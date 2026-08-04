@@ -44,6 +44,7 @@ export {
   fallbackModelCatalog,
 } from './model-discovery'
 export { generateImageForProvider } from './image-generation'
+export { sanitizeGeminiSchema } from './gemini-schema'
 export { chatForProvider } from './chat'
 export { AiCreditsError, sseLines, streamForProvider } from './stream'
 export type { StreamCallbacks } from './stream'

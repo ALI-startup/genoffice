@@ -1,10 +1,7 @@
 import type { AgentMessage, AgentToolCall, AgentToolDef } from '@genoffice/agent-core'
+import { sanitizeGeminiSchema } from './gemini-schema'
 import { httpBodyDetail } from './http-error'
-import {
-  AI_PROVIDER_BY_ID,
-  GENSPARK_LLM_BASE_URLS,
-  gensparkAttributionHeaders,
-} from './providers'
+import { AI_PROVIDER_BY_ID, GENSPARK_LLM_BASE_URLS, gensparkAttributionHeaders } from './providers'
 import type { AiProviderConfig, AiProviderId } from './types'
 import { createStreamWatchdog, type StreamWatchdog } from './watchdog'
 
@@ -511,7 +508,7 @@ async function geminiTurn(
                 functionDeclarations: tools.map((t) => ({
                   name: t.name,
                   description: t.description,
-                  parameters: t.inputSchema,
+                  parameters: sanitizeGeminiSchema(t.inputSchema),
                 })),
               },
             ],
