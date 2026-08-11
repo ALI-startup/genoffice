@@ -3,11 +3,16 @@ import type { Editor } from '@tiptap/core'
 import type { Block } from '@genoffice/docx-engine'
 import { AgentLoop, composeSkills, type AgentImage } from '@genoffice/agent-core'
 import { AI_PROVIDERS, type AiSettings } from '@genoffice/ai-provider'
-import type { AttachmentAddResult, AttachmentMeta } from '../../shared/ipc'
-import { ATTACHMENT_IMAGE_EXTS } from '../../shared/ipc'
+import {
+  ATTACHMENT_IMAGE_EXTS,
+  type AttachmentAddResult,
+  type AttachmentMeta,
+  type AttachmentRef,
+} from '@genoffice/platform'
 import type { PmNode } from '../editor/convert'
+import { docsPlatform } from '../platform'
 import { findNumId, type NumIds } from './protocol'
-import { markDocSeen } from './tools'
+import { availableTools, markDocSeen } from './tools'
 import { createDocsSkill } from './docs-skill'
 import { applyRevisionsBy } from '../editor/revisions'
 import { DOCS_AGENT_MAX_TURNS, DOCS_CONTINUE_INSTRUCTION } from './continuation'
@@ -315,9 +320,11 @@ export function AiPanel({
         ...(tools && tools.length > 0 ? { tools } : {}),
         ...(attachments && attachments.length > 0
           ? {
+              // The project store records a local path (main-process bookkeeping,
+              // not migrated yet); `location` is what this host can offer for it.
               attachments: attachments.map((a) => ({
                 name: a.name,
-                path: a.path,
+                path: a.location,
                 ext: a.ext,
                 sizeBytes: a.sizeBytes,
               })),
@@ -356,6 +363,9 @@ export function AiPanel({
           () => editorRef.current,
           numIds,
           () => (trackChangesRef.current ? { author: AI_REVISION_AUTHOR } : undefined),
+          // Host-filtered: the web/image-search tools are dropped when this host
+          // has no SearchPort, so the model is not offered them at all.
+          availableTools(),
         ),
         createFilesSkill(() => attachmentsRef.current),
       ]),
@@ -469,9 +479,12 @@ export function AiPanel({
             return next
           })
           // Signed-out failures get an inline sign-in button; detected via
-          // gsk status rather than matching the localized error text
-          void window.desktop
-            .aiGskStatus()
+          // gsk status rather than matching the localized error text.
+          // Null on a host with no Genspark integration (the browser build,
+          // where signing in means running a local CLI): there is no account
+          // state to probe, so the failure is reported without a sign-in offer.
+          void docsPlatform()
+            .genspark?.aiGskStatus()
             .then((status) => {
               if (status.loggedIn) return
               setChat((prev) => {
@@ -534,7 +547,7 @@ export function AiPanel({
     const images: AgentImage[] = []
     const failures: string[] = []
     for (const att of imageAtts.slice(0, MAX_IMAGES_PER_MESSAGE)) {
-      const result = await window.desktop.readAttachmentImage(att.path)
+      const result = await docsPlatform().attachments.readAttachmentImage(att.ref)
       if (result.ok && result.base64 && result.mime) {
         images.push({ base64: result.base64, mime: result.mime })
       } else {
@@ -600,8 +613,8 @@ export function AiPanel({
     if (!result) return
     if (result.accepted.length > 0) {
       setAttachments((prev) => {
-        const seen = new Set(prev.map((a) => a.path))
-        return [...prev, ...result.accepted.filter((a) => !seen.has(a.path))]
+        const seen = new Set(prev.map((a) => a.ref))
+        return [...prev, ...result.accepted.filter((a) => !seen.has(a.ref))]
       })
     }
     if (result.rejected.length > 0) {
@@ -610,35 +623,41 @@ export function AiPanel({
     }
   }
 
-  const pickAttachments = async () => mergeAttachments(await window.desktop.pickAttachments())
+  const pickAttachments = async () =>
+    mergeAttachments(await docsPlatform().attachments.pickAttachments())
 
   const onDrop = async (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setDragOver(false)
-    const paths = Array.from(e.dataTransfer.files)
-      .map((f) => window.desktop.getPathForFile(f))
-      .filter(Boolean)
-    if (paths.length > 0) mergeAttachments(await window.desktop.addAttachmentPaths(paths))
+    const { attachments: port } = docsPlatform()
+    const resolved = await Promise.all(
+      Array.from(e.dataTransfer.files).map((f) => port.refForFile(f)),
+    )
+    const refs = resolved.filter((ref): ref is AttachmentRef => ref !== null)
+    if (refs.length > 0) mergeAttachments(await port.addAttachments(refs))
   }
 
-  /** Files pasted into the input: ones with a local path go through regular attachments; pure bitmaps like screenshots hit a temp file first */
+  /** Files pasted into the input: ones the host can address go through regular attachments; pure bitmaps like screenshots hand their bytes over instead */
   const onPasteFiles = async (files: File[]) => {
-    const paths: string[] = []
+    const { attachments: port } = docsPlatform()
+    const refs: AttachmentRef[] = []
     for (const f of files) {
-      const p = window.desktop.getPathForFile(f)
-      if (p) {
-        paths.push(p)
+      // null is a real answer, not a failure: a clipboard bitmap has no backing
+      // file for any host to name, which is exactly what addPastedImage is for.
+      const ref = await port.refForFile(f)
+      if (ref !== null) {
+        refs.push(ref)
         continue
       }
       const ext = PASTE_MIME_EXT[f.type] ?? f.name.split('.').pop()?.toLowerCase() ?? 'bin'
-      mergeAttachments(await window.desktop.addPastedImage(await f.arrayBuffer(), ext))
+      mergeAttachments(await port.addPastedImage(await f.arrayBuffer(), ext))
     }
-    if (paths.length > 0) mergeAttachments(await window.desktop.addAttachmentPaths(paths))
+    if (refs.length > 0) mergeAttachments(await port.addAttachments(refs))
   }
 
-  const removeAttachment = (path: string) =>
-    setAttachments((prev) => prev.filter((a) => a.path !== path))
+  const removeAttachment = (ref: AttachmentRef) =>
+    setAttachments((prev) => prev.filter((a) => a.ref !== ref))
 
   const acceptChanges = () => {
     applyRevisionsBy(editorRef.current, AI_REVISION_AUTHOR, 'accept')
@@ -831,8 +850,15 @@ export function AiPanel({
               {entry.error && (
                 <div className="ai-msg-error">{t('aiErrorPrefix', { error: entry.error })}</div>
               )}
-              {entry.loginRequired && (
-                <button className="ai-login-btn" onClick={() => void window.desktop.aiGskLogin()}>
+              {/* `loginRequired` is only ever set by the status probe above,
+                  which no-ops without the port — so the platform read here is
+                  reached only on a host that has Genspark, and short-circuits
+                  before it on one that does not. */}
+              {entry.loginRequired && docsPlatform().genspark && (
+                <button
+                  className="ai-login-btn"
+                  onClick={() => void docsPlatform().genspark?.aiGskLogin()}
+                >
                   {t('aiGskLoginBtn')}
                 </button>
               )}
@@ -914,12 +940,12 @@ export function AiPanel({
         {attachments.length > 0 && (
           <div className="ai-attachments">
             {attachments.map((a) => (
-              <span key={a.path} className="ai-attachment-chip" title={a.path}>
+              <span key={a.ref} className="ai-attachment-chip" title={a.location}>
                 <IconPaperclip size={11} />
                 {a.name}
                 <button
                   className="ai-attachment-remove"
-                  onClick={() => removeAttachment(a.path)}
+                  onClick={() => removeAttachment(a.ref)}
                   title={t('aiRemoveAttachmentTitle')}
                 >
                   ×

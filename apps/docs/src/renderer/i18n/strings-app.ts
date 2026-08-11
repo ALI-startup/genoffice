@@ -23,6 +23,8 @@ export const appStrings = defineStrings({
     appNewDocCreated: '已新建空白文档,可在右侧 AI 面板直接描述要生成的内容',
     appNewFailed: '新建失败: {error}',
     appSaveFailed: '保存失败: {error}',
+    appSaveExtModified: '文件已被其他程序修改。仍要保存并覆盖磁盘上的更改吗?',
+    appSaveNeedsLocation: '未自动保存: 此文档尚无保存位置。请点击"保存"选择存放位置。',
     appAutoSavedAt: '已自动保存 ({time})',
     appSaved: '已保存',
     // Section breaks
@@ -308,11 +310,16 @@ export const appStrings = defineStrings({
     appOpenedFile: 'Opened {name}',
     appOpenFailed: 'Open failed: {error}',
     appFontsMissing: 'Missing document fonts: {names} (substitutes shown)',
-    appVerticalTextNotice: 'This document contains vertical text (shown horizontally for now; saving is unaffected)',
+    appVerticalTextNotice:
+      'This document contains vertical text (shown horizontally for now; saving is unaffected)',
     appNewDocCreated:
       'Blank document created. Describe what to generate in the AI pane on the right.',
     appNewFailed: 'Failed to create document: {error}',
     appSaveFailed: 'Save failed: {error}',
+    appSaveExtModified:
+      'The file has been modified by another program. Save anyway and overwrite the changes on disk?',
+    appSaveNeedsLocation:
+      'Not auto-saved: this document has no location yet. Use Save to choose where to store it.',
     appAutoSavedAt: 'AutoSaved ({time})',
     appSaved: 'Saved',
     appSectionBreakInserted: 'Section break inserted ({type})',
@@ -580,10 +587,15 @@ export const appStrings = defineStrings({
     appOpenedFile: '{name} を開きました',
     appOpenFailed: '開けませんでした: {error}',
     appFontsMissing: '文書のフォントが未インストールです: {names}（代替フォントで表示）',
-    appVerticalTextNotice: '縦書きテキストを含む文書です（現在は横書きで表示。保存には影響しません）',
+    appVerticalTextNotice:
+      '縦書きテキストを含む文書です（現在は横書きで表示。保存には影響しません）',
     appNewDocCreated: '空白の文書を作成しました。右側の AI パネルで生成したい内容を記述できます',
     appNewFailed: '新規作成に失敗しました: {error}',
     appSaveFailed: '保存に失敗しました: {error}',
+    appSaveExtModified:
+      'このファイルは別のプログラムによって変更されています。このまま保存してディスク上の変更を上書きしますか?',
+    appSaveNeedsLocation:
+      '自動保存されていません: この文書には保存場所がまだありません。「保存」で保存先を選んでください。',
     appAutoSavedAt: '自動保存しました ({time})',
     appSaved: '保存しました',
     // Section breaks
@@ -882,11 +894,16 @@ export const appStrings = defineStrings({
     appOpenedFile: '{name}을(를) 열었습니다',
     appOpenFailed: '열기 실패: {error}',
     appFontsMissing: '문서 글꼴이 설치되어 있지 않습니다: {names} (대체 글꼴로 표시)',
-    appVerticalTextNotice: '세로쓰기 텍스트가 포함된 문서입니다(현재 가로쓰기로 표시되며 저장에는 영향이 없습니다)',
+    appVerticalTextNotice:
+      '세로쓰기 텍스트가 포함된 문서입니다(현재 가로쓰기로 표시되며 저장에는 영향이 없습니다)',
     appNewDocCreated:
       '빈 문서를 만들었습니다. 오른쪽 AI 패널에서 생성할 내용을 바로 입력할 수 있습니다',
     appNewFailed: '새로 만들기 실패: {error}',
     appSaveFailed: '저장 실패: {error}',
+    appSaveExtModified:
+      '이 파일이 다른 프로그램에서 수정되었습니다. 그래도 저장하여 디스크의 변경 사항을 덮어쓸까요?',
+    appSaveNeedsLocation:
+      '자동 저장되지 않음: 이 문서에는 아직 저장 위치가 없습니다. "저장"으로 저장할 위치를 선택하세요.',
     appAutoSavedAt: '자동 저장됨 ({time})',
     appSaved: '저장됨',
     // Section breaks
@@ -1182,11 +1199,16 @@ export const appStrings = defineStrings({
     appOpenedFile: '{name} ouvert',
     appOpenFailed: "Échec de l'ouverture : {error}",
     appFontsMissing: 'Polices du document manquantes : {names} (polices de substitution affichées)',
-    appVerticalTextNotice: "Ce document contient du texte vertical (affiché horizontalement pour l'instant ; l'enregistrement n'est pas affecté)",
+    appVerticalTextNotice:
+      "Ce document contient du texte vertical (affiché horizontalement pour l'instant ; l'enregistrement n'est pas affecté)",
     appNewDocCreated:
       'Document vierge créé. Décrivez le contenu à générer dans le volet IA à droite',
     appNewFailed: 'Échec de la création du document : {error}',
     appSaveFailed: "Échec de l'enregistrement : {error}",
+    appSaveExtModified:
+      'Le fichier a été modifié par un autre programme. Enregistrer quand même et écraser les modifications sur le disque ?',
+    appSaveNeedsLocation:
+      "Non enregistré automatiquement : ce document n'a pas encore d'emplacement. Utilisez Enregistrer pour choisir où le stocker.",
     appAutoSavedAt: 'Enregistrement automatique ({time})',
     appSaved: 'Enregistré',
     appSectionBreakInserted: 'Saut de section inséré ({type})',
@@ -1463,11 +1485,16 @@ export const appStrings = defineStrings({
     appOpenedFile: '{name} geöffnet',
     appOpenFailed: 'Öffnen fehlgeschlagen: {error}',
     appFontsMissing: 'Fehlende Dokumentschriftarten: {names} (Ersatzschriften werden angezeigt)',
-    appVerticalTextNotice: 'Dieses Dokument enthält vertikalen Text (vorerst horizontal angezeigt; das Speichern ist nicht betroffen)',
+    appVerticalTextNotice:
+      'Dieses Dokument enthält vertikalen Text (vorerst horizontal angezeigt; das Speichern ist nicht betroffen)',
     appNewDocCreated:
       'Leeres Dokument erstellt. Beschreiben Sie im KI-Bereich rechts, was generiert werden soll',
     appNewFailed: 'Erstellen des Dokuments fehlgeschlagen: {error}',
     appSaveFailed: 'Speichern fehlgeschlagen: {error}',
+    appSaveExtModified:
+      'Die Datei wurde von einem anderen Programm geändert. Trotzdem speichern und die Änderungen auf dem Datenträger überschreiben?',
+    appSaveNeedsLocation:
+      'Nicht automatisch gespeichert: Dieses Dokument hat noch keinen Speicherort. Wählen Sie über „Speichern“ einen Speicherort.',
     appAutoSavedAt: 'Automatisch gespeichert ({time})',
     appSaved: 'Gespeichert',
     appSectionBreakInserted: 'Abschnittsumbruch eingefügt ({type})',
@@ -1746,11 +1773,16 @@ export const appStrings = defineStrings({
     appOpenedFile: 'Se abrió {name}',
     appOpenFailed: 'Error al abrir: {error}',
     appFontsMissing: 'Faltan fuentes del documento: {names} (se muestran sustitutas)',
-    appVerticalTextNotice: 'Este documento contiene texto vertical (se muestra horizontal por ahora; el guardado no se ve afectado)',
+    appVerticalTextNotice:
+      'Este documento contiene texto vertical (se muestra horizontal por ahora; el guardado no se ve afectado)',
     appNewDocCreated:
       'Documento en blanco creado. Describa el contenido que desea generar en el panel de IA de la derecha',
     appNewFailed: 'Error al crear el documento: {error}',
     appSaveFailed: 'Error al guardar: {error}',
+    appSaveExtModified:
+      'El archivo ha sido modificado por otro programa. ¿Guardar de todos modos y sobrescribir los cambios en el disco?',
+    appSaveNeedsLocation:
+      'No se guarda automáticamente: este documento aún no tiene ubicación. Usa Guardar para elegir dónde almacenarlo.',
     appAutoSavedAt: 'Guardado automáticamente ({time})',
     appSaved: 'Guardado',
     appSectionBreakInserted: 'Salto de sección insertado ({type})',
@@ -2029,6 +2061,10 @@ export const appStrings = defineStrings({
     appNewDocCreated: 'สร้างเอกสารเปล่าแล้ว อธิบายเนื้อหาที่ต้องการสร้างได้ในแผง AI ทางขวา',
     appNewFailed: 'สร้างเอกสารไม่สำเร็จ: {error}',
     appSaveFailed: 'บันทึกไม่สำเร็จ: {error}',
+    appSaveExtModified:
+      'ไฟล์ถูกแก้ไขโดยโปรแกรมอื่น บันทึกต่อไปและเขียนทับการเปลี่ยนแปลงบนดิสก์หรือไม่?',
+    appSaveNeedsLocation:
+      'ไม่ได้บันทึกอัตโนมัติ: เอกสารนี้ยังไม่มีตำแหน่งจัดเก็บ ใช้ "บันทึก" เพื่อเลือกที่จัดเก็บ',
     appAutoSavedAt: 'บันทึกอัตโนมัติแล้ว ({time})',
     appSaved: 'บันทึกแล้ว',
     appSectionBreakInserted: 'แทรกตัวแบ่งส่วนแล้ว ({type})',
@@ -2298,11 +2334,16 @@ export const appStrings = defineStrings({
     appOpenedFile: '{name} dibuka',
     appOpenFailed: 'Gagal membuka: {error}',
     appFontsMissing: 'Font dokumen tidak tersedia: {names} (ditampilkan dengan font pengganti)',
-    appVerticalTextNotice: 'Dokumen ini berisi teks vertikal (sementara ditampilkan horizontal; penyimpanan tidak terpengaruh)',
+    appVerticalTextNotice:
+      'Dokumen ini berisi teks vertikal (sementara ditampilkan horizontal; penyimpanan tidak terpengaruh)',
     appNewDocCreated:
       'Dokumen kosong telah dibuat. Jelaskan konten yang ingin dibuat di panel AI sebelah kanan',
     appNewFailed: 'Gagal membuat dokumen: {error}',
     appSaveFailed: 'Gagal menyimpan: {error}',
+    appSaveExtModified:
+      'File telah diubah oleh program lain. Tetap simpan dan timpa perubahan di disk?',
+    appSaveNeedsLocation:
+      'Tidak disimpan otomatis: dokumen ini belum memiliki lokasi. Gunakan Simpan untuk memilih tempat penyimpanan.',
     appAutoSavedAt: 'Disimpan otomatis ({time})',
     appSaved: 'Disimpan',
     appSectionBreakInserted: 'Pemisah bagian disisipkan ({type})',
@@ -2573,10 +2614,15 @@ export const appStrings = defineStrings({
     appOpenedFile: 'Открыт файл {name}',
     appOpenFailed: 'Не удалось открыть: {error}',
     appFontsMissing: 'Отсутствуют шрифты документа: {names} (показаны заменители)',
-    appVerticalTextNotice: 'Документ содержит вертикальный текст (пока отображается горизонтально; на сохранение это не влияет)',
+    appVerticalTextNotice:
+      'Документ содержит вертикальный текст (пока отображается горизонтально; на сохранение это не влияет)',
     appNewDocCreated: 'Создан пустой документ. Опишите содержимое для создания в панели ИИ справа',
     appNewFailed: 'Не удалось создать документ: {error}',
     appSaveFailed: 'Не удалось сохранить: {error}',
+    appSaveExtModified:
+      'Файл был изменён другой программой. Всё равно сохранить и перезаписать изменения на диске?',
+    appSaveNeedsLocation:
+      'Автосохранение не выполняется: у документа ещё нет места хранения. Нажмите «Сохранить», чтобы выбрать его.',
     appAutoSavedAt: 'Автосохранение ({time})',
     appSaved: 'Сохранено',
     appSectionBreakInserted: 'Вставлен разрыв раздела ({type})',
@@ -2851,11 +2897,16 @@ export const appStrings = defineStrings({
     appOpenedFile: 'تم فتح {name}',
     appOpenFailed: 'فشل الفتح: {error}',
     appFontsMissing: 'خطوط المستند غير مثبتة: {names} (تُعرض بخطوط بديلة)',
-    appVerticalTextNotice: 'يحتوي المستند على نص عمودي (يُعرض أفقيًا حاليًا؛ لا يؤثر ذلك على الحفظ)',
+    appVerticalTextNotice:
+      'يحتوي المستند على نص عمودي (يُعرض أفقيًا حاليًا؛ لا يؤثر ذلك على الحفظ)',
     appNewDocCreated:
       'تم إنشاء مستند فارغ. صِف المحتوى المراد إنشاؤه في لوحة الذكاء الاصطناعي على اليمين',
     appNewFailed: 'فشل إنشاء المستند: {error}',
     appSaveFailed: 'فشل الحفظ: {error}',
+    appSaveExtModified:
+      'تم تعديل الملف بواسطة برنامج آخر. هل تريد الحفظ على أي حال والكتابة فوق التغييرات على القرص؟',
+    appSaveNeedsLocation:
+      'لم يتم الحفظ التلقائي: لا يوجد موقع لهذا المستند بعد. استخدم "حفظ" لاختيار مكان تخزينه.',
     appAutoSavedAt: 'تم الحفظ التلقائي ({time})',
     appSaved: 'تم الحفظ',
     appSectionBreakInserted: 'تم إدراج فاصل مقطعي ({type})',
@@ -3122,10 +3173,15 @@ export const appStrings = defineStrings({
     appOpenedFile: '{name} aberto',
     appOpenFailed: 'Falha ao abrir: {error}',
     appFontsMissing: 'Fontes do documento ausentes: {names} (substitutas exibidas)',
-    appVerticalTextNotice: 'Este documento contém texto vertical (exibido horizontalmente por enquanto; o salvamento não é afetado)',
+    appVerticalTextNotice:
+      'Este documento contém texto vertical (exibido horizontalmente por enquanto; o salvamento não é afetado)',
     appNewDocCreated: 'Documento em branco criado. Descreva o que gerar no painel de IA à direita.',
     appNewFailed: 'Falha ao criar o documento: {error}',
     appSaveFailed: 'Falha ao salvar: {error}',
+    appSaveExtModified:
+      'O arquivo foi modificado por outro programa. Salvar mesmo assim e sobrescrever as alterações no disco?',
+    appSaveNeedsLocation:
+      'Não salvo automaticamente: este documento ainda não tem um local. Use Salvar para escolher onde armazená-lo.',
     appAutoSavedAt: 'Salvo automaticamente ({time})',
     appSaved: 'Salvo',
     appSectionBreakInserted: 'Quebra de seção inserida ({type})',
@@ -3397,10 +3453,15 @@ export const appStrings = defineStrings({
     appOpenedFile: '{name} aperto',
     appOpenFailed: 'Apertura non riuscita: {error}',
     appFontsMissing: 'Font del documento mancanti: {names} (mostrati sostituti)',
-    appVerticalTextNotice: 'Questo documento contiene testo verticale (mostrato orizzontalmente per ora; il salvataggio non è interessato)',
+    appVerticalTextNotice:
+      'Questo documento contiene testo verticale (mostrato orizzontalmente per ora; il salvataggio non è interessato)',
     appNewDocCreated: 'Documento vuoto creato. Descrivi cosa generare nel pannello IA a destra.',
     appNewFailed: 'Creazione del documento non riuscita: {error}',
     appSaveFailed: 'Salvataggio non riuscito: {error}',
+    appSaveExtModified:
+      'Il file è stato modificato da un altro programma. Salvare comunque e sovrascrivere le modifiche sul disco?',
+    appSaveNeedsLocation:
+      'Non salvato automaticamente: questo documento non ha ancora una posizione. Usa Salva per scegliere dove archiviarlo.',
     appAutoSavedAt: 'Salvato automaticamente ({time})',
     appSaved: 'Salvato',
     appSectionBreakInserted: 'Interruzione di sezione inserita ({type})',
@@ -3672,10 +3733,15 @@ export const appStrings = defineStrings({
     appOpenedFile: 'Otwarto {name}',
     appOpenFailed: 'Otwieranie nie powiodło się: {error}',
     appFontsMissing: 'Brak czcionek dokumentu: {names} (wyświetlane zamienniki)',
-    appVerticalTextNotice: 'Ten dokument zawiera tekst pionowy (na razie wyświetlany poziomo; zapis pozostaje bez zmian)',
+    appVerticalTextNotice:
+      'Ten dokument zawiera tekst pionowy (na razie wyświetlany poziomo; zapis pozostaje bez zmian)',
     appNewDocCreated: 'Utworzono pusty dokument. Opisz w panelu AI po prawej, co wygenerować.',
     appNewFailed: 'Nie udało się utworzyć dokumentu: {error}',
     appSaveFailed: 'Zapisywanie nie powiodło się: {error}',
+    appSaveExtModified:
+      'Plik został zmodyfikowany przez inny program. Zapisać mimo to i nadpisać zmiany na dysku?',
+    appSaveNeedsLocation:
+      'Brak autozapisu: ten dokument nie ma jeszcze lokalizacji. Użyj polecenia Zapisz, aby wybrać miejsce zapisu.',
     appAutoSavedAt: 'Zapisano automatycznie ({time})',
     appSaved: 'Zapisano',
     appSectionBreakInserted: 'Wstawiono podział sekcji ({type})',
@@ -3950,11 +4016,16 @@ export const appStrings = defineStrings({
     appOpenedFile: '{name} geopend',
     appOpenFailed: 'Openen mislukt: {error}',
     appFontsMissing: 'Ontbrekende documentlettertypen: {names} (vervangingen weergegeven)',
-    appVerticalTextNotice: 'Dit document bevat verticale tekst (voorlopig horizontaal weergegeven; opslaan wordt niet beïnvloed)',
+    appVerticalTextNotice:
+      'Dit document bevat verticale tekst (voorlopig horizontaal weergegeven; opslaan wordt niet beïnvloed)',
     appNewDocCreated:
       'Leeg document gemaakt. Beschrijf in het AI-paneel rechts wat er gegenereerd moet worden.',
     appNewFailed: 'Document maken mislukt: {error}',
     appSaveFailed: 'Opslaan mislukt: {error}',
+    appSaveExtModified:
+      'Het bestand is door een ander programma gewijzigd. Toch opslaan en de wijzigingen op schijf overschrijven?',
+    appSaveNeedsLocation:
+      'Niet automatisch opgeslagen: dit document heeft nog geen locatie. Gebruik Opslaan om een locatie te kiezen.',
     appAutoSavedAt: 'Automatisch opgeslagen ({time})',
     appSaved: 'Opgeslagen',
     appSectionBreakInserted: 'Sectie-einde ingevoegd ({type})',
@@ -4232,11 +4303,16 @@ export const appStrings = defineStrings({
     appOpenedFile: '{name} dibuka',
     appOpenFailed: 'Gagal membuka: {error}',
     appFontsMissing: 'Fon dokumen tiada: {names} (dipaparkan dengan fon ganti)',
-    appVerticalTextNotice: 'Dokumen ini mengandungi teks menegak (dipaparkan mendatar buat masa ini; penyimpanan tidak terjejas)',
+    appVerticalTextNotice:
+      'Dokumen ini mengandungi teks menegak (dipaparkan mendatar buat masa ini; penyimpanan tidak terjejas)',
     appNewDocCreated:
       'Dokumen kosong telah dibuat. Terangkan kandungan yang hendak dijana di panel AI sebelah kanan.',
     appNewFailed: 'Gagal membuat dokumen: {error}',
     appSaveFailed: 'Gagal menyimpan: {error}',
+    appSaveExtModified:
+      'Fail telah diubah oleh program lain. Simpan juga dan tulis ganti perubahan pada cakera?',
+    appSaveNeedsLocation:
+      'Tidak disimpan automatik: dokumen ini belum mempunyai lokasi. Gunakan Simpan untuk memilih tempat menyimpannya.',
     appAutoSavedAt: 'Disimpan secara automatik ({time})',
     appSaved: 'Disimpan',
     appSectionBreakInserted: 'Pemisah seksyen disisipkan ({type})',
@@ -4511,6 +4587,9 @@ export const appStrings = defineStrings({
     appNewDocCreated: 'נוצר מסמך ריק. תארו בחלונית ה-AI מימין מה ליצור.',
     appNewFailed: 'יצירת המסמך נכשלה: {error}',
     appSaveFailed: 'השמירה נכשלה: {error}',
+    appSaveExtModified: 'הקובץ שונה על ידי תוכנית אחרת. לשמור בכל זאת ולדרוס את השינויים בדיסק?',
+    appSaveNeedsLocation:
+      'לא נשמר אוטומטית: למסמך הזה אין עדיין מקום שמירה. השתמשו ב"שמירה" כדי לבחור היכן לשמור אותו.',
     appAutoSavedAt: 'נשמר אוטומטית ({time})',
     appSaved: 'נשמר',
     appSectionBreakInserted: 'הוסף מעבר מקטע ({type})',
@@ -4776,10 +4855,15 @@ export const appStrings = defineStrings({
     appOpenedFile: '{name} खोला गया',
     appOpenFailed: 'खोलने में विफल: {error}',
     appFontsMissing: 'दस्तावेज़ के फ़ॉन्ट इंस्टॉल नहीं हैं: {names} (विकल्प फ़ॉन्ट दिखाए गए)',
-    appVerticalTextNotice: 'इस दस्तावेज़ में लंबवत पाठ है (फ़िलहाल क्षैतिज रूप में दिखाया गया है; सहेजने पर असर नहीं)',
+    appVerticalTextNotice:
+      'इस दस्तावेज़ में लंबवत पाठ है (फ़िलहाल क्षैतिज रूप में दिखाया गया है; सहेजने पर असर नहीं)',
     appNewDocCreated: 'खाली दस्तावेज़ बनाया गया। दाईं ओर AI पैनल में बताएँ कि क्या जनरेट करना है।',
     appNewFailed: 'दस्तावेज़ बनाने में विफल: {error}',
     appSaveFailed: 'सहेजने में विफल: {error}',
+    appSaveExtModified:
+      'फ़ाइल को किसी अन्य प्रोग्राम ने बदल दिया है। फिर भी सहेजें और डिस्क पर मौजूद बदलावों को अधिलेखित करें?',
+    appSaveNeedsLocation:
+      'स्वतः सहेजा नहीं गया: इस दस्तावेज़ का कोई स्थान अभी नहीं है। "सहेजें" से स्थान चुनें।',
     appAutoSavedAt: 'स्वतः सहेजा गया ({time})',
     appSaved: 'सहेजा गया',
     appSectionBreakInserted: 'अनुभाग विराम सम्मिलित किया गया ({type})',
@@ -5053,6 +5137,8 @@ export const appStrings = defineStrings({
     appNewDocCreated: '已建立空白文件,可在右側 AI 面板直接描述要產生的內容',
     appNewFailed: '建立失敗: {error}',
     appSaveFailed: '儲存失敗: {error}',
+    appSaveExtModified: '檔案已被其他程式修改。仍要儲存並覆寫磁碟上的變更嗎?',
+    appSaveNeedsLocation: '未自動儲存: 此文件尚無儲存位置。請按「儲存」選擇存放位置。',
     appAutoSavedAt: '已自動儲存 ({time})',
     appSaved: '已儲存',
     appSectionBreakInserted: '已插入分節符號({type})',

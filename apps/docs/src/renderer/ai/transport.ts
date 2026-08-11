@@ -1,12 +1,13 @@
 import { createIpcTransport, type AgentTransport } from '@genoffice/agent-core'
 import { t } from '../i18n/locale'
+import { docsPlatform } from '../platform'
 
-/** The shared IPC transport wired to the docs preload bridge (window.desktop). */
+/** The shared IPC transport wired to the host's AI port. */
 export function createElectronTransport(): AgentTransport {
   return createIpcTransport({
-    onStream: (listener) => window.desktop.onAiStream(listener),
-    start: (request) => window.desktop.aiStream(request),
-    cancel: (requestId) => void window.desktop.aiStreamCancel(requestId),
+    onStream: (listener) => docsPlatform().ai.onAiStream(listener),
+    start: (request) => docsPlatform().ai.aiStream(request),
+    cancel: (requestId) => void docsPlatform().ai.aiStreamCancel(requestId),
     task: 'chat',
     unknownErrorText: () => t('aiUnknownError'),
     timeoutErrorText: () => t('aiTimeoutError'),

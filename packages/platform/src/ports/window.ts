@@ -34,8 +34,17 @@
  *
  * Deliberately excluded (single-app, so not a shared capability yet): docs'
  * onCloseCheck / reportCloseCheck / onTeardown, and slides' setAutoSavePref /
- * isDirty. docs' reportCloseCheck additionally carries `autoSave` and
- * `filePath`, which the boolean cannot express — see the Phase 1 report.
+ * isDirty.
+ *
+ * The docs close-check pair is excluded for a stronger reason than "only one app
+ * has it": it is a different protocol. `setDirty` is a push — the renderer tells
+ * the host whenever the state changes, and the host remembers. docs' pair is a
+ * pull — the host asks at close time and the renderer answers once, with a
+ * three-field decision (`dirty`, `autoSave`, and the document handle) that
+ * drives the host's silent-autosave-on-close path. Neither direction can be
+ * derived from the other, so docs declares its own close-guard port
+ * (apps/docs/src/renderer/platform.ts) and reuses only the save-request /
+ * save-result half from here, which really is shared by all four apps.
  */
 
 /** One open editor tab, for the "switch tab" menu. */
@@ -48,9 +57,13 @@ export interface TabInfo {
 export interface WindowPort {
   /**
    * Open another tab of the current app, optionally loading a document.
-   * A null / omitted path opens a blank document.
+   * A null / omitted handle opens a blank document.
+   *
+   * `openRef` is an opaque handle the host itself issued (Electron's is an
+   * absolute path); the renderer only relays back what it was given. Named for
+   * that rather than `openPath`, so no caller is invited to build one.
    */
-  openNewTab(openPath?: string | null): Promise<void>
+  openNewTab(openRef?: string | null): Promise<void>
   /**
    * All open tabs of the current app.
    *

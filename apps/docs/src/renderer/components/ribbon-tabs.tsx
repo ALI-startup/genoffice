@@ -9,10 +9,11 @@ import {
   type HeaderFooter,
   type TextboxDisplay,
 } from '@genoffice/docx-engine'
-import type { DocsTabInfo } from '../../shared/ipc'
+import type { TabInfo } from '@genoffice/platform'
 import { tableModelToPmNode } from '../editor/convert'
 import type { InkTool } from '../editor/ink'
 import { t, useI18n, type StringKey } from '../i18n/locale'
+import { docsPlatform } from '../platform'
 import {
   IconAccept,
   IconAiPanel,
@@ -176,7 +177,7 @@ export async function insertImageFromDataUrl(
 }
 
 export async function insertImageViaDialog(editor: Editor): Promise<void> {
-  const picked = await window.desktop.pickImage()
+  const picked = await docsPlatform().file.pickImage()
   if (!picked) return
   await insertImageFromDataUrl(
     editor,
@@ -870,10 +871,14 @@ export function ViewTab({
 }: ViewTabProps) {
   const { t } = useI18n()
   const [winMenuOpen, setWinMenuOpen] = useState(false)
-  const [windows, setWindows] = useState<DocsTabInfo[]>([])
+  const [windows, setWindows] = useState<TabInfo[]>([])
+  // Null on a host with no tab strip (the browser build); the Window group's tab
+  // buttons are rendered only when it is present, rather than shown and inert.
+  const tabs = docsPlatform().tabs
 
   const toggleWinMenu = async () => {
-    if (!winMenuOpen) setWindows(await window.desktop.listDocsTabs())
+    if (!tabs) return
+    if (!winMenuOpen) setWindows(await tabs.listTabs())
     setWinMenuOpen((v) => !v)
   }
 
@@ -1078,16 +1083,21 @@ export function ViewTab({
 
       <div className="ribbon-group">
         <div className="ribbon-group-items">
-          <button
-            className="rb-big"
-            title={t('ribbonNewTabTip')}
-            onClick={() => void window.desktop.openNewTab(filePath)}
-          >
-            <span className="rb-big-icon">
-              <IconNewWindow size={BIG} />
-            </span>
-            <span>{t('ribbonNewTab')}</span>
-          </button>
+          {/* New Tab and Switch Tabs exist exactly when the host has a tab strip:
+              `tabs` is null in a browser, where a page can neither enumerate nor
+              raise the browser's own tabs. Split View is renderer-only and stays. */}
+          {tabs && (
+            <button
+              className="rb-big"
+              title={t('ribbonNewTabTip')}
+              onClick={() => void tabs.openNewTab(filePath)}
+            >
+              <span className="rb-big-icon">
+                <IconNewWindow size={BIG} />
+              </span>
+              <span>{t('ribbonNewTab')}</span>
+            </button>
+          )}
           <button
             className={`rb-big ${splitView ? 'active' : ''}`}
             disabled={!hasDoc}
@@ -1099,35 +1109,37 @@ export function ViewTab({
             </span>
             <span>{t('ribbonSplit')}</span>
           </button>
-          <div className="rb-split-wrap">
-            <button
-              className="rb-big"
-              title={t('ribbonSwitchTabsTip')}
-              onClick={() => void toggleWinMenu()}
-            >
-              <span className="rb-big-icon">
-                <IconSwitchWindows size={BIG} />
-                <IconCaret />
-              </span>
-              <span>{t('ribbonSwitchTabs')}</span>
-            </button>
-            {winMenuOpen && (
-              <div className="layout-menu align-right">
-                {windows.map((w) => (
-                  <button
-                    key={w.id}
-                    onClick={() => {
-                      void window.desktop.focusDocsTab(w.id)
-                      setWinMenuOpen(false)
-                    }}
-                  >
-                    {w.focused ? '✓ ' : ''}
-                    {w.title || 'GenOffice Docs'}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          {tabs && (
+            <div className="rb-split-wrap">
+              <button
+                className="rb-big"
+                title={t('ribbonSwitchTabsTip')}
+                onClick={() => void toggleWinMenu()}
+              >
+                <span className="rb-big-icon">
+                  <IconSwitchWindows size={BIG} />
+                  <IconCaret />
+                </span>
+                <span>{t('ribbonSwitchTabs')}</span>
+              </button>
+              {winMenuOpen && (
+                <div className="layout-menu align-right">
+                  {windows.map((w) => (
+                    <button
+                      key={w.id}
+                      onClick={() => {
+                        void tabs.focusTab(w.id)
+                        setWinMenuOpen(false)
+                      }}
+                    >
+                      {w.focused ? '✓ ' : ''}
+                      {w.title || 'GenOffice Docs'}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <div className="ribbon-group-label">{t('ribbonGroupWindow')}</div>
       </div>

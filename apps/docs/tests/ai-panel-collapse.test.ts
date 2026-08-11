@@ -6,6 +6,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { Editor } from '@tiptap/core'
 import { editorExtensions } from '../src/renderer/editor/extensions'
 import { AiPanel } from '../src/renderer/ai/AiPanel'
+import { setDocsPlatform, type DocsPlatform } from '../src/renderer/platform'
 import { AI_PROVIDERS, type AiSettings } from '../src/shared/ipc'
 
 const settings: AiSettings = {
@@ -75,6 +76,17 @@ function typeInto(textarea: HTMLTextAreaElement, text: string) {
 beforeAll(() => {
   // jsdom has no scrollTo; the panel auto-scrolls its chat log
   Element.prototype.scrollTo ??= () => {}
+  // The panel builds its agent loop during the first render, and the tool list it
+  // offers the model depends on the host (a host with no SearchPort gets no
+  // search tools), so a platform has to be installed before rendering — the same
+  // rule main.tsx follows. Only the ports this test's render path touches are
+  // filled in; the rest are the "this host cannot" nulls a browser host uses.
+  setDocsPlatform({
+    search: null,
+    genspark: null,
+    tabs: null,
+    pdfExport: null,
+  } as unknown as DocsPlatform)
 })
 
 describe('AiPanel collapse', () => {

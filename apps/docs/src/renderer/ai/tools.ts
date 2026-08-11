@@ -3,6 +3,7 @@ import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import type { ChartDisplay, NewChart } from '@genoffice/docx-engine'
 import type { AgentToolCall, AgentToolDef } from '../../shared/ipc'
 import { t } from '../i18n/locale'
+import { docsPlatform } from '../platform'
 import { executeCommands, type Command, type CommandEnvelope } from './commands'
 import {
   blockRangePositions,
@@ -282,17 +283,40 @@ function imageSizeOf(dataUrl: string): Promise<{ width: number; height: number }
   })
 }
 
+/**
+ * The three tools backed by `SearchPort`, which not every host has.
+ *
+ * `availableTools()` removes them from the list the model is shown when the port
+ * is null, so the model is never offered a capability that would fail — the same
+ * reasoning as gating a ribbon button on a null port, applied to the tool
+ * catalogue.
+ */
+const SEARCH_TOOLS: ReadonlySet<string> = new Set(['web_search', 'image_search', 'insert_image'])
+
+/** The tool definitions this host can actually execute. */
+export function availableTools(): AgentToolDef[] {
+  if (docsPlatform().search !== null) return AGENT_TOOLS
+  return AGENT_TOOLS.filter((tool) => !SEARCH_TOOLS.has(tool.name))
+}
+
 /** Async tools: web search / image search / insert web image. */
 async function executeAsyncTool(
   editor: Editor,
   call: AgentToolCall,
   signal?: AbortSignal,
 ): Promise<ToolExecution> {
+  const search = docsPlatform().search
+  // Unreachable through `availableTools()`, which never offers these on a host
+  // without the port. Kept because a model can name a tool it was not given, and
+  // "this host cannot search" is a better answer than a crash on null.
+  if (search === null) {
+    return fail(t('aiSumUnknownTool'), `${call.name} is not available in this build`)
+  }
   switch (call.name) {
     case 'web_search': {
       const query = String(call.input.query ?? '').trim()
       if (!query) return fail(t('aiSumWebSearch'), 'query must not be empty')
-      const r = await window.desktop.webSearch(query, Number(call.input.maxResults) || 6)
+      const r = await search.webSearch(query, Number(call.input.maxResults) || 6)
       // a backend failure must not read as "no results" — the model would fabricate conclusions
       if (r.method === 'error') {
         return fail(
@@ -314,7 +338,7 @@ async function executeAsyncTool(
     case 'image_search': {
       const query = String(call.input.query ?? '').trim()
       if (!query) return fail(t('aiSumImageSearch'), 'query must not be empty')
-      const r = await window.desktop.imageSearch(query, Number(call.input.maxResults) || 8)
+      const r = await search.imageSearch(query, Number(call.input.maxResults) || 8)
       // a backend failure must not read as an empty gallery — the model would fabricate image choices
       if (r.method === 'error') {
         return fail(
@@ -335,7 +359,7 @@ async function executeAsyncTool(
     case 'insert_image': {
       const url = String(call.input.url ?? '')
       if (!/^https?:\/\//.test(url)) return fail(t('aiSumInsertImage'), 'invalid url')
-      const fetched = await window.desktop.fetchImage(url)
+      const fetched = await search.fetchImage(url)
       // never write after the user hit stop (the download may resolve long after the abort)
       if (signal?.aborted)
         return fail(t('aiSumInsertImage'), 'stopped by the user; the image was not inserted')

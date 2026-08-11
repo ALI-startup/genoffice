@@ -12,8 +12,11 @@
  */
 export {
   browserFilePickers,
+  browserMultiFilePicker,
+  DOCX_FILE_TYPES,
   ensurePermission,
   FilePermissionDeniedError,
+  IMAGE_FILE_TYPES,
   isPickerCancel,
   PDF_FILE_TYPES,
 } from './fs-access.js'
@@ -24,6 +27,7 @@ export type {
   FsPermissionDescriptor,
   FsPermissionMode,
   FsPermissionState,
+  MultiFilePicker,
   OpenFilePickerOptions,
   SaveFilePickerOptions,
   WebDirectoryHandle,
@@ -32,6 +36,19 @@ export type {
   WebPermissionAware,
   WebWritableFile,
 } from './fs-access.js'
+
+export {
+  ATTACHMENT_IMAGE_MAX_BYTES,
+  ATTACHMENT_MAX_BYTES,
+  ATTACHMENT_TEXT_EXTS,
+  createWebAttachmentsPort,
+} from './attachments.js'
+export type {
+  WebAttachmentExtractor,
+  WebAttachmentSource,
+  WebAttachmentsOptions,
+  WebAttachmentText,
+} from './attachments.js'
 
 export {
   createIndexedDbHandleStore,
@@ -57,7 +74,7 @@ export {
 } from './language.js'
 export type { LanguageHostEnv } from './language.js'
 
-export { createWebWindowPort } from './window.js'
+export { createWebUnloadPrompt, createWebWindowPort } from './window.js'
 export type { CloseGuardEnv, WebWindowSlice } from './window.js'
 
 export { createWebAiPort, toAiSettings } from './ai.js'

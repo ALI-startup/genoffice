@@ -3,7 +3,22 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["node"]
+    "types": ["node"],
+    // The build-time host seam. `tsc` has one view of the tree, so it checks
+    // main.tsx against the Electron host; host-web.ts is checked in its own
+    // right because it annotates its export as `CreateDocsPlatform`, which is the
+    // contract main.tsx consumes. Neither host can drift from the other.
+    "paths": {
+      "@host": ["./src/renderer/host-electron.ts"]
+    }
   },
-  "include": ["src", "tests", "electron.vite.config.ts", "vitest.config.ts"]
+  "include": [
+    "src",
+    "tests",
+    "electron.vite.config.ts",
+    "vite.renderer.config.ts",
+    "vite.web.config.ts",
+    "vite.shared.ts",
+    "vitest.config.ts"
+  ]
 }

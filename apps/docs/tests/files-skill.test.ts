@@ -1,17 +1,23 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { AttachmentMeta, AttachmentReadResult } from '../src/shared/ipc'
+import type { AttachmentMeta, AttachmentReadResult } from '@genoffice/platform'
 import { createFilesSkill } from '../src/renderer/ai/files-skill'
+import { setDocsPlatform, type DocsPlatform } from '../src/renderer/platform'
 
 const ATT: AttachmentMeta = {
-  path: '/tmp/notes.md',
+  ref: '/tmp/notes.md',
   name: 'notes.md',
   ext: 'md',
   sizeBytes: 2048,
 }
 
-function mockDesktop(result: AttachmentReadResult) {
+/**
+ * Install a platform whose only real member is the one the skill uses. The slot
+ * is typed, so the cast stands in for the rest of the composition rather than
+ * stubbing it: a capability this skill does not consume is never reached.
+ */
+function mockPlatform(result: AttachmentReadResult) {
   const readAttachment = vi.fn(async () => result)
-  vi.stubGlobal('window', { desktop: { readAttachment } })
+  setDocsPlatform({ attachments: { readAttachment } } as unknown as DocsPlatform)
   return readAttachment
 }
 
@@ -27,7 +33,7 @@ describe('files skill', () => {
   })
 
   it('reads a slice and reports paging info', async () => {
-    const readAttachment = mockDesktop({
+    const readAttachment = mockPlatform({
       ok: true,
       name: 'notes.md',
       totalChars: 50_000,
@@ -35,7 +41,11 @@ describe('files skill', () => {
       text: 'hello'.repeat(10),
     })
     const skill = createFilesSkill(() => [ATT])
-    const result = await skill.executeTool({ id: 't1', name: 'read_attachment', input: { index: 0 } })
+    const result = await skill.executeTool({
+      id: 't1',
+      name: 'read_attachment',
+      input: { index: 0 },
+    })
     expect(readAttachment).toHaveBeenCalledWith('/tmp/notes.md', 0, 24_000)
     expect(result.isError).toBeFalsy()
     expect(result.mutated).toBeFalsy()
@@ -44,7 +54,7 @@ describe('files skill', () => {
   })
 
   it('rejects an invalid attachment index without calling IPC', async () => {
-    const readAttachment = mockDesktop({ ok: true })
+    const readAttachment = mockPlatform({ ok: true })
     const skill = createFilesSkill(() => [ATT])
     const result = await skill.executeTool({
       id: 't2',
@@ -56,9 +66,9 @@ describe('files skill', () => {
   })
 
   it('answers image attachments locally without reading text', async () => {
-    const readAttachment = mockDesktop({ ok: true })
+    const readAttachment = mockPlatform({ ok: true })
     const skill = createFilesSkill(() => [
-      { path: '/tmp/photo.png', name: 'photo.png', ext: 'png', sizeBytes: 1024 },
+      { ref: '/tmp/photo.png', name: 'photo.png', ext: 'png', sizeBytes: 1024 },
     ])
     const result = await skill.executeTool({
       id: 't-img',
@@ -71,7 +81,7 @@ describe('files skill', () => {
   })
 
   it('surfaces main-process parse errors as tool errors', async () => {
-    mockDesktop({ ok: false, error: 'File exceeds the size limit' })
+    mockPlatform({ ok: false, error: 'File exceeds the size limit' })
     const skill = createFilesSkill(() => [ATT])
     const result = await skill.executeTool({
       id: 't3',

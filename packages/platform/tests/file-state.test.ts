@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { isExternallyModified, type DiskFileState } from '../src/main/external-change'
+import { isExternallyModified, type DiskFileState } from '../src/file-state'
 
 const recorded: DiskFileState = { mtimeMs: 1000, size: 42, hash: 'aaa' }
 

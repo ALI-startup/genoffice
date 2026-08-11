@@ -32,6 +32,16 @@ export interface FsPermissionDescriptor {
 export interface WebFile {
   readonly name: string
   readonly size: number
+  /**
+   * Epoch millis of the file's last modification, i.e. `File.lastModified`.
+   *
+   * Present because it is half of the conflict check that stops a save from
+   * overwriting another program's edits: together with `size` it is exactly
+   * @genoffice/platform's `DiskFileState`, whose other producer is `fs.stat`.
+   * Without it a browser host would have to write blind — see
+   * `WebDocumentStore.stat`.
+   */
+  readonly lastModified: number
   arrayBuffer(): Promise<ArrayBuffer>
 }
 
@@ -94,6 +104,34 @@ export interface FilePickers {
 
 export const PDF_FILE_TYPES: FilePickerAcceptType[] = [
   { description: 'PDF', accept: { 'application/pdf': ['.pdf'] } },
+]
+
+export const DOCX_FILE_TYPES: FilePickerAcceptType[] = [
+  {
+    description: 'Word Document',
+    accept: {
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+    },
+  },
+]
+
+/**
+ * Image types for "insert a picture".
+ *
+ * png / jpeg / gif only, and deliberately not webp: the callers' result type
+ * (apps/docs' `PickImageResult.mime`) is a three-value union, so offering a
+ * fourth format in the dialog would let the user pick a file the caller cannot
+ * describe.
+ */
+export const IMAGE_FILE_TYPES: FilePickerAcceptType[] = [
+  {
+    description: 'Image',
+    accept: {
+      'image/png': ['.png'],
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/gif': ['.gif'],
+    },
+  },
 ]
 
 /** True for the rejection a picker produces when the user dismisses it. */
@@ -180,5 +218,43 @@ export function browserFilePickers(scope: object = globalThis): FilePickers {
     directory(options) {
       return required(globals.showDirectoryPicker, 'showDirectoryPicker').call(scope, options)
     },
+  }
+}
+
+/**
+ * A multi-select *read* dialog, for attachments.
+ *
+ * Separate from `FilePickers` on purpose. `FilePickers` is the handle-returning
+ * surface the document store is built on, where every dialog yields exactly one
+ * handle the app will later write back through. An attachment is the opposite
+ * case: many files at once, read once, never written. So this returns plain
+ * `WebFile`s — a snapshot of bytes and a name — and never asks for write
+ * permission or persists anything.
+ *
+ * `null` means the user dismissed the dialog; every other failure throws.
+ */
+export type MultiFilePicker = (options?: OpenFilePickerOptions) => Promise<WebFile[] | null>
+
+export function browserMultiFilePicker(scope: object = globalThis): MultiFilePicker {
+  const globals = scope as PickerGlobals
+  return async (options) => {
+    const show = globals.showOpenFilePicker
+    if (!show) {
+      throw new Error(
+        `This browser does not support showOpenFilePicker. GenOffice's web build requires the ` +
+          `File System Access API (Chromium 86+).`,
+      )
+    }
+    let handles: WebFileHandle[]
+    try {
+      handles = await show.call(scope, { ...options, multiple: true })
+    } catch (error) {
+      if (isPickerCancel(error)) return null
+      throw error
+    }
+    // Read access is what a picker just granted, so no ensurePermission round
+    // trip here — and no readwrite request, which would prompt for a grant this
+    // surface must never hold.
+    return Promise.all(handles.map((handle) => handle.getFile()))
   }
 }

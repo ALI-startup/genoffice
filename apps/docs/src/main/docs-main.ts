@@ -70,7 +70,7 @@ import type {
 import { ATTACHMENT_IMAGE_EXTS } from '../shared/ipc'
 import { findDocxPath } from '../shared/open-file'
 import { atomicWriteFile, looksLikeZip } from './atomic-write'
-import { isExternallyModified, type DiskFileState } from './external-change'
+import { isExternallyModified, type DiskFileState } from '@genoffice/platform'
 import { initDocsAutoUpdater } from './updater'
 
 /**

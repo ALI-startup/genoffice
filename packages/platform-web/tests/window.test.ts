@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createWebWindowPort } from '../src/window'
+import { createWebUnloadPrompt, createWebWindowPort } from '../src/window'
 
 function fakeWindow() {
   const listeners = new Set<(event: BeforeUnloadEvent) => void>()
@@ -63,5 +63,45 @@ describe('close-save handshake', () => {
 
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('never issues a close-save request'))
     warn.mockRestore()
+  })
+})
+
+describe('createWebUnloadPrompt', () => {
+  /** Fire beforeunload at every installed listener and report what the page decided. */
+  const unload = (env: ReturnType<typeof fakeWindow>) => {
+    const event = { preventDefault: vi.fn(), returnValue: undefined as unknown }
+    for (const listener of env.listeners) listener(event as unknown as BeforeUnloadEvent)
+    return event
+  }
+
+  it('installs one listener and removes it on unsubscribe', () => {
+    const env = fakeWindow()
+    const off = createWebUnloadPrompt(() => false, env)
+
+    expect(env.listeners.size).toBe(1)
+    off()
+    expect(env.listeners.size).toBe(0)
+  })
+
+  it('asks the predicate at unload time rather than being told in advance', () => {
+    const env = fakeWindow()
+    let dirty = false
+    createWebUnloadPrompt(() => dirty, env)
+
+    expect(unload(env).preventDefault).not.toHaveBeenCalled()
+    dirty = true
+    const prompted = unload(env)
+    expect(prompted.preventDefault).toHaveBeenCalled()
+    // Both are needed across Chromium versions; the browser picks the wording.
+    expect(prompted.returnValue).toBe('')
+  })
+
+  it('prompts when the predicate throws, because losing work is worse than an extra dialog', () => {
+    const env = fakeWindow()
+    createWebUnloadPrompt(() => {
+      throw new Error('state unavailable')
+    }, env)
+
+    expect(unload(env).preventDefault).toHaveBeenCalled()
   })
 })

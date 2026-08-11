@@ -23,6 +23,8 @@ export interface PermissionLog {
 export interface FakeFileHandle extends WebFileHandle {
   /** Current file contents, replaced by every completed write. */
   contents: Uint8Array
+  /** Reported as `File.lastModified`; a test bumps it to model an external write. */
+  lastModified: number
   permissions: PermissionLog
   /** Answers `queryPermission`; 'prompt' makes the store fall through to a request. */
   queryState: FsPermissionState
@@ -38,6 +40,7 @@ export function fakeFileHandle(
     kind: 'file',
     name,
     contents: initial,
+    lastModified: 1_000,
     permissions: { queried: [], requested: [] },
     queryState: 'granted',
     requestState: 'granted',
@@ -56,6 +59,7 @@ export function fakeFileHandle(
       return {
         name: handle.name,
         size: handle.contents.byteLength,
+        lastModified: handle.lastModified,
         arrayBuffer: async () =>
           handle.contents.buffer.slice(
             handle.contents.byteOffset,

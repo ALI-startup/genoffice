@@ -4,7 +4,9 @@
  * `PlatformPorts` is the catalogue of capability ports the apps share. It has
  * exactly two implementations in mind — Electron (preload bridges) and Web
  * (HTTP/browser APIs) — and neither lives here: this package is interfaces
- * plus a slot factory, with no runtime dependency on Electron.
+ * plus a slot factory, with no runtime dependency on Electron. (The one piece of
+ * real logic is `isExternallyModified` in ports-neutral file-state.ts, which both
+ * hosts must answer identically; see that file for why it is not a port.)
  *
  * Design rule: nothing here is optional. Optional members are how the
  * hand-written web shims drift — an unimplemented method returns `undefined`
@@ -41,9 +43,12 @@ export type {
   AttachmentImageResult,
   AttachmentMeta,
   AttachmentReadResult,
+  AttachmentRef,
   AttachmentsPort,
 } from './ports/attachments.js'
 export { ATTACHMENT_IMAGE_EXTS } from './ports/attachments.js'
+export { isExternallyModified } from './file-state.js'
+export type { DiskFileState } from './file-state.js'
 export type { LanguagePort } from './ports/language.js'
 export type {
   AppendChatArgs,

@@ -26,6 +26,7 @@ import {
   ensurePermission,
   isPickerCancel,
   PDF_FILE_TYPES,
+  type FilePickerAcceptType,
   type FilePickers,
   type WebDirectoryHandle,
   type WebFileHandle,
@@ -62,6 +63,20 @@ export class UnknownDocumentError extends Error {
 export interface WebDocumentStoreOptions {
   handles: DocumentHandleStore
   pickers: FilePickers
+  /**
+   * File types every dialog this store opens is filtered to. Defaults to PDF,
+   * which is what the first caller needed; docs passes `DOCX_FILE_TYPES`.
+   *
+   * One store handles one document format on purpose: a store is created per
+   * app, and mixing filters would let a docx open dialog offer a .pdf that
+   * nothing downstream could parse.
+   */
+  fileTypes?: FilePickerAcceptType[]
+  /**
+   * Groups this store's dialogs so the browser reopens them in the last
+   * directory used *for this format*. Defaults to `genoffice-pdf`.
+   */
+  pickerId?: string
   /** Injected for tests; production uses `crypto.randomUUID`. */
   newRef?: () => string
   /** Injected for tests; production uses `Date.now`. */
@@ -71,6 +86,8 @@ export interface WebDocumentStoreOptions {
 export class WebDocumentStore {
   private readonly handles: DocumentHandleStore
   private readonly pickers: FilePickers
+  private readonly fileTypes: FilePickerAcceptType[]
+  private readonly pickerId: string
   private readonly newRef: () => string
   private readonly now: () => number
   /** Handles granted in this session. Authoritative while the page lives. */
@@ -81,6 +98,8 @@ export class WebDocumentStore {
   constructor(options: WebDocumentStoreOptions) {
     this.handles = options.handles
     this.pickers = options.pickers
+    this.fileTypes = options.fileTypes ?? PDF_FILE_TYPES
+    this.pickerId = options.pickerId ?? 'genoffice-pdf'
     this.newRef = options.newRef ?? (() => crypto.randomUUID())
     this.now = options.now ?? (() => Date.now())
   }
@@ -93,7 +112,7 @@ export class WebDocumentStore {
    */
   async open(): Promise<WebDocument | null> {
     const handle = await this.withDialog(() =>
-      this.pickers.openFile({ types: PDF_FILE_TYPES, id: 'genoffice-pdf' }),
+      this.pickers.openFile({ types: this.fileTypes, id: this.pickerId }),
     ).catch(cancelToNull)
     if (!handle) return null
     return this.adopt(handle)
@@ -125,6 +144,21 @@ export class WebDocumentStore {
     const handle = await this.handleFor(ref)
     const file = await handle.getFile()
     return new Uint8Array(await file.arrayBuffer())
+  }
+
+  /**
+   * The document's current last-modified time and size — a browser's `fs.stat`.
+   *
+   * Together with a hash of the bytes the host last read or wrote, this is
+   * @genoffice/platform's `DiskFileState`, so a browser host can run the very same
+   * `isExternallyModified` check the Electron main process runs before it
+   * overwrites a file. `getFile()` is a metadata snapshot and does not read the
+   * contents, which is what keeps the no-conflict save path from rereading the
+   * document.
+   */
+  async stat(ref: string): Promise<{ lastModified: number; size: number }> {
+    const file = await (await this.handleFor(ref)).getFile()
+    return { lastModified: file.lastModified, size: file.size }
   }
 
   /**
@@ -165,7 +199,7 @@ export class WebDocumentStore {
   /** Read a one-off file (e.g. a PDF to merge in) without minting a ref for it. */
   async pickBytes(): Promise<Uint8Array | null> {
     const handle = await this.withDialog(() =>
-      this.pickers.openFile({ types: PDF_FILE_TYPES, id: 'genoffice-pdf' }),
+      this.pickers.openFile({ types: this.fileTypes, id: this.pickerId }),
     ).catch(cancelToNull)
     if (!handle) return null
     await ensurePermission(handle, 'read')
@@ -183,7 +217,7 @@ export class WebDocumentStore {
    */
   async saveBytesAs(suggestedName: string, bytes: Uint8Array): Promise<string | null> {
     const handle = await this.withDialog(() =>
-      this.pickers.saveFile({ types: PDF_FILE_TYPES, suggestedName, id: 'genoffice-pdf' }),
+      this.pickers.saveFile({ types: this.fileTypes, suggestedName, id: this.pickerId }),
     ).catch(cancelToNull)
     if (!handle) return null
     await ensurePermission(handle, 'readwrite')
@@ -194,6 +228,34 @@ export class WebDocumentStore {
       await writable.close()
     }
     return handle.name
+  }
+
+  /**
+   * Save As: write bytes to a destination the user picks, then *adopt* it as the
+   * open document.
+   *
+   * The difference from `saveBytesAs` is the adoption, and it is what an editor
+   * needs. After Save As the app keeps editing the new file, so the destination
+   * has to become a ref the store can resolve for every later save — and it
+   * belongs in the recent list, because the user really did open it. Callers that
+   * only export a derived artifact (extracted pages, a rendered image) want
+   * `saveBytesAs` and its deliberate lack of a ref.
+   *
+   * `null` means the user dismissed the dialog.
+   */
+  async saveAsDocument(suggestedName: string, bytes: Uint8Array): Promise<WebDocument | null> {
+    const handle = await this.withDialog(() =>
+      this.pickers.saveFile({ types: this.fileTypes, suggestedName, id: this.pickerId }),
+    ).catch(cancelToNull)
+    if (!handle) return null
+    await ensurePermission(handle, 'readwrite')
+    const writable = await handle.createWritable()
+    try {
+      await writable.write(toBlobPart(bytes))
+    } finally {
+      await writable.close()
+    }
+    return this.adopt(handle)
   }
 
   /** Pick an output folder (image export). `null` on cancel. */

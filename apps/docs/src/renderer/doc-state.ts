@@ -18,8 +18,19 @@ export const EMPTY_HF_VARIANTS: HfVariantsState = {
 
 export interface DocState {
   parsed: ParsedDocFull
-  /** null until a new document is saved for the first time */
+  /**
+   * The open document's host-issued handle (a `DocumentRef` — see
+   * renderer/platform.ts); null until a new document is saved for the first
+   * time.
+   *
+   * Still named `filePath` because it is genuinely a path for its one remaining
+   * non-seam consumer, `window.projectApi` (resolveChat / rebindChat), which is
+   * main-process bookkeeping and not migrated yet. Treat it as opaque anyway:
+   * store it, compare it, hand it back. Never split, parse or display it — use
+   * `fileName`, which the host supplies.
+   */
   filePath: string | null
+  /** Display name, supplied by the host; the renderer never derives it from filePath. */
   fileName: string
   hash: string
   /** created from the built-in blank template (its numbering ids are known) */

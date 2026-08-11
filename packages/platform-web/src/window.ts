@@ -40,6 +40,44 @@ export interface CloseGuardEnv {
   removeEventListener: (type: 'beforeunload', handler: (event: BeforeUnloadEvent) => void) => void
 }
 
+/**
+ * The other shape a browser close guard takes: ask at unload time instead of
+ * being told in advance.
+ *
+ * `createWebWindowPort` below arms `beforeunload` from a push (`setDirty`). Some
+ * apps have no such push — apps/docs never claimed `setDirty`, because its host
+ * *pulls* the dirty state at close time — and for those the listener has to stay
+ * installed and ask a predicate when the moment comes. That works because
+ * `beforeunload` is synchronous and so is the question: "would work be lost?"
+ * needs no I/O. What cannot be done either way is *saving* during unload, which
+ * is why the save half of the handshake is still an event source with no events.
+ *
+ * @param shouldPrompt called during `beforeunload`; must be synchronous and must
+ *   not block. `true` shows the browser's own "Leave site?" dialog.
+ * @returns an unsubscribe.
+ */
+export function createWebUnloadPrompt(
+  shouldPrompt: () => boolean,
+  env: CloseGuardEnv = window,
+): () => void {
+  const onBeforeUnload = (event: BeforeUnloadEvent) => {
+    // A throwing predicate must not swallow the prompt: if we cannot tell
+    // whether work would be lost, ask. An extra dialog is recoverable; a
+    // discarded document is not.
+    let prompt: boolean
+    try {
+      prompt = shouldPrompt()
+    } catch {
+      prompt = true
+    }
+    if (!prompt) return
+    event.preventDefault()
+    event.returnValue = ''
+  }
+  env.addEventListener('beforeunload', onBeforeUnload)
+  return () => env.removeEventListener('beforeunload', onBeforeUnload)
+}
+
 export function createWebWindowPort(env: CloseGuardEnv = window): WebWindowSlice {
   let armed = false
   const onBeforeUnload = (event: BeforeUnloadEvent) => {

@@ -5,6 +5,16 @@ import { editorExtensions } from '../src/renderer/editor/extensions'
 import { createDocsSkill } from '../src/renderer/ai/docs-skill'
 import { buildDocContext, countWords } from '../src/renderer/ai/protocol'
 import { executeTool } from '../src/renderer/ai/tools'
+import { setDocsPlatform, type DocsPlatform } from '../src/renderer/platform'
+
+/**
+ * Install a platform backing only the search port these tools reach for. The
+ * slot is typed, so the cast stands in for the rest of the composition rather
+ * than stubbing it; each test installs its own, so there is nothing to restore.
+ */
+function installSearchPort(search: Partial<DocsPlatform['search']>): void {
+  setDocsPlatform({ search } as unknown as DocsPlatform)
+}
 
 /**
  * End-to-end through the local stack: AgentLoop -> docs skill -> tools ->
@@ -412,23 +422,17 @@ describe('blank-document detection', () => {
 describe('web_search backend failures', () => {
   it("method 'error' surfaces as a tool error instead of '(no results)'", async () => {
     const editor = createEditor(fixture())
-    const w = window as unknown as { desktop?: unknown }
-    const saved = w.desktop
-    w.desktop = {
+    installSearchPort({
       webSearch: async () => ({ results: [], method: 'error', error: 'Serper 502' }),
-    }
-    try {
-      const exec = await executeTool(
-        editor,
-        { id: 't', name: 'web_search', input: { query: 'genspark' } },
-        NUM_IDS,
-      )
-      expect(exec.isError).toBe(true)
-      expect(exec.output).toContain('Serper 502')
-      expect(exec.output).not.toContain('(no results)')
-    } finally {
-      w.desktop = saved
-    }
+    })
+    const exec = await executeTool(
+      editor,
+      { id: 't', name: 'web_search', input: { query: 'genspark' } },
+      NUM_IDS,
+    )
+    expect(exec.isError).toBe(true)
+    expect(exec.output).toContain('Serper 502')
+    expect(exec.output).not.toContain('(no results)')
   })
 })
 
@@ -445,21 +449,18 @@ describe('insert_image freshness baseline', () => {
   }
 
   const withImageStubs = async (fn: (release: () => void) => Promise<void>) => {
-    const w = window as unknown as { desktop?: unknown }
-    const savedDesktop = w.desktop
     const savedImage = globalThis.Image
     let release!: () => void
-    w.desktop = {
+    installSearchPort({
       fetchImage: () =>
         new Promise((resolve) => {
           release = () => resolve({ mime: 'image/png', base64: 'AAAA' })
         }),
-    }
+    })
     globalThis.Image = FakeImage as unknown as typeof Image
     try {
       await fn(() => release())
     } finally {
-      w.desktop = savedDesktop
       globalThis.Image = savedImage
     }
   }
@@ -519,27 +520,19 @@ describe('abort during async tools', () => {
   it('insert_image aborted mid-download writes nothing', async () => {
     const editor = createEditor(fixture())
     const before = JSON.stringify(editor.getJSON())
-    const w = window as unknown as { desktop?: { fetchImage(url: string): Promise<unknown> } }
-    const saved = w.desktop
-    w.desktop = {
-      fetchImage: async () => ({ mime: 'image/png', base64: 'AAAA' }),
-    }
-    try {
-      const ctrl = new AbortController()
-      ctrl.abort()
-      const skill = createDocsSkill(
-        () => editor,
-        () => NUM_IDS,
-      )
-      const exec = await skill.executeTool(
-        { id: 't', name: 'insert_image', input: { url: 'https://example.com/a.png' } },
-        ctrl.signal,
-      )
-      expect(exec.isError).toBe(true)
-      expect(exec.output).toContain('stopped by the user')
-      expect(JSON.stringify(editor.getJSON())).toBe(before)
-    } finally {
-      w.desktop = saved
-    }
+    installSearchPort({ fetchImage: async () => ({ mime: 'image/png', base64: 'AAAA' }) })
+    const ctrl = new AbortController()
+    ctrl.abort()
+    const skill = createDocsSkill(
+      () => editor,
+      () => NUM_IDS,
+    )
+    const exec = await skill.executeTool(
+      { id: 't', name: 'insert_image', input: { url: 'https://example.com/a.png' } },
+      ctrl.signal,
+    )
+    expect(exec.isError).toBe(true)
+    expect(exec.output).toContain('stopped by the user')
+    expect(JSON.stringify(editor.getJSON())).toBe(before)
   })
 })

@@ -34,7 +34,6 @@ import {
   type ThemeFonts,
 } from '@genoffice/docx-engine'
 import type { Dispatch, SetStateAction } from 'react'
-import type { OpenFileResult } from '../shared/ipc'
 import {
   hfVariantsFromParsed,
   type DocState,
@@ -59,6 +58,7 @@ import { createSaveSerializer } from './save-until-persisted'
 import { checkMissingFonts, collectDocFonts } from './font-check'
 import { defaultEastAsiaFontFor } from './font-list'
 import { hasPrintableHeaderFooter } from './pagination'
+import { docsPlatform, type OpenedDocument, type RecentDocument } from './platform'
 
 /** The App state the file actions need; built fresh per call. */
 export interface FileActionContext {
@@ -69,7 +69,7 @@ export interface FileActionContext {
   saveIncompleteRef: { current: boolean }
   pendingMixedExportRef: { current: boolean | string }
   setStatus: (status: string) => void
-  setRecent: (paths: string[]) => void
+  setRecent: (documents: RecentDocument[]) => void
   setShowAi: (show: boolean) => void
   setDoc: Dispatch<SetStateAction<DocState | null>>
   setAiPanelKey: Dispatch<SetStateAction<number>>
@@ -175,7 +175,7 @@ function resetEditorHistory(editor: Editor): void {
 
 export async function loadFile(
   ctx: FileActionContext,
-  result: OpenFileResult | null,
+  result: OpenedDocument | null,
 ): Promise<void> {
   if (!result || !ctx.editor) return
   try {
@@ -184,7 +184,7 @@ export async function loadFile(
     ctx.editor.commands.setContent(blocksToPmDoc(parsed.blocks) as never)
     resetEditorHistory(ctx.editor)
     noteDocumentSwapped()
-    ctx.setDoc({ parsed, filePath: result.path, fileName: result.name, hash: result.hash })
+    ctx.setDoc({ parsed, filePath: result.ref, fileName: result.name, hash: result.hash })
     ctx.setAiPanelKey((k) => k + 1)
     ctx.setDocCss(docStyleCss(parsed))
     ctx.setSection(readSectionSettings(parsed))
@@ -252,7 +252,7 @@ export async function loadFile(
     } else {
       ctx.setStatus(t('appOpenedFile', { name: result.name }))
     }
-    void window.desktop.getRecentFiles().then(ctx.setRecent)
+    void docsPlatform().file.recentDocuments().then(ctx.setRecent)
   } catch (err) {
     ctx.setStatus(t('appOpenFailed', { error: String(err) }))
   }
@@ -494,7 +494,7 @@ export async function writeRecoveryCopy(ctx: FileActionContext): Promise<void> {
       bytes.byteOffset,
       bytes.byteOffset + bytes.byteLength,
     ) as ArrayBuffer
-    await window.desktop.writeRecoveryCopy(doc.filePath, buffer)
+    await docsPlatform().file.writeRecoveryCopy(doc.filePath, buffer)
   } catch {
     /* best-effort */
   }
@@ -547,22 +547,33 @@ async function saveOnce(ctx: FileActionContext, saveAs: boolean, auto: boolean):
     // a pathless snapshot may belong to a document that an earlier queued pass
     // already landed on disk — overwrite that file instead of creating another
     let savedPath = doc.filePath ?? pathlessDocSavedPath
+    // Set only when this pass had to name the document; otherwise the current
+    // name still describes the destination it overwrote.
+    let savedName: string | undefined
     if (saveAs || !savedPath) {
       // A never-saved document still called "Untitled" gets a name derived from its first heading
       const autoName =
         !doc.filePath && doc.fileName === t('appUntitledDocx') ? deriveAutoFileName(editor) : null
       // Save As keeps the dialog; a new document's first save lands silently in the default folder
       const result = saveAs
-        ? await window.desktop.saveDocxAs(autoName ?? doc.fileName, buffer)
-        : await window.desktop.saveDocxNew(autoName ?? doc.fileName, buffer)
+        ? await docsPlatform().file.saveAs(autoName ?? doc.fileName, buffer)
+        : await docsPlatform().file.saveNew(autoName ?? doc.fileName, buffer)
       if (!result.ok) {
         if (result.error) ctx.setStatus(t('appSaveFailed', { error: result.error }))
+        // Not a failure and not a cancellation: the host can only name a document
+        // through a dialog it may not open without a user gesture, so a save from
+        // the autosave/recovery timer could not run. Reported, because a document
+        // the user believes is being autosaved and is not must not be silent.
+        else if (result.reason === 'needs-user-gesture') ctx.setStatus(t('appSaveNeedsLocation'))
         return false
       }
-      savedPath = result.path!
+      savedPath = result.ref!
+      // The host names the destination. The renderer used to split the returned
+      // path on separators, which only works while a ref happens to be a path.
+      savedName = result.name
       if (!doc.filePath) pathlessDocSavedPath = savedPath
     } else {
-      const result = await window.desktop.saveDocx(savedPath, buffer, auto)
+      const result = await docsPlatform().file.save(savedPath, buffer, auto)
       if (!result.ok) {
         // external-modified: the main process already prompted (or the autosave
         // deferred to a manual save) — stay dirty, no second dialog/error banner
@@ -583,7 +594,7 @@ async function saveOnce(ctx: FileActionContext, saveAs: boolean, auto: boolean):
           ? {
               ...prev,
               filePath: savedPath,
-              fileName: savedPath?.split(/[\\/]/).pop() ?? prev.fileName,
+              fileName: savedName ?? prev.fileName,
             }
           : prev,
       )
@@ -619,7 +630,7 @@ async function saveOnce(ctx: FileActionContext, saveAs: boolean, auto: boolean):
             ...prev,
             parsed: reparsed,
             filePath: savedPath,
-            fileName: savedPath?.split(/[\\/]/).pop() ?? prev.fileName,
+            fileName: savedName ?? prev.fileName,
           }
         : prev,
     )
@@ -690,6 +701,13 @@ async function saveOnce(ctx: FileActionContext, saveAs: boolean, auto: boolean):
 export async function exportPdf(ctx: FileActionContext, outPath?: string): Promise<void> {
   const { doc } = ctx
   if (!doc) return
+  // Null on a host with no PDF pipeline at all. Electron always has one (the main
+  // process renders with printToPDF and merges with pdf-lib), so this branch is
+  // unreachable today; it exists so a host that cannot export says so in its type
+  // instead of installing a stub that silently does nothing, and so the UI that
+  // offers the command can be gated on it when a web host arrives.
+  const pdfExport = docsPlatform().pdfExport
+  if (!pdfExport) return
   ctx.setStatus(t('appExportingPdf'))
   // with the pagination preview open: group by actual pv-page size. Mixed paper →
   // print group by group (other pages hidden for printing), then merge in page order
@@ -712,7 +730,7 @@ export async function exportPdf(ctx: FileActionContext, outPath?: string): Promi
           pvPages.forEach((page, i) =>
             page.classList.toggle('pv-print-skip', i < g.from || i > g.to),
           )
-          const part = await window.desktop.printPdfBuffer(g.w, g.h)
+          const part = await pdfExport.printPdfBuffer(g.w, g.h)
           if (!part.ok || !part.base64) {
             ctx.setStatus(
               t('appExportPdfFailed', { error: part.error ?? t('appPrintGroupFailed') }),
@@ -724,7 +742,7 @@ export async function exportPdf(ctx: FileActionContext, outPath?: string): Promi
       } finally {
         pvPages.forEach((page) => page.classList.remove('pv-print-skip'))
       }
-      const result = await window.desktop.saveMergedPdf(doc.fileName, parts, outPath)
+      const result = await pdfExport.saveMergedPdf(doc.fileName, parts, outPath)
       ctx.setStatus(
         result.ok
           ? t('appExportedPdfMixed', { path: result.path ?? '', n: groups.length })
@@ -737,7 +755,7 @@ export async function exportPdf(ctx: FileActionContext, outPath?: string): Promi
     // preview open but uniform paper: single export at the preview size
     const g = groups[0]
     if (g) {
-      const result = await window.desktop.exportPdf(doc.fileName, g.w, g.h, outPath)
+      const result = await pdfExport.exportPdf(doc.fileName, g.w, g.h, outPath)
       ctx.setStatus(
         result.ok
           ? t('appExportedPdf', { path: result.path ?? '' })
@@ -787,7 +805,7 @@ export async function exportPdf(ctx: FileActionContext, outPath?: string): Promi
     return
   }
   const major = [...counts.values()][0]
-  const result = await window.desktop.exportPdf(
+  const result = await pdfExport.exportPdf(
     doc.fileName,
     major?.w ?? ctx.section?.pageWidth ?? 12240,
     major?.h ?? ctx.section?.pageHeight ?? 15840,

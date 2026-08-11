@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { FilePermissionDeniedError } from '../src/fs-access'
+import { DOCX_FILE_TYPES, FilePermissionDeniedError, PDF_FILE_TYPES } from '../src/fs-access'
 import { UnknownDocumentError, WebDocumentStore } from '../src/document-store'
 import {
   fakeDirectoryHandle,
@@ -294,5 +294,127 @@ describe('one-off host dialogs', () => {
 
     await store.open()
     expect(seen).toEqual([true, false])
+  })
+})
+
+describe('saveAsDocument', () => {
+  it('writes the bytes and adopts the destination, so later saves land on it', async () => {
+    const store = newStore()
+    const destination = fakeFileHandle('copy.pdf')
+    pickers.saveQueue.push(destination)
+
+    const saved = await store.saveAsDocument('copy.pdf', new Uint8Array([1, 2, 3]))
+
+    expect(saved).toEqual({ ref: 'ref-1', name: 'copy.pdf' })
+    expect([...destination.contents]).toEqual([1, 2, 3])
+    // Adopted, not just written: the ref resolves, which is the difference from
+    // saveBytesAs and the reason Save As can be followed by an in-place save.
+    await store.write(saved!.ref, new Uint8Array([9]))
+    expect([...destination.contents]).toEqual([9])
+    // And it is in the recent list, because the user really did open it.
+    await expect(store.recent()).resolves.toEqual([
+      { ref: 'ref-1', name: 'copy.pdf', openedAt: 1_001 },
+    ])
+  })
+
+  it('reports a dismissed dialog as null, not as a failure', async () => {
+    const store = newStore()
+    pickers.saveQueue.push(pickerCancel())
+
+    await expect(store.saveAsDocument('copy.pdf', new Uint8Array([1]))).resolves.toBeNull()
+    await expect(store.recent()).resolves.toEqual([])
+  })
+
+  it('refuses to write when write permission is denied, and mints no ref', async () => {
+    const store = newStore()
+    const destination = fakeFileHandle('copy.pdf')
+    destination.queryState = 'prompt'
+    destination.requestState = 'denied'
+    pickers.saveQueue.push(destination)
+
+    await expect(store.saveAsDocument('copy.pdf', new Uint8Array([1]))).rejects.toBeInstanceOf(
+      FilePermissionDeniedError,
+    )
+    await expect(store.recent()).resolves.toEqual([])
+  })
+})
+
+describe('file types', () => {
+  it('defaults every dialog to PDF, keeping the first caller unchanged', async () => {
+    const store = newStore()
+    const seen: unknown[] = []
+    pickers.openFile = (options) => {
+      seen.push(options)
+      return Promise.resolve(fakeFileHandle('a.pdf'))
+    }
+
+    await store.open()
+    expect(seen).toEqual([{ types: PDF_FILE_TYPES, id: 'genoffice-pdf' }])
+  })
+
+  it('filters and groups dialogs by the configured format, which is how docs gets .docx', async () => {
+    const store = new WebDocumentStore({
+      handles,
+      pickers,
+      fileTypes: DOCX_FILE_TYPES,
+      pickerId: 'genoffice-docx',
+      newRef: () => 'ref-1',
+      now: () => 1_000,
+    })
+    const seen: unknown[] = []
+    pickers.openFile = (options) => {
+      seen.push(options)
+      return Promise.resolve(fakeFileHandle('report.docx'))
+    }
+    pickers.saveFile = (options) => {
+      seen.push(options)
+      return Promise.resolve(fakeFileHandle('copy.docx'))
+    }
+
+    await store.open()
+    await store.saveBytesAs('copy.docx', new Uint8Array([1]))
+
+    expect(seen).toEqual([
+      { types: DOCX_FILE_TYPES, id: 'genoffice-docx' },
+      { types: DOCX_FILE_TYPES, suggestedName: 'copy.docx', id: 'genoffice-docx' },
+    ])
+  })
+})
+
+describe('stat', () => {
+  it('reports last-modified and size — the browser half of DiskFileState', async () => {
+    const store = newStore()
+    const handle = fakeFileHandle('report.pdf', new Uint8Array([1, 2, 3]))
+    handle.lastModified = 12_345
+    pickers.openQueue.push(handle)
+    const doc = await store.open()
+
+    await expect(store.stat(doc!.ref)).resolves.toEqual({ lastModified: 12_345, size: 3 })
+  })
+
+  it('does not read the file, which is what keeps the no-conflict save path cheap', async () => {
+    const store = newStore()
+    const handle = fakeFileHandle('report.pdf', new Uint8Array([1, 2, 3]))
+    let reads = 0
+    const realGetFile = handle.getFile.bind(handle)
+    handle.getFile = async () => {
+      const file = await realGetFile()
+      return {
+        ...file,
+        arrayBuffer: () => {
+          reads++
+          return file.arrayBuffer()
+        },
+      }
+    }
+    pickers.openQueue.push(handle)
+    const doc = await store.open()
+
+    await store.stat(doc!.ref)
+    expect(reads).toBe(0)
+  })
+
+  it('rejects for a ref it never issued, so a caller cannot mistake it for "unchanged"', async () => {
+    await expect(newStore().stat('nope')).rejects.toBeInstanceOf(UnknownDocumentError)
   })
 })

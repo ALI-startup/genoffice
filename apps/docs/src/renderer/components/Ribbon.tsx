@@ -27,6 +27,7 @@ import type {
   ThemeColors,
   ThemeFonts,
 } from '@genoffice/docx-engine'
+import { docsPlatform } from '../platform'
 import { HIGHLIGHT_CSS } from '../editor/extensions'
 import { setParagraphDirection, setSelectionAlign } from '../editor/direction'
 import { stepParagraphIndent } from '../editor/indent'
@@ -689,7 +690,7 @@ function RibbonInner({
   }
 
   const replacePicture = async () => {
-    const picked = await window.desktop.pickImage()
+    const picked = await docsPlatform().file.pickImage()
     if (!picked) return
     await applyPictureBytes(`data:${picked.mime};base64,${picked.base64}`)
   }

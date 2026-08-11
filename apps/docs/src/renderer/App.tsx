@@ -21,8 +21,9 @@ import {
   type ThemeColors,
   type ThemeFonts,
 } from '@genoffice/docx-engine'
-import type { AiSettings, OpenFileResult } from '../shared/ipc'
+import type { AiSettings } from '../shared/ipc'
 import { AI_PROVIDERS } from '../shared/ipc'
+import { docsPlatform, type OpenedDocument, type RecentDocument } from './platform'
 import { AiPanel } from './ai/AiPanel'
 import { asianCharCount, countWords, nonAsianWordCount } from './word-count'
 import { toRoman } from './note-format'
@@ -265,9 +266,9 @@ export function App() {
   const { lang } = useI18n()
   const [doc, setDoc] = useState<DocState | null>(null)
   /** true until the pending-open / new-blank boot checks settle; the start screen stays hidden meanwhile */
-  const bootPendingRef = useRef<Promise<[OpenFileResult | null, boolean]> | null>(null)
+  const bootPendingRef = useRef<Promise<[OpenedDocument | null, boolean]> | null>(null)
   const bootHandledRef = useRef(false)
-  const [_recent, setRecent] = useState<string[]>([])
+  const [_recent, setRecent] = useState<RecentDocument[]>([])
   const [settings, setSettings] = useState<AiSettings>(DEFAULT_SETTINGS)
   const [showAi, setShowAi] = useState(() => localStorage.getItem('aidocs.showAi') !== '0')
   /** Increments on every open/new document: AiPanel remounts by key to reset the conversation and history (save path changes don't bump it, so the session continues) */
@@ -583,8 +584,8 @@ export function App() {
   )
 
   useEffect(() => {
-    void window.desktop.getRecentFiles().then(setRecent)
-    void window.desktop.getAiSettings().then(setSettings)
+    void docsPlatform().file.recentDocuments().then(setRecent)
+    void docsPlatform().ai.getAiSettings().then(setSettings)
   }, [])
 
   useEffect(() => {
@@ -634,7 +635,7 @@ export function App() {
     document.title = doc ? doc.fileName : 'GenOffice Docs'
   }, [doc])
 
-  useEffect(() => window.desktop.onTeardown?.(() => setTornDown(true)), [])
+  useEffect(() => docsPlatform().window.onTeardown(() => setTornDown(true)), [])
 
   // Crash-recovery copy: while the document is dirty, push a serialized
   // copy to the main process every 30s; a normal save (or discarding on close) removes
@@ -800,22 +801,18 @@ export function App() {
   }
 
   const loadFile = useCallback(
-    (result: OpenFileResult | null) => loadFileImpl(fileCtxRef.current, result),
+    (result: OpenedDocument | null) => loadFileImpl(fileCtxRef.current, result),
     [],
   )
 
   // file renamed externally (renamed in the shell Home list) → sync the save path and title-bar file name (content unchanged)
   useEffect(
     () =>
-      window.desktop.onRenamedDocx(({ oldPath, newPath }) => {
+      // The host supplies newName: a ref is opaque, so the renderer cannot derive
+      // a display name from it (it used to split the new path on separators).
+      docsPlatform().file.onDocumentRenamed(({ ref, newRef, newName }) => {
         setDoc((prev) =>
-          prev && prev.filePath === oldPath
-            ? {
-                ...prev,
-                filePath: newPath,
-                fileName: newPath.split(/[\\/]/).pop() ?? prev.fileName,
-              }
-            : prev,
+          prev && prev.filePath === ref ? { ...prev, filePath: newRef, fileName: newName } : prev,
         )
       }),
     [],
@@ -823,7 +820,7 @@ export function App() {
 
   useEffect(() => {
     if (!editor) return
-    const unsubscribe = window.desktop.onOpenDocx((result) => {
+    const unsubscribe = docsPlatform().file.onOpenDocument((result) => {
       void loadFile(result)
     })
     // With no pending file the window lands directly in the editor on a blank document
@@ -831,9 +828,9 @@ export function App() {
     // effect twice but the pending queues can only be consumed once, so the consume
     // Promise lives in a ref and its result is processed only once.
     bootPendingRef.current ??= Promise.all([
-      window.desktop.consumePendingOpenDocx(),
+      docsPlatform().file.consumePending(),
       // Still consume the one-shot new-blank flag so it doesn't leak into the next open
-      window.desktop.consumeNewBlankDoc(),
+      docsPlatform().file.consumeNewBlank(),
     ])
     void bootPendingRef.current
       .then(async ([pending]) => {
@@ -856,15 +853,16 @@ export function App() {
   }, [editor, loadFile])
 
   const openFile = useCallback(async () => {
-    await loadFile(await window.desktop.openDocx())
+    await loadFile(await docsPlatform().file.openDocument())
   }, [loadFile])
 
   /** new document from the built-in blank template (AI can then generate into it) */
   const newFile = useCallback(() => newFileImpl(fileCtxRef.current), [])
 
+  /** Re-open a handle the host issued earlier (a recent entry, or the menu's open-path payload). */
   const openRecent = useCallback(
-    async (path: string) => {
-      await loadFile(await window.desktop.openDocxPath(path))
+    async (ref: string) => {
+      await loadFile(await docsPlatform().file.openDocumentByRef(ref))
     },
     [loadFile],
   )
@@ -1233,6 +1231,13 @@ export function App() {
     (outPath?: string) => exportPdfImpl(fileCtxRef.current, outPath),
     [],
   )
+  /**
+   * Whether this host can render a PDF at all. `pdfExport` is null in the browser
+   * build (Phase 4c adds a renderer-side exporter), and `exportPdf` returns
+   * immediately when it is — so the pagination preview's Export button is hidden
+   * instead of being offered and silently doing nothing.
+   */
+  const canExportPdf = docsPlatform().pdfExport !== null
 
   // for real-device verification: trigger export directly via CDP (same as __pageDebug)
   useEffect(() => {
@@ -1905,14 +1910,15 @@ export function App() {
 
   // close guard: the main process queries dirty state before closing a tab/window; choosing "Save" runs a full save and reports back
   useEffect(() => {
-    const offCheck = window.desktop.onCloseCheck?.(() => {
-      window.desktop.reportCloseCheck({
+    const { window: host } = docsPlatform()
+    const offCheck = host.onCloseCheck(() => {
+      host.reportCloseCheck({
         dirty: !!doc && (anyDirtyRef.current || dirtyRef.current),
         autoSave: autoSave && !!doc?.filePath,
-        filePath: doc?.filePath ?? null,
+        ref: doc?.filePath ?? null,
       })
     })
-    const offSave = window.desktop.onCloseSaveRequest?.(() => {
+    const offSave = host.onCloseSaveRequest(() => {
       // Closing must not report success while edits are still unpersisted, so a
       // save that raced with typing is retried until the file catches up.
       // save(false) never prompts — a pathless first save lands silently in the
@@ -1923,13 +1929,13 @@ export function App() {
         wasIncomplete: () => saveIncompleteRef.current,
         hasPath: () => true,
       }).then(
-        (ok) => window.desktop.reportCloseSaveResult(ok === true),
-        () => window.desktop.reportCloseSaveResult(false),
+        (ok) => host.reportCloseSaveResult(ok === true),
+        () => host.reportCloseSaveResult(false),
       )
     })
     return () => {
-      offCheck?.()
-      offSave?.()
+      offCheck()
+      offSave()
     }
   }, [doc, save, autoSave])
 
@@ -2044,7 +2050,7 @@ export function App() {
 
   // native application menu → renderer commands
   useEffect(() => {
-    return window.desktop.onMenuCommand((command, payload) => {
+    return docsPlatform().window.onMenuCommand((command, payload) => {
       const align = (value: 'left' | 'center' | 'right' | 'justify') =>
         editor && setSelectionAlign(editor, value)
       switch (command) {
@@ -2896,7 +2902,7 @@ export function App() {
           pageFootnotesOf={pageFootnotesOf}
           endnoteItems={endnoteItems}
           sectionHfOverride={sectionHfOverride}
-          onExportPdf={() => void exportPdf()}
+          onExportPdf={canExportPdf ? () => void exportPdf() : null}
           onClose={() => setShowPagePreview(false)}
         />
       )}

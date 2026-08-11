@@ -96,7 +96,12 @@ export function PaginationPreview({
   endnoteItems?: PageNoteItem[]
   /** Multi-section: unsaved per-section header/footer edit overrides (default variant) */
   sectionHfOverride?: (sectionIndex: number, kind: 'header' | 'footer') => HeaderFooter | null
-  onExportPdf: () => void
+  /**
+   * Export the preview to PDF, or `null` on a host with no PDF pipeline (the
+   * browser build, until a renderer-side exporter exists). Null hides the button
+   * rather than showing one that would do nothing.
+   */
+  onExportPdf: (() => void) | null
   onClose: () => void
 }) {
   const { t } = useI18n()
@@ -301,9 +306,11 @@ export function PaginationPreview({
         <span className="pv-title">{t('appPaginationPreview')}</span>
         <span className="pv-count">{t('appTotalPagesN', { n: slices.length })}</span>
         <span className="pv-hint">{t('appPvHint')}</span>
-        <button className="pv-close" title={t('appPvExportTip')} onClick={onExportPdf}>
-          {t('appExportPdf')}
-        </button>
+        {onExportPdf && (
+          <button className="pv-close" title={t('appPvExportTip')} onClick={onExportPdf}>
+            {t('appExportPdf')}
+          </button>
+        )}
         <button className="pv-close" onClick={onClose}>
           {t('appClose')}
         </button>

@@ -1,5 +1,6 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
+import { hostAlias } from './vite.shared'
 
 export default defineConfig({
   // Main and preload use only electron + node builtins; bundle everything so
@@ -12,6 +13,9 @@ export default defineConfig({
   },
   preload: {},
   renderer: {
+    // The build-time host seam: this bundle gets the preload-bridge host and
+    // never the browser one. See vite.shared.ts.
+    resolve: { alias: hostAlias('electron') },
     plugins: [react()],
     server: {
       // Overridable so multiple genoffice dev instances can coexist (default 5173).

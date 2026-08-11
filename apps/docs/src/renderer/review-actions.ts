@@ -16,6 +16,7 @@ import {
 } from '@genoffice/docx-engine'
 import type { Dispatch, SetStateAction } from 'react'
 import type { DocState } from './doc-state'
+import { docsPlatform } from './platform'
 import {
   addCommentToSelection,
   addReplyToCommentRange,
@@ -287,7 +288,7 @@ export async function submitProtectModal(ctx: ReviewContext): Promise<void> {
 /** Compare: pick a second .docx and diff it against the open document */
 export async function compareWithFile(ctx: ReviewContext): Promise<void> {
   if (!ctx.doc) return
-  const other = await window.desktop.openDocx()
+  const other = await docsPlatform().file.openDocument()
   if (!other) return
   try {
     const otherParsed = await parseDocx(new Uint8Array(other.data))
