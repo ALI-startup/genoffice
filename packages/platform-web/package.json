@@ -1,0 +1,27 @@
+{
+  "name": "@genoffice/platform-web",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser adapters for the platform ports: a File System Access document store with IndexedDB-persisted handles, plus language / AI (over the BFF) / window implementations; no Electron and no Node built-ins",
+  "exports": {
+    ".": "./src/index.ts",
+    "./wire": "./src/ai-wire.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@genoffice/ai-provider": "*",
+    "@genoffice/i18n": "*",
+    "@genoffice/pdf-edit": "*",
+    "@genoffice/platform": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
+  }
+}

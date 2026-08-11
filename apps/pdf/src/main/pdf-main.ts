@@ -10,6 +10,7 @@ import {
   safeExternalUrl,
 } from '@genoffice/electron-utils'
 import { createI18n, getUiLang } from '@genoffice/i18n'
+import { extractPagesBytes, insertPdfBytes } from '@genoffice/pdf-edit'
 import { PDF_CHANNELS } from '../shared/ipc'
 import type {
   ExportImagesRequest,
@@ -21,7 +22,7 @@ import type {
   SavePdfRequest,
   SavePdfResult,
 } from '../shared/ipc'
-import { extractPagesBytes, insertPdfBytes, savePdfToPath } from './save-pdf'
+import { savePdfToPath } from './save-pdf'
 
 const tDlg = createI18n({
   zh: {

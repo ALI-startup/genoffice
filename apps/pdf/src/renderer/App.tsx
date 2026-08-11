@@ -32,6 +32,8 @@ import type { HeaderFooterConfig, WatermarkConfig } from './stamps'
 import { buildSearchIndex, searchInIndex } from './search'
 import type { SearchIndex, SearchMatch } from './search'
 import { useI18n } from './i18n/locale'
+import { pdfPlatform } from './platform'
+import type { DocumentRef, PendingDocument } from './platform'
 import { useAutosave } from './useAutosave'
 import type {
   DrawingInput,
@@ -555,7 +557,12 @@ function parsePageRanges(input: string, max: number): number[] | null {
 export default function App() {
   const { t } = useI18n()
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null)
-  const [filePath, setFilePath] = useState('')
+  /** Opaque handle to the open document; only the host may interpret it (see DocumentRef) */
+  const [docRef, setDocRef] = useState<DocumentRef>('')
+  /** Display name for the open document, supplied by the host with the ref */
+  const [fileName, setFileName] = useState('')
+  /** Host-supplied human-readable location, display-only; undefined when the host has none */
+  const [docLocation, setDocLocation] = useState<string | undefined>(undefined)
   const [status, setStatus] = useState<'loading' | 'error' | 'empty' | 'password' | 'ready'>(
     'loading',
   )
@@ -650,7 +657,6 @@ export default function App() {
       spread === 1 ? visIdx : visIdx === 0 ? 0 : Math.floor((visIdx - 1) / 2) + 1,
     [spread],
   )
-  const fileName = filePath.split(/[\\/]/).pop() ?? filePath
 
   const rotDelta = useCallback((origIdx: number) => rotations.get(origIdx) ?? 0, [rotations])
   /** Page geometry: unrotated size + total display rotation; the single entry point for overlay coord conversion */
@@ -679,8 +685,8 @@ export default function App() {
     sidebar === 'thumbs',
   )
 
-  const loadDoc = useCallback(async (path: string, previous: PDFDocumentProxy | null) => {
-    const data = await window.pdfApi.readFile(path)
+  const loadDoc = useCallback(async (ref: DocumentRef, previous: PDFDocumentProxy | null) => {
+    const data = await pdfPlatform().file.readFile(ref)
     const loaded = await getDocument({
       data: new Uint8Array(data),
       password: passwordRef.current,
@@ -718,13 +724,15 @@ export default function App() {
     if (previous) void previous.destroy()
   }, [])
 
-  const openPath = useCallback(
-    async (path: string) => {
+  const openDoc = useCallback(
+    async (ref: DocumentRef, name: string, location: string | undefined) => {
       try {
-        setFilePath(path)
+        setDocRef(ref)
+        setFileName(name)
+        setDocLocation(location)
         // A newly opened file starts outside the autosave gate
         savedOnceRef.current = false
-        await loadDoc(path, null)
+        await loadDoc(ref, null)
         setStatus('ready')
       } catch (err) {
         if ((err as Error | null)?.name === 'PasswordException') {
@@ -741,14 +749,43 @@ export default function App() {
 
   useEffect(() => {
     void (async () => {
-      const path = await window.pdfApi.consumePending()
-      if (!path) {
+      const pending = await pdfPlatform().file.consumePending()
+      if (!pending) {
         setStatus('empty')
         return
       }
-      await openPath(path)
+      await openDoc(pending.ref, pending.name, pending.location)
     })()
-  }, [openPath])
+  }, [openDoc])
+
+  /**
+   * Whether this host lets the renderer start an open at all. Null under
+   * Electron, where the shell owns file opening — see PdfFilePort.openDocument.
+   */
+  const openDocument = pdfPlatform().file.openDocument
+
+  /** Host open dialog → load what it returns. Must run inside a user gesture. */
+  const pickAndOpen = useCallback(() => {
+    if (!openDocument) return
+    void (async () => {
+      let picked: PendingDocument | null
+      try {
+        picked = await openDocument()
+      } catch (err) {
+        console.error('[pdf] open dialog failed:', err)
+        setStatus('error')
+        return
+      }
+      // A dismissed dialog is not a failure: leave the placeholder as it was.
+      if (!picked) return
+      // A different file starts without the previous one's password.
+      passwordRef.current = undefined
+      setPwInput('')
+      setPwWrong(false)
+      setStatus('loading')
+      await openDoc(picked.ref, picked.name, picked.location)
+    })()
+  }, [openDocument, openDoc])
 
   /** Documents opened with a password are treated as read-only: pdf-lib can't write back encrypted files */
   const readOnly = status === 'ready' && passwordRef.current !== undefined
@@ -862,7 +899,7 @@ export default function App() {
 
   // Mirror dirty state to the main process (close-tab/close-window guard)
   useEffect(() => {
-    window.pdfApi.setDirty(dirty)
+    pdfPlatform().window.setDirty(dirty)
   }, [dirty])
 
   // ── Undo/redo: push a full snapshot before each change; consecutive input on the same form field coalesces into one step ──
@@ -1083,12 +1120,12 @@ export default function App() {
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
 
   const save = (autosave = false): Promise<boolean> => {
-    if (!dirty || saveState === 'saving' || !filePath) return Promise.resolve(!dirty)
+    if (!dirty || saveState === 'saving' || !docRef) return Promise.resolve(!dirty)
     // An explicit save opts this file into autosave
     if (!autosave) savedOnceRef.current = true
     const run = (async (): Promise<boolean> => {
       setSaveState('saving')
-      const result = await window.pdfApi.save({ path: filePath, ...editsPayload() })
+      const result = await pdfPlatform().file.save({ ref: docRef, ...editsPayload() })
       if (!result.ok) {
         opFailed(result.error)
         return false
@@ -1097,7 +1134,7 @@ export default function App() {
       try {
         const el = scrollRef.current
         const scrollTop = el?.scrollTop ?? 0
-        await loadDoc(filePath, doc)
+        await loadDoc(docRef, doc)
         requestAnimationFrame(() => {
           if (scrollRef.current) scrollRef.current.scrollTop = scrollTop
         })
@@ -1116,11 +1153,12 @@ export default function App() {
   }
 
   /**
-   * Save As: apply pending edits onto the source bytes and write only to targetPath.
-   * The original file stays untouched on disk and the edits stay pending in this tab.
+   * Save As: apply pending edits onto the source bytes and write only to the
+   * host's destination ref. The open document stays untouched and the edits
+   * stay pending in this tab.
    */
-  const saveAsTo = async (targetPath: string): Promise<boolean> => {
-    if (!filePath) return false
+  const saveAsTo = async (target: DocumentRef): Promise<boolean> => {
+    if (!docRef) return false
     // A save already in flight (autosave that started before the dialog opened) lands
     // first. If it succeeded, every edit that was pending is now part of the source
     // bytes, so the copy applies nothing on top — deriving this from the save result
@@ -1131,7 +1169,7 @@ export default function App() {
       ? { markups: [], drawings: [], formValues: [], stamps: [] }
       : editsPayload()
     setSaveState('saving')
-    const result = await window.pdfApi.save({ path: filePath, targetPath, ...edits })
+    const result = await pdfPlatform().file.save({ ref: docRef, target, ...edits })
     if (!result.ok) {
       opFailed(result.error)
       return false
@@ -1145,10 +1183,13 @@ export default function App() {
   // Autosave pauses while the shell's Save As flow is open: the save dialog blurs the
   // window, and the blur-triggered autosave would write the pending edits into the original
   const saveAsFlowRef = useRef(false)
-  useEffect(() => window.pdfApi.onSaveAsFlow((inFlight) => (saveAsFlowRef.current = inFlight)), [])
+  useEffect(
+    () => pdfPlatform().window.onSaveAsFlow((inFlight) => (saveAsFlowRef.current = inFlight)),
+    [],
+  )
 
   // Autosave (same strategy as Docs): every 30s and on window blur, silently persist pending
-  // edits via the regular save() path; skipped while a save is in flight or without a file path.
+  // edits via the regular save() path; skipped while a save is in flight or without an open document.
   // Gated on one explicit save first: a PDF opened only to read must never be
   // overwritten because a thumbnail got dragged or a markup tool tapped — Save (⌘S / the
   // toolbar button / File ▸ Save) is what opts this file into unattended writes.
@@ -1157,7 +1198,7 @@ export default function App() {
       savedOnceRef.current &&
       dirty &&
       saveState !== 'saving' &&
-      filePath !== '' &&
+      docRef !== '' &&
       !readOnly &&
       !saveAsFlowRef.current,
     () => void save(true),
@@ -1292,7 +1333,7 @@ export default function App() {
         }
         canvas.width = 0
         canvas.height = 0
-        const result = await window.pdfApi.exportImages({
+        const result = await pdfPlatform().file.exportImages({
           images,
           pageNumbers,
           baseName: fileName.replace(/\.pdf$/i, ''),
@@ -1336,8 +1377,8 @@ export default function App() {
   const extractPage = (origIdx: number) =>
     flushThen(async () => {
       const base = fileName.replace(/\.pdf$/i, '')
-      const result = await window.pdfApi.extractPages({
-        path: filePath,
+      const result = await pdfPlatform().file.extractPages({
+        ref: docRef,
         pages: [origIdx],
         suggestedName: `${base}-p${origIdx + 1}.pdf`,
       })
@@ -1361,8 +1402,8 @@ export default function App() {
     void flushThen(async () => {
       const base = fileName.replace(/\.pdf$/i, '')
       const label = pages.length === 1 ? `p${pages[0]}` : `p${pages[0]}-${pages[pages.length - 1]}`
-      const result = await window.pdfApi.extractPages({
-        path: filePath,
+      const result = await pdfPlatform().file.extractPages({
+        ref: docRef,
         pages: pages.map((n) => visList[n - 1]!),
         suggestedName: `${base}-${label}.pdf`,
       })
@@ -1372,12 +1413,15 @@ export default function App() {
 
   const insertPdf = (afterOrigIdx: number) =>
     flushThen(async () => {
-      const result = await window.pdfApi.insertPdf({ path: filePath, afterPageIndex: afterOrigIdx })
+      const result = await pdfPlatform().file.insertPdf({
+        ref: docRef,
+        afterPageIndex: afterOrigIdx,
+      })
       if (!result.ok) {
         opFailed(result.error)
         return
       }
-      if (!('canceled' in result)) await loadDoc(filePath, doc)
+      if (!('canceled' in result)) await loadDoc(docRef, doc)
     })
 
   /** Print: save first (markups/forms/page ops all into the file), then reload from the file to render, avoiding a destroyed old doc */
@@ -1386,7 +1430,7 @@ export default function App() {
       if (printing) return
       setPrinting(true)
       try {
-        const data = await window.pdfApi.readFile(filePath)
+        const data = await pdfPlatform().file.readFile(docRef)
         const pdoc = await getDocument({ data: new Uint8Array(data), ...DOC_OPTS }).promise
         try {
           await printPdf(pdoc)
@@ -1475,15 +1519,15 @@ export default function App() {
 
   // Main process picked "Save" in the close prompt → save and report the result
   useEffect(() => {
-    return window.pdfApi.onCloseSaveRequest(() => {
-      void save().then((ok) => window.pdfApi.sendCloseSaveResult(ok))
+    return pdfPlatform().window.onCloseSaveRequest(() => {
+      void save().then((ok) => pdfPlatform().window.reportCloseSaveResult(ok))
     })
   })
 
-  // Shell menu Save As → write pending edits to the picked path only; the original file is never mutated
+  // Shell menu Save As → write pending edits to the picked destination only; the open document is never mutated
   useEffect(() => {
-    return window.pdfApi.onSaveAsRequest((targetPath) => {
-      void saveAsTo(targetPath).then((ok) => window.pdfApi.sendSaveAsResult(ok))
+    return pdfPlatform().window.onSaveAsRequest((target) => {
+      void saveAsTo(target).then((ok) => pdfPlatform().window.reportSaveAsResult(ok))
     })
   })
 
@@ -1604,7 +1648,7 @@ export default function App() {
               e.preventDefault()
               passwordRef.current = pwInput
               setStatus('loading')
-              void openPath(filePath)
+              void openDoc(docRef, fileName, docLocation)
             }}
           >
             <div className="pdf-password-title">{t('pwTitle')}</div>
@@ -1631,6 +1675,22 @@ export default function App() {
       <div className="app">
         <div className="pdf-placeholder">
           {status === 'loading' ? t('loading') : status === 'error' ? t('loadError') : t('noFile')}
+          {/*
+            Renderer-initiated open, shown only when the host actually offers
+            one. Under Electron `openDocument` is null (the shell owns opening
+            and queues a pending document), so this placeholder renders exactly
+            as it always has; in the browser nothing is ever pending, so without
+            this button the first load would be a dead end.
+
+            The click is the user gesture the file picker requires, so
+            `openDocument` is called directly from the handler rather than after
+            an await.
+          */}
+          {status !== 'loading' && openDocument && (
+            <button type="button" className="pdf-open-btn" onClick={pickAndOpen}>
+              {t('openFile')}
+            </button>
+          )}
         </div>
       </div>
     )
@@ -1668,7 +1728,10 @@ export default function App() {
             <IconRedo />
           </button>
           <span className="ribbon-tabs-spacer" />
-          <span className="ribbon-file" title={filePath}>
+          {/* The ref is opaque, so the tooltip shows the host's display
+              location (Electron: the absolute path); a host without one falls
+              back to the name, which the ellipsis still makes worth hovering */}
+          <span className="ribbon-file" title={docLocation ?? fileName}>
             {fileName}
           </span>
           {readOnly && <span className="tb-readonly">{t('roEncrypted')}</span>}

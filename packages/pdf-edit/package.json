@@ -1,0 +1,23 @@
+{
+  "name": "@genoffice/pdf-edit",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "description": "Host-agnostic PDF editing (pdf-lib): markups, drawings, stamps, form values and page ops applied to bytes; byte I/O is injected, so Electron (node:fs) and the web host (File System Access) share one implementation",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
+  }
+}

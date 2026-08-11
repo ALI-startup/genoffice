@@ -9,7 +9,9 @@
   "scripts": {
     "dev": "electron-vite dev",
     "dev:renderer": "vite --config vite.renderer.config.ts",
+    "dev:web": "vite --config vite.web.config.ts",
     "build": "electron-vite build",
+    "build:web": "vite build --config vite.web.config.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
@@ -19,6 +21,10 @@
     "@genoffice/ai-provider": "*",
     "@genoffice/electron-utils": "*",
     "@genoffice/i18n": "*",
+    "@genoffice/pdf-edit": "*",
+    "@genoffice/platform": "*",
+    "@genoffice/platform-electron": "*",
+    "@genoffice/platform-web": "*",
     "@genoffice/ui": "*",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

@@ -70,10 +70,27 @@ button {
 .pdf-placeholder {
   flex: 1;
   display: flex;
+  /* Column + gap so the empty state can stack an Open button under its message.
+     With a single child (every Electron case, and the password form) this lays
+     out identically to the previous row direction. */
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 14px;
   color: var(--text-dim);
   font-size: 14px;
+}
+
+/* Open affordance, shown only when the host offers a renderer-initiated open. */
+.pdf-open-btn {
+  height: 30px;
+  padding: 0 22px;
+  border: none;
+  border-radius: 5px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
 }
 
 /* ================= ribbon (aligned with docs/slides chrome) ================= */

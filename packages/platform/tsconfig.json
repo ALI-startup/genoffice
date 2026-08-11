@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // `File` (drag-and-drop payloads in AttachmentsPort) is a DOM type.
+    "lib": ["ES2022", "DOM"]
+  },
+  "include": ["src", "tests", "vitest.config.ts"]
+}

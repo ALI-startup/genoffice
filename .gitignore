@@ -30,3 +30,4 @@ electron-builder.env
 __pycache__/
 /notes/
 /MEMORY.md
+.vscode

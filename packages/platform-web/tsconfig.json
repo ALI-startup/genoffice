@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Every adapter here is a browser adapter: File System Access, IndexedDB,
+    // fetch and the window event loop are all DOM types.
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  },
+  "include": ["src", "tests", "vitest.config.ts"]
+}

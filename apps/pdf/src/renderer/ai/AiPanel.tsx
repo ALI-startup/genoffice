@@ -8,6 +8,7 @@ import { Markdown } from '@genoffice/ui'
 import sendEnterOn from '../assets/send-enter-on.png'
 import sendEnterOff from '../assets/send-enter-off.png'
 import sendStop from '../assets/send-stop.png'
+import { pdfPlatform } from '../platform'
 import { createPdfSkill } from './pdf-skill'
 import { createElectronTransport } from './transport'
 import type { PdfAiDeps } from './tools'
@@ -191,7 +192,7 @@ export function AiPanel({
     setPhase('thinking')
     void (async () => {
       try {
-        settingsRef.current = await window.pdfApi.getAiSettings()
+        settingsRef.current = await pdfPlatform().ai.getAiSettings()
         await loop.run(instruction)
       } catch (err) {
         patchLast({

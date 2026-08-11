@@ -1,5 +1,27 @@
+/**
+ * The Electron transport contract: preload channels and the payloads that cross
+ * them. Everything in this file is main-process-side by definition, so file
+ * paths are the natural identifiers here — the renderer's own seam
+ * (renderer/platform.ts) speaks in opaque `DocumentRef`s instead, and the
+ * Electron adapter is what maps one to the other.
+ *
+ * The edit payload itself is host-agnostic and lives in @genoffice/pdf-edit;
+ * it is re-exported here so renderer modules keep importing their input types
+ * from one place.
+ */
 import type { Lang } from '@genoffice/i18n'
 import type { AiSettings, AiStreamChunk, AiStreamRequest } from '@genoffice/ai-provider'
+import type { PdfEditRequest } from '@genoffice/pdf-edit'
+
+export type {
+  DrawingInput,
+  FormValueInput,
+  MarkupInput,
+  MarkupType,
+  MetadataInput,
+  PdfEditRequest,
+  StampInput,
+} from '@genoffice/pdf-edit'
 
 export const PDF_CHANNELS = {
   consumePending: 'pdf:consume-pending',
@@ -18,74 +40,12 @@ export const PDF_CHANNELS = {
   languageChanged: 'app:language-changed',
 } as const
 
-export type MarkupType = 'highlight' | 'underline' | 'strikeout'
-
-/** A text markup to write; quads are 4-point groups in PDF coords (y up) [x1,yTop,x2,yTop,x1,yBottom,x2,yBottom] */
-export interface MarkupInput {
-  pageIndex: number
-  type: MarkupType
-  /** rgb normalized to 0-1 */
-  color: [number, number, number]
-  quads: number[][]
-}
-
-/** Drawing annotations (all coords in PDF user space, y up).
-    One union member per kind; a union-literal kind would break TS narrowing. */
-interface DrawBase {
-  pageIndex: number
-  color: [number, number, number]
-  width: number
-}
-
-export type DrawingInput =
-  | (DrawBase & {
-      kind: 'ink'
-      /** Each stroke as [x1,y1,x2,y2,...] */
-      paths: number[][]
-    })
-  | (DrawBase & { kind: 'rect'; rect: [number, number, number, number] })
-  | (DrawBase & { kind: 'ellipse'; rect: [number, number, number, number] })
-  | (DrawBase & { kind: 'line'; from: [number, number]; to: [number, number] })
-  | (DrawBase & { kind: 'arrow'; from: [number, number]; to: [number, number] })
-  | {
-      kind: 'note'
-      pageIndex: number
-      color: [number, number, number]
-      at: [number, number]
-      contents: string
-    }
-
 /**
- * Stamp layer (watermark/header/footer/page numbers all go through it).
- * The renderer rasterizes the bitmap via canvas (with rotation and fonts, bypassing
- * pdf-lib's lack of CJK support); the main process only embeds and positions it.
+ * Save over the Electron transport: the host-agnostic edit payload plus the
+ * paths the main process needs. The renderer never builds `path` itself — the
+ * Electron adapter fills it in from the DocumentRef it issued.
  */
-export interface StampInput {
-  pageIndex: number
-  /** base64 PNG, without the data: prefix */
-  image: string
-  /** PDF user space [x1,y1,x2,y2] */
-  rect: [number, number, number, number]
-  opacity?: number
-}
-
-/** Document info; an empty string clears the field */
-export interface MetadataInput {
-  title?: string
-  author?: string
-  subject?: string
-  keywords?: string
-}
-
-export interface FormValueInput {
-  name: string
-  kind: 'text' | 'checkbox' | 'radio' | 'choice'
-  /** For radio: selected exportValue; for choice: selected option; empty string clears selection */
-  value?: string
-  checked?: boolean
-}
-
-export interface SavePdfRequest {
+export interface SavePdfRequest extends PdfEditRequest {
   path: string
   /**
    * Save As destination. When set, `path` is only read (source bytes) and the edited PDF
@@ -93,17 +53,6 @@ export interface SavePdfRequest {
    * Must match the target granted to the view by the main process (save dialog pick).
    */
   targetPath?: string
-  markups: MarkupInput[]
-  drawings: DrawingInput[]
-  formValues: FormValueInput[]
-  stamps: StampInput[]
-  /** Page rotation deltas (original page index → multiple of 90 clockwise) */
-  rotations?: { pageIndex: number; delta: number }[]
-  /** Pages to delete (original page indices) */
-  deletedPages?: number[]
-  /** New page order (array of original page indices, excluding deleted); omitted if unreordered */
-  pageOrder?: number[]
-  metadata?: MetadataInput
 }
 
 export type SavePdfResult = { ok: true } | { ok: false; error: string }

@@ -1,0 +1,302 @@
+/**
+ * The browser's answer to "what is a DocumentRef?".
+ *
+ * Electron can use an absolute path as its ref because the main process can
+ * reopen a path at will. A browser cannot: the only thing that carries the
+ * user's grant is the `FileSystemFileHandle` object itself, and it has no path
+ * and no stable identity the renderer may print. So this store issues an opaque
+ * `crypto.randomUUID()` ref and privately owns the ref → handle mapping — which
+ * is exactly the indirection `PendingDocument.location` was made optional for
+ * in Phase 3a.
+ *
+ * The mapping lives in two places at once, deliberately:
+ *
+ *   - an in-memory `Map`, the authority for the current page. Handles minted by
+ *     a picker in this session already carry the user's grant.
+ *   - IndexedDB, so the mapping survives a reload. Handles are
+ *     structured-cloneable, so the handle itself is stored — no bytes are
+ *     copied and no path is invented.
+ *
+ * The two are not interchangeable, and the difference is the permission rule:
+ * a handle restored from IndexedDB carries *no* permission, so the first use
+ * after a reload must query and, if needed, re-request it. See `handleFor`.
+ */
+import type { PdfBytesIo } from '@genoffice/pdf-edit'
+import {
+  ensurePermission,
+  isPickerCancel,
+  PDF_FILE_TYPES,
+  type FilePickers,
+  type WebDirectoryHandle,
+  type WebFileHandle,
+} from './fs-access.js'
+import type { DocumentHandleStore, StoredDocumentHandle } from './handle-store.js'
+
+/** An opaque ref plus the only display information a browser can honestly give. */
+export interface WebDocument {
+  ref: string
+  name: string
+}
+
+export interface WebRecentDocument extends WebDocument {
+  openedAt: number
+}
+
+/** A picked output folder, narrowed to the one thing callers do with it. */
+export interface WebDirectory {
+  name: string
+  writeFile(fileName: string, bytes: Uint8Array): Promise<void>
+}
+
+/** Raised for a ref this store never issued, or one whose handle has been forgotten. */
+export class UnknownDocumentError extends Error {
+  override readonly name = 'UnknownDocumentError'
+  constructor(ref: string) {
+    super(
+      `No document handle for ref "${ref}". It was never opened in this browser, or the ` +
+        `browser dropped its stored handle; open the file again.`,
+    )
+  }
+}
+
+export interface WebDocumentStoreOptions {
+  handles: DocumentHandleStore
+  pickers: FilePickers
+  /** Injected for tests; production uses `crypto.randomUUID`. */
+  newRef?: () => string
+  /** Injected for tests; production uses `Date.now`. */
+  now?: () => number
+}
+
+export class WebDocumentStore {
+  private readonly handles: DocumentHandleStore
+  private readonly pickers: FilePickers
+  private readonly newRef: () => string
+  private readonly now: () => number
+  /** Handles granted in this session. Authoritative while the page lives. */
+  private readonly live = new Map<string, WebFileHandle>()
+  private readonly dialogListeners = new Set<(open: boolean) => void>()
+  private openDialogs = 0
+
+  constructor(options: WebDocumentStoreOptions) {
+    this.handles = options.handles
+    this.pickers = options.pickers
+    this.newRef = options.newRef ?? (() => crypto.randomUUID())
+    this.now = options.now ?? (() => Date.now())
+  }
+
+  /**
+   * Show the open dialog and adopt the picked file as a document.
+   *
+   * `null` means the user dismissed the dialog — a cancel is not an error, and
+   * every other failure still throws.
+   */
+  async open(): Promise<WebDocument | null> {
+    const handle = await this.withDialog(() =>
+      this.pickers.openFile({ types: PDF_FILE_TYPES, id: 'genoffice-pdf' }),
+    ).catch(cancelToNull)
+    if (!handle) return null
+    return this.adopt(handle)
+  }
+
+  /** Reuse a document opened in an earlier session; prompts for permission if needed. */
+  async reopen(ref: string): Promise<WebDocument> {
+    const stored = await this.handles.get(ref)
+    if (!stored) throw new UnknownDocumentError(ref)
+    await this.grant(stored.handle)
+    this.live.set(ref, stored.handle)
+    await this.handles.put({ ...stored, openedAt: this.now() })
+    return { ref, name: stored.handle.name || stored.name }
+  }
+
+  /** Previously opened documents, most recent first. Handles are not touched, so this never prompts. */
+  async recent(): Promise<WebRecentDocument[]> {
+    const stored = await this.handles.list()
+    return stored.map(({ ref, name, openedAt }) => ({ ref, name, openedAt }))
+  }
+
+  /** Drop a document from the recent list and release its handle. */
+  async forget(ref: string): Promise<void> {
+    this.live.delete(ref)
+    await this.handles.delete(ref)
+  }
+
+  async read(ref: string): Promise<Uint8Array> {
+    const handle = await this.handleFor(ref)
+    const file = await handle.getFile()
+    return new Uint8Array(await file.arrayBuffer())
+  }
+
+  /**
+   * Overwrite the document in place.
+   *
+   * `createWritable()` truncates by default, so the file is replaced rather
+   * than patched; the bytes handed in are always a complete document (see
+   * `savePdf` in @genoffice/pdf-edit, which only writes after the whole edit
+   * applied cleanly).
+   */
+  async write(ref: string, bytes: Uint8Array): Promise<void> {
+    const handle = await this.handleFor(ref)
+    // A session handle may hold read-only permission even though it never left
+    // memory: `showOpenFilePicker` grants read, and write is a second grant.
+    await this.grant(handle)
+    const writable = await handle.createWritable()
+    try {
+      await writable.write(toBlobPart(bytes))
+    } finally {
+      await writable.close()
+    }
+  }
+
+  /**
+   * The `PdfBytesIo` for a document — the seam that makes save-in-place work.
+   *
+   * @genoffice/pdf-edit's `savePdf` reads through this, applies the edits with
+   * pdf-lib and writes back, so the browser runs byte-for-byte the same editing
+   * code as the Electron main process.
+   */
+  bytesIo(ref: string): PdfBytesIo {
+    return {
+      read: () => this.read(ref),
+      write: (bytes) => this.write(ref, bytes),
+    }
+  }
+
+  /** Read a one-off file (e.g. a PDF to merge in) without minting a ref for it. */
+  async pickBytes(): Promise<Uint8Array | null> {
+    const handle = await this.withDialog(() =>
+      this.pickers.openFile({ types: PDF_FILE_TYPES, id: 'genoffice-pdf' }),
+    ).catch(cancelToNull)
+    if (!handle) return null
+    await ensurePermission(handle, 'read')
+    const file = await handle.getFile()
+    return new Uint8Array(await file.arrayBuffer())
+  }
+
+  /**
+   * Write bytes to a destination the user picks. Returns the chosen file name,
+   * or `null` on cancel.
+   *
+   * No ref is minted: the destination is written once and never reopened, so
+   * persisting a handle for it would grow the recent list with documents the
+   * user never opened.
+   */
+  async saveBytesAs(suggestedName: string, bytes: Uint8Array): Promise<string | null> {
+    const handle = await this.withDialog(() =>
+      this.pickers.saveFile({ types: PDF_FILE_TYPES, suggestedName, id: 'genoffice-pdf' }),
+    ).catch(cancelToNull)
+    if (!handle) return null
+    await ensurePermission(handle, 'readwrite')
+    const writable = await handle.createWritable()
+    try {
+      await writable.write(toBlobPart(bytes))
+    } finally {
+      await writable.close()
+    }
+    return handle.name
+  }
+
+  /** Pick an output folder (image export). `null` on cancel. */
+  async pickDirectory(): Promise<WebDirectory | null> {
+    const handle = await this.withDialog(() =>
+      this.pickers.directory({ mode: 'readwrite', id: 'genoffice-export' }),
+    ).catch(cancelToNull)
+    if (!handle) return null
+    await ensurePermission(handle, 'readwrite')
+    return directoryWriter(handle)
+  }
+
+  /**
+   * Fires `true` while any host dialog is open and `false` once it closes.
+   *
+   * A real event source with real events: every picker blurs the window, and a
+   * blur is what triggers autosave. Without this, opening "insert PDF" would
+   * race an autosave into the document being inserted into.
+   */
+  onDialog(handler: (open: boolean) => void): () => void {
+    this.dialogListeners.add(handler)
+    return () => void this.dialogListeners.delete(handler)
+  }
+
+  /** Mint a ref for a freshly picked handle and remember it in both maps. */
+  private async adopt(handle: WebFileHandle): Promise<WebDocument> {
+    const ref = this.newRef()
+    this.live.set(ref, handle)
+    const entry: StoredDocumentHandle = { ref, name: handle.name, handle, openedAt: this.now() }
+    // A browser with IndexedDB blocked (private mode, storage pressure) can
+    // still work for this session — losing the recent list must not lose the
+    // document the user just opened.
+    await this.handles.put(entry).catch((error: unknown) => {
+      console.warn('[platform-web] could not persist the file handle:', error)
+    })
+    return { ref, name: handle.name }
+  }
+
+  /**
+   * Resolve a ref to a usable handle.
+   *
+   * The permission rule lives here. A handle still in `live` was granted by a
+   * picker in this session, so it is used as is. A handle loaded from IndexedDB
+   * is a *reused persisted handle*: the browser drops its permission across a
+   * reload, so it is queried and re-requested before anyone touches the file.
+   */
+  private async handleFor(ref: string): Promise<WebFileHandle> {
+    const live = this.live.get(ref)
+    if (live) return live
+    const stored = await this.handles.get(ref)
+    if (!stored) throw new UnknownDocumentError(ref)
+    await this.grant(stored.handle)
+    this.live.set(ref, stored.handle)
+    return stored.handle
+  }
+
+  /** Read-write is the only mode this store asks for: an editor that cannot write back is the shim we are deleting. */
+  private grant(handle: WebFileHandle): Promise<void> {
+    return ensurePermission(handle, 'readwrite')
+  }
+
+  private async withDialog<T>(run: () => Promise<T>): Promise<T> {
+    this.setDialogs(this.openDialogs + 1)
+    try {
+      return await run()
+    } finally {
+      this.setDialogs(this.openDialogs - 1)
+    }
+  }
+
+  private setDialogs(count: number): void {
+    const before = this.openDialogs > 0
+    this.openDialogs = Math.max(0, count)
+    const after = this.openDialogs > 0
+    if (before !== after) for (const listener of this.dialogListeners) listener(after)
+  }
+}
+
+function directoryWriter(handle: WebDirectoryHandle): WebDirectory {
+  return {
+    name: handle.name,
+    async writeFile(fileName, bytes) {
+      const file = await handle.getFileHandle(fileName, { create: true })
+      const writable = await file.createWritable()
+      try {
+        await writable.write(toBlobPart(bytes))
+      } finally {
+        await writable.close()
+      }
+    },
+  }
+}
+
+/**
+ * `Uint8Array` is a `BufferSource`, but a view over a pooled `ArrayBuffer` (as
+ * pdf-lib may return) would write the whole backing buffer if passed as one.
+ * Slicing to the view's own bounds keeps the write exact.
+ */
+function toBlobPart(bytes: Uint8Array): ArrayBuffer {
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
+}
+
+function cancelToNull(error: unknown): null {
+  if (isPickerCancel(error)) return null
+  throw error
+}

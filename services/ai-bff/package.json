@@ -1,0 +1,28 @@
+{
+  "name": "@genoffice/ai-bff",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "description": "Backend-for-frontend that holds AI provider credentials server-side and proxies streaming/one-shot calls, so no key ever reaches the browser",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "tsx --env-file-if-exists=.env src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@genoffice/agent-core": "*",
+    "@genoffice/ai-provider": "*",
+    "@genoffice/platform-web": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
+  }
+}
