@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import appIcon from './assets/app-icon.png'
 import { useI18n } from './locale'
 import type { StringKey } from './locale'
+import { shellPlatform } from './platform'
 import './onboarding.css'
 
 interface OnboardingProps {
@@ -180,7 +181,10 @@ export function Onboarding({ onDone }: OnboardingProps) {
               {s.showOffer && (
                 <div className="onb-offer">
                   <p className="onb-credits">{renderEmphasis(t('onbCredits'))}</p>
-                  <button className="onb-join" onClick={() => void window.aiOffice.openGenTeam()}>
+                  <button
+                    className="onb-join"
+                    onClick={() => void shellPlatform().app.openGenTeam()}
+                  >
                     {t('onbJoinGenTeam')}
                     <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
                       <path

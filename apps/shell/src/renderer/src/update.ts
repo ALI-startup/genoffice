@@ -1,7 +1,6 @@
-import type { UpdateUiState, UpdateWindowApi } from '../../shared/update-api'
-
-// exposed by src/preload/update.ts
-const api = (window as unknown as { aiOfficeUpdate: UpdateWindowApi }).aiOfficeUpdate
+import type { UpdateUiState } from '../../shared/update-api'
+import { createUpdateWindowPlatform } from './host-electron'
+import { setUpdateWindowPlatform, updateWindowPlatform } from './platform'
 
 const el = (id: string): HTMLElement => document.getElementById(id) as HTMLElement
 const headline = el('headline')
@@ -62,13 +61,19 @@ function render(state: UpdateUiState): void {
   }
 }
 
-action.addEventListener('click', () => {
-  if (phase === 'downloaded') api.install()
-  else api.download()
-})
-later.addEventListener('click', () => api.later())
+// This window has its own preload and therefore its own slot; installing it is
+// the same bootstrap step main.tsx performs for the shell window.
+void (async () => {
+  setUpdateWindowPlatform(await createUpdateWindowPlatform())
+  const { update } = updateWindowPlatform()
 
-api.onState(render)
-void api.getState().then((state) => {
+  action.addEventListener('click', () => {
+    if (phase === 'downloaded') update.install()
+    else update.download()
+  })
+  later.addEventListener('click', () => update.later())
+
+  update.onState(render)
+  const state = await update.getState()
   if (state) render(state)
-})
+})()

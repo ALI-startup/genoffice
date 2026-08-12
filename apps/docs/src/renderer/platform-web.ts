@@ -34,6 +34,11 @@
  *
  * And `saveNew` is conditional on a user gesture, which is a browser rule rather
  * than a gap — see the comment on it.
+ *
+ * One member does reach for `window` directly: `createWebDocsPrintPort` listens
+ * for `afterprint`, an event with no injectable source (the dialog it reports on
+ * is the browser's). The call that *opens* the dialog is still injected, so a test
+ * drives the whole port without a real print, and jsdom supplies the event target.
  */
 import type { AiPort, AttachmentsPort, DiskFileState, LanguagePort } from '@genoffice/platform'
 import { isExternallyModified } from '@genoffice/platform'
@@ -49,6 +54,7 @@ import type {
   CloseCheckState,
   DocsFilePort,
   DocsPlatform,
+  DocsPrintPort,
   DocsWindowPort,
   DocumentRef,
   OpenedDocument,
@@ -97,6 +103,8 @@ export interface WebDocsPlatformDeps {
   confirmOverwrite: ConfirmOverwrite
   /** Install a `beforeunload` guard; injected so tests can drive it. Defaults to the real one. */
   unloadPrompt?: typeof createWebUnloadPrompt
+  /** Opens the browser's print dialog; injected so tests can drive it. Defaults to `window.print`. */
+  printPage?: () => void
 }
 
 /**
@@ -432,6 +440,40 @@ export function createWebDocsWindowPort(
   }
 }
 
+/**
+ * The browser's print flow, which is `window.print()` and nothing else.
+ *
+ * This is the one capability the *web* host has and the Electron one does not
+ * (see `DocsPlatform.print`), and it is deliberately thin: the paper size, the
+ * one-page-per-sheet layout and the hidden app chrome are all CSS, decided by the
+ * renderer, because only the renderer knows the document's section geometry.
+ * `window.print()` takes no arguments — there is nothing for this adapter to
+ * pass — so all it owns is *when the print is over*.
+ *
+ * That is what the promise is for. `window.print()` happens to block on a nested
+ * event loop in every browser that implements it, but the spec does not require
+ * it to, and `afterprint` is the defined signal. Waiting on the event means a
+ * caller that tears something down afterwards cannot tear it down out from under
+ * a live print job on whatever browser decides to return early. Cancelling fires
+ * `afterprint` too, which is why the promise carries no outcome: from here,
+ * printed and cancelled are the same event.
+ */
+export function createWebDocsPrintPort(
+  printPage: () => void = () => window.print(),
+): DocsPrintPort {
+  return {
+    print: () =>
+      new Promise<void>((resolve) => {
+        const done = () => {
+          window.removeEventListener('afterprint', done)
+          resolve()
+        }
+        window.addEventListener('afterprint', done)
+        printPage()
+      }),
+  }
+}
+
 export function createWebDocsPlatform(deps: WebDocsPlatformDeps): DocsPlatform {
   return {
     language: deps.language,
@@ -450,7 +492,13 @@ export function createWebDocsPlatform(deps: WebDocsPlatformDeps): DocsPlatform {
     tabs: null,
     search: null,
     genspark: null,
+    // Still null after Phase 4c, and permanently: PDF *export* writes a file the
+    // renderer would have to draw itself, and a rasterised or re-laid-out
+    // approximation under the same command name would misreport what happened.
+    // The browser prints instead — a different operation, offered under its own
+    // name through the port below.
     pdfExport: null,
+    print: createWebDocsPrintPort(deps.printPage),
   }
 }
 

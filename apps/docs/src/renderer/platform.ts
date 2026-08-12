@@ -25,10 +25,14 @@
  *     run, plus the inline sign-in button), or `null` on a host with no Genspark
  *     integration.
  *   - `pdfExport` — PDF export/print, or `null` on a host that has none.
+ *   - `print` — handing the current view to the host's print flow, or `null` on a
+ *     host whose print flow the renderer does not drive.
  *
- * Four of those are `X | null`, and every one of them is a capability the web
- * host (Phase 4b) genuinely cannot back — see `DocsPlatform` for why each is
- * nullable rather than optional, and host-web.ts for why each is null there.
+ * Five of those are `X | null`. Four are capabilities the web host (Phase 4b)
+ * genuinely cannot back, and the fifth (`print`) runs the other way: it is the
+ * Electron host that leaves it null, because there printing belongs to the native
+ * application menu. See `DocsPlatform` for why each is nullable rather than
+ * optional, and host-web.ts / platform-electron.ts for why each is null there.
  *
  * Ports deliberately left out, and why:
  *   - `aiSettings` (setAiSettings) — docs' preload forwards 'ai:set-settings'
@@ -306,9 +310,41 @@ export interface DocsPdfExportPort {
 }
 
 /**
+ * Handing the current view to the host's own print flow.
+ *
+ * Deliberately *not* a member of `DocsPdfExportPort`, and not a nullable method
+ * on it either. The two are different operations that happen to both end in
+ * paper-shaped output:
+ *
+ *   - `DocsPdfExportPort` renders the document to a *file*. It takes a paper size
+ *     and a destination, reports the path it wrote, and — for a mixed-paper
+ *     document — renders per size and merges. Nothing about it is user-facing
+ *     while it runs.
+ *   - `DocsPrintPort` opens the host's print UI over whatever is currently
+ *     rendered. There is no destination, no bytes come back, and the user may
+ *     cancel; the host decides everything after the call.
+ *
+ * Folding print into the export port would also mean a host has to supply both or
+ * neither, and the two hosts split exactly the other way: Electron exports and
+ * does not print through the renderer, the browser prints and does not export. So
+ * they are two ports, each nullable on its own, and every `pdfExport` call site in
+ * file-actions.ts is untouched by print existing.
+ */
+export interface DocsPrintPort {
+  /**
+   * Open the host's print flow for the current view.
+   *
+   * Resolves once the host is done with it — printed *or* cancelled, which the
+   * caller cannot tell apart and does not need to: the point of the promise is
+   * that nothing tears down what is on screen underneath a live print job.
+   */
+  print(): Promise<void>
+}
+
+/**
  * docs' composed platform.
  *
- * Four members are `X | null`, and the nullability is the whole design rather
+ * Five members are `X | null`, and the nullability is the whole design rather
  * than a convenience. An *optional* member would let a host claim a capability
  * and silently no-op it — the renderer would offer Export PDF and nothing would
  * happen, which is exactly how the hand-written web shims failed. A *required
@@ -326,11 +362,24 @@ export interface DocsPdfExportPort {
  *   - `genspark` — Electron: the gsk CLI (a local process) and a system browser
  *     sign-in. Web: `null`; a page can do neither.
  *   - `pdfExport` — Electron: the main process renders with `printToPDF` and
- *     merges with pdf-lib. Web: `null` until Phase 4c supplies a renderer-side
- *     exporter — the shape already said "may be absent", so that arrives without
- *     reshaping the seam.
+ *     merges with pdf-lib. Web: `null`, and it stays null. Phase 4c decided
+ *     against a renderer-side exporter: rasterising pages to canvas or re-laying
+ *     the text out with pdf-lib would produce a *different* document from the one
+ *     the desktop exports, under the same command name. The browser prints
+ *     instead, through `print` below, and Export PDF simply is not offered there.
+ *   - `print` — Web: `window.print()`, over the pagination preview, with `@page`
+ *     rules supplying the paper size Electron passes to `printToPDF` as an
+ *     argument. Electron: `null`. Not because Chromium could not do it — it could
+ *     — but because on the desktop printing is the *host's*: the native File menu
+ *     owns the Print item and the main process answers it with
+ *     `webContents.print()`. `DesktopApi.print()` is forwarded by the preload and
+ *     has no renderer call site, and the `'print'` MenuCommand is not handled in
+ *     App.tsx's switch, so the renderer genuinely does not drive printing there.
+ *     Claiming it would add a second, differently-behaved print path to the
+ *     desktop app; null says the truth and leaves the desktop exactly as it was.
  *
- * The Electron host backs all four, so nothing about the desktop app changes.
+ * The Electron host backs all four of the first group, so nothing about the
+ * desktop app changes.
  */
 export type DocsPlatform = Platform<'language' | 'ai' | 'attachments'> & {
   window: DocsWindowPort
@@ -339,6 +388,7 @@ export type DocsPlatform = Platform<'language' | 'ai' | 'attachments'> & {
   search: SearchPort | null
   genspark: GensparkPort | null
   pdfExport: DocsPdfExportPort | null
+  print: DocsPrintPort | null
 }
 
 /**

@@ -2,7 +2,9 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { htmlLang } from '@genoffice/i18n'
 import { AppFrame } from './AppFrame'
+import { createShellPlatform } from './host-electron'
 import { LocaleProvider } from './locale'
+import { setShellPlatform } from './platform'
 import './home.css'
 import './tabbar.css'
 
@@ -10,13 +12,19 @@ import './tabbar.css'
 // editor views' translucent regions (e.g. slides thumbnail pane) show it
 if (navigator.platform.toLowerCase().includes('mac')) document.body.classList.add('vib')
 
-// resolve the persisted language and the first-run flag before first paint so
-// the UI never flashes (home showing briefly before the onboarding overlay)
-void Promise.all([
-  window.aiOffice.getLanguage(),
-  // if the flag is unreadable, skip onboarding rather than block the home screen
-  window.aiOffice.onboardingSeen().catch(() => true),
-]).then(([lang, onboardingSeen]) => {
+void (async () => {
+  // Install the host implementation before anything renders: every other module
+  // reaches the host through the slot, and the slot throws until this runs.
+  const platform = await createShellPlatform()
+  setShellPlatform(platform)
+
+  // resolve the persisted language and the first-run flag before first paint so
+  // the UI never flashes (home showing briefly before the onboarding overlay)
+  const [lang, onboardingSeen] = await Promise.all([
+    platform.language.getLanguage(),
+    // if the flag is unreadable, skip onboarding rather than block the home screen
+    platform.onboarding.seen().catch(() => true),
+  ])
   document.documentElement.lang = htmlLang(lang)
   createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
@@ -25,4 +33,4 @@ void Promise.all([
       </LocaleProvider>
     </React.StrictMode>,
   )
-})
+})()

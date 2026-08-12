@@ -1,13 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
-import type { TabsApi, TabSummary } from '../../shared/tabs-api'
+import type { TabSummary } from '../../shared/tabs-api'
 import { useI18n } from './locale'
-
-declare global {
-  interface Window {
-    aiOfficeTabs: TabsApi
-  }
-}
+import { shellPlatform } from './platform'
 
 function DocIcon() {
   return (
@@ -88,6 +83,7 @@ const KIND_ICON: Record<TabSummary['kind'], ReactElement> = {
 
 export function TabBar() {
   const { t } = useI18n()
+  const { tabs: tabsPort, tabMenus } = shellPlatform()
   const [tabs, setTabs] = useState<TabSummary[]>([])
   const stripRef = useRef<HTMLDivElement>(null)
 
@@ -139,14 +135,14 @@ export function TabBar() {
         next.splice(Math.min(Math.max(drag.target, 1), next.length), 0, moved)
         return next
       })
-      void window.aiOfficeTabs.reorder(drag.id, drag.target)
+      void tabsPort.reorder(drag.id, drag.target)
     }
   }
 
   useEffect(() => {
-    void window.aiOfficeTabs.list().then(setTabs)
-    return window.aiOfficeTabs.onChanged(setTabs)
-  }, [])
+    void tabsPort.list().then(setTabs)
+    return tabsPort.onChanged(setTabs)
+  }, [tabsPort])
 
   // if the dragged tab is closed mid-drag (e.g. Cmd+W) its element unmounts
   // and pointerup/pointercancel never fire — clear the drag state ourselves
@@ -213,7 +209,7 @@ export function TabBar() {
                 if ((event.target as HTMLElement).closest('.tab-close')) return
                 // Chrome-style: pressing a tab activates it immediately, so
                 // activation never depends on the click that a drag would eat
-                if (!tab.active) void window.aiOfficeTabs.activate(tab.id)
+                if (!tab.active) void tabsPort.activate(tab.id)
                 if (tab.id === 'home') return
                 const strip = stripRef.current
                 if (!strip) return
@@ -302,7 +298,7 @@ export function TabBar() {
                   title={t('closeTab')}
                   onClick={(event) => {
                     event.stopPropagation()
-                    void window.aiOfficeTabs.close(tab.id)
+                    void tabsPort.close(tab.id)
                   }}
                 >
                   ×
@@ -311,18 +307,52 @@ export function TabBar() {
             </div>
           )
         })}
+        {/* Both menus are native, so both buttons exist only on a host that can
+            pop one: with no menu behind it the button would do nothing. A host
+            without `tabMenus` renders its own DOM menus instead (see
+            ShellTabMenusPort). */}
+        {tabMenus && (
+          <button
+            className="tab-new-btn"
+            title={t('newTab')}
+            onClick={(event) => {
+              const rect = event.currentTarget.getBoundingClientRect()
+              void tabMenus.showNewMenu(Math.round(rect.left), Math.round(rect.bottom))
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 4.286v15.429M4.286 12h15.429"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        )}
+      </div>
+      {tabMenus && (
         <button
-          className="tab-new-btn"
-          title={t('newTab')}
+          className="tab-overflow-btn"
+          title={t('tabList')}
           onClick={(event) => {
             const rect = event.currentTarget.getBoundingClientRect()
-            void window.aiOfficeTabs.showNewMenu(Math.round(rect.left), Math.round(rect.bottom))
+            void tabMenus.showMenu(Math.round(rect.left), Math.round(rect.bottom))
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+          {/* window-with-tab-bar glyph: slanted tab cells above a full-width
+              header divider (from design asset tab.svg) */}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path
-              d="M12 4.286v15.429M4.286 12h15.429"
-              fill="none"
+              d="M21 4H3C2.44772 4 2 4.44772 2 5V19C2 19.5523 2.44772 20 3 20H21C21.5523 20 22 19.5523 22 19V5C22 4.44772 21.5523 4 21 4Z"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M11.5 9.5H22M11.5 9.5L9.5 4M17.5 9.5L15.5 4M2 19V8.5M22 19V8.5M4.5 20H19.5"
               stroke="currentColor"
               strokeWidth="1.5"
               strokeLinecap="round"
@@ -330,33 +360,7 @@ export function TabBar() {
             />
           </svg>
         </button>
-      </div>
-      <button
-        className="tab-overflow-btn"
-        title={t('tabList')}
-        onClick={(event) => {
-          const rect = event.currentTarget.getBoundingClientRect()
-          void window.aiOfficeTabs.showMenu(Math.round(rect.left), Math.round(rect.bottom))
-        }}
-      >
-        {/* window-with-tab-bar glyph: slanted tab cells above a full-width
-            header divider (from design asset tab.svg) */}
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path
-            d="M21 4H3C2.44772 4 2 4.44772 2 5V19C2 19.5523 2.44772 20 3 20H21C21.5523 20 22 19.5523 22 19V5C22 4.44772 21.5523 4 21 4Z"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M11.5 9.5H22M11.5 9.5L9.5 4M17.5 9.5L15.5 4M2 19V8.5M22 19V8.5M4.5 20H19.5"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
+      )}
     </div>
   )
 }

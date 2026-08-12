@@ -129,6 +129,7 @@ import {
   writeRecoveryCopy as writeRecoveryCopyImpl,
   type FileActionContext,
 } from './file-actions'
+import { paperSizesOf, printPageCss } from './print'
 import {
   allocateListNumId as allocateListNumIdImpl,
   continueNumbering as continueNumberingImpl,
@@ -1238,6 +1239,36 @@ export function App() {
    * instead of being offered and silently doing nothing.
    */
   const canExportPdf = docsPlatform().pdfExport !== null
+
+  /**
+   * The host's print flow, or null where the renderer does not drive one.
+   *
+   * Null on Electron, where Print belongs to the native application menu, and
+   * non-null in the browser, where `window.print()` is the only way to get paper
+   * or a PDF out at all. Both the Print button and the `@page` stylesheet below
+   * hang off this, so neither exists on a host that would not use them.
+   */
+  const printPort = docsPlatform().print
+  const printPages = useCallback(() => void printPort?.print(), [printPort])
+  /**
+   * `@page` rules matching the document's section paper sizes.
+   *
+   * Rendered as a plain stylesheet rather than injected around a print call, for
+   * two reasons: it stays correct as the document's page setup changes, and it is
+   * already in place when the *browser's* own Ctrl+P runs, which no in-app code
+   * gets to wrap. See print.ts for what happens with mixed paper sizes.
+   */
+  const printCss = useMemo(
+    () =>
+      printPort === null
+        ? ''
+        : printPageCss(
+            paperSizesOf(
+              sections.length > 0 ? sections.map((sec) => sec.settings) : section ? [section] : [],
+            ),
+          ),
+    [printPort, sections, section],
+  )
 
   // for real-device verification: trigger export directly via CDP (same as __pageDebug)
   useEffect(() => {
@@ -2445,6 +2476,7 @@ export function App() {
       {/* Theme CSS comes from live state, so a Design ▸ Themes/Fonts/Colors pick shows
           on the page immediately instead of only in the saved file */}
       {doc && <style>{docThemeCss(themeFonts, themeColors)}</style>}
+      {printCss && <style>{printCss}</style>}
       {colFlow && viewMode === 'print' && (
         // columns (sectPr w:cols): column gap follows the document's w:space; measuring-columns
         // is the single-flow measuring state (columns removed, content-box width = column width,
@@ -2903,6 +2935,7 @@ export function App() {
           endnoteItems={endnoteItems}
           sectionHfOverride={sectionHfOverride}
           onExportPdf={canExportPdf ? () => void exportPdf() : null}
+          onPrint={printPort ? printPages : null}
           onClose={() => setShowPagePreview(false)}
         />
       )}

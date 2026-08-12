@@ -1,10 +1,10 @@
-import type { RecentPage } from '../../shared/home-api'
+import type { FilePage } from './platform'
 
 export type FileCountKey = 'fileCount' | 'fileCountOne'
 export type TimelineCountKey = 'timelineCount' | 'timelineCountOne'
 
 /** Sidebar counts use the same filtered total as the visible list. */
-export function visiblePageCount(page: Pick<RecentPage, 'total'>): number {
+export function visiblePageCount(page: Pick<FilePage, 'total'>): number {
   return page.total
 }
 

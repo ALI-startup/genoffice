@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Home } from './Home'
 import { Onboarding } from './Onboarding'
+import { shellPlatform } from './platform'
 import { TabBar } from './TabBar'
 import { SettingsDialog } from './SettingsDialog'
+import type { TabSummary } from '../../shared/tabs-api'
 
 interface AppFrameProps {
   /** resolved before first paint (main.tsx) so home never flashes under the overlay */
@@ -15,17 +17,20 @@ export function AppFrame({ initialOnboardingSeen }: AppFrameProps) {
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => {
-    const applyTabs = (tabs: Awaited<ReturnType<typeof window.aiOfficeTabs.list>>) => {
-      const active = tabs.find((tab) => tab.active)
+    const { tabs } = shellPlatform()
+    const applyTabs = (open: TabSummary[]) => {
+      const active = open.find((tab) => tab.active)
       setHomeActive(!active || active.kind === 'home')
     }
-    void window.aiOfficeTabs.list().then(applyTabs)
-    return window.aiOfficeTabs.onChanged(applyTabs)
+    void tabs.list().then(applyTabs)
+    return tabs.onChanged(applyTabs)
   }, [])
 
   const finishOnboarding = () => {
     setShowOnboarding(false)
-    void window.aiOffice.setOnboardingSeen().catch(() => {})
+    void shellPlatform()
+      .onboarding.markSeen()
+      .catch(() => {})
   }
 
   return (

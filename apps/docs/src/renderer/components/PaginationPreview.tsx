@@ -28,6 +28,7 @@ import {
   type SectionHfHeights,
 } from '../pagination'
 import { estimateHfHeight, FOOTNOTE_SEPARATOR_H } from '../line-metrics'
+import { printPageName } from '../print'
 import { toRoman } from '../note-format'
 import { useI18n } from '../i18n/locale'
 import { HeaderFooterArea } from './HeaderFooterArea'
@@ -74,6 +75,7 @@ export function PaginationPreview({
   endnoteItems,
   sectionHfOverride,
   onExportPdf,
+  onPrint,
   onClose,
 }: {
   /** Canvas geometry (final section): for the measurement origin / clone width */
@@ -102,6 +104,12 @@ export function PaginationPreview({
    * rather than showing one that would do nothing.
    */
   onExportPdf: (() => void) | null
+  /**
+   * Print these pages through the host's print flow, or `null` on a host the
+   * renderer does not drive printing on (the Electron build, where Print is the
+   * native menu's). Null hides the button rather than showing an inert one.
+   */
+  onPrint: (() => void) | null
   onClose: () => void
 }) {
   const { t } = useI18n()
@@ -311,6 +319,15 @@ export function PaginationPreview({
             {t('appExportPdf')}
           </button>
         )}
+        {/* Print lives here rather than in the ribbon because this is the only
+            surface where what is on screen is what comes out: one .pv-page per
+            sheet, each at its own section's paper size, with the header/footer
+            variant that page actually gets. */}
+        {onPrint && (
+          <button className="pv-close" title={t('appPvPrintTip')} onClick={onPrint}>
+            {t('appPrint')}
+          </button>
+        )}
         <button className="pv-close" onClick={onClose}>
           {t('appClose')}
         </button>
@@ -344,6 +361,12 @@ export function PaginationPreview({
                 {
                   width: pageW,
                   height: pageH,
+                  // Which `@page` rule this sheet prints under, so a mixed-paper
+                  // document keeps each section's paper size in the browser (see
+                  // print.ts). Set unconditionally: with no `@page` rules in the
+                  // stylesheet the property names nothing, and Electron's
+                  // printToPDF ignores CSS page geometry outright.
+                  page: printPageName({ width: pageW, height: pageH }),
                   '--pv-page-h': `${pageH}px`,
                   '--page-w': `${pageW}px`,
                   '--page-h': `${pageH}px`,

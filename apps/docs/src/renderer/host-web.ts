@@ -22,6 +22,7 @@ import {
   browserLanguageEnv,
   browserMultiFilePicker,
   createIndexedDbHandleStore,
+  DOCUMENT_DB_NAME,
   createWebAiPort,
   createWebAttachmentsPort,
   createWebLanguagePort,
@@ -35,6 +36,10 @@ import {
 import { t } from './i18n/locale'
 import type { CreateDocsPlatform } from './platform'
 import { createWebDocsPlatform } from './platform-web'
+// Print rules that only make sense for `window.print()`. Imported here rather
+// than from main.tsx so they follow the `@host` alias into the web bundle alone
+// and cannot reach the print CSS Electron's printToPDF renders through.
+import './print-web.css'
 
 /**
  * Formats a browser can extract text from, beyond plain text.
@@ -122,7 +127,10 @@ export const createDocsPlatform: CreateDocsPlatform = async () => {
   const store = new WebDocumentStore({
     // Handles are structured-cloneable, so IndexedDB stores the handle itself
     // and a document survives a reload without copying bytes or inventing a path.
-    handles: createIndexedDbHandleStore(),
+    // The database name is per-app on purpose: the store's list() is an
+    // unfiltered getAll(), so a shared database would put this app's documents
+    // in another app's recent list when both run on the same origin.
+    handles: createIndexedDbHandleStore(indexedDB, `${DOCUMENT_DB_NAME}-docs`),
     pickers,
     fileTypes: DOCX_FILE_TYPES,
     pickerId: 'genoffice-docx',

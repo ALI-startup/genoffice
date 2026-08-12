@@ -285,6 +285,8 @@ export const appStrings = defineStrings({
     appPaginationPreview: '分页预览',
     appTotalPagesN: '共 {n} 页',
     appPvHint: '只读快照,编辑后请重新打开 · Esc 关闭',
+    appPrint: '打印',
+    appPvPrintTip: '通过浏览器打印这些页面,每个预览页对应一张纸',
     appPvExportTip: '按预览逐页导出,页眉页脚/页码与所见一致',
     // Styles pane
     appStylesTitle: '样式',
@@ -560,6 +562,8 @@ export const appStrings = defineStrings({
     appPaginationPreview: 'Pagination Preview',
     appTotalPagesN: '{n} pages',
     appPvHint: 'Read-only snapshot; reopen after editing · Esc to close',
+    appPrint: 'Print',
+    appPvPrintTip: 'Prints these pages through the browser; each preview page is one sheet',
     appPvExportTip:
       'Exports page by page as previewed; headers, footers, and page numbers match what you see',
     appStylesTitle: 'Styles',
@@ -866,6 +870,9 @@ export const appStrings = defineStrings({
     appPaginationPreview: 'ページ プレビュー',
     appTotalPagesN: '全 {n} ページ',
     appPvHint: '読み取り専用スナップショット。編集後は再度開いてください · Esc で閉じる',
+    appPrint: '印刷',
+    appPvPrintTip:
+      'ブラウザーでこれらのページを印刷します。プレビュー 1 ページが用紙 1 枚になります',
     appPvExportTip:
       'プレビューどおりにページ単位でエクスポートします。ヘッダー/フッターとページ番号は表示と一致します',
     // Styles pane
@@ -1173,6 +1180,8 @@ export const appStrings = defineStrings({
     appPaginationPreview: '페이지 미리 보기',
     appTotalPagesN: '전체 {n}페이지',
     appPvHint: '읽기 전용 스냅숏입니다. 편집 후 다시 여세요 · Esc로 닫기',
+    appPrint: '인쇄',
+    appPvPrintTip: '브라우저로 이 페이지를 인쇄합니다. 미리 보기 한 페이지가 용지 한 장입니다',
     appPvExportTip:
       '미리 보기 그대로 페이지 단위로 내보냅니다. 머리글/바닥글과 페이지 번호가 화면과 일치합니다',
     // Styles pane
@@ -1459,6 +1468,9 @@ export const appStrings = defineStrings({
     appPaginationPreview: 'Aperçu de la pagination',
     appTotalPagesN: '{n} pages',
     appPvHint: 'Instantané en lecture seule ; rouvrez après modification · Échap pour fermer',
+    appPrint: 'Imprimer',
+    appPvPrintTip:
+      'Imprime ces pages via le navigateur ; chaque page de l’aperçu correspond à une feuille',
     appPvExportTip:
       "Exporte page par page tel qu'affiché ; en-têtes, pieds de page et numéros de page conformes à l'aperçu",
     appStylesTitle: 'Styles',
@@ -1747,6 +1759,8 @@ export const appStrings = defineStrings({
     appTotalPagesN: '{n} Seiten',
     appPvHint:
       'Schreibgeschützte Momentaufnahme; nach der Bearbeitung erneut öffnen · Esc zum Schließen',
+    appPrint: 'Drucken',
+    appPvPrintTip: 'Druckt diese Seiten über den Browser; jede Vorschauseite ergibt ein Blatt',
     appPvExportTip:
       'Exportiert Seite für Seite wie in der Vorschau; Kopf-/Fußzeilen und Seitenzahlen entsprechen der Anzeige',
     appStylesTitle: 'Formatvorlagen',
@@ -2031,6 +2045,9 @@ export const appStrings = defineStrings({
     appPaginationPreview: 'Vista previa de paginación',
     appTotalPagesN: '{n} páginas',
     appPvHint: 'Instantánea de solo lectura; vuelva a abrirla después de editar · Esc para cerrar',
+    appPrint: 'Imprimir',
+    appPvPrintTip:
+      'Imprime estas páginas mediante el navegador; cada página de la vista previa es una hoja',
     appPvExportTip:
       'Exporta página por página tal como se muestra; los encabezados, pies de página y números de página coinciden con lo que ve',
     appStylesTitle: 'Estilos',
@@ -2309,6 +2326,8 @@ export const appStrings = defineStrings({
     appPaginationPreview: 'ตัวอย่างการแบ่งหน้า',
     appTotalPagesN: 'ทั้งหมด {n} หน้า',
     appPvHint: 'สแนปช็อตแบบอ่านอย่างเดียว เปิดใหม่หลังแก้ไข · กด Esc เพื่อปิด',
+    appPrint: 'พิมพ์',
+    appPvPrintTip: 'พิมพ์หน้าเหล่านี้ผ่านเบราว์เซอร์ หนึ่งหน้าตัวอย่างเท่ากับกระดาษหนึ่งแผ่น',
     appPvExportTip: 'ส่งออกทีละหน้าตามตัวอย่าง หัวกระดาษ/ท้ายกระดาษและหมายเลขหน้าตรงกับที่เห็น',
     appStylesTitle: 'สไตล์',
     appParagraphStyles: 'สไตล์ย่อหน้า',
@@ -2588,6 +2607,9 @@ export const appStrings = defineStrings({
     appPaginationPreview: 'Pratinjau Paginasi',
     appTotalPagesN: '{n} halaman',
     appPvHint: 'Cuplikan baca-saja; buka kembali setelah mengedit · Esc untuk menutup',
+    appPrint: 'Cetak',
+    appPvPrintTip:
+      'Mencetak halaman ini melalui peramban; setiap halaman pratinjau menjadi satu lembar',
     appPvExportTip:
       'Mengekspor halaman demi halaman sesuai pratinjau; header, footer, dan nomor halaman sama dengan yang terlihat',
     appStylesTitle: 'Gaya',
@@ -2871,6 +2893,8 @@ export const appStrings = defineStrings({
     appPaginationPreview: 'Предварительный просмотр страниц',
     appTotalPagesN: 'Всего страниц: {n}',
     appPvHint: 'Снимок только для чтения; после правки откройте заново · Esc — закрыть',
+    appPrint: 'Печать',
+    appPvPrintTip: 'Печатает эти страницы через браузер; каждая страница предпросмотра — один лист',
     appPvExportTip:
       'Экспорт постранично, как в предварительном просмотре; колонтитулы и номера страниц соответствуют отображению',
     appStylesTitle: 'Стили',
@@ -3148,6 +3172,8 @@ export const appStrings = defineStrings({
     appPaginationPreview: 'معاينة ترقيم الصفحات',
     appTotalPagesN: '{n} صفحة إجمالاً',
     appPvHint: 'لقطة للقراءة فقط؛ أعد الفتح بعد التحرير · Esc للإغلاق',
+    appPrint: 'طباعة',
+    appPvPrintTip: 'يطبع هذه الصفحات عبر المتصفح؛ كل صفحة معاينة تساوي ورقة واحدة',
     appPvExportTip:
       'تصدير صفحة بصفحة كما في المعاينة؛ الرؤوس والتذييلات وأرقام الصفحات مطابقة لما تراه',
     appStylesTitle: 'الأنماط',
@@ -3428,6 +3454,9 @@ export const appStrings = defineStrings({
     appPaginationPreview: 'Visualização de paginação',
     appTotalPagesN: '{n} páginas',
     appPvHint: 'Instantâneo somente leitura; reabra após editar · Esc para fechar',
+    appPrint: 'Imprimir',
+    appPvPrintTip:
+      'Imprime estas páginas pelo navegador; cada página da pré-visualização é uma folha',
     appPvExportTip:
       'Exporta página por página conforme a visualização; cabeçalhos, rodapés e números de página correspondem ao que você vê',
     appStylesTitle: 'Estilos',
@@ -3708,6 +3737,9 @@ export const appStrings = defineStrings({
     appPaginationPreview: 'Anteprima impaginazione',
     appTotalPagesN: '{n} pagine',
     appPvHint: 'Istantanea in sola lettura; riapri dopo le modifiche · Esc per chiudere',
+    appPrint: 'Stampa',
+    appPvPrintTip:
+      'Stampa queste pagine tramite il browser; ogni pagina dell’anteprima è un foglio',
     appPvExportTip:
       "Esporta pagina per pagina come nell'anteprima; intestazioni, piè di pagina e numeri di pagina corrispondono a ciò che vedi",
     appStylesTitle: 'Stili',
@@ -3990,6 +4022,8 @@ export const appStrings = defineStrings({
     appPaginationPreview: 'Podgląd podziału na strony',
     appTotalPagesN: 'Stron: {n}',
     appPvHint: 'Migawka tylko do odczytu; po edycji otwórz ponownie · Esc — zamknij',
+    appPrint: 'Drukuj',
+    appPvPrintTip: 'Drukuje te strony przez przeglądarkę; każda strona podglądu to jedna kartka',
     appPvExportTip:
       'Eksportuje strona po stronie zgodnie z podglądem; nagłówki, stopki i numery stron odpowiadają temu, co widzisz',
     appStylesTitle: 'Style',
@@ -4277,6 +4311,8 @@ export const appStrings = defineStrings({
     appPaginationPreview: 'Pagineringsvoorbeeld',
     appTotalPagesN: "{n} pagina's",
     appPvHint: 'Alleen-lezen momentopname; opnieuw openen na bewerken · Esc om te sluiten',
+    appPrint: 'Afdrukken',
+    appPvPrintTip: 'Drukt deze pagina’s af via de browser; elke voorbeeldpagina is één vel',
     appPvExportTip:
       'Exporteert pagina voor pagina zoals in het voorbeeld; kop- en voetteksten en paginanummers komen overeen met wat je ziet',
     appStylesTitle: 'Stijlen',
@@ -4558,6 +4594,9 @@ export const appStrings = defineStrings({
     appPaginationPreview: 'Pratonton Penomboran Halaman',
     appTotalPagesN: '{n} halaman',
     appPvHint: 'Snapshot baca sahaja; buka semula selepas menyunting · Esc untuk tutup',
+    appPrint: 'Cetak',
+    appPvPrintTip:
+      'Mencetak halaman ini melalui pelayar; setiap halaman pratonton ialah satu helai',
     appPvExportTip:
       'Eksport halaman demi halaman seperti pratonton; pengepala, pengaki dan nombor halaman sepadan dengan yang dilihat',
     appStylesTitle: 'Gaya',
@@ -4830,6 +4869,8 @@ export const appStrings = defineStrings({
     appPaginationPreview: 'תצוגה מקדימה של עימוד',
     appTotalPagesN: '{n} עמודים בסך הכול',
     appPvHint: 'תמונת מצב לקריאה בלבד; פתחו מחדש לאחר עריכה · Esc לסגירה',
+    appPrint: 'הדפסה',
+    appPvPrintTip: 'מדפיס את העמודים האלה דרך הדפדפן; כל עמוד בתצוגה המקדימה הוא גיליון אחד',
     appPvExportTip:
       'מייצא עמוד אחר עמוד כפי שמוצג בתצוגה המקדימה; כותרות עליונות, תחתונות ומספרי עמודים תואמים למה שרואים',
     appStylesTitle: 'סגנונות',
@@ -5108,6 +5149,8 @@ export const appStrings = defineStrings({
     appPaginationPreview: 'पृष्ठांकन पूर्वावलोकन',
     appTotalPagesN: 'कुल {n} पृष्ठ',
     appPvHint: 'केवल-पठन स्नैपशॉट; संपादन के बाद फिर से खोलें · बंद करने के लिए Esc',
+    appPrint: 'प्रिंट करें',
+    appPvPrintTip: 'इन पृष्ठों को ब्राउज़र से प्रिंट करता है; पूर्वावलोकन का हर पृष्ठ एक शीट है',
     appPvExportTip:
       'पूर्वावलोकन के अनुसार पृष्ठ-दर-पृष्ठ निर्यात करता है; शीर्षलेख, पादलेख और पृष्ठ संख्याएँ वैसी ही रहती हैं जैसी आप देखते हैं',
     appStylesTitle: 'शैलियाँ',
@@ -5375,6 +5418,8 @@ export const appStrings = defineStrings({
     appPaginationPreview: '分頁預覽',
     appTotalPagesN: '共 {n} 頁',
     appPvHint: '唯讀快照,編輯後請重新開啟 · Esc 關閉',
+    appPrint: '列印',
+    appPvPrintTip: '透過瀏覽器列印這些頁面,每個預覽頁對應一張紙',
     appPvExportTip: '依預覽逐頁匯出,頁首頁尾/頁碼與所見一致',
     appStylesTitle: '樣式',
     appParagraphStyles: '段落樣式',

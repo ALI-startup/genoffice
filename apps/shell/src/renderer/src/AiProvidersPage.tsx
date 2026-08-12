@@ -9,6 +9,7 @@ import type {
 import { AI_PROVIDER_DEFINITIONS } from '../../shared/ai-settings-api'
 import { ProviderList, ProviderModeTabs } from './AiProviderNavigation'
 import { useI18n } from './locale'
+import { shellPlatform } from './platform'
 import { ProviderIcon } from './ProviderIcon'
 
 const CUSTOM_MODEL_VALUE = '__genoffice_custom_model__'
@@ -66,6 +67,11 @@ function supportsCapability(
 
 export function AiProvidersPage() {
   const { t } = useI18n()
+  // Reading the configuration and editing it are separate capabilities: a host
+  // can report which providers are configured without being able to store a
+  // credential. `editor` is null on such a host, and every control that would
+  // write, probe or clear is disabled rather than present-but-inert.
+  const { aiSettings, aiSettingsEditor: editor } = shellPlatform()
   const [snapshot, setSnapshot] = useState<AiSettingsSnapshot>(FALLBACK_SNAPSHOT)
   const [capability, setCapability] = useState<AiProviderCapability>('text')
   const [selectedId, setSelectedId] = useState('genspark')
@@ -134,7 +140,7 @@ export function AiProvidersPage() {
 
   useEffect(() => {
     let active = true
-    void window.aiOfficeAiSettings
+    void aiSettings
       .get()
       .then((next) => {
         if (!active) return
@@ -176,11 +182,12 @@ export function AiProvidersPage() {
   }
 
   const discover = async (quiet = false, operation: 'discover' | 'test' = 'discover') => {
+    if (!editor) return
     setTesting(true)
     setActiveOperation(operation)
     if (!quiet) setStatus(null)
     try {
-      const result = await window.aiOfficeAiSettings.test({
+      const result = await editor.test({
         providerId: selectedId,
         capability,
         operation,
@@ -201,15 +208,17 @@ export function AiProvidersPage() {
   }
 
   const cancelTest = async () => {
+    if (!editor) return
     try {
-      await window.aiOfficeAiSettings.cancelTest()
+      await editor.cancelTest()
     } catch {
       setStatus({ ok: false, message: t('aiCancelTestFailed') })
     }
   }
 
   useEffect(() => {
-    if (!loaded || !definition.supportsModelDiscovery || !selectedConfig.credentialSet) return
+    if (!editor || !loaded || !definition.supportsModelDiscovery || !selectedConfig.credentialSet)
+      return
     // Runware's merged catalog is large. Keep it manual so opening settings never starts a crawl.
     if (selectedId === 'runware') return
     const key = `${capability}:${selectedId}`
@@ -228,6 +237,7 @@ export function AiProvidersPage() {
   }
 
   const save = async () => {
+    if (!editor) return
     setSaving(true)
     setStatus(null)
     try {
@@ -235,7 +245,7 @@ export function AiProvidersPage() {
         capability === 'text'
           ? { activeProvider: selectedId, activeModel: effectiveModel }
           : { imageProvider: selectedId, imageModel: effectiveModel }
-      const next = await window.aiOfficeAiSettings.save({
+      const next = await editor.save({
         ...selection,
         provider: {
           providerId: selectedId,
@@ -259,9 +269,10 @@ export function AiProvidersPage() {
   }
 
   const clearCredential = async () => {
+    if (!editor) return
     setSaving(true)
     try {
-      const next = await window.aiOfficeAiSettings.save({
+      const next = await editor.save({
         provider: {
           providerId: selectedId,
           capability,
@@ -282,7 +293,7 @@ export function AiProvidersPage() {
 
   const requiresNewCredential = definition.requiresApiKey && !selectedConfig.credentialSet
   const saveDisabled =
-    saving || testing || !effectiveModel || (requiresNewCredential && !apiKey.trim())
+    !editor || saving || testing || !effectiveModel || (requiresNewCredential && !apiKey.trim())
   const activeProviderId = capability === 'text' ? snapshot.activeProvider : snapshot.imageProvider
 
   return (
@@ -373,7 +384,9 @@ export function AiProvidersPage() {
                     type="button"
                     className="model-refresh-button"
                     onClick={() => void discover(false)}
-                    disabled={testing || (!selectedConfig.credentialSet && !apiKey.trim())}
+                    disabled={
+                      !editor || testing || (!selectedConfig.credentialSet && !apiKey.trim())
+                    }
                     aria-label={t('aiRefreshModels')}
                     title={t('aiRefreshModels')}
                   >
@@ -458,9 +471,14 @@ export function AiProvidersPage() {
                     }
                     autoComplete="off"
                     spellCheck={false}
+                    readOnly={!editor}
                   />
                   {selectedConfig.credentialSet && (
-                    <button type="button" onClick={() => void clearCredential()} disabled={saving}>
+                    <button
+                      type="button"
+                      onClick={() => void clearCredential()}
+                      disabled={!editor || saving}
+                    >
                       {t('aiRemoveKey')}
                     </button>
                   )}
@@ -492,6 +510,7 @@ export function AiProvidersPage() {
                 className="settings-button secondary"
                 onClick={() => (testing ? void cancelTest() : void discover(false, 'test'))}
                 disabled={
+                  !editor ||
                   saving ||
                   (!testing &&
                     (!effectiveModel || (!selectedConfig.credentialSet && !apiKey.trim())))

@@ -113,8 +113,8 @@ export function createDocsWindowPort(bridge: DesktopApi): DocsWindowPort {
  * PDF export over the Electron bridge.
  *
  * Non-null because this host really does have a PDF pipeline: the main process
- * renders with Electron's `printToPDF` and merges fragments with pdf-lib. A web
- * host will supply `null` here until it has a renderer-side exporter.
+ * renders with Electron's `printToPDF` and merges fragments with pdf-lib. The web
+ * host supplies `null`, and prints instead.
  */
 export function createDocsPdfExportPort(bridge: DesktopApi): DocsPdfExportPort {
   return {
@@ -128,10 +128,18 @@ export function createDocsPdfExportPort(bridge: DesktopApi): DocsPdfExportPort {
 }
 
 /**
- * Every one of the four nullable capabilities is non-null here, which is what
- * makes the desktop app's behaviour identical to before the seam existed: the
- * shell owns a tab strip, the main process owns the search client and the gsk
- * CLI, and PDF export goes through `printToPDF`.
+ * Four of the five nullable capabilities are non-null here, which is what makes
+ * the desktop app's behaviour identical to before the seam existed: the shell owns
+ * a tab strip, the main process owns the search client and the gsk CLI, and PDF
+ * export goes through `printToPDF`.
+ *
+ * The fifth, `print`, is null — the one place this host declares *less* than the
+ * browser one. Printing on the desktop is the native menu's, answered by
+ * `webContents.print()` in the main process; no renderer code has ever started a
+ * print here, `DesktopApi.print()` has no call site, and the `'print'` MenuCommand
+ * reaches no case in App.tsx's switch. A port here would have to invent a second
+ * print path, so the honest value is null and the desktop keeps exactly the one
+ * print it had.
  */
 export function createElectronDocsPlatform(bridge: DesktopApi): DocsPlatform {
   return {
@@ -144,5 +152,6 @@ export function createElectronDocsPlatform(bridge: DesktopApi): DocsPlatform {
     search: createDocsSearchPort(bridge),
     genspark: createDocsGensparkPort(bridge),
     pdfExport: createDocsPdfExportPort(bridge),
+    print: null,
   }
 }

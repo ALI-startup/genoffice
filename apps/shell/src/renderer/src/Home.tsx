@@ -4,25 +4,12 @@ import iconDocx from './assets/file-docx.svg'
 import iconXlsx from './assets/file-xlsx.svg'
 import iconPptx from './assets/file-pptx.svg'
 import iconPdf from './assets/file-pdf.svg'
-import type {
-  AccountStatus,
-  HomeApi,
-  ProjectHomeApi,
-  ProjectSummaryEntry,
-  RecentEntry,
-} from '../../shared/home-api'
+import type { AccountStatus, ProjectSummaryEntry } from '../../shared/home-api'
 import { fileCountKey, visiblePageCount } from './counts'
 import { useI18n } from './locale'
 import type { I18n, StringKey } from './locale'
-import type { AiSettingsApi } from '../../shared/ai-settings-api'
-
-declare global {
-  interface Window {
-    aiOffice: HomeApi
-    aiOfficeProject?: ProjectHomeApi
-    aiOfficeAiSettings: AiSettingsApi
-  }
-}
+import { shellPlatform } from './platform'
+import type { FileEntry, FileRef } from './platform'
 
 /** page size of the home list; scrolling to the bottom auto-loads the next page */
 const PAGE_SIZE = 50
@@ -86,24 +73,13 @@ function formatSize(bytes: number): string {
   return `${Math.max(1, Math.round(bytes / 1024))} KB`
 }
 
-function parentDir(path: string): string {
-  const parts = path.split(/[\\/]/).filter(Boolean)
-  return parts[parts.length - 2] ?? ''
-}
-
-function fileName(path: string): string {
-  return path.split(/[\\/]/).pop() ?? path
-}
-
-function baseName(entry: RecentEntry): string {
+/**
+ * The rename box seeds itself with the name minus its extension. This parses a
+ * display *name*, not a ref, so it stays in the renderer; the host supplies the
+ * folder label and the full location as their own fields.
+ */
+function baseName(entry: FileEntry): string {
   return entry.ext ? entry.name.slice(0, -(entry.ext.length + 1)) : entry.name
-}
-
-// ── Project hooks ─────────────────────────────────────────
-
-/** whether we are inside the shell (aiOfficeProject API available) */
-function hasProjectApi(): boolean {
-  return typeof window.aiOfficeProject !== 'undefined'
 }
 
 const FILTERS: { key: string; label: StringKey }[] = [
@@ -125,6 +101,9 @@ interface ProjectPanelProps {
 
 function ProjectPanel({ projects, selectedId, onSelect, onRefresh }: ProjectPanelProps) {
   const { t } = useI18n()
+  // Only rendered when the host has a projects port; the optional calls below
+  // are for the type, not for a capability that might silently do nothing.
+  const projectsPort = shellPlatform().projects
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState('')
   // open menu id + fixed-position anchor (viewport coords), so the popup can
@@ -159,7 +138,7 @@ function ProjectPanel({ projects, selectedId, onSelect, onRefresh }: ProjectPane
     setCreating(false)
     setNewName('')
     if (!name) return
-    await window.aiOfficeProject?.createProject(name)
+    await projectsPort?.create(name)
     onRefresh()
   }
 
@@ -169,7 +148,7 @@ function ProjectPanel({ projects, selectedId, onSelect, onRefresh }: ProjectPane
     const id = renaming.id
     setRenaming(null)
     if (!name) return
-    await window.aiOfficeProject?.renameProject(id, name)
+    await projectsPort?.rename(id, name)
     onRefresh()
   }
 
@@ -185,7 +164,7 @@ function ProjectPanel({ projects, selectedId, onSelect, onRefresh }: ProjectPane
     const id = confirmDeleteId
     setConfirmDeleteId(null)
     if (!id) return
-    await window.aiOfficeProject?.deleteProject(id)
+    await projectsPort?.delete(id)
     if (selectedId === id) onSelect(null)
     onRefresh()
   }
@@ -421,6 +400,7 @@ const LANG_OPTIONS = [
 
 function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
   const { lang, setLang, t } = useI18n()
+  const { account, app } = shellPlatform()
   const [status, setStatus] = useState<AccountStatus | null>(null)
   const [waiting, setWaiting] = useState(false)
   // incremented on login retry, resetting the polling timer
@@ -446,25 +426,25 @@ function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
   // query login state + app version once on mount
   useEffect(() => {
     let alive = true
-    void window.aiOffice.accountStatus?.().then((s) => {
+    void account.status().then((s) => {
       if (alive) setStatus(s)
     })
-    void window.aiOffice.getAppVersion?.().then((v) => {
+    void app.version().then((v) => {
       if (alive && v) setAppVersion(v)
     })
     return () => {
       alive = false
     }
-  }, [])
+  }, [account, app])
 
   // login progress pushed from main (gsk login CLI output)
   useEffect(() => {
-    const off = window.aiOffice.onAccountLogin?.((ev) => {
+    const off = account.onLoginProgress((ev) => {
       if (ev.phase === 'url') {
         if (ev.url) setAuthUrl(ev.url)
         if (ev.expiresInSec) loginDeadline.current = Date.now() + ev.expiresInSec * 1000
       } else if (ev.phase === 'success') {
-        void window.aiOffice.accountStatus().then((s) => {
+        void account.status().then((s) => {
           if (s.loggedIn) {
             setStatus(s)
             setWaiting(false)
@@ -480,13 +460,13 @@ function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
       }
     })
     return off
-  }, [])
+  }, [account])
 
   // config-file polling stays as the fallback success path (works even if progress events are lost)
   useEffect(() => {
     if (!waiting) return
     const timer = setInterval(() => {
-      void window.aiOffice.accountStatus().then((s) => {
+      void account.status().then((s) => {
         if (s.loggedIn) {
           setStatus(s)
           setWaiting(false)
@@ -499,7 +479,7 @@ function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
       })
     }, LOGIN_POLL_MS)
     return () => clearInterval(timer)
-  }, [waiting, loginNonce])
+  }, [account, waiting, loginNonce])
 
   // close the menu on outside click
   useEffect(() => {
@@ -578,7 +558,7 @@ function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
     loginDeadline.current = Date.now() + LOGIN_MAX_WAIT_MS
     setLoginNonce((n) => n + 1)
     closeMenu()
-    void window.aiOffice.accountLogin().then((launched) => {
+    void account.login().then((launched) => {
       if (!launched) {
         setWaiting(false)
         setLoginError('launch')
@@ -586,7 +566,7 @@ function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
     })
   }
 
-  const openLoginUrl = () => void window.aiOffice.openLoginUrl?.()
+  const openLoginUrl = () => void account.openLoginUrl()
 
   const copyLoginUrl = () => {
     if (!authUrl) return
@@ -757,7 +737,7 @@ function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
               disabled={loggingOut}
               onClick={() => {
                 setLoggingOut(true)
-                void window.aiOffice.accountLogout().then(() => {
+                void account.logout().then(() => {
                   setLoggingOut(false)
                   closeMenu()
                   setStatus({ loggedIn: false })
@@ -861,8 +841,9 @@ function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
 export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
   const i18n = useI18n()
   const { t, lang } = i18n
+  const { files, launcher, projects: projectsPort, account } = shellPlatform()
   // ── Paged list state (rows loaded for the current view + filter) ──
-  const [entries, setEntries] = useState<RecentEntry[]>([])
+  const [entries, setEntries] = useState<FileEntry[]>([])
   /** total count under the current view + filter (not just the loaded rows) */
   const [listTotal, setListTotal] = useState(0)
   /** sidebar Recent / Starred counts under the active type filter */
@@ -870,10 +851,12 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
   const [loadingMore, setLoadingMore] = useState(false)
   const [view, setView] = useState<'recent' | 'starred'>('recent')
   const [filter, setFilter] = useState('all')
-  const [rowMenu, setRowMenu] = useState<string | null>(null)
-  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
-  const [renaming, setRenaming] = useState<{ path: string; value: string } | null>(null)
-  const [confirmDelete, setConfirmDelete] = useState<string[] | null>(null)
+  const [rowMenu, setRowMenu] = useState<FileRef | null>(null)
+  const [selected, setSelected] = useState<ReadonlySet<FileRef>>(new Set())
+  const [renaming, setRenaming] = useState<{ ref: FileRef; value: string } | null>(null)
+  // Holds the rows themselves, not their refs: the dialog lists the files by
+  // name, and a name is not something a ref can be turned into.
+  const [confirmDelete, setConfirmDelete] = useState<FileEntry[] | null>(null)
   // name in the greeting; omitted when logged out
   const [accountName, setAccountName] = useState('')
   const [greetAskKey] = useState(
@@ -881,17 +864,17 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
   )
 
   useEffect(() => {
-    void window.aiOffice.accountStatus?.().then((s) => {
+    void account.status().then((s) => {
       const name = s?.loggedIn ? (s.email ?? '').split('@')[0] : ''
       if (name) setAccountName(name[0].toUpperCase() + name.slice(1))
     })
-  }, [])
+  }, [account])
 
   // ── Project state ──
   const [projects, setProjects] = useState<ProjectSummaryEntry[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
 
-  const projectMode = hasProjectApi()
+  const projectMode = projectsPort !== null
 
   // ── Paged loading ──
   // stale responses are dropped via a request sequence number (when views/filters switch quickly)
@@ -904,8 +887,8 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
     const seq = ++requestSeq.current
     const ext = filter === 'all' ? undefined : filter
     const limit = keepCount ? Math.max(entriesLen.current, PAGE_SIZE) : PAGE_SIZE
-    const primary = view === 'recent' ? window.aiOffice.recents : window.aiOffice.starred
-    const secondary = view === 'recent' ? window.aiOffice.starred : window.aiOffice.recents
+    const primary = view === 'recent' ? files.recents : files.starred
+    const secondary = view === 'recent' ? files.starred : files.recents
     void primary({ offset: 0, limit, ext }).then((page) => {
       if (seq !== requestSeq.current) return
       setEntries(page.entries)
@@ -925,8 +908,8 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
           : { ...prev, recent: visiblePageCount(page) },
       )
     })
-    if (projectMode) {
-      void window.aiOfficeProject!.listProjects().then(setProjects)
+    if (projectsPort) {
+      void projectsPort.list().then(setProjects)
     }
   }
   const reloadRef = useRef(reload)
@@ -960,7 +943,7 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
     setLoadingMore(true)
     const seq = requestSeq.current
     const ext = filter === 'all' ? undefined : filter
-    const api = view === 'recent' ? window.aiOffice.recents : window.aiOffice.starred
+    const api = view === 'recent' ? files.recents : files.starred
     void api({ offset: entriesLen.current, limit: PAGE_SIZE, ext }).then((page) => {
       setLoadingMore(false)
       if (seq !== requestSeq.current) return
@@ -1010,8 +993,8 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
 
   // ── Project files state ────────────────────────────────
 
-  const [projectFileEntries, setProjectFileEntries] = useState<RecentEntry[]>([])
-  const [moveFileMenu, setMoveFileMenu] = useState<string | null>(null)
+  const [projectFileEntries, setProjectFileEntries] = useState<FileEntry[]>([])
+  const [moveFileMenu, setMoveFileMenu] = useState<FileRef | null>(null)
   // submenu opens rightward by default; flips left when the window edge is too close
   const [moveMenuFlip, setMoveMenuFlip] = useState(false)
   // hover-open/close delays: avoid flashing the submenu while the pointer passes
@@ -1021,9 +1004,9 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
     close: null,
   })
 
-  const openMoveMenu = (path: string) => {
+  const openMoveMenu = (ref: FileRef) => {
     setMoveMenuFlip(false)
-    setMoveFileMenu(path)
+    setMoveFileMenu(ref)
   }
 
   // ref runs pre-paint, so measuring the real width (long project names exceed
@@ -1044,21 +1027,22 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
   const [bulkMoveMenu, setBulkMoveMenu] = useState(false)
 
   useEffect(() => {
-    if (!projectMode || !selectedProjectId) {
+    if (!projectsPort || !selectedProjectId) {
       setProjectFileEntries([])
       return
     }
     let active = true
-    const api = window.aiOfficeProject!
-    void api.listFiles(selectedProjectId).then(async (paths) => {
-      const stats = await window.aiOffice.statPaths(paths)
+    // Refs in, rows out: the project's file handles never become strings the
+    // renderer inspects, they go straight back to the host to be described.
+    void projectsPort.listFiles(selectedProjectId).then(async (refs) => {
+      const stats = await files.statFiles(refs)
       if (!active) return
       setProjectFileEntries(stats.sort((a, b) => b.mtimeMs - a.mtimeMs))
     })
     return () => {
       active = false
     }
-  }, [projectMode, selectedProjectId, projectTick])
+  }, [files, projectsPort, selectedProjectId, projectTick])
 
   // the submenu lives inside the row menu: when that closes, drop the stale
   // submenu state and any pending hover timers so it doesn't reopen expanded
@@ -1099,16 +1083,14 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
     }
   }, [bulkMoveMenu])
 
-  // ── Plain view (no project selected): filtering runs in the main process; entries is the visible list ──
-  const selectedPaths = entries.filter((e) => selected.has(e.path)).map((e) => e.path)
-  const allSelected = entries.length > 0 && selectedPaths.length === entries.length
+  // ── Plain view (no project selected): filtering runs in the host; entries is the visible list ──
+  const selectedEntries = entries.filter((e) => selected.has(e.ref))
+  const allSelected = entries.length > 0 && selectedEntries.length === entries.length
 
-  // project view shares the same `selected` set (keyed by path)
-  const projSelectedPaths = projectFileEntries
-    .filter((e) => selected.has(e.path))
-    .map((e) => e.path)
+  // project view shares the same `selected` set (keyed by ref)
+  const projSelectedEntries = projectFileEntries.filter((e) => selected.has(e.ref))
   const projAllSelected =
-    projectFileEntries.length > 0 && projSelectedPaths.length === projectFileEntries.length
+    projectFileEntries.length > 0 && projSelectedEntries.length === projectFileEntries.length
 
   const changeView = (next: 'recent' | 'starred') => {
     setView(next)
@@ -1122,100 +1104,100 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
     setRowMenu(null)
   }
 
-  const toggleSelect = (path: string, on: boolean) => {
+  const toggleSelect = (ref: FileRef, on: boolean) => {
     setSelected((prev) => {
       const next = new Set(prev)
-      if (on) next.add(path)
-      else next.delete(path)
+      if (on) next.add(ref)
+      else next.delete(ref)
       return next
     })
   }
 
   const toggleSelectAll = () => {
-    setSelected(allSelected ? new Set() : new Set(entries.map((e) => e.path)))
+    setSelected(allSelected ? new Set() : new Set(entries.map((e) => e.ref)))
   }
 
   const toggleSelectAllProject = () => {
-    setSelected(projAllSelected ? new Set() : new Set(projectFileEntries.map((e) => e.path)))
+    setSelected(projAllSelected ? new Set() : new Set(projectFileEntries.map((e) => e.ref)))
   }
 
-  const toggleStar = (path: string) => {
-    void window.aiOffice.toggleStar(path).then(refresh)
+  const toggleStar = (ref: FileRef) => {
+    void files.toggleStar(ref).then(refresh)
   }
 
-  const removeRecent = (paths: string[]) => {
+  const removeRecent = (refs: FileRef[]) => {
     setRowMenu(null)
     setSelected(new Set())
-    void window.aiOffice.removeRecent(paths).then(refresh)
+    void files.removeRecent(refs).then(refresh)
   }
 
-  const deleteFiles = (paths: string[]) => {
+  const deleteFiles = (rows: FileEntry[]) => {
     setRowMenu(null)
-    setConfirmDelete(paths)
+    setConfirmDelete(rows)
   }
 
   const confirmDeleteNow = () => {
-    const paths = confirmDelete ?? []
+    const rows = confirmDelete ?? []
     setConfirmDelete(null)
     setSelected(new Set())
-    void window.aiOffice.deleteFiles(paths).then(refresh)
+    void files.deleteFiles(rows.map((row) => row.ref)).then(refresh)
   }
 
-  const duplicateFile = (path: string) => {
+  const duplicateFile = (ref: FileRef) => {
     setRowMenu(null)
-    void window.aiOffice.duplicateFile(path).then(refresh)
+    void files.duplicate(ref).then(refresh)
   }
 
-  const startRename = (entry: RecentEntry) => {
+  const startRename = (entry: FileEntry) => {
     setRowMenu(null)
-    setRenaming({ path: entry.path, value: baseName(entry) })
+    setRenaming({ ref: entry.ref, value: baseName(entry) })
   }
 
-  const commitRename = (entry: RecentEntry) => {
+  const commitRename = (entry: FileEntry) => {
     const value = renaming?.value.trim() ?? ''
     setRenaming(null)
     if (!value || value === baseName(entry)) return
     const newName = entry.ext ? `${value}.${entry.ext}` : value
-    void window.aiOffice.renameFile(entry.path, newName).then((result) => {
+    void files.rename(entry.ref, newName).then((result) => {
       if (!result.ok) window.alert(result.error ?? t('renameFailed'))
       refresh()
     })
   }
 
-  const moveFileTo = async (filePath: string, targetProjectId: string) => {
+  const moveFileTo = async (ref: FileRef, targetProjectId: string) => {
     setMoveFileMenu(null)
     setRowMenu(null)
-    await window.aiOfficeProject?.moveFile(filePath, targetProjectId)
+    await projectsPort?.moveFile(ref, targetProjectId)
     refresh()
     if (selectedProjectId) {
-      setProjectFileEntries((prev) => prev.filter((e) => e.path !== filePath))
+      setProjectFileEntries((prev) => prev.filter((e) => e.ref !== ref))
     }
   }
 
-  const moveFilesTo = async (paths: string[], targetProjectId: string) => {
+  const moveFilesTo = async (refs: FileRef[], targetProjectId: string) => {
     setBulkMoveMenu(false)
     setSelected(new Set())
     // drop moved rows immediately (same as moveFileTo) so they cannot be
-    // re-selected or re-moved while the sequential IPC loop is in flight
-    const moved = new Set(paths)
-    setProjectFileEntries((prev) => prev.filter((e) => !moved.has(e.path)))
-    for (const path of paths) {
-      await window.aiOfficeProject?.moveFile(path, targetProjectId)
+    // re-selected or re-moved while the sequential host calls are in flight
+    const moved = new Set(refs)
+    setProjectFileEntries((prev) => prev.filter((e) => !moved.has(e.ref)))
+    for (const ref of refs) {
+      await projectsPort?.moveFile(ref, targetProjectId)
     }
     refresh()
   }
 
   // ── New file (passes projectId when a project is selected) ──
   const handleNewDoc = () => {
-    void window.aiOffice.newDoc(selectedProjectId ? { projectId: selectedProjectId } : undefined)
+    void launcher.newDoc(selectedProjectId ? { projectId: selectedProjectId } : undefined)
   }
 
   const handleNewSheet = () => {
-    void window.aiOffice.newSheet(selectedProjectId ? { projectId: selectedProjectId } : undefined)
+    void launcher.newSheet(selectedProjectId ? { projectId: selectedProjectId } : undefined)
   }
 
   const handleNewSlide = () => {
-    void window.aiOffice.newSlide(selectedProjectId ? { projectId: selectedProjectId } : undefined)
+    void launcher.newSlide(selectedProjectId ? { projectId: selectedProjectId } : undefined)
   }
 
   const NEW_ITEMS = [
@@ -1239,7 +1221,7 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
             </span>
           </button>
         ))}
-        <button className="quick-card" onClick={() => void window.aiOffice.browse()}>
+        <button className="quick-card" onClick={() => void launcher.browse()}>
           <span className="quick-folder">
             <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path
@@ -1263,23 +1245,23 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
 
   // ── File row rendering (shared by the plain view and the project files view) ──
 
-  function renderFileRow(entry: RecentEntry, context: 'global' | 'project') {
-    const isRenaming = renaming?.path === entry.path
+  function renderFileRow(entry: FileEntry, context: 'global' | 'project') {
+    const isRenaming = renaming?.ref === entry.ref
     const otherProjects = projects.filter(
       (p) => p.id !== (context === 'project' ? selectedProjectId : undefined),
     )
     return (
-      <li className="recent-row" key={entry.path}>
+      <li className="recent-row" key={entry.ref}>
         <div
           className="recent-item"
           role="button"
           tabIndex={0}
           onClick={() => {
-            if (!isRenaming) void window.aiOffice.openPath(entry.path)
+            if (!isRenaming) void launcher.open(entry.ref)
           }}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && event.target === event.currentTarget) {
-              void window.aiOffice.openPath(entry.path)
+              void launcher.open(entry.ref)
             }
           }}
         >
@@ -1287,8 +1269,8 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
             <input
               type="checkbox"
               className="row-check"
-              checked={selected.has(entry.path)}
-              onChange={(event) => toggleSelect(entry.path, event.target.checked)}
+              checked={selected.has(entry.ref)}
+              onChange={(event) => toggleSelect(entry.ref, event.target.checked)}
               aria-label={t('selectFile', { name: entry.name })}
             />
           </span>
@@ -1302,7 +1284,7 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
               autoFocus
               onFocus={(event) => event.target.select()}
               onClick={(event) => event.stopPropagation()}
-              onChange={(event) => setRenaming({ path: entry.path, value: event.target.value })}
+              onChange={(event) => setRenaming({ ref: entry.ref, value: event.target.value })}
               onBlur={() => commitRename(entry)}
               onKeyDown={(event) => {
                 event.stopPropagation()
@@ -1313,7 +1295,7 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
           ) : (
             <span className="recent-name">{entry.name}</span>
           )}
-          <span className="recent-path">{parentDir(entry.path)}</span>
+          <span className="recent-path">{entry.folder ?? ''}</span>
           <span className="recent-time">{formatModified(entry.mtimeMs, i18n)}</span>
           <span className="recent-size">{formatSize(entry.sizeBytes)}</span>
           <button
@@ -1321,7 +1303,7 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
             aria-label={entry.starred ? t('unstar') : t('star')}
             onClick={(event) => {
               event.stopPropagation()
-              toggleStar(entry.path)
+              toggleStar(entry.ref)
             }}
           >
             <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
@@ -1338,8 +1320,8 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
             <button
               className="more-btn"
               aria-label={t('moreActions')}
-              aria-expanded={rowMenu === entry.path}
-              onClick={() => setRowMenu(rowMenu === entry.path ? null : entry.path)}
+              aria-expanded={rowMenu === entry.ref}
+              onClick={() => setRowMenu(rowMenu === entry.ref ? null : entry.ref)}
             >
               <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
                 <circle cx="3.2" cy="8" r="1.4" fill="currentColor" />
@@ -1347,35 +1329,42 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
                 <circle cx="12.8" cy="8" r="1.4" fill="currentColor" />
               </svg>
             </button>
-            {rowMenu === entry.path && (
+            {rowMenu === entry.ref && (
               <div className="row-menu" role="menu">
                 <button
                   role="menuitem"
                   onClick={() => {
                     setRowMenu(null)
-                    void window.aiOffice.openPath(entry.path)
+                    void launcher.open(entry.ref)
                   }}
                 >
                   {t('open')}
                 </button>
-                <button
-                  role="menuitem"
-                  onClick={() => {
-                    setRowMenu(null)
-                    void window.aiOffice.revealPath(entry.path)
-                  }}
-                >
-                  {t('revealInFolder')}
-                </button>
-                <button
-                  role="menuitem"
-                  onClick={() => {
-                    setRowMenu(null)
-                    void navigator.clipboard.writeText(entry.path)
-                  }}
-                >
-                  {t('copyPath')}
-                </button>
+                {/* Both entries exist exactly when the host can back them: one
+                    needs a file manager, the other needs a location to put on
+                    the clipboard. Neither is derivable from a ref. */}
+                {files.reveal && (
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setRowMenu(null)
+                      void files.reveal?.(entry.ref)
+                    }}
+                  >
+                    {t('revealInFolder')}
+                  </button>
+                )}
+                {entry.location !== undefined && (
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setRowMenu(null)
+                      void navigator.clipboard.writeText(entry.location ?? '')
+                    }}
+                  >
+                    {t('copyPath')}
+                  </button>
+                )}
                 {projectMode && otherProjects.length > 0 && (
                   <>
                     <div className="row-menu-divider" />
@@ -1383,10 +1372,10 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
                       className="move-menu-wrap"
                       onMouseEnter={() => {
                         clearMoveMenuTimer('close')
-                        if (moveFileMenu === entry.path) return
+                        if (moveFileMenu === entry.ref) return
                         clearMoveMenuTimer('open')
                         moveMenuTimers.current.open = window.setTimeout(
-                          () => openMoveMenu(entry.path),
+                          () => openMoveMenu(entry.ref),
                           160,
                         )
                       }}
@@ -1406,8 +1395,8 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
                           e.stopPropagation()
                           clearMoveMenuTimer('open')
                           clearMoveMenuTimer('close')
-                          if (moveFileMenu === entry.path) setMoveFileMenu(null)
-                          else openMoveMenu(entry.path)
+                          if (moveFileMenu === entry.ref) setMoveFileMenu(null)
+                          else openMoveMenu(entry.ref)
                         }}
                       >
                         {t('moveToProject')}
@@ -1427,7 +1416,7 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
                           />
                         </svg>
                       </button>
-                      {moveFileMenu === entry.path && (
+                      {moveFileMenu === entry.ref && (
                         <div
                           className={`submenu${moveMenuFlip ? ' submenu-left' : ''}`}
                           role="menu"
@@ -1437,7 +1426,7 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
                             <button
                               key={p.id}
                               role="menuitem"
-                              onClick={() => void moveFileTo(entry.path, p.id)}
+                              onClick={() => void moveFileTo(entry.ref, p.id)}
                             >
                               {p.isDefault ? t('defaultProject') : p.name}
                             </button>
@@ -1451,20 +1440,16 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
                 <button role="menuitem" onClick={() => startRename(entry)}>
                   {t('rename')}
                 </button>
-                <button role="menuitem" onClick={() => duplicateFile(entry.path)}>
+                <button role="menuitem" onClick={() => duplicateFile(entry.ref)}>
                   {t('duplicate')}
                 </button>
-                {context === 'global' && selectedPaths.length === 0 && (
+                {context === 'global' && selectedEntries.length === 0 && (
                   <>
                     <div className="row-menu-divider" />
-                    <button role="menuitem" onClick={() => removeRecent([entry.path])}>
+                    <button role="menuitem" onClick={() => removeRecent([entry.ref])}>
                       {t('removeFromList')}
                     </button>
-                    <button
-                      role="menuitem"
-                      className="danger"
-                      onClick={() => deleteFiles([entry.path])}
-                    >
+                    <button role="menuitem" className="danger" onClick={() => deleteFiles([entry])}>
                       {t('deleteFiles')}
                     </button>
                   </>
@@ -1501,10 +1486,10 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
                 {t(fileCountKey(projectFileEntries.length), { n: projectFileEntries.length })}
               </span>
             </div>
-            {projSelectedPaths.length > 0 && (
+            {projSelectedEntries.length > 0 && (
               <div className="selection-bar">
                 <span className="selection-count">
-                  {t('selectedCount', { n: projSelectedPaths.length })}
+                  {t('selectedCount', { n: projSelectedEntries.length })}
                 </span>
                 {otherProjects.length > 0 && (
                   <span className="selection-move-wrap">
@@ -1521,7 +1506,12 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
                           <button
                             key={p.id}
                             role="menuitem"
-                            onClick={() => void moveFilesTo(projSelectedPaths, p.id)}
+                            onClick={() =>
+                              void moveFilesTo(
+                                projSelectedEntries.map((entry) => entry.ref),
+                                p.id,
+                              )
+                            }
                           >
                             {p.isDefault ? t('defaultProject') : p.name}
                           </button>
@@ -1532,7 +1522,7 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
                 )}
                 <button
                   className="selection-action danger"
-                  onClick={() => deleteFiles(projSelectedPaths)}
+                  onClick={() => deleteFiles(projSelectedEntries)}
                 >
                   {t('deleteFiles')}
                 </button>
@@ -1632,17 +1622,20 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
               </span>
               <span className="file-count">{t(fileCountKey(listTotal), { n: listTotal })}</span>
             </div>
-            {selectedPaths.length > 0 ? (
+            {selectedEntries.length > 0 ? (
               <div className="selection-bar">
                 <span className="selection-count">
-                  {t('selectedCount', { n: selectedPaths.length })}
+                  {t('selectedCount', { n: selectedEntries.length })}
                 </span>
-                <button className="selection-action" onClick={() => removeRecent(selectedPaths)}>
+                <button
+                  className="selection-action"
+                  onClick={() => removeRecent(selectedEntries.map((entry) => entry.ref))}
+                >
                   {t('removeFromList')}
                 </button>
                 <button
                   className="selection-action danger"
-                  onClick={() => deleteFiles(selectedPaths)}
+                  onClick={() => deleteFiles(selectedEntries)}
                 >
                   {t('deleteFiles')}
                 </button>
@@ -1695,7 +1688,7 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
               </span>
             </p>
           ) : (
-            <div className={`recent-table${selectedPaths.length > 0 ? ' has-selection' : ''}`}>
+            <div className={`recent-table${selectedEntries.length > 0 ? ' has-selection' : ''}`}>
               <div className="recent-columns">
                 <span className="col-check">
                   <input
@@ -1810,13 +1803,13 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
             <h3>{t('deleteModalTitle')}</h3>
             <p>
               {confirmDelete.length === 1
-                ? t('deleteConfirmOne', { name: fileName(confirmDelete[0]) })
+                ? t('deleteConfirmOne', { name: confirmDelete[0].name })
                 : t('deleteConfirmMany', { n: confirmDelete.length })}
             </p>
             {confirmDelete.length > 1 && (
               <ul className="modal-file-list">
-                {confirmDelete.slice(0, 6).map((p) => (
-                  <li key={p}>{fileName(p)}</li>
+                {confirmDelete.slice(0, 6).map((row) => (
+                  <li key={row.ref}>{row.name}</li>
                 ))}
                 {confirmDelete.length > 6 && (
                   <li>{t('deleteMoreCount', { n: confirmDelete.length })}</li>

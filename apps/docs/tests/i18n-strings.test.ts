@@ -50,4 +50,13 @@ describe('i18n string tables', () => {
   it.each([...LANGS])('locale %s can report that a new document is not autosaved', (lang) => {
     expect(dicts[lang]!.appSaveNeedsLocation, lang).toBeTruthy()
   })
+
+  // The pagination preview's Print button, which only a host that prints through
+  // the renderer ever renders — i.e. the browser build. Asserted by name for the
+  // same reason as the two above: nothing in the desktop app would notice them
+  // missing.
+  it.each([...LANGS])('locale %s can label the browser print button', (lang) => {
+    expect(dicts[lang]!.appPrint, lang).toBeTruthy()
+    expect(dicts[lang]!.appPvPrintTip, lang).toBeTruthy()
+  })
 })

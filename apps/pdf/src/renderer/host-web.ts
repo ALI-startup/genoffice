@@ -17,6 +17,7 @@ import {
   browserFilePickers,
   browserLanguageEnv,
   createIndexedDbHandleStore,
+  DOCUMENT_DB_NAME,
   createWebAiPort,
   createWebLanguagePort,
   createWebWindowPort,
@@ -29,7 +30,10 @@ export const createPdfPlatform: CreatePdfPlatform = async () => {
   const store = new WebDocumentStore({
     // Handles are structured-cloneable, so IndexedDB stores the handle itself
     // and a document survives a reload without copying bytes or inventing a path.
-    handles: createIndexedDbHandleStore(),
+    // The database name is per-app on purpose: the store's list() is an
+    // unfiltered getAll(), so a shared database would put this app's documents
+    // in another app's recent list when both run on the same origin.
+    handles: createIndexedDbHandleStore(indexedDB, `${DOCUMENT_DB_NAME}-pdf`),
     pickers: browserFilePickers(),
   })
   return createWebPdfPlatform({
