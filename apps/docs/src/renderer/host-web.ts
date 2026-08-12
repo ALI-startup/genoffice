@@ -21,6 +21,7 @@ import {
   browserFilePickers,
   browserLanguageEnv,
   browserMultiFilePicker,
+  createFrameChildLink,
   createIndexedDbHandleStore,
   DOCUMENT_DB_NAME,
   createWebAiPort,
@@ -151,5 +152,12 @@ export const createDocsPlatform: CreateDocsPlatform = async () => {
     // to be in hand before anything is written. Wording comes from the renderer's
     // i18n, so it is localised in all the languages the desktop prompt is.
     confirmOverwrite: () => window.confirm(t('appSaveExtModified')),
+    // Non-null only when the web shell hosts this page in its tab strip, which
+    // it signals with a query parameter. It is what lets the shell's close guard
+    // ask this document whether it has unsaved work, and ask it to save: closing
+    // a shell tab removes the iframe, and `beforeunload` does not fire for that.
+    // Standalone in a browser tab there is no shell, so this is null and nothing
+    // about the page changes.
+    frame: createFrameChildLink(),
   })
 }

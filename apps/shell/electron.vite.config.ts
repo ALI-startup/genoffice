@@ -1,6 +1,7 @@
 import { resolve } from 'node:path'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'electron-vite'
+import { hostAlias } from './vite.shared'
 
 export default defineConfig({
   // Bundle everything into the shell main (same policy as apps/docs): the
@@ -20,6 +21,9 @@ export default defineConfig({
   },
   renderer: {
     plugins: [react()],
+    // The build-time host seam; see vite.shared.ts. This is what keeps the web
+    // host — routing, iframes, the frame protocol — out of the desktop bundle.
+    resolve: { alias: hostAlias('electron') },
     build: {
       rollupOptions: {
         input: {

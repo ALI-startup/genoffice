@@ -29,14 +29,20 @@ const bffTarget = process.env.AI_BFF_URL || 'http://127.0.0.1:8788'
 
 export default defineConfig({
   root: 'src/renderer',
-  base: './',
+  // Standalone this app owns its origin, so a relative base is right. The web
+  // shell serves it under a path of *its* origin instead (`/app/docs/`), which
+  // is what keeps this app's AI calls same-origin and its title readable from
+  // the tab strip — so the shell's dev script and its composed build set the
+  // base to that prefix. Nothing else about the build differs.
+  base: process.env.DOCS_WEB_BASE || './',
   resolve: { alias: hostAlias('web') },
   plugins: [react()],
   build: {
     // Deliberately outside `out/`: apps/shell/electron-builder.cjs ships
     // `from: '../docs/out'` as an extraResource, so a web bundle under out/
-    // would be packaged into every desktop installer as dead weight.
-    outDir: '../../dist/web',
+    // would be packaged into every desktop installer as dead weight. The shell's
+    // composed web build redirects it under the shell's own dist/web instead.
+    outDir: process.env.DOCS_WEB_OUT_DIR || '../../dist/web',
     emptyOutDir: true,
   },
   server: {

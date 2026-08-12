@@ -8,7 +8,9 @@
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev --watch",
+    "dev:web": "vite --config vite.web.config.ts",
     "build": "electron-vite build",
+    "build:web": "vite build --config vite.web.config.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "start": "electron-vite build && electron .",
@@ -25,6 +27,7 @@
     "@genoffice/electron-utils": "*",
     "@genoffice/i18n": "*",
     "@genoffice/platform": "*",
+    "@genoffice/platform-web": "*",
     "@genoffice/pptx-engine": "*",
     "@genoffice/pptx-render": "*",
     "@genoffice/sheets": "*",

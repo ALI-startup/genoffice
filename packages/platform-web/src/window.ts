@@ -7,27 +7,32 @@
  *   - `setDirty` does real work. It attaches and detaches a `beforeunload`
  *     listener, which is what makes the browser show its "Leave site?" prompt.
  *
- *   - `onCloseSaveRequest` is a real subscription that this host never emits an
- *     event for, and that is a legitimate implementation. The Electron flow is
- *     a handshake: the host intercepts the close, asks the renderer to save,
- *     *awaits* the answer, and only then closes. `beforeunload` cannot express
- *     that — the browser shows a generic, unstyled prompt, ignores any string
- *     the page supplies, and the page may not await anything before the
- *     document goes away. So there is no moment at which this host could
- *     honestly ask "save, then tell me how it went". An event source with no
- *     events is honest: it reports the truth (this host never makes that
- *     request) and every subscriber keeps working unchanged. What would *not*
- *     be honest is a method that pretends to do work — e.g. a `setDirty` that
- *     accepted the flag and dropped it, so the app believed unsaved work was
- *     protected when nothing was. That is the distinction this file draws.
+ *   - `onCloseSaveRequest` emits exactly when there is a host to ask. Standalone
+ *     in a browser tab there is none, and that is a legitimate implementation
+ *     rather than a gap: the Electron flow is a handshake — the host intercepts
+ *     the close, asks the renderer to save, *awaits* the answer, and only then
+ *     closes — and `beforeunload` cannot express it, because the browser shows a
+ *     generic prompt, ignores any string the page supplies, and the page may not
+ *     await anything before the document goes away. An event source with no
+ *     events reports that truth and every subscriber keeps working unchanged.
+ *     What would *not* be honest is a method that pretends to do work — a
+ *     `setDirty` that accepted the flag and dropped it, so the app believed
+ *     unsaved work was protected when nothing was.
  *
- *   - `reportCloseSaveResult` is the reply half of that handshake. With no
- *     requests there are no replies, so it is unreachable by construction: the
- *     only caller in the pdf renderer is inside the `onCloseSaveRequest`
- *     handler. It warns rather than silently returning, so that if the
- *     invariant is ever broken the mismatch is visible instead of swallowed.
+ *     Inside the web shell there *is* such a host: closing a tab removes the
+ *     iframe, which the shell controls and can defer. So when a `FrameChildLink`
+ *     is supplied, this port's close-save requests become real — driven by the
+ *     shell over the frame protocol, into the very same subscriber set. Nothing
+ *     about the standalone build changes; it simply passes no link.
+ *
+ *   - `reportCloseSaveResult` is the reply half of that handshake. Standalone
+ *     there are no requests, so it is unreachable by construction — the only
+ *     caller in the pdf renderer is inside the `onCloseSaveRequest` handler —
+ *     and it warns rather than silently returning, so a broken invariant is
+ *     visible. With a link it relays the outcome to the shell instead.
  */
 import type { WindowPort } from '@genoffice/platform'
+import type { FrameChildLink } from './frame-child.js'
 
 export type WebWindowSlice = Pick<
   WindowPort,
@@ -78,7 +83,16 @@ export function createWebUnloadPrompt(
   return () => env.removeEventListener('beforeunload', onBeforeUnload)
 }
 
-export function createWebWindowPort(env: CloseGuardEnv = window): WebWindowSlice {
+/**
+ * @param frame the shell frame link when this page is hosted in the web shell's
+ *   tab strip, `null` when it is a standalone browser tab. It is what turns the
+ *   close-save handshake from an event source with no events into a real one;
+ *   see the file header.
+ */
+export function createWebWindowPort(
+  env: CloseGuardEnv = window,
+  frame: FrameChildLink | null = null,
+): WebWindowSlice {
   let armed = false
   const onBeforeUnload = (event: BeforeUnloadEvent) => {
     // Both are required across Chromium versions to trigger the prompt; the
@@ -87,6 +101,21 @@ export function createWebWindowPort(env: CloseGuardEnv = window): WebWindowSlice
     event.returnValue = ''
   }
   const closeSaveListeners = new Set<() => void>()
+
+  if (frame !== null) {
+    // The shell's close check is answered from the same flag `beforeunload` is
+    // armed from, so a tab close and a window close ask the identical question.
+    frame.onCloseCheck(() => armed)
+    frame.onCloseSave(() => {
+      if (closeSaveListeners.size === 0) {
+        // Nobody is listening, so nothing will ever reply. Say so now rather
+        // than let the shell wait out its deadline and reach the same answer.
+        frame.reportCloseSave(false)
+        return
+      }
+      for (const listener of closeSaveListeners) listener()
+    })
+  }
 
   return {
     setDirty(dirty: boolean): void {
@@ -100,6 +129,10 @@ export function createWebWindowPort(env: CloseGuardEnv = window): WebWindowSlice
       return () => void closeSaveListeners.delete(handler)
     },
     reportCloseSaveResult(ok: boolean): void {
+      if (frame !== null) {
+        frame.reportCloseSave(ok)
+        return
+      }
       console.warn(
         `[platform-web] close-save result (${ok}) reported, but this host never issues a ` +
           `close-save request. Something is calling the reply half of the handshake directly.`,

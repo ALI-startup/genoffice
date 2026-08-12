@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
 import type { TabSummary } from '../../shared/tabs-api'
 import { useI18n } from './locale'
@@ -81,9 +81,97 @@ const KIND_ICON: Record<TabSummary['kind'], ReactElement> = {
   pdf: <PdfIcon />,
 }
 
+/** One entry of the DOM menus a host without native ones gets. */
+interface MenuItem {
+  key: string
+  label: string
+  run: () => void
+}
+
+/**
+ * A popup menu drawn in the DOM, for hosts that have no native one.
+ *
+ * The tab strip's two menus are native on Electron by necessity, not by taste:
+ * the content area below the strip is a `WebContentsView` that paints over any
+ * DOM dropdown the shell renders. In a browser the content area is an iframe
+ * with a z-index, so a DOM menu simply works — which is why `tabMenus` is null
+ * there rather than backed by something that would have to fake a native menu.
+ *
+ * Anchored to its button, dismissed on outside click, Escape, or a choice.
+ */
+function DomMenu({
+  label,
+  items,
+  className,
+  children,
+}: {
+  label: string
+  items: MenuItem[]
+  className: string
+  children: ReactElement
+}) {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (event: PointerEvent) => {
+      if (!wrapRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
+
+  if (items.length === 0) return null
+  return (
+    <div className="tab-menu-wrap" ref={wrapRef}>
+      <button
+        className={className}
+        title={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((prev) => !prev)}
+      >
+        {children}
+      </button>
+      {open && (
+        <div className="tab-menu" role="menu">
+          {items.map((item) => (
+            <button
+              key={item.key}
+              className="tab-menu-item"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false)
+                item.run()
+              }}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function TabBar() {
   const { t } = useI18n()
-  const { tabs: tabsPort, tabMenus } = shellPlatform()
+  const {
+    tabs: tabsPort,
+    tabMenus,
+    launcher,
+    officeLauncher,
+    browse,
+    pdfLauncher,
+  } = shellPlatform()
   const [tabs, setTabs] = useState<TabSummary[]>([])
   const stripRef = useRef<HTMLDivElement>(null)
 
@@ -181,6 +269,34 @@ export function TabBar() {
       ?.querySelector('.tab-item.active')
       ?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
   }, [activeId])
+
+  // The DOM menus' contents, built from the ports that are actually present.
+  // A host without `officeLauncher` gets no spreadsheet entry rather than an
+  // entry that does nothing, which is the same rule the native menus follow.
+  const newMenuItems = useMemo<MenuItem[]>(() => {
+    const items: MenuItem[] = [
+      { key: 'doc', label: t('newDoc'), run: () => void launcher.newDoc() },
+    ]
+    if (officeLauncher) {
+      items.push({ key: 'sheet', label: t('newSheet'), run: () => void officeLauncher.newSheet() })
+      items.push({ key: 'slide', label: t('newSlide'), run: () => void officeLauncher.newSlide() })
+    }
+    if (pdfLauncher) {
+      items.push({ key: 'pdf', label: t('openPdf'), run: () => void pdfLauncher.newPdfTab() })
+    }
+    if (browse) items.push({ key: 'open', label: t('openLocal'), run: () => void browse.browse() })
+    return items
+  }, [t, launcher, officeLauncher, pdfLauncher, browse])
+
+  const tabMenuItems = useMemo<MenuItem[]>(
+    () =>
+      tabs.map((tab) => ({
+        key: tab.id,
+        label: tab.title,
+        run: () => void tabsPort.activate(tab.id),
+      })),
+    [tabs, tabsPort],
+  )
 
   return (
     <div className="tab-bar">
@@ -332,7 +448,40 @@ export function TabBar() {
             </svg>
           </button>
         )}
+        {!tabMenus && (
+          <DomMenu className="tab-new-btn" label={t('newTab')} items={newMenuItems}>
+            <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 4.286v15.429M4.286 12h15.429"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </DomMenu>
+        )}
       </div>
+      {!tabMenus && (
+        <DomMenu className="tab-overflow-btn" label={t('tabList')} items={tabMenuItems}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M21 4H3C2.44772 4 2 4.44772 2 5V19C2 19.5523 2.44772 20 3 20H21C21.5523 20 22 19.5523 22 19V5C22 4.44772 21.5523 4 21 4Z"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M11.5 9.5H22M11.5 9.5L9.5 4M17.5 9.5L15.5 4M2 19V8.5M22 19V8.5M4.5 20H19.5"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </DomMenu>
+      )}
       {tabMenus && (
         <button
           className="tab-overflow-btn"

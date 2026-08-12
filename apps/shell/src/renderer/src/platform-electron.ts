@@ -31,9 +31,11 @@ import type {
   ShellAiSettingsEditorPort,
   ShellAiSettingsPort,
   ShellAppPort,
+  ShellBrowsePort,
   ShellFilesPort,
   ShellLanguagePort,
   ShellLauncherPort,
+  ShellOfficeLauncherPort,
   ShellOnboardingPort,
   ShellPlatform,
   ShellProjectsPort,
@@ -102,11 +104,21 @@ export function createShellFilesPort(bridge: HomeApi): ShellFilesPort {
 export function createShellLauncherPort(bridge: HomeApi): ShellLauncherPort {
   return {
     open: (ref) => bridge.openPath(ref),
-    browse: () => bridge.browse(),
     newDoc: (options) => bridge.newDoc(options),
+  }
+}
+
+/** Spreadsheets and presentations: non-null here, since both apps have an Electron build. */
+export function createShellOfficeLauncherPort(bridge: HomeApi): ShellOfficeLauncherPort {
+  return {
     newSheet: (options) => bridge.newSheet(options),
     newSlide: (options) => bridge.newSlide(options),
   }
+}
+
+/** The native "open a file" dialog, which the main process shows. */
+export function createShellBrowsePort(bridge: HomeApi): ShellBrowsePort {
+  return { browse: () => bridge.browse() }
 }
 
 /**
@@ -225,9 +237,16 @@ export interface ShellBridges {
 }
 
 /**
- * All three nullable capabilities are non-null here, which is what makes the
- * desktop app's behaviour identical to before the seam existed: the main process
- * owns the file manager, the native menus and the credential store.
+ * Every capability the desktop app had is non-null here, which is what makes its
+ * behaviour identical to before the seam existed: the main process owns the file
+ * manager, the native menus, the credential store, the open dialog and the
+ * sheets/slides tabs.
+ *
+ * The two exceptions are the web-only ports. `frames` is null because this host
+ * paints its editors as `WebContentsView` children rather than in-page frames,
+ * and `pdfLauncher` because an Electron pdf tab is created around a path and
+ * cannot be empty. Both are capabilities this host genuinely lacks, in the same
+ * sense as the ones a browser lacks — see `ShellPlatform`.
  */
 export function createElectronShellPlatform(bridges: ShellBridges): ShellPlatform {
   return {
@@ -236,6 +255,10 @@ export function createElectronShellPlatform(bridges: ShellBridges): ShellPlatfor
     onboarding: createShellOnboardingPort(bridges.home),
     files: createShellFilesPort(bridges.home),
     launcher: createShellLauncherPort(bridges.home),
+    officeLauncher: createShellOfficeLauncherPort(bridges.home),
+    browse: createShellBrowsePort(bridges.home),
+    pdfLauncher: null,
+    frames: null,
     projects: createShellProjectsPort(bridges.project),
     account: createShellAccountPort(bridges.home),
     tabs: createShellTabsPort(bridges.tabs),

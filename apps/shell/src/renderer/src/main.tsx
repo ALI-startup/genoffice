@@ -2,7 +2,12 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { htmlLang } from '@genoffice/i18n'
 import { AppFrame } from './AppFrame'
-import { createShellPlatform } from './host-electron'
+// The build-time host seam: `@host` is aliased to host-electron.ts or
+// host-web.ts by whichever Vite config is building, so the two hosts' code
+// never meets in one bundle. tsconfig maps it to the Electron host so `tsc` has
+// something to check this file against; host-web.ts is checked in its own right
+// because it annotates its export as `CreateShellPlatform`.
+import { createShellPlatform } from '@host'
 import { LocaleProvider } from './locale'
 import { setShellPlatform } from './platform'
 import './home.css'

@@ -841,7 +841,14 @@ function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
 export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
   const i18n = useI18n()
   const { t, lang } = i18n
-  const { files, launcher, projects: projectsPort, account } = shellPlatform()
+  const {
+    files,
+    launcher,
+    officeLauncher,
+    browse,
+    projects: projectsPort,
+    account,
+  } = shellPlatform()
   // ── Paged list state (rows loaded for the current view + filter) ──
   const [entries, setEntries] = useState<FileEntry[]>([])
   /** total count under the current view + filter (not just the loaded rows) */
@@ -1192,18 +1199,33 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
     void launcher.newDoc(selectedProjectId ? { projectId: selectedProjectId } : undefined)
   }
 
-  const handleNewSheet = () => {
-    void launcher.newSheet(selectedProjectId ? { projectId: selectedProjectId } : undefined)
-  }
-
-  const handleNewSlide = () => {
-    void launcher.newSlide(selectedProjectId ? { projectId: selectedProjectId } : undefined)
-  }
-
+  // Spreadsheets and presentations exist only on a host that has those editors;
+  // the cards below are built from this list, so on a host without them the
+  // cards are absent rather than present and inert (see ShellOfficeLauncherPort).
   const NEW_ITEMS = [
     { ext: 'docx', title: t('newDoc'), sub: '.docx', action: handleNewDoc },
-    { ext: 'xlsx', title: t('newSheet'), sub: '.xlsx', action: handleNewSheet },
-    { ext: 'pptx', title: t('newSlide'), sub: '.pptx', action: handleNewSlide },
+    ...(officeLauncher
+      ? [
+          {
+            ext: 'xlsx',
+            title: t('newSheet'),
+            sub: '.xlsx',
+            action: () =>
+              officeLauncher.newSheet(
+                selectedProjectId ? { projectId: selectedProjectId } : undefined,
+              ),
+          },
+          {
+            ext: 'pptx',
+            title: t('newSlide'),
+            sub: '.pptx',
+            action: () =>
+              officeLauncher.newSlide(
+                selectedProjectId ? { projectId: selectedProjectId } : undefined,
+              ),
+          },
+        ]
+      : []),
   ]
 
   function renderQuickCards() {
@@ -1221,24 +1243,30 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
             </span>
           </button>
         ))}
-        <button className="quick-card" onClick={() => void launcher.browse()}>
-          <span className="quick-folder">
-            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path
-                d="M1.5 4A1.5 1.5 0 0 1 3 2.5h3.1c.44 0 .85.19 1.13.52L8.4 4.4H13A1.5 1.5 0 0 1 14.5 5.9v5.6A1.5 1.5 0 0 1 13 13H3a1.5 1.5 0 0 1-1.5-1.5V4z"
-                stroke="currentColor"
-                strokeWidth="1.3"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-          <span className="quick-text">
-            <span className="quick-title-row">
-              <span className="quick-title">{t('openLocal')}</span>
+        {/* Only on a host whose shell can open a file for an editor. A browser
+            cannot: the picker's user activation belongs to whichever window
+            handles the click, so opening starts inside the editor's own frame
+            (see ShellBrowsePort). */}
+        {browse && (
+          <button className="quick-card" onClick={() => void browse.browse()}>
+            <span className="quick-folder">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path
+                  d="M1.5 4A1.5 1.5 0 0 1 3 2.5h3.1c.44 0 .85.19 1.13.52L8.4 4.4H13A1.5 1.5 0 0 1 14.5 5.9v5.6A1.5 1.5 0 0 1 13 13H3a1.5 1.5 0 0 1-1.5-1.5V4z"
+                  stroke="currentColor"
+                  strokeWidth="1.3"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </span>
-            <span className="quick-sub">.docx / .xlsx / .xls / .csv / .pptx / .pdf</span>
-          </span>
-        </button>
+            <span className="quick-text">
+              <span className="quick-title-row">
+                <span className="quick-title">{t('openLocal')}</span>
+              </span>
+              <span className="quick-sub">.docx / .xlsx / .xls / .csv / .pptx / .pdf</span>
+            </span>
+          </button>
+        )}
       </div>
     )
   }

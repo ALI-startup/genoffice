@@ -77,8 +77,26 @@ export type { LanguageHostEnv } from './language.js'
 export { createWebUnloadPrompt, createWebWindowPort } from './window.js'
 export type { CloseGuardEnv, WebWindowSlice } from './window.js'
 
-export { createWebAiPort, toAiSettings } from './ai.js'
+export { createWebAiPort, fetchPublicAiSettings, toAiSettings } from './ai.js'
 export type { WebAiPortOptions } from './ai.js'
+
+export { browserFrameChildEnv, createFrameChildLink, frameIdFromLocation } from './frame-child.js'
+export type { FrameChildEnv, FrameChildLink } from './frame-child.js'
+
+export {
+  browserShellFrameLinkEnv,
+  createShellFrameLink,
+  FRAME_REPLY_TIMEOUT_MS,
+} from './frame-host.js'
+export type { ShellFrameLink, ShellFrameLinkEnv, ShellFrameTarget } from './frame-host.js'
+
+export {
+  FRAME_ID_PARAM,
+  FRAME_PROTOCOL,
+  parseFrameToShell,
+  parseShellToFrame,
+} from './frame-wire.js'
+export type { FrameMessageLike, FrameToShellMessage, ShellToFrameMessage } from './frame-wire.js'
 
 export { AI_BFF_BASE_PATH, AI_BFF_ROUTES } from './ai-wire.js'
 export type {

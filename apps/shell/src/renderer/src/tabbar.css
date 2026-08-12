@@ -274,3 +274,44 @@
 .app-frame-content {
   padding-top: 40px;
 }
+
+/* DOM popup menus, rendered by hosts that have no native ones (see DomMenu in
+ * TabBar.tsx). On Electron these never mount: a WebContentsView would paint over
+ * them, which is why that host uses OS menus instead. */
+.tab-menu-wrap {
+  -webkit-app-region: no-drag;
+  position: relative;
+  flex-shrink: 0;
+  align-self: center;
+  display: flex;
+}
+
+.tab-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 180px;
+  padding: 4px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22);
+  z-index: 20;
+}
+
+.tab-menu-item {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: #1f1f1f;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tab-menu-item:hover {
+  background: rgba(0, 0, 0, 0.06);
+}

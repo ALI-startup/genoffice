@@ -45,6 +45,32 @@ export function toAiSettings(publicSettings: PublicAiSettings): AiSettings {
   return { provider: publicSettings.active.providerId, providers }
 }
 
+/**
+ * Fetch the server's public view of its own AI configuration, unmapped.
+ *
+ * `toAiSettings` exists to satisfy `AiPort`, and in doing so it drops the one
+ * field a *settings screen* needs: `credentialConfigured`. It has to — the
+ * `AiSettings` shape has an `apiKey` and no notion of "the server holds one",
+ * so the boolean has nowhere to go and becomes `apiKey: ''` for configured and
+ * unconfigured providers alike.
+ *
+ * The shell's read-only AI Providers page reads this instead. It is the same
+ * request to the same route; what differs is that nothing is discarded. There is
+ * still no credential in the response and cannot be — the BFF's no-leak test
+ * asserts that no four-character run of any credential appears in any response
+ * body, which is exactly why this view can show *whether* a provider is
+ * configured and never a masked hint of the key.
+ */
+export async function fetchPublicAiSettings(
+  options: WebAiPortOptions = {},
+): Promise<PublicAiSettings> {
+  const routes = options.routes ?? AI_BFF_ROUTES
+  const doFetch = options.fetch ?? globalThis.fetch.bind(globalThis)
+  const response = await doFetch(routes.settings, { headers: { accept: 'application/json' } })
+  if (!response.ok) throw new Error(`AI settings request failed: HTTP ${response.status}`)
+  return (await response.json()) as PublicAiSettings
+}
+
 export function createWebAiPort(options: WebAiPortOptions = {}): AiPort {
   const routes = options.routes ?? AI_BFF_ROUTES
   const doFetch = options.fetch ?? globalThis.fetch.bind(globalThis)

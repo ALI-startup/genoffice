@@ -1,0 +1,92 @@
+/* In-page editor frames (web host only; Electron paints WebContentsViews here).
+ * The strip is `position: fixed` and 40px tall, so a frame fills everything
+ * under it. Every frame keeps its box whether it is showing or not — hidden with
+ * `visibility`, not `display`, so a backgrounded document is never relaid out at
+ * zero width and never destroyed. */
+.app-frame-view {
+  position: fixed;
+  top: 40px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: calc(100% - 40px);
+  border: 0;
+  background: #fff;
+  /* Above the shell's own content: only one frame is visible at a time, and the
+   * Home page below stays mounted. */
+  z-index: 5;
+}
+
+/* Unsaved-changes guard, in place of the native message box the Electron main
+ * process raises when a tab with unsaved work is closed. */
+.frame-close-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.32);
+  z-index: 100;
+}
+
+.frame-close-dialog {
+  min-width: 320px;
+  max-width: 440px;
+  padding: 20px 22px 16px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+  color: #1f1f1f;
+}
+
+.frame-close-dialog:focus {
+  outline: none;
+}
+
+.frame-close-dialog h2 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.frame-close-dialog p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.frame-close-error {
+  color: #b3261e;
+}
+
+.frame-close-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.frame-close-actions button {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.frame-close-secondary {
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  background: #fff;
+  color: #1f1f1f;
+}
+
+.frame-close-primary {
+  border: 1px solid transparent;
+  background: #3276cd;
+  color: #fff;
+}
+
+.frame-close-primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

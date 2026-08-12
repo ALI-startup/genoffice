@@ -31,6 +31,8 @@
     "build:pdf:web": "npm run build:web -w @genoffice/pdf",
     "docs:web": "concurrently -k -n bff,docs -c magenta,blue \"npm run start -w @genoffice/ai-bff\" \"npm run dev:web -w @genoffice/docs\"",
     "build:docs:web": "npm run build:web -w @genoffice/docs",
+    "shell:web": "concurrently -k -n bff,docs,pdf,shell -c magenta,blue,red,yellow \"npm run start -w @genoffice/ai-bff\" \"DOCS_WEB_BASE=/app/docs/ npm run dev:web -w @genoffice/docs\" \"PDF_WEB_BASE=/app/pdf/ npm run dev:web -w @genoffice/pdf\" \"npm run dev:web -w @genoffice/shell\"",
+    "build:shell:web": "npm run build:web -w @genoffice/shell && DOCS_WEB_BASE=/app/docs/ DOCS_WEB_OUT_DIR=../../../shell/dist/web/app/docs npm run build:web -w @genoffice/docs && PDF_WEB_BASE=/app/pdf/ PDF_WEB_OUT_DIR=../../../shell/dist/web/app/pdf npm run build:web -w @genoffice/pdf",
     "build": "npm run build -w @genoffice/docs",
     "build:all": "npm run build -w @genoffice/docs && npm run build -w @genoffice/sheets && npm run build -w @genoffice/slides && npm run build -w @genoffice/pdf && npm run build -w @genoffice/shell",
     "shell": "npm run build:all && electron apps/shell",

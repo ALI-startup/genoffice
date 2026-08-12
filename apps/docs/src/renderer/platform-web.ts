@@ -42,7 +42,7 @@
  */
 import type { AiPort, AttachmentsPort, DiskFileState, LanguagePort } from '@genoffice/platform'
 import { isExternallyModified } from '@genoffice/platform'
-import type { FilePickers, WebDocumentStore } from '@genoffice/platform-web'
+import type { FilePickers, FrameChildLink, WebDocumentStore } from '@genoffice/platform-web'
 import {
   IMAGE_FILE_TYPES,
   createWebUnloadPrompt,
@@ -103,6 +103,13 @@ export interface WebDocsPlatformDeps {
   confirmOverwrite: ConfirmOverwrite
   /** Install a `beforeunload` guard; injected so tests can drive it. Defaults to the real one. */
   unloadPrompt?: typeof createWebUnloadPrompt
+  /**
+   * The web shell's frame link when this page is hosted in its tab strip, `null`
+   * when it is a standalone browser tab. It is what makes the close guard real
+   * for a tab close, which `beforeunload` cannot see; see
+   * `createWebDocsWindowPort`.
+   */
+  frame?: FrameChildLink | null
   /** Opens the browser's print dialog; injected so tests can drive it. Defaults to `window.print`. */
   printPage?: () => void
 }
@@ -355,22 +362,30 @@ export function createWebDocsFilePort(
  *     to clean up the recovery copy on "Don't Save". Neither is possible during
  *     unload (both are async writes), so this host uses only `dirty`.
  *
- *   - `onCloseSaveRequest` is a real subscription this host never emits for, and
- *     that is a legitimate implementation rather than a gap swept under the
- *     carpet. Its contract is "save, then tell me how it went, and I will wait":
- *     the Electron host intercepts the close, awaits the renderer's save and only
- *     then closes. `beforeunload` cannot express that — the page may not await
- *     anything before the document goes away — so there is no moment at which
- *     this host could honestly make that request. An event source with no events
+ *   - `onCloseSaveRequest` emits exactly when there is a host that can wait. In a
+ *     standalone browser tab there is none, and that is a legitimate
+ *     implementation rather than a gap swept under the carpet. Its contract is
+ *     "save, then tell me how it went, and I will wait": the Electron host
+ *     intercepts the close, awaits the renderer's save and only then closes.
+ *     `beforeunload` cannot express that — the page may not await anything before
+ *     the document goes away — so standalone there is no moment at which this
+ *     host could honestly make that request. An event source with no events
  *     reports the truth and every subscriber keeps working; a method that
- *     pretended to save would tell the app the work was persisted when it was not.
- *     The user-visible consequence: the browser's leave prompt offers "leave" or
- *     "stay", not "save and leave".
+ *     pretended to save would tell the app the work was persisted when it was
+ *     not. The user-visible consequence: the browser's leave prompt offers
+ *     "leave" or "stay", not "save and leave".
  *
- *   - `reportCloseSaveResult` is the reply half of that handshake. With no
- *     requests there are no replies, so it is unreachable by construction — the
- *     only caller is inside the `onCloseSaveRequest` handler. It warns rather than
- *     returning silently, so a broken invariant is visible instead of swallowed.
+ *     Inside the web shell there *is* such a host. Closing a tab removes this
+ *     frame, which the shell controls and can defer, so when a `FrameChildLink`
+ *     is supplied both the close check and the close-save request become real —
+ *     driven from the shell into the very same two subscriber sets. Nothing about
+ *     the standalone build changes; it simply passes no link.
+ *
+ *   - `reportCloseSaveResult` is the reply half of that handshake. Standalone
+ *     there are no requests, so it is unreachable by construction — the only
+ *     caller is inside the `onCloseSaveRequest` handler — and it warns rather
+ *     than returning silently, so a broken invariant is visible instead of
+ *     swallowed. With a link it relays the outcome to the shell.
  *
  *   - `onTeardown` is a real subscription this host never emits for. Electron
  *     fires it when the shell detaches a tab's contents but keeps it alive, so
@@ -385,8 +400,10 @@ export function createWebDocsFilePort(
  */
 export function createWebDocsWindowPort(
   installUnloadPrompt: typeof createWebUnloadPrompt = createWebUnloadPrompt,
+  frame: FrameChildLink | null = null,
 ): DocsWindowPort {
   const closeCheckListeners = new Set<() => void>()
+  const closeSaveListeners = new Set<() => void>()
   /**
    * Mailbox for the reply to the request currently in flight.
    *
@@ -418,6 +435,21 @@ export function createWebDocsWindowPort(
 
   installUnloadPrompt(wouldLoseWork)
 
+  if (frame !== null) {
+    // The shell's close check asks the same question the unload guard does, of
+    // the same subscribers, so a tab close and a window close cannot disagree.
+    frame.onCloseCheck(wouldLoseWork)
+    frame.onCloseSave(() => {
+      if (closeSaveListeners.size === 0) {
+        // Nobody is listening, so nothing will ever reply. Say so now rather
+        // than let the shell wait out its deadline and reach the same answer.
+        frame.reportCloseSave(false)
+        return
+      }
+      for (const listener of closeSaveListeners) listener()
+    })
+  }
+
   return {
     onCloseCheck(handler: () => void): () => void {
       closeCheckListeners.add(handler)
@@ -426,10 +458,15 @@ export function createWebDocsWindowPort(
     reportCloseCheck(state: CloseCheckState): void {
       replies.push(state)
     },
-    onCloseSaveRequest: () => () => {
-      // Subscribing is legitimate; being called back never happens here.
+    onCloseSaveRequest(handler: () => void): () => void {
+      closeSaveListeners.add(handler)
+      return () => void closeSaveListeners.delete(handler)
     },
     reportCloseSaveResult: (ok: boolean) => {
+      if (frame !== null) {
+        frame.reportCloseSave(ok)
+        return
+      }
       console.warn(
         `[docs] close-save result (${ok}) reported, but this host never issues a close-save ` +
           `request. Something is calling the reply half of the handshake directly.`,
@@ -479,7 +516,7 @@ export function createWebDocsPlatform(deps: WebDocsPlatformDeps): DocsPlatform {
     language: deps.language,
     ai: deps.ai,
     attachments: deps.attachments,
-    window: createWebDocsWindowPort(deps.unloadPrompt),
+    window: createWebDocsWindowPort(deps.unloadPrompt, deps.frame ?? null),
     file: createWebDocsFilePort(
       deps.store,
       deps.pickers,

@@ -111,6 +111,13 @@ const baseStrings = {
     closeTab: '关闭标签',
     tabList: '全部标签',
     newTab: '新建标签页',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: '打开 PDF',
+    save: '保存',
+    dontSave: '不保存',
+    closeUnsavedTitle: '有未保存的更改',
+    closeUnsavedBody: '“{name}”有未保存的更改。关闭该标签页前要保存吗？',
+    closeSaveFailed: '无法从这里保存。请切换到该标签页在其中保存，或选择不保存后关闭。',
     // First-run onboarding
     onbTitle1: '欢迎使用 GenOffice',
     onbSubtitle1: '第一个开源的 AI 原生 Office 套件',
@@ -231,6 +238,14 @@ const baseStrings = {
     closeTab: 'Close tab',
     tabList: 'All tabs',
     newTab: 'New tab',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: 'Open PDF',
+    save: 'Save',
+    dontSave: 'Don’t save',
+    closeUnsavedTitle: 'Unsaved changes',
+    closeUnsavedBody: '“{name}” has unsaved changes. Save before closing this tab?',
+    closeSaveFailed:
+      'Couldn’t save from here. Switch to the tab and save inside it, or close without saving.',
     // First-run onboarding
     onbTitle1: 'Welcome to GenOffice',
     onbSubtitle1: 'The first open-source, AI-native office suite',
@@ -368,6 +383,15 @@ const baseStrings = {
     closeTab: 'タブを閉じる',
     tabList: 'すべてのタブ',
     newTab: '新しいタブ',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: 'PDF を開く',
+    save: '保存',
+    dontSave: '保存しない',
+    closeUnsavedTitle: '保存されていない変更',
+    closeUnsavedBody:
+      '「{name}」に保存されていない変更があります。このタブを閉じる前に保存しますか？',
+    closeSaveFailed:
+      'ここからは保存できませんでした。そのタブに切り替えて保存するか、保存せずに閉じてください。',
     // First-run onboarding
     onbTitle1: 'GenOffice へようこそ',
     onbSubtitle1: '初のオープンソース AI ネイティブ Office スイート',
@@ -501,6 +525,15 @@ const baseStrings = {
     closeTab: '탭 닫기',
     tabList: '모든 탭',
     newTab: '새 탭',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: 'PDF 열기',
+    save: '저장',
+    dontSave: '저장 안 함',
+    closeUnsavedTitle: '저장하지 않은 변경 사항',
+    closeUnsavedBody:
+      '‘{name}’에 저장하지 않은 변경 사항이 있습니다. 이 탭을 닫기 전에 저장할까요?',
+    closeSaveFailed:
+      '여기에서는 저장할 수 없습니다. 해당 탭으로 이동해 저장하거나 저장하지 않고 닫으세요.',
     // First-run onboarding
     onbTitle1: 'GenOffice에 오신 것을 환영합니다',
     onbSubtitle1: '최초의 오픈소스 AI 네이티브 오피스 제품군',
@@ -638,6 +671,15 @@ const baseStrings = {
     closeTab: "Fermer l'onglet",
     tabList: 'Tous les onglets',
     newTab: 'Nouvel onglet',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: 'Ouvrir un PDF',
+    save: 'Enregistrer',
+    dontSave: 'Ne pas enregistrer',
+    closeUnsavedTitle: 'Modifications non enregistrées',
+    closeUnsavedBody:
+      '« {name} » contient des modifications non enregistrées. Les enregistrer avant de fermer cet onglet ?',
+    closeSaveFailed:
+      'Impossible d’enregistrer depuis ici. Ouvrez l’onglet et enregistrez depuis celui-ci, ou fermez sans enregistrer.',
     // First-run onboarding
     onbTitle1: 'Bienvenue dans GenOffice',
     onbSubtitle1: 'La première suite bureautique open source et native IA',
@@ -777,6 +819,15 @@ const baseStrings = {
     closeTab: 'Tab schließen',
     tabList: 'Alle Tabs',
     newTab: 'Neuer Tab',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: 'PDF öffnen',
+    save: 'Speichern',
+    dontSave: 'Nicht speichern',
+    closeUnsavedTitle: 'Nicht gespeicherte Änderungen',
+    closeUnsavedBody:
+      '„{name}“ enthält nicht gespeicherte Änderungen. Vor dem Schließen dieses Tabs speichern?',
+    closeSaveFailed:
+      'Speichern von hier aus nicht möglich. Wechseln Sie zum Tab und speichern Sie dort, oder schließen Sie ohne zu speichern.',
     // First-run onboarding
     onbTitle1: 'Willkommen bei GenOffice',
     onbSubtitle1: 'Die erste quelloffene, KI-native Office-Suite',
@@ -915,6 +966,15 @@ const baseStrings = {
     closeTab: 'Cerrar pestaña',
     tabList: 'Todas las pestañas',
     newTab: 'Nueva pestaña',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: 'Abrir PDF',
+    save: 'Guardar',
+    dontSave: 'No guardar',
+    closeUnsavedTitle: 'Cambios sin guardar',
+    closeUnsavedBody:
+      '«{name}» tiene cambios sin guardar. ¿Guardarlos antes de cerrar esta pestaña?',
+    closeSaveFailed:
+      'No se pudo guardar desde aquí. Cambia a la pestaña y guarda desde ella, o ciérrala sin guardar.',
     // First-run onboarding
     onbTitle1: 'Bienvenido a GenOffice',
     onbSubtitle1: 'La primera suite ofimática de código abierto y nativa de IA',
@@ -1048,6 +1108,13 @@ const baseStrings = {
     closeTab: 'ปิดแท็บ',
     tabList: 'แท็บทั้งหมด',
     newTab: 'แท็บใหม่',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: 'เปิด PDF',
+    save: 'บันทึก',
+    dontSave: 'ไม่บันทึก',
+    closeUnsavedTitle: 'การเปลี่ยนแปลงที่ยังไม่ได้บันทึก',
+    closeUnsavedBody: '“{name}” มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก บันทึกก่อนปิดแท็บนี้หรือไม่',
+    closeSaveFailed: 'บันทึกจากที่นี่ไม่ได้ ให้สลับไปที่แท็บนั้นแล้วบันทึก หรือปิดโดยไม่บันทึก',
     // First-run onboarding
     onbTitle1: 'ยินดีต้อนรับสู่ GenOffice',
     onbSubtitle1: 'ชุดโปรแกรมออฟฟิศ AI-native โอเพนซอร์สตัวแรก',
@@ -1182,6 +1249,15 @@ const baseStrings = {
     closeTab: 'Tutup tab',
     tabList: 'Semua tab',
     newTab: 'Tab baru',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: 'Buka PDF',
+    save: 'Simpan',
+    dontSave: 'Jangan simpan',
+    closeUnsavedTitle: 'Perubahan belum disimpan',
+    closeUnsavedBody:
+      '“{name}” memiliki perubahan yang belum disimpan. Simpan sebelum menutup tab ini?',
+    closeSaveFailed:
+      'Tidak dapat menyimpan dari sini. Buka tab tersebut dan simpan di dalamnya, atau tutup tanpa menyimpan.',
     // First-run onboarding
     onbTitle1: 'Selamat datang di GenOffice',
     onbSubtitle1: 'Suite office open source AI-native pertama',
@@ -1317,6 +1393,14 @@ const baseStrings = {
     closeTab: 'Закрыть вкладку',
     tabList: 'Все вкладки',
     newTab: 'Новая вкладка',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: 'Открыть PDF',
+    save: 'Сохранить',
+    dontSave: 'Не сохранять',
+    closeUnsavedTitle: 'Несохранённые изменения',
+    closeUnsavedBody: 'В «{name}» есть несохранённые изменения. Сохранить перед закрытием вкладки?',
+    closeSaveFailed:
+      'Не удалось сохранить отсюда. Перейдите на вкладку и сохраните в ней или закройте без сохранения.',
     // First-run onboarding
     onbTitle1: 'Добро пожаловать в GenOffice',
     onbSubtitle1: 'Первый открытый AI-нативный офисный пакет',
@@ -1450,6 +1534,15 @@ const baseStrings = {
     closeTab: 'إغلاق علامة التبويب',
     tabList: 'كل علامات التبويب',
     newTab: 'علامة تبويب جديدة',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: 'فتح PDF',
+    save: 'حفظ',
+    dontSave: 'عدم الحفظ',
+    closeUnsavedTitle: 'تغييرات غير محفوظة',
+    closeUnsavedBody:
+      'يحتوي «{name}» على تغييرات غير محفوظة. هل تريد الحفظ قبل إغلاق علامة التبويب؟',
+    closeSaveFailed:
+      'تعذّر الحفظ من هنا. انتقل إلى علامة التبويب واحفظ من داخلها، أو أغلقها دون حفظ.',
     // First-run onboarding
     onbTitle1: 'مرحبًا بك في GenOffice',
     onbSubtitle1: 'أول حزمة مكتبية مفتوحة المصدر وأصيلة في الذكاء الاصطناعي',
@@ -1576,6 +1669,14 @@ const baseStrings = {
     closeTab: 'Fechar guia',
     tabList: 'Todas as guias',
     newTab: 'Nova guia',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: 'Abrir PDF',
+    save: 'Salvar',
+    dontSave: 'Não salvar',
+    closeUnsavedTitle: 'Alterações não salvas',
+    closeUnsavedBody: '“{name}” tem alterações não salvas. Salvar antes de fechar esta guia?',
+    closeSaveFailed:
+      'Não foi possível salvar daqui. Vá até a guia e salve por lá, ou feche sem salvar.',
     // First-run onboarding
     onbTitle1: 'Bem-vindo ao GenOffice',
     onbSubtitle1: 'A primeira suíte de escritório open source e nativa de IA',
@@ -1702,6 +1803,15 @@ const baseStrings = {
     closeTab: 'Chiudi scheda',
     tabList: 'Tutte le schede',
     newTab: 'Nuova scheda',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: 'Apri PDF',
+    save: 'Salva',
+    dontSave: 'Non salvare',
+    closeUnsavedTitle: 'Modifiche non salvate',
+    closeUnsavedBody:
+      '«{name}» contiene modifiche non salvate. Salvare prima di chiudere questa scheda?',
+    closeSaveFailed:
+      'Impossibile salvare da qui. Passa alla scheda e salva al suo interno, oppure chiudila senza salvare.',
     // First-run onboarding
     onbTitle1: 'Benvenuto in GenOffice',
     onbSubtitle1: 'La prima suite per ufficio open source e nativa per l’IA',
@@ -1827,6 +1937,14 @@ const baseStrings = {
     closeTab: 'Zamknij kartę',
     tabList: 'Wszystkie karty',
     newTab: 'Nowa karta',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: 'Otwórz PDF',
+    save: 'Zapisz',
+    dontSave: 'Nie zapisuj',
+    closeUnsavedTitle: 'Niezapisane zmiany',
+    closeUnsavedBody: '„{name}” ma niezapisane zmiany. Zapisać przed zamknięciem tej karty?',
+    closeSaveFailed:
+      'Nie udało się zapisać stąd. Przejdź do karty i zapisz w niej albo zamknij bez zapisywania.',
     // First-run onboarding
     onbTitle1: 'Witamy w GenOffice',
     onbSubtitle1: 'Pierwszy otwartoźródłowy, natywnie oparty na AI pakiet biurowy',
@@ -1952,6 +2070,15 @@ const baseStrings = {
     closeTab: 'Tabblad sluiten',
     tabList: 'Alle tabbladen',
     newTab: 'Nieuw tabblad',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: 'PDF openen',
+    save: 'Opslaan',
+    dontSave: 'Niet opslaan',
+    closeUnsavedTitle: 'Niet-opgeslagen wijzigingen',
+    closeUnsavedBody:
+      '‘{name}’ heeft niet-opgeslagen wijzigingen. Opslaan voordat dit tabblad sluit?',
+    closeSaveFailed:
+      'Opslaan lukt hier niet. Ga naar het tabblad en sla daar op, of sluit zonder op te slaan.',
     // First-run onboarding
     onbTitle1: 'Welkom bij GenOffice',
     onbSubtitle1: 'De eerste open source, AI-native officesuite',
@@ -2077,6 +2204,15 @@ const baseStrings = {
     closeTab: 'Tutup tab',
     tabList: 'Semua tab',
     newTab: 'Tab baharu',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: 'Buka PDF',
+    save: 'Simpan',
+    dontSave: 'Jangan simpan',
+    closeUnsavedTitle: 'Perubahan belum disimpan',
+    closeUnsavedBody:
+      '“{name}” mempunyai perubahan yang belum disimpan. Simpan sebelum menutup tab ini?',
+    closeSaveFailed:
+      'Tidak dapat menyimpan dari sini. Buka tab itu dan simpan di dalamnya, atau tutup tanpa menyimpan.',
     // First-run onboarding
     onbTitle1: 'Selamat datang ke GenOffice',
     onbSubtitle1: 'Suite pejabat sumber terbuka natif AI yang pertama',
@@ -2199,6 +2335,13 @@ const baseStrings = {
     closeTab: 'סגירת כרטיסייה',
     tabList: 'כל הכרטיסיות',
     newTab: 'כרטיסייה חדשה',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: 'פתיחת PDF',
+    save: 'שמירה',
+    dontSave: 'לא לשמור',
+    closeUnsavedTitle: 'שינויים שלא נשמרו',
+    closeUnsavedBody: 'ל־«{name}» יש שינויים שלא נשמרו. לשמור לפני סגירת הכרטיסייה?',
+    closeSaveFailed: 'לא ניתן לשמור מכאן. עברו לכרטיסייה ושמרו בתוכה, או סגרו בלי לשמור.',
     // First-run onboarding
     onbTitle1: 'ברוכים הבאים ל-GenOffice',
     onbSubtitle1: 'חבילת המשרד הראשונה בקוד פתוח שהיא AI-נייטיב',
@@ -2324,6 +2467,14 @@ const baseStrings = {
     closeTab: 'टैब बंद करें',
     tabList: 'सभी टैब',
     newTab: 'नया टैब',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: 'PDF खोलें',
+    save: 'सहेजें',
+    dontSave: 'सहेजें नहीं',
+    closeUnsavedTitle: 'सहेजे नहीं गए बदलाव',
+    closeUnsavedBody: '“{name}” में सहेजे नहीं गए बदलाव हैं। इस टैब को बंद करने से पहले सहेजें?',
+    closeSaveFailed:
+      'यहाँ से सहेजा नहीं जा सका। उस टैब पर जाकर उसमें सहेजें, या बिना सहेजे बंद करें।',
     // First-run onboarding
     onbTitle1: 'GenOffice में आपका स्वागत है',
     onbSubtitle1: 'पहला ओपन-सोर्स, AI-नेटिव ऑफ़िस सुइट',
@@ -2445,6 +2596,13 @@ const baseStrings = {
     closeTab: '關閉分頁',
     tabList: '全部分頁',
     newTab: '新分頁',
+    // Web shell: DOM tab menu + unsaved-changes guard
+    openPdf: '開啟 PDF',
+    save: '儲存',
+    dontSave: '不儲存',
+    closeUnsavedTitle: '有未儲存的變更',
+    closeUnsavedBody: '「{name}」有未儲存的變更。關閉這個分頁前要儲存嗎？',
+    closeSaveFailed: '無法從這裡儲存。請切換到該分頁在其中儲存，或選擇不儲存後關閉。',
     // First-run onboarding
     onbTitle1: '歡迎使用 GenOffice',
     onbSubtitle1: '第一個開源的 AI 原生 Office 套件',

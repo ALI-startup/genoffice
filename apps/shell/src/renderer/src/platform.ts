@@ -66,7 +66,7 @@ import type {
   ProjectSummaryEntry,
   RecentQuery,
 } from '../../shared/home-api'
-import type { TabsApi } from '../../shared/tabs-api'
+import type { TabsApi, TabSummary } from '../../shared/tabs-api'
 import type { UpdateWindowApi } from '../../shared/update-api'
 
 /**
@@ -189,17 +189,68 @@ export interface NewDocumentOptions {
  * Separate from `ShellFilesPort` because it is a different kind of capability:
  * the file port reads and edits the host's file bookkeeping, while every member
  * here *navigates* — in Electron by asking the main process for a
- * WebContentsView tab, in a browser (Phase 5b) by routing. A host could
+ * WebContentsView tab, in a browser by routing to an in-page frame. A host could
  * plausibly back one and not the other.
+ *
+ * Only the two members every host can back live here; the three that a browser
+ * cannot are their own ports below. `open` stays because it takes a `FileRef`,
+ * so on a host that issues no refs it is unreachable by construction rather than
+ * unimplementable — see `ShellFilesPort` on the web host.
  */
 export interface ShellLauncherPort {
   /** Open an existing file, routed to the right editor by its type. */
   open(ref: FileRef): Promise<void>
-  /** Host file picker accepting every supported type, then routes to the editor. */
-  browse(): Promise<void>
   newDoc(options?: NewDocumentOptions): Promise<void>
+}
+
+/**
+ * Creating spreadsheet and presentation documents.
+ *
+ * Split out of `ShellLauncherPort` because these two stand or fall together on a
+ * host, and they fall on the web one: apps/sheets and apps/slides have no
+ * browser build, so there is no surface for a web shell to route to. `X | null`
+ * rather than an optional method, for the usual reason — the two Home quick
+ * cards then exist exactly when the documents they promise can be created,
+ * instead of being present and inert.
+ */
+export interface ShellOfficeLauncherPort {
   newSheet(options?: NewDocumentOptions): Promise<void>
   newSlide(options?: NewDocumentOptions): Promise<void>
+}
+
+/**
+ * The shell's own "open a file" picker: pick anywhere on the machine, then route
+ * the result to the editor that handles its type.
+ *
+ * Null on the web host, and this is the sharpest capability difference in the
+ * whole seam. A browser file picker requires transient user activation, and
+ * activation is per-`window`: the click that would open this picker happens in
+ * the shell's document, so the shell could indeed *show* the dialog — but the
+ * handle it obtains then has to reach the editor's frame and be adopted there,
+ * and every subsequent save in that frame is a separate grant. The shell claims
+ * nothing it cannot finish, so opening a document on the web starts inside the
+ * editor frame, where the click, the picker and the file handle are all in one
+ * window. See `ShellPdfLauncherPort` for how a frame is reached in the first
+ * place.
+ */
+export interface ShellBrowsePort {
+  /** Host file picker accepting every supported type, then routes to the editor. */
+  browse(): Promise<void>
+}
+
+/**
+ * Opening a pdf surface with no document in it.
+ *
+ * The mirror image of `ShellBrowsePort`, and null on *Electron* rather than on
+ * the web — the only port in this seam that way round. Electron's pdf tab is
+ * created around a path (`openPdfTab(openPath: string)`), so there is no such
+ * thing as an empty one; the web shell's is a frame that renders pdf's own empty
+ * state, whose Open button runs inside that frame with its own user activation.
+ * That is the entry point that makes pdf reachable at all in a browser, so it is
+ * a real capability and not a workaround dressed as one.
+ */
+export interface ShellPdfLauncherPort {
+  newPdfTab(): Promise<void>
 }
 
 /**
@@ -321,10 +372,61 @@ export type ShellAiSettingsPort = Pick<AiSettingsApi, 'get'>
  */
 export type ShellAiSettingsEditorPort = Pick<AiSettingsApi, 'save' | 'test' | 'cancelTest'>
 
+/** What the shell does with a tab whose editor reports unsaved work. */
+export type ShellCloseDecision = 'close' | 'keep'
+
+/** The close guard's question, handed to the renderer's prompt. */
+export interface ShellCloseRequest {
+  /** The tab being closed, for the prompt's wording. */
+  tab: TabSummary
+  /**
+   * Ask the editor to save now; resolves to whether it succeeded.
+   *
+   * May be called more than once — a prompt that offers "Save" and is told the
+   * save failed can let the user try again — and may not be called at all.
+   */
+  save(): Promise<boolean>
+}
+
+/**
+ * Hosting editor surfaces as in-page frames.
+ *
+ * Null on Electron, where the editors are `WebContentsView` children positioned
+ * by the main process over the shell's own DOM; a host that paints its editors
+ * natively has no frames to hand out and must not claim it. The web host backs
+ * it, and `AppFrame` renders frames exactly when this port is present.
+ *
+ * `setClosePrompt` is here rather than being a dialog the host puts up itself,
+ * because the host is not allowed to render. Electron's close guard is a native
+ * message box with Save / Don't Save / Cancel, raised by the main process; a
+ * browser page has no such thing, and `window.confirm` can express two outcomes
+ * where the guard needs three. So the *decision* is a React dialog in the shell,
+ * and the host drives it: it asks the frame whether closing would lose work,
+ * calls this prompt if so, and honours the answer — including running `save()`
+ * back through the frame protocol into the editor's own save path, which is the
+ * only place a save can happen.
+ */
+export interface ShellFramesPort {
+  /**
+   * The URL a tab's frame should load, or `null` for a tab that has no frame
+   * (Home). Same-origin by construction — the editors are served under a path of
+   * the shell's own origin, which is what keeps their AI calls same-origin and
+   * their titles readable.
+   */
+  srcFor(tab: TabSummary): string | null
+  /**
+   * Attach the rendered iframe for a tab, or `null` when it unmounts. Called
+   * from a React ref callback; the host talks to the frame through it.
+   */
+  register(id: string, frame: HTMLIFrameElement | null): void
+  /** Install the renderer's unsaved-changes prompt. Called once, before any close. */
+  setClosePrompt(prompt: (request: ShellCloseRequest) => Promise<ShellCloseDecision>): void
+}
+
 /**
  * The shell's composed platform (the `index.html` document).
  *
- * Three members are `X | null`, and the nullability is the design rather than a
+ * Seven members are `X | null`, and the nullability is the design rather than a
  * convenience. An *optional* member would let a host claim a capability and
  * silently no-op it — the renderer would offer "Reveal in folder" and nothing
  * would happen, which is exactly how the hand-written web shims failed. A
@@ -336,13 +438,21 @@ export type ShellAiSettingsEditorPort = Pick<AiSettingsApi, 'save' | 'test' | 'c
  *     Already effectively nullable before this phase: Home.tsx tested
  *     `typeof window.aiOfficeProject !== 'undefined'` and hid the whole sidebar
  *     panel when absent, because the Home renderer is also loaded outside the
- *     shell. That runtime `typeof` check is now a typed key.
+ *     shell. That runtime `typeof` check is now a typed key. Null on the web
+ *     host: @genoffice/project-store is `node:fs` keyed on absolute paths.
  *   - `tabMenus` — Electron: the native popup menus. See `ShellTabMenusPort` for
  *     why a browser backs this with DOM instead of claiming it.
  *   - `aiSettingsEditor` — Electron: `safeStorage`-backed credential writes. See
- *     `ShellAiSettingsEditorPort`.
+ *     `ShellAiSettingsEditorPort`. Null on the web host: the BFF loads its
+ *     credentials from the environment at boot and exposes no write route.
+ *   - `officeLauncher`, `browse` — Electron only; see each port.
+ *   - `pdfLauncher`, `frames` — web only; see each port. These two are the
+ *     reason this is not simply a list of things a browser cannot do: a host
+ *     may back capabilities the desktop one has no equivalent for, and the
+ *     nullable-key shape says so in the same voice.
  *
- * The Electron host backs all three, so nothing about the desktop app changes.
+ * The Electron host backs everything it did before, so nothing about the desktop
+ * app changes.
  */
 export interface ShellPlatform {
   language: ShellLanguagePort
@@ -350,6 +460,10 @@ export interface ShellPlatform {
   onboarding: ShellOnboardingPort
   files: ShellFilesPort
   launcher: ShellLauncherPort
+  officeLauncher: ShellOfficeLauncherPort | null
+  browse: ShellBrowsePort | null
+  pdfLauncher: ShellPdfLauncherPort | null
+  frames: ShellFramesPort | null
   projects: ShellProjectsPort | null
   account: ShellAccountPort
   tabs: ShellTabsPort

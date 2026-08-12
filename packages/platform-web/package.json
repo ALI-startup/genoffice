@@ -7,7 +7,8 @@
   "description": "Browser adapters for the platform ports: a File System Access document store with IndexedDB-persisted handles, plus language / AI (over the BFF) / window implementations; no Electron and no Node built-ins",
   "exports": {
     ".": "./src/index.ts",
-    "./wire": "./src/ai-wire.ts"
+    "./wire": "./src/ai-wire.ts",
+    "./frame": "./src/frame-wire.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
