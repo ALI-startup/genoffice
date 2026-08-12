@@ -274,6 +274,10 @@ async function anthropicTurn(
       method: 'POST',
       signal: wd.signal,
       headers: {
+        // Operator-configured extras (tracking/attribution) come first so a
+        // stray entry can never displace the credential or protocol headers
+        // below — the built-ins always win the spread.
+        ...config.headers,
         'Content-Type': 'application/json',
         'x-api-key': config.apiKey,
         'anthropic-version': '2023-06-01',
@@ -494,6 +498,7 @@ async function geminiTurn(
     method: 'POST',
     signal: wd.signal,
     headers: {
+      ...config.headers,
       'Content-Type': 'application/json',
       'x-goog-api-key': config.apiKey,
       ...gensparkAttributionHeaders(baseUrl),
@@ -697,6 +702,7 @@ async function openAiCompatibleTurn(
     method: 'POST',
     signal: wd.signal,
     headers: {
+      ...config.headers,
       'Content-Type': 'application/json',
       Authorization: `Bearer ${config.apiKey}`,
       ...gensparkAttributionHeaders(baseUrl),

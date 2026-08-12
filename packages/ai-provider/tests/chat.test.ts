@@ -135,6 +135,49 @@ describe('chatForProvider', () => {
     ).toBeUndefined()
   })
 
+  it('sends operator-configured headers alongside the built-in ones', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ choices: [{ message: { content: 'ok' } }] }))
+    vi.stubGlobal('fetch', fetchMock)
+    await chatForProvider(
+      'vllm',
+      {
+        apiKey: 'k',
+        model: 'qwen36-35b',
+        baseUrl: 'https://gateway.example/v1',
+        headers: { 'X-Caller': 'my-service' },
+      },
+      'sys',
+      'hi',
+    )
+    const headers = fetchMock.mock.calls[0]![1].headers as Record<string, string>
+    expect(headers['X-Caller']).toBe('my-service')
+    expect(headers.Authorization).toBe('Bearer k')
+  })
+
+  it('never lets a custom header displace the credential or content type', async () => {
+    // The whole point of the merge order: an operator typo, or a settings blob
+    // that reached this far, cannot rewrite how the request authenticates.
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ choices: [{ message: { content: 'ok' } }] }))
+    vi.stubGlobal('fetch', fetchMock)
+    await chatForProvider(
+      'openai',
+      {
+        apiKey: 'real-key',
+        model: 'gpt-4.1-mini',
+        headers: { Authorization: 'Bearer spoofed', 'Content-Type': 'text/plain' },
+      },
+      'sys',
+      'hi',
+    )
+    const headers = fetchMock.mock.calls[0]![1].headers as Record<string, string>
+    expect(headers.Authorization).toBe('Bearer real-key')
+    expect(headers['Content-Type']).toBe('application/json')
+  })
+
   it('treats an empty response body as an error', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ choices: [{ message: {} }] })))
     const result = await chatForProvider(

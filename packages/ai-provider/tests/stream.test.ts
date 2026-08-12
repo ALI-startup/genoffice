@@ -350,6 +350,31 @@ describe('streamForProvider: gemini', () => {
 })
 
 describe('streamForProvider: openai-compatible', () => {
+  it('sends operator-configured headers without displacing the credential', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(okResponse(sseStream(['data: [DONE]'])))
+    vi.stubGlobal('fetch', fetchMock)
+    const { cb } = collector()
+    await streamForProvider(
+      'vllm',
+      {
+        apiKey: 'k',
+        model: 'qwen36-35b',
+        baseUrl: 'https://gateway.example/v1',
+        headers: { 'X-Caller': 'my-service', Authorization: 'Bearer spoofed' },
+      },
+      'sys',
+      [],
+      [],
+      100,
+      cb,
+    )
+    const headers = fetchMock.mock.calls[0]![1].headers as Record<string, string>
+    expect(headers['X-Caller']).toBe('my-service')
+    expect(headers.Authorization).toBe('Bearer k')
+  })
+
   it('reassembles fragmented tool call arguments and flushes on finish_reason', async () => {
     const body = sseStream([
       'data: {"choices":[{"delta":{"content":"partial "}}]}',

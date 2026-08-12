@@ -115,8 +115,8 @@ export const AI_PROVIDERS: AiProviderMeta[] = [
   {
     id: 'openrouter',
     label: 'OpenRouter',
-    models: ['anthropic/claude-sonnet-4.6', 'openai/gpt-4.1-mini', 'google/gemini-2.5-flash'],
-    defaultModel: 'anthropic/claude-sonnet-4.6',
+    models: ['google/gemma-3-27b-it:free', 'anthropic/claude-sonnet-4.6', 'openai/gpt-4.1-mini', 'google/gemini-2.5-flash'],
+    defaultModel: 'google/gemma-3-27b-it:free',
     keyPlaceholder: 'sk-or-v1-...',
     protocol: 'openai-compatible',
     defaultBaseUrl: 'https://openrouter.ai/api/v1',

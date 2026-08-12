@@ -14,6 +14,8 @@ async function chatAnthropic(
     method: 'POST',
     signal: wd.signal,
     headers: {
+      // See the note in stream.ts: extras first, so built-ins always win.
+      ...config.headers,
       'Content-Type': 'application/json',
       'x-api-key': config.apiKey,
       'anthropic-version': '2023-06-01',
@@ -56,6 +58,7 @@ async function chatGemini(
     method: 'POST',
     signal: wd.signal,
     headers: {
+      ...config.headers,
       'Content-Type': 'application/json',
       'x-goog-api-key': config.apiKey,
       ...gensparkAttributionHeaders(baseUrl),
@@ -92,6 +95,7 @@ async function chatOpenAiCompatible(
     method: 'POST',
     signal: wd.signal,
     headers: {
+      ...config.headers,
       'Content-Type': 'application/json',
       Authorization: `Bearer ${config.apiKey}`,
       ...gensparkAttributionHeaders(baseUrl),
