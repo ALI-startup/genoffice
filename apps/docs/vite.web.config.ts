@@ -22,6 +22,7 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { AI_BFF_BASE_PATH } from '@genoffice/platform-web/wire'
+import { hwpxBrowserAlias } from '@genoffice/hwpx-convert/vite'
 import { hostAlias } from './vite.shared'
 
 /** Where `npm run start -w @genoffice/ai-bff` listens by default. */
@@ -35,7 +36,10 @@ export default defineConfig({
   // the tab strip — so the shell's dev script and its composed build set the
   // base to that prefix. Nothing else about the build differs.
   base: process.env.DOCS_WEB_BASE || './',
-  resolve: { alias: hostAlias('web') },
+  // The host seam, plus the one alias the HWPX reader needs to bundle for a
+  // browser — see @genoffice/hwpx-convert/vite for why it cannot be imported
+  // through its package entry point here.
+  resolve: { alias: { ...hostAlias('web'), ...hwpxBrowserAlias() } },
   plugins: [react()],
   build: {
     // Deliberately outside `out/`: apps/shell/electron-builder.cjs ships

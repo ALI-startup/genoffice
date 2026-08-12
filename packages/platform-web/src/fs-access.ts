@@ -115,6 +115,28 @@ export const DOCX_FILE_TYPES: FilePickerAcceptType[] = [
   },
 ]
 
+/** Hangul Word Processor documents, which docs imports and exports. */
+export const HWPX_FILE_TYPES: FilePickerAcceptType[] = [
+  { description: 'Hangul Document', accept: { 'application/hwp+zip': ['.hwpx'] } },
+]
+
+/**
+ * Everything docs can open.
+ *
+ * One entry rather than two, so a single choice in the dialog shows both kinds
+ * side by side — which matters because the two are opened the same way from the
+ * user's side even though `.hwpx` arrives as an import rather than a document.
+ */
+export const DOCUMENT_FILE_TYPES: FilePickerAcceptType[] = [
+  {
+    description: 'Documents',
+    accept: {
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'application/hwp+zip': ['.hwpx'],
+    },
+  },
+]
+
 /**
  * Image types for "insert a picture".
  *

@@ -215,9 +215,18 @@ export class WebDocumentStore {
    * persisting a handle for it would grow the recent list with documents the
    * user never opened.
    */
-  async saveBytesAs(suggestedName: string, bytes: Uint8Array): Promise<string | null> {
+  async saveBytesAs(
+    suggestedName: string,
+    bytes: Uint8Array,
+    /**
+     * Accepted types for this write, when the artifact is not the store's own
+     * document format — exporting `.hwpx` out of a `.docx` store, for instance.
+     * Defaults to the store's types.
+     */
+    types: FilePickerAcceptType[] = this.fileTypes,
+  ): Promise<string | null> {
     const handle = await this.withDialog(() =>
-      this.pickers.saveFile({ types: this.fileTypes, suggestedName, id: this.pickerId }),
+      this.pickers.saveFile({ types, suggestedName, id: this.pickerId }),
     ).catch(cancelToNull)
     if (!handle) return null
     await ensurePermission(handle, 'readwrite')

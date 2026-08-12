@@ -23,7 +23,7 @@ import {
 } from '@genoffice/docx-engine'
 import type { AiSettings } from '../shared/ipc'
 import { AI_PROVIDERS } from '../shared/ipc'
-import { docsPlatform, type OpenedDocument, type RecentDocument } from './platform'
+import { docsPlatform, type OpenOutcome, type RecentDocument } from './platform'
 import { AiPanel } from './ai/AiPanel'
 import { asianCharCount, countWords, nonAsianWordCount } from './word-count'
 import { toRoman } from './note-format'
@@ -123,6 +123,7 @@ import {
 } from './doc-state'
 import {
   exportPdf as exportPdfImpl,
+  exportHwpx as exportHwpxImpl,
   loadFile as loadFileImpl,
   newFile as newFileImpl,
   save as saveImpl,
@@ -267,7 +268,7 @@ export function App() {
   const { lang } = useI18n()
   const [doc, setDoc] = useState<DocState | null>(null)
   /** true until the pending-open / new-blank boot checks settle; the start screen stays hidden meanwhile */
-  const bootPendingRef = useRef<Promise<[OpenedDocument | null, boolean]> | null>(null)
+  const bootPendingRef = useRef<Promise<[OpenOutcome | null, boolean]> | null>(null)
   const bootHandledRef = useRef(false)
   const [_recent, setRecent] = useState<RecentDocument[]>([])
   const [settings, setSettings] = useState<AiSettings>(DEFAULT_SETTINGS)
@@ -799,10 +800,14 @@ export function App() {
     setProtection,
     setProtectionDirty,
     setCompareResult,
+    // Read through the ref at call time: the numbering context is assigned
+    // further down this render, and an import only calls this from an event.
+    allocateNumId: (kind: 'bullet' | 'ordered') =>
+      allocateListNumIdImpl(numberingCtxRef.current, kind),
   }
 
   const loadFile = useCallback(
-    (result: OpenedDocument | null) => loadFileImpl(fileCtxRef.current, result),
+    (outcome: OpenOutcome | null) => loadFileImpl(fileCtxRef.current, outcome),
     [],
   )
 
@@ -1232,6 +1237,14 @@ export function App() {
     (outPath?: string) => exportPdfImpl(fileCtxRef.current, outPath),
     [],
   )
+  const exportHwpx = useCallback(() => exportHwpxImpl(fileCtxRef.current), [])
+  /**
+   * Whether this host can write .hwpx. Both hosts can — Electron in the main
+   * process, the browser in the page — but the port is still consulted rather
+   * than assumed, so a host that drops the capability loses the command instead
+   * of offering a broken one.
+   */
+  const canExportHwpx = docsPlatform().hwpx !== null
   /**
    * Whether this host can render a PDF at all. `pdfExport` is null in the browser
    * build (Phase 4c adds a renderer-side exporter), and `exportPdf` returns
@@ -2188,6 +2201,9 @@ export function App() {
         case 'export-pdf':
           void exportPdf()
           break
+        case 'export-hwpx':
+          void exportHwpx()
+          break
       }
     })
   }, [
@@ -2198,6 +2214,7 @@ export function App() {
     openRecent,
     save,
     exportPdf,
+    exportHwpx,
     zoomFit,
     openStats,
     startNewComment,
@@ -2295,6 +2312,7 @@ export function App() {
     onOpen: () => void openFile(),
     onSave: () => void save(false),
     onSaveAs: () => void save(true),
+    onExportHwpx: () => void exportHwpx(),
     onToggleAi: () => setShowAi((v) => !v),
     onSection: (next: SectionSettings) => {
       // layout applies to the cursor's section; the final section's sectPr goes through SaveOptions.section (also drives canvas geometry)
@@ -2526,6 +2544,11 @@ export function App() {
         showGrid={showGrid}
         splitView={splitView}
         {...ribbonActions}
+        nativeChrome={docsPlatform().window.nativeChrome}
+        // Null on a host with no converter, so the item is hidden rather than
+        // offered and broken. This is the only export surface in the browser,
+        // which has no native menu bar to carry it.
+        onExportHwpx={canExportHwpx ? ribbonActions.onExportHwpx : null}
       />
 
       <div className={`workspace ${darkCanvas ? 'workspace-dark' : ''}`}>

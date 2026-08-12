@@ -21,35 +21,58 @@ import {
   createDocsSearchPort,
   createDocsTabsPort,
 } from '@genoffice/platform-electron'
-import type { DesktopApi, OpenFileResult } from '../shared/ipc'
+import type { DesktopApi, OpenResult } from '../shared/ipc'
 import type {
   DocsFilePort,
+  DocsHwpxPort,
   DocsPdfExportPort,
   DocsPlatform,
   DocsWindowPort,
-  OpenedDocument,
+  OpenOutcome,
 } from './platform'
 
 /** Last path segment of an absolute path, for the display name. */
 const baseName = (path: string): string => path.split(/[\\/]/).pop() ?? path
 
-/** Bridge result → port document: the path becomes the ref, the name comes along unchanged. */
-const toOpenedDocument = (result: OpenFileResult): OpenedDocument => ({
-  ref: result.path,
-  name: result.name,
-  data: result.data,
-  hash: result.hash,
-})
+/**
+ * Bridge result → port outcome.
+ *
+ * A `.docx` becomes a document whose ref is its path; a `.hwpx` becomes an
+ * import, which has no ref because there is nothing on disk this app can write
+ * back to. The tag comes from the main process, which is the only side that saw
+ * the extension.
+ */
+const toOpenOutcome = (result: OpenResult): OpenOutcome =>
+  result.kind === 'import'
+    ? {
+        kind: 'import',
+        imported: {
+          html: result.html,
+          align: result.align,
+          droppedImages: result.droppedImages,
+          sourceName: result.sourceName,
+          name: result.name,
+        },
+      }
+    : {
+        kind: 'document',
+        document: {
+          ref: result.path,
+          name: result.name,
+          data: result.data,
+          hash: result.hash,
+        },
+      }
 
 /** docs' docx document surface over the Electron bridge. */
 export function createDocsFilePort(bridge: DesktopApi): DocsFilePort {
   return {
     consumePending: async () => {
       const result = await bridge.consumePendingOpenDocx()
-      return result ? toOpenedDocument(result) : null
+      return result ? toOpenOutcome(result) : null
     },
     consumeNewBlank: () => bridge.consumeNewBlankDoc(),
-    onOpenDocument: (handler) => bridge.onOpenDocx((result) => handler(toOpenedDocument(result))),
+    onOpenDocument: (handler) => bridge.onOpenDocx((result) => handler(toOpenOutcome(result))),
     // The host reports two paths; the *name* is derived here rather than in the
     // renderer, which used to split newPath on path separators itself.
     onDocumentRenamed: (handler) =>
@@ -58,11 +81,11 @@ export function createDocsFilePort(bridge: DesktopApi): DocsFilePort {
       ),
     openDocument: async () => {
       const result = await bridge.openDocx()
-      return result ? toOpenedDocument(result) : null
+      return result ? toOpenOutcome(result) : null
     },
     openDocumentByRef: async (ref) => {
       const result = await bridge.openDocxPath(ref)
-      return result ? toOpenedDocument(result) : null
+      return result ? toOpenOutcome(result) : null
     },
     save: (ref, data, auto) => bridge.saveDocx(ref, data, auto),
     saveAs: async (defaultName, data) => toNamedResult(await bridge.saveDocxAs(defaultName, data)),
@@ -99,6 +122,10 @@ function toNamedResult(result: { ok: boolean; path?: string; error?: string }): 
 export function createDocsWindowPort(bridge: DesktopApi): DocsWindowPort {
   return {
     ...createDocsCloseSavePort(bridge),
+    // Electron draws the frame and owns the application menu, so the ribbon
+    // keeps its platform-specific behaviour: File in the menu bar on macOS, a
+    // File tab elsewhere, and room reserved for the window controls.
+    nativeChrome: true,
     onCloseCheck: (handler) => bridge.onCloseCheck(handler),
     // The ref→filePath rename lives here. The main process resolves it to clean
     // up the recovery copy on "Don't Save"; nothing on that side changes.
@@ -128,12 +155,25 @@ export function createDocsPdfExportPort(bridge: DesktopApi): DocsPdfExportPort {
 }
 
 /**
- * Four of the five nullable capabilities are non-null here, which is what makes
- * the desktop app's behaviour identical to before the seam existed: the shell owns
- * a tab strip, the main process owns the search client and the gsk CLI, and PDF
- * export goes through `printToPDF`.
+ * HWPX export over the Electron bridge.
  *
- * The fifth, `print`, is null — the one place this host declares *less* than the
+ * The conversion happens in the main process, where the file dialog and the disk
+ * write already live — not because it has to: @genoffice/hwpx-convert needs no
+ * filesystem, and the web adapter runs the same converter in the page.
+ */
+export function createDocsHwpxPort(bridge: DesktopApi): DocsHwpxPort {
+  return {
+    exportDocument: (defaultName, html) => bridge.exportHwpx(defaultName, html),
+  }
+}
+
+/**
+ * Five of the six nullable capabilities are non-null here, which is what makes
+ * the desktop app's behaviour identical to before the seam existed: the shell owns
+ * a tab strip, the main process owns the search client and the gsk CLI, PDF
+ * export goes through `printToPDF`, and HWPX export goes through the main process.
+ *
+ * The sixth, `print`, is null — the one place this host declares *less* than the
  * browser one. Printing on the desktop is the native menu's, answered by
  * `webContents.print()` in the main process; no renderer code has ever started a
  * print here, `DesktopApi.print()` has no call site, and the `'print'` MenuCommand
@@ -153,5 +193,6 @@ export function createElectronDocsPlatform(bridge: DesktopApi): DocsPlatform {
     genspark: createDocsGensparkPort(bridge),
     pdfExport: createDocsPdfExportPort(bridge),
     print: null,
+    hwpx: createDocsHwpxPort(bridge),
   }
 }

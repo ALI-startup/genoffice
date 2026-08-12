@@ -246,6 +246,7 @@ const tMain = createI18n({
     dlgOpenTitle: '打开文件',
     filterSupported: '支持的文件',
     filterWord: 'Word 文档',
+    filterHwpx: '韩文文档 (HWPX)',
     filterExcel: 'Excel 工作簿',
     filterPpt: 'PowerPoint 演示文稿',
     filterPdf: 'PDF 文档',
@@ -291,6 +292,7 @@ const tMain = createI18n({
     dlgOpenTitle: 'Open File',
     filterSupported: 'Supported Files',
     filterWord: 'Word Documents',
+    filterHwpx: 'Hangul Documents (HWPX)',
     filterExcel: 'Excel Workbooks',
     filterPpt: 'PowerPoint Presentations',
     filterPdf: 'PDF Documents',
@@ -339,6 +341,7 @@ const tMain = createI18n({
     dlgOpenTitle: 'ファイルを開く',
     filterSupported: '対応ファイル',
     filterWord: 'Word 文書',
+    filterHwpx: 'HWPX 文書',
     filterExcel: 'Excel ブック',
     filterPpt: 'PowerPoint プレゼンテーション',
     filterPdf: 'PDF ドキュメント',
@@ -387,6 +390,7 @@ const tMain = createI18n({
     dlgOpenTitle: '파일 열기',
     filterSupported: '지원되는 파일',
     filterWord: 'Word 문서',
+    filterHwpx: '한글 문서 (HWPX)',
     filterExcel: 'Excel 통합 문서',
     filterPpt: 'PowerPoint 프레젠테이션',
     filterPdf: 'PDF 문서',
@@ -435,6 +439,7 @@ const tMain = createI18n({
     dlgOpenTitle: 'Ouvrir un fichier',
     filterSupported: 'Fichiers pris en charge',
     filterWord: 'Documents Word',
+    filterHwpx: 'Documents Hangul (HWPX)',
     filterExcel: 'Classeurs Excel',
     filterPpt: 'Présentations PowerPoint',
     filterPdf: 'Documents PDF',
@@ -483,6 +488,7 @@ const tMain = createI18n({
     dlgOpenTitle: 'Datei öffnen',
     filterSupported: 'Unterstützte Dateien',
     filterWord: 'Word-Dokumente',
+    filterHwpx: 'Hangul-Dokumente (HWPX)',
     filterExcel: 'Excel-Arbeitsmappen',
     filterPpt: 'PowerPoint-Präsentationen',
     filterPdf: 'PDF-Dokumente',
@@ -531,6 +537,7 @@ const tMain = createI18n({
     dlgOpenTitle: 'Abrir archivo',
     filterSupported: 'Archivos compatibles',
     filterWord: 'Documentos de Word',
+    filterHwpx: 'Documentos Hangul (HWPX)',
     filterExcel: 'Libros de Excel',
     filterPpt: 'Presentaciones de PowerPoint',
     filterPdf: 'Documentos PDF',
@@ -579,6 +586,7 @@ const tMain = createI18n({
     dlgOpenTitle: 'เปิดไฟล์',
     filterSupported: 'ไฟล์ที่รองรับ',
     filterWord: 'เอกสาร Word',
+    filterHwpx: 'เอกสาร Hangul (HWPX)',
     filterExcel: 'เวิร์กบุ๊ก Excel',
     filterPpt: 'งานนำเสนอ PowerPoint',
     filterPdf: 'เอกสาร PDF',
@@ -626,6 +634,7 @@ const tMain = createI18n({
     dlgOpenTitle: 'Buka File',
     filterSupported: 'File yang Didukung',
     filterWord: 'Dokumen Word',
+    filterHwpx: 'Dokumen Hangul (HWPX)',
     filterExcel: 'Buku Kerja Excel',
     filterPpt: 'Presentasi PowerPoint',
     filterPdf: 'Dokumen PDF',
@@ -674,6 +683,7 @@ const tMain = createI18n({
     dlgOpenTitle: 'Открытие файла',
     filterSupported: 'Поддерживаемые файлы',
     filterWord: 'Документы Word',
+    filterHwpx: 'Документы Hangul (HWPX)',
     filterExcel: 'Книги Excel',
     filterPpt: 'Презентации PowerPoint',
     filterPdf: 'Документы PDF',
@@ -722,6 +732,7 @@ const tMain = createI18n({
     dlgOpenTitle: 'فتح ملف',
     filterSupported: 'الملفات المدعومة',
     filterWord: 'مستندات Word',
+    filterHwpx: 'مستندات هانغول (HWPX)',
     filterExcel: 'مصنفات Excel',
     filterPpt: 'عروض PowerPoint التقديمية',
     filterPdf: 'مستندات PDF',
@@ -769,6 +780,7 @@ const tMain = createI18n({
     dlgOpenTitle: 'Abrir arquivo',
     filterSupported: 'Arquivos compatíveis',
     filterWord: 'Documentos do Word',
+    filterHwpx: 'Documentos Hangul (HWPX)',
     filterExcel: 'Pastas de trabalho do Excel',
     filterPpt: 'Apresentações do PowerPoint',
     filterPdf: 'Documentos PDF',
@@ -817,6 +829,7 @@ const tMain = createI18n({
     dlgOpenTitle: 'Apri file',
     filterSupported: 'File supportati',
     filterWord: 'Documenti Word',
+    filterHwpx: 'Documenti Hangul (HWPX)',
     filterExcel: 'Cartelle di lavoro Excel',
     filterPpt: 'Presentazioni PowerPoint',
     filterPdf: 'Documenti PDF',
@@ -865,6 +878,7 @@ const tMain = createI18n({
     dlgOpenTitle: 'Otwieranie pliku',
     filterSupported: 'Obsługiwane pliki',
     filterWord: 'Dokumenty programu Word',
+    filterHwpx: 'Dokumenty Hangul (HWPX)',
     filterExcel: 'Skoroszyty programu Excel',
     filterPpt: 'Prezentacje programu PowerPoint',
     filterPdf: 'Dokumenty PDF',
@@ -913,6 +927,7 @@ const tMain = createI18n({
     dlgOpenTitle: 'Bestand openen',
     filterSupported: 'Ondersteunde bestanden',
     filterWord: 'Word-documenten',
+    filterHwpx: 'Hangul-documenten (HWPX)',
     filterExcel: 'Excel-werkmappen',
     filterPpt: 'PowerPoint-presentaties',
     filterPdf: 'PDF-documenten',
@@ -961,6 +976,7 @@ const tMain = createI18n({
     dlgOpenTitle: 'Buka Fail',
     filterSupported: 'Fail yang Disokong',
     filterWord: 'Dokumen Word',
+    filterHwpx: 'Dokumen Hangul (HWPX)',
     filterExcel: 'Buku Kerja Excel',
     filterPpt: 'Persembahan PowerPoint',
     filterPdf: 'Dokumen PDF',
@@ -1009,6 +1025,7 @@ const tMain = createI18n({
     dlgOpenTitle: 'פתיחת קובץ',
     filterSupported: 'קבצים נתמכים',
     filterWord: 'מסמכי Word',
+    filterHwpx: 'מסמכי Hangul (HWPX)',
     filterExcel: 'חוברות עבודה של Excel',
     filterPpt: 'מצגות PowerPoint',
     filterPdf: 'מסמכי PDF',
@@ -1054,6 +1071,7 @@ const tMain = createI18n({
     dlgOpenTitle: 'फ़ाइल खोलें',
     filterSupported: 'समर्थित फ़ाइलें',
     filterWord: 'Word दस्तावेज़',
+    filterHwpx: 'Hangul दस्तावेज़ (HWPX)',
     filterExcel: 'Excel वर्कबुक',
     filterPpt: 'PowerPoint प्रस्तुतियाँ',
     filterPdf: 'PDF दस्तावेज़',
@@ -1102,6 +1120,7 @@ const tMain = createI18n({
     dlgOpenTitle: '開啟檔案',
     filterSupported: '支援的檔案',
     filterWord: 'Word 文件',
+    filterHwpx: '韓文文件 (HWPX)',
     filterExcel: 'Excel 活頁簿',
     filterPpt: 'PowerPoint 簡報',
     filterPdf: 'PDF 文件',
@@ -1318,6 +1337,15 @@ function createShellWindow(): void {
 // ---- routing: one dispatch function for every open path ----
 
 const DOCX_RE = /\.docx$/i
+/**
+ * Hangul documents, which docs *imports* rather than opens: the tab it lands in
+ * holds an unsaved .docx, so there is no file on disk for it to be reopened
+ * from. Routed to docs all the same — from the user's side it is opening a
+ * document — but kept out of the recent list and out of the
+ * find-the-tab-for-this-path lookup, both of which are keyed on a path the tab
+ * can save back to.
+ */
+const HWPX_RE = /\.hwpx$/i
 const XLSX_RE = /\.(xlsx|xls|csv)$/i
 const PPTX_RE = /\.pptx$/i
 const PDF_RE = /\.pdf$/i
@@ -1330,13 +1358,27 @@ const UNSUPPORTED_DOC_RE = /\.(doc|rtf|odt|ppt|pps|odp|ods|xlsm|xlsb|pages|key|n
  * legacy .doc/.ppt binaries so they are selectable and surface the explicit
  * "not supported" dialog via openDocumentPath instead of being grayed out.
  */
-const OPEN_DIALOG_EXTENSIONS = ['docx', 'doc', 'xlsx', 'xls', 'csv', 'pptx', 'ppt', 'pdf']
+const OPEN_DIALOG_EXTENSIONS = [
+  'docx',
+  'hwpx',
+  'doc',
+  'xlsx',
+  'xls',
+  'csv',
+  'pptx',
+  'ppt',
+  'pdf',
+]
 
 function supportedFileIn(argv: string[]): string | null {
   return (
     argv.find(
       (arg) =>
-        (DOCX_RE.test(arg) || XLSX_RE.test(arg) || PPTX_RE.test(arg) || PDF_RE.test(arg)) &&
+        (DOCX_RE.test(arg) ||
+          HWPX_RE.test(arg) ||
+          XLSX_RE.test(arg) ||
+          PPTX_RE.test(arg) ||
+          PDF_RE.test(arg)) &&
         existsSync(arg),
     ) ?? null
   )
@@ -1366,6 +1408,12 @@ function openDocumentPath(filePath: string): boolean {
     const existing = tabManager.findDocsTabByPath(filePath)
     if (existing) tabManager.activateTab(existing)
     else tabManager.openDocsTab(filePath)
+    return true
+  }
+  if (HWPX_RE.test(filePath)) {
+    // Always a fresh tab: an import has no saved path, so there is no existing
+    // tab to find, and reopening the same .hwpx twice is two separate imports.
+    tabManager.openDocsTab(filePath)
     return true
   }
   if (XLSX_RE.test(filePath)) {
@@ -1520,6 +1568,7 @@ function registerHomeIpc(): void {
       filters: [
         { name: tm('filterSupported'), extensions: OPEN_DIALOG_EXTENSIONS },
         { name: tm('filterWord'), extensions: ['docx', 'doc'] },
+        { name: tm('filterHwpx'), extensions: ['hwpx'] },
         { name: tm('filterExcel'), extensions: ['xlsx', 'xls', 'csv'] },
         { name: tm('filterPpt'), extensions: ['pptx', 'ppt'] },
         { name: tm('filterPdf'), extensions: ['pdf'] },

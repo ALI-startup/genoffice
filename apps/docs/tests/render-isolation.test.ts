@@ -188,6 +188,8 @@ function ribbonProps(editor: Editor, formatState: RibbonFormatState) {
     onOpen: noop,
     onSave: noop,
     onSaveAs: noop,
+    // The Electron shape, which is what these render tests have always exercised.
+    nativeChrome: true,
     showAi: false,
     onToggleAi: noop,
     section: null,

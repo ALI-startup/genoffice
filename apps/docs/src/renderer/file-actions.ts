@@ -32,6 +32,7 @@ import {
   type StyleUpsert,
   type ThemeColors,
   type ThemeFonts,
+  type ParsedDocFull,
 } from '@genoffice/docx-engine'
 import type { Dispatch, SetStateAction } from 'react'
 import {
@@ -52,13 +53,18 @@ import {
   type InkTool,
 } from './editor/ink'
 import { t, getLang } from './i18n/locale'
-import { isBlankDocument } from './ai/protocol'
+import { findNumId, isBlankDocument, parseHtmlFragment, serializeRangeToHtml } from './ai/protocol'
 import { isDocDirty } from './doc-dirty'
 import { createSaveSerializer } from './save-until-persisted'
 import { checkMissingFonts, collectDocFonts } from './font-check'
 import { defaultEastAsiaFontFor } from './font-list'
 import { hasPrintableHeaderFooter } from './pagination'
-import { docsPlatform, type OpenedDocument, type RecentDocument } from './platform'
+import {
+  docsPlatform,
+  type ImportedDocument,
+  type OpenOutcome,
+  type RecentDocument,
+} from './platform'
 
 /** The App state the file actions need; built fresh per call. */
 export interface FileActionContext {
@@ -160,6 +166,14 @@ export interface FileActionContext {
   setProtection: (value: DocProtection | null) => void
   setProtectionDirty: (dirty: boolean) => void
   setCompareResult: (value: { otherName: string; entries: CompareEntry[] } | null) => void
+  /**
+   * Allocate a numbering id for a new list, or null when none can be made.
+   *
+   * Needed by the import, whose list items have to join real docx numbering:
+   * the blank template it lands on has no list of its own to borrow an id from.
+   * Same allocator the ribbon's list buttons use.
+   */
+  allocateNumId: (kind: 'bullet' | 'ordered') => string | null
 }
 
 /** Drop the undo stack: undo across an open/reparse boundary resurrects stale
@@ -175,9 +189,13 @@ function resetEditorHistory(editor: Editor): void {
 
 export async function loadFile(
   ctx: FileActionContext,
-  result: OpenedDocument | null,
+  outcome: OpenOutcome | null,
 ): Promise<void> {
-  if (!result || !ctx.editor) return
+  if (!outcome || !ctx.editor) return
+  // A converted file is not a document with bytes behind it; it becomes an
+  // unsaved document instead, so it takes a wholly different path.
+  if (outcome.kind === 'import') return importDocument(ctx, outcome.imported)
+  const result = outcome.document
   try {
     const parsed = await parseDocx(new Uint8Array(result.data))
     ctx.editor.storage.listNumbering.defs = parsed.numbering
@@ -258,57 +276,222 @@ export async function loadFile(
   }
 }
 
+/**
+ * Clear every per-document state slot to what a blank document implies.
+ *
+ * A blank template carries no comments, notes, ink, sources, watermark or
+ * header/footer, and nothing in it is dirty yet. Shared by "New" and by an
+ * import so the two cannot drift — a slot cleared in one and forgotten in the
+ * other would leak the previous document's comments or footnotes into the next.
+ */
+function applyBlankDocumentState(ctx: FileActionContext, parsed: ParsedDocFull): void {
+  ctx.setDocCss(docStyleCss(parsed))
+  ctx.setSection(readSectionSettings(parsed))
+  ctx.setSections(readSections(parsed))
+  ctx.setSectionDirty(false)
+  ctx.setPageColor(readPageColor(parsed))
+  ctx.setPageColorDirty(false)
+  ctx.setHeader(null)
+  ctx.setHeaderDirty(false)
+  ctx.setFooter(null)
+  ctx.setFooterDirty(false)
+  ctx.setShowComments(false)
+  ctx.setComments([])
+  ctx.setCommentsDirty(false)
+  ctx.setWatermark(null)
+  ctx.setWatermarkDirty(false)
+  ctx.setInkAnnotations([])
+  ctx.setInksDirty(false)
+  ctx.setInkTool('select')
+  ctx.setFootnotes(parsed.footnotes)
+  ctx.setEndnotes(parsed.endnotes)
+  ctx.setNotesDirty(false)
+  ctx.setSources([])
+  ctx.setSourcesDirty(false)
+  ctx.setThemeFonts(parsed.themeFonts ?? null)
+  ctx.setThemeFontsDirty(false)
+  ctx.setThemeColors(parsed.themeColors ?? null)
+  ctx.setThemeColorsDirty(false)
+  ctx.setCommentComposing(false)
+  ctx.setTrackChanges(false)
+  ctx.setProtection(null)
+  ctx.setProtectionDirty(false)
+  ctx.setCompareResult(null)
+  ctx.dirtyRef.current = false
+}
+
+/**
+ * Reset every piece of document state onto a freshly-built blank document.
+ *
+ * Shared by "New" and by an import, which are the same operation apart from what
+ * ends up in the editor and what the result is called: both start from the blank
+ * template, so both have no path, no comments, no notes and no header/footer,
+ * and both must clear the same dirty flags. `content` is null for New (the blank
+ * template's own blocks are used) and the parsed nodes for an import.
+ */
+async function resetToBlankDocument(
+  ctx: FileActionContext,
+  options: {
+    fileName: string
+    isBlank: boolean
+    /**
+     * Body of the new document, built from the freshly-parsed blank template.
+     *
+     * A factory rather than a ready-made array because an import needs the
+     * template's own numbering definitions to build its list items, and the
+     * template is parsed here — passing nodes in would mean building and parsing
+     * a second blank document just to read them.
+     */
+    content?: (blank: ParsedDocFull) => PmNode[]
+  },
+): Promise<ParsedDocFull> {
+  const editor = ctx.editor!
+  const bytes = await buildBlankDocx({ eastAsiaFont: defaultEastAsiaFontFor(getLang()) })
+  const parsed = await parseDocx(bytes)
+  editor.storage.listNumbering.defs = parsed.numbering
+  const pmDoc = options.content
+    ? { type: 'doc', content: options.content(parsed) }
+    : blocksToPmDoc(parsed.blocks)
+  editor.commands.setContent(pmDoc as never)
+  resetEditorHistory(editor)
+  noteDocumentSwapped()
+  ctx.setDoc({
+    parsed,
+    filePath: null,
+    fileName: options.fileName,
+    hash: '',
+    ...(options.isBlank ? { isBlank: true } : {}),
+  })
+  return parsed
+}
+
 /** new document from the built-in blank template (AI can then generate into it) */
 export async function newFile(ctx: FileActionContext): Promise<boolean | undefined> {
   if (!ctx.editor) return
   try {
-    const bytes = await buildBlankDocx({ eastAsiaFont: defaultEastAsiaFontFor(getLang()) })
-    const parsed = await parseDocx(bytes)
-    ctx.editor.storage.listNumbering.defs = parsed.numbering
-    ctx.editor.commands.setContent(blocksToPmDoc(parsed.blocks) as never)
-    resetEditorHistory(ctx.editor)
-    noteDocumentSwapped()
-    ctx.setDoc({ parsed, filePath: null, fileName: t('appUntitledDocx'), hash: '', isBlank: true })
+    const parsed = await resetToBlankDocument(ctx, {
+      fileName: t('appUntitledDocx'),
+      isBlank: true,
+    })
     ctx.setAiPanelKey((k) => k + 1)
-    ctx.setDocCss(docStyleCss(parsed))
-    ctx.setSection(readSectionSettings(parsed))
-    ctx.setSections(readSections(parsed))
-    ctx.setSectionDirty(false)
-    ctx.setPageColor(readPageColor(parsed))
-    ctx.setPageColorDirty(false)
-    ctx.setHeader(null)
-    ctx.setHeaderDirty(false)
-    ctx.setFooter(null)
-    ctx.setFooterDirty(false)
-    ctx.setShowComments(false)
-    ctx.setComments([])
-    ctx.setCommentsDirty(false)
-    ctx.setWatermark(null)
-    ctx.setWatermarkDirty(false)
-    ctx.setInkAnnotations([])
-    ctx.setInksDirty(false)
-    ctx.setInkTool('select')
-    ctx.setFootnotes(parsed.footnotes)
-    ctx.setEndnotes(parsed.endnotes)
-    ctx.setNotesDirty(false)
-    ctx.setSources([])
-    ctx.setSourcesDirty(false)
-    ctx.setThemeFonts(parsed.themeFonts ?? null)
-    ctx.setThemeFontsDirty(false)
-    ctx.setThemeColors(parsed.themeColors ?? null)
-    ctx.setThemeColorsDirty(false)
-    ctx.setCommentComposing(false)
-    ctx.setTrackChanges(false)
-    ctx.setProtection(null)
-    ctx.setProtectionDirty(false)
-    ctx.setCompareResult(null)
-    ctx.dirtyRef.current = false
+    applyBlankDocumentState(ctx, parsed)
     ctx.setShowAi(true)
     ctx.setStatus(t('appNewDocCreated'))
     return true
   } catch (err) {
     ctx.setStatus(t('appNewFailed', { error: String(err) }))
     return false
+  }
+}
+
+/**
+ * Load a converted file as a new, unsaved document.
+ *
+ * The result is an ordinary .docx-backed document that has never been saved: the
+ * blank template underneath it is what gives pagination, save and PDF export
+ * something real to work with, and the imported content is simply what is in the
+ * editor. Saving it writes .docx, under a name derived from the source
+ * (`report.hwpx` becomes `report.docx`). Writing the original format again is
+ * the separate export command, which is what keeps a lossy format from being
+ * silently re-encoded on every Ctrl+S.
+ */
+export async function importDocument(
+  ctx: FileActionContext,
+  imported: ImportedDocument,
+): Promise<void> {
+  if (!ctx.editor) return
+  try {
+    const parsed = await resetToBlankDocument(ctx, {
+      fileName: imported.name,
+      isBlank: false,
+      content: (blank) => {
+        // List items need a numbering id to join real docx numbering. The blank
+        // template has no list of its own to borrow one from, so it is allocated
+        // on demand — the same path the ribbon's list buttons take.
+        const numIds = {
+          bullet: findNumId(blank.blocks, 'bullet') ?? ctx.allocateNumId('bullet'),
+          ordered: findNumId(blank.blocks, 'ordered') ?? ctx.allocateNumId('ordered'),
+        }
+        const nodes = parseHtmlFragment(imported.html, numIds).map(clearAiChanged)
+        // Alignment rides alongside the fragment because its tag set cannot
+        // carry it. Applied only when it describes exactly the blocks that were
+        // parsed: formatting on the wrong paragraphs is worse than none at all.
+        if (imported.align.length !== nodes.length) return nodes
+        return nodes.map((node, i) =>
+          imported.align[i]
+            ? { ...node, attrs: { ...node.attrs, align: imported.align[i] } }
+            : node,
+        )
+      },
+    })
+    ctx.setAiPanelKey((k) => k + 1)
+    applyBlankDocumentState(ctx, parsed)
+    // Imported content is unsaved by definition: it exists only in the editor
+    // until the user saves, so the document starts dirty rather than clean.
+    ctx.dirtyRef.current = true
+    ctx.setStatus(
+      imported.droppedImages > 0
+        ? t('appImportedWithoutImages', {
+            name: imported.sourceName,
+            n: imported.droppedImages,
+          })
+        : t('appImported', { name: imported.sourceName }),
+    )
+  } catch (err) {
+    ctx.setStatus(t('appImportFailed', { error: String(err) }))
+  }
+}
+
+/**
+ * Strip the AI-changed highlight from imported nodes.
+ *
+ * `parseHtmlFragment` exists for the AI panel, so everything it builds is marked
+ * as an AI edit and renders with the yellow "changed" background. An import is
+ * not an AI edit, and arriving pre-highlighted would tell the user something
+ * untrue about the document.
+ */
+function clearAiChanged(node: PmNode): PmNode {
+  return { ...node, attrs: { ...node.attrs, aiChanged: false } }
+}
+
+/**
+ * Write the document out as .hwpx.
+ *
+ * Serialized through the same restricted fragment the import arrives as, which
+ * is what makes the two halves symmetric — and equally limited. The converter
+ * drops alignment, hyperlink targets, font families and line breaks, so this is
+ * offered as its own command rather than wired into Save; nothing here touches
+ * the .docx the document is saved to.
+ */
+export async function exportHwpx(ctx: FileActionContext): Promise<void> {
+  const { doc, editor } = ctx
+  if (!doc || !editor) return
+  // Null on a host that cannot convert. Both hosts can today, and the ribbon
+  // hides the command where the port is null, so this is the type's guard rather
+  // than a silent no-op.
+  const hwpx = docsPlatform().hwpx
+  if (!hwpx) return
+  ctx.setStatus(t('appExportingHwpx'))
+  try {
+    // flush pending in-place table cell / textbox edits into the PM doc first,
+    // exactly as save() does, or the export would miss the newest cell text
+    window.dispatchEvent(new Event('ai-docs-commit-tables'))
+    const blockCount = (editor.getJSON() as PmNode).content?.length ?? 0
+    if (blockCount === 0) {
+      ctx.setStatus(t('appExportHwpxEmpty'))
+      return
+    }
+    const html = serializeRangeToHtml(editor, 0, blockCount - 1)
+    const result = await hwpx.exportDocument(doc.fileName, html)
+    ctx.setStatus(
+      result.ok
+        ? t('appExportedHwpx', { path: result.path ?? '' })
+        : result.error
+          ? t('appExportHwpxFailed', { error: result.error })
+          : t('appExportHwpxCanceled'),
+    )
+  } catch (err) {
+    ctx.setStatus(t('appExportHwpxFailed', { error: String(err) }))
   }
 }
 

@@ -7,6 +7,35 @@ export interface OpenFileResult {
   hash: string
 }
 
+/**
+ * A .hwpx the main process converted on the way in.
+ *
+ * Content only: there is no path to save back to, because the editor writes
+ * .docx. Writing .hwpx again is the separate exportHwpx call.
+ */
+export interface ImportFileResult {
+  /** restricted HTML fragment (h1-h6, p, ul/ol/li, strong/em/u/s, a, br, tables) */
+  html: string
+  /** paragraph alignment per top-level block; the fragment cannot carry it */
+  align: ReadonlyArray<'center' | 'right' | 'justify' | null>
+  /** pictures the fragment could not carry, reported so the user is told */
+  droppedImages: number
+  /** name of the source file, e.g. report.hwpx */
+  sourceName: string
+  /** what the imported document is called, e.g. report.docx */
+  name: string
+}
+
+/**
+ * Either outcome of an open request.
+ *
+ * Tagged rather than merged, so the renderer cannot mistake an import for a
+ * document with a path behind it.
+ */
+export type OpenResult =
+  | ({ kind: 'document' } & OpenFileResult)
+  | ({ kind: 'import' } & ImportFileResult)
+
 export interface PickImageResult {
   /** raw image bytes, base64 encoded */
   base64: string
@@ -129,6 +158,7 @@ export type MenuCommand =
   | 'find'
   | 'print'
   | 'export-pdf'
+  | 'export-hwpx'
   | 'word-count'
 
 export interface DesktopApi {
@@ -140,14 +170,20 @@ export interface DesktopApi {
       lang: 'zh' | 'en' | 'ja' | 'ko' | 'fr' | 'de' | 'es' | 'th' | 'id' | 'ru' | 'ar',
     ) => void,
   ): () => void
-  openDocx(): Promise<OpenFileResult | null>
-  openDocxPath(path: string): Promise<OpenFileResult | null>
+  /** open dialog covering every format docs loads (.docx opened, .hwpx imported) */
+  openDocx(): Promise<OpenResult | null>
+  openDocxPath(path: string): Promise<OpenResult | null>
   /** mark the renderer ready and consume a file passed by Finder/Explorer at launch */
-  consumePendingOpenDocx(): Promise<OpenFileResult | null>
+  consumePendingOpenDocx(): Promise<OpenResult | null>
   /** returns true when this tab was created via "New Document" and should start blank */
   consumeNewBlankDoc(): Promise<boolean>
   /** receive documents opened from Finder/Explorer while the app is running */
-  onOpenDocx(handler: (result: OpenFileResult) => void): () => void
+  onOpenDocx(handler: (result: OpenResult) => void): () => void
+  /** convert a restricted HTML fragment to .hwpx and ask where to save it */
+  exportHwpx(
+    defaultName: string,
+    html: string,
+  ): Promise<{ ok: boolean; path?: string; error?: string }>
   /** File was renamed externally (renamed in the shell Home list) — pushes old and new paths; renderer syncs its save path and title bar */
   onRenamedDocx(handler: (paths: { oldPath: string; newPath: string }) => void): () => void
   /** auto=true marks an autosave: an externally modified file then fails with

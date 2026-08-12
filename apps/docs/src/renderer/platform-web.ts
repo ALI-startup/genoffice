@@ -44,6 +44,7 @@ import type { AiPort, AttachmentsPort, DiskFileState, LanguagePort } from '@geno
 import { isExternallyModified } from '@genoffice/platform'
 import type { FilePickers, FrameChildLink, WebDocumentStore } from '@genoffice/platform-web'
 import {
+  HWPX_FILE_TYPES,
   IMAGE_FILE_TYPES,
   createWebUnloadPrompt,
   ensurePermission,
@@ -53,15 +54,26 @@ import type { PickImageResult } from '../shared/ipc'
 import type {
   CloseCheckState,
   DocsFilePort,
+  DocsHwpxPort,
   DocsPlatform,
   DocsPrintPort,
   DocsWindowPort,
   DocumentRef,
-  OpenedDocument,
+  HwpxExportResult,
+  OpenOutcome,
   RecentDocument,
   SaveDocumentResult,
   SaveNamedDocumentResult,
 } from './platform'
+
+/**
+ * Recognises a `.hwpx` by its display name.
+ *
+ * The name is all there is to go on: a `DocumentRef` is opaque and the picker
+ * hands back a handle, not a type. That is enough — the name is what the user
+ * picked, from a dialog filtered to these extensions.
+ */
+const HWPX_NAME = /\.hwpx$/i
 
 /**
  * The one browser rule that shapes this host: `showSaveFilePicker` may only be
@@ -156,12 +168,47 @@ export function createWebDocsFilePort(
    * also the baseline for conflict detection, which is the second reason it must
    * be a real hash.
    */
-  const load = async (ref: DocumentRef, name: string): Promise<OpenedDocument> => {
+  const load = async (ref: DocumentRef, name: string): Promise<OpenOutcome> => {
     const bytes = await store.read(ref)
+    if (HWPX_NAME.test(name)) return importHwpx(ref, name, bytes)
     const data = toArrayBuffer(bytes)
     const hash = await sha256Hex(data)
     await remember(ref, hash)
-    return { ref, name, data, hash }
+    return { kind: 'document', document: { ref, name, data, hash } }
+  }
+
+  /**
+   * Convert a picked `.hwpx` and hand it over as an import.
+   *
+   * The handle is released rather than kept. Everything the store remembers a
+   * handle *for* — saving in place, conflict detection, the recent list — is
+   * about a file this app can write back to, and this one it cannot: the import
+   * becomes an unsaved `.docx`. Leaving the handle behind would put a document
+   * in the recent list that reopening would silently re-import.
+   */
+  const importHwpx = async (
+    ref: DocumentRef,
+    name: string,
+    bytes: Uint8Array,
+  ): Promise<OpenOutcome> => {
+    // Loaded on demand: the converter is the heaviest thing in this bundle and a
+    // session that never opens a .hwpx should not download it.
+    const { hwpxToHtml } = await import('@genoffice/hwpx-convert')
+    try {
+      const imported = await hwpxToHtml(bytes)
+      return {
+        kind: 'import',
+        imported: {
+          ...imported,
+          sourceName: name,
+          name: `${name.replace(HWPX_NAME, '')}.docx`,
+        },
+      }
+    } finally {
+      // Released whether or not the conversion worked: a file that failed to
+      // convert is not a document either.
+      await store.forget(ref).catch(() => {})
+    }
   }
 
   /**
@@ -451,6 +498,11 @@ export function createWebDocsWindowPort(
   }
 
   return {
+    // A browser draws neither the window frame nor a menu bar. The ribbon reads
+    // this to keep its File menu in-app on every platform — keyed on the OS
+    // alone it would vanish on macOS, taking Open, Save As and Export with it —
+    // and to stop reserving space for window controls that do not exist here.
+    nativeChrome: false,
     onCloseCheck(handler: () => void): () => void {
       closeCheckListeners.add(handler)
       return () => void closeCheckListeners.delete(handler)
@@ -535,7 +587,45 @@ export function createWebDocsPlatform(deps: WebDocsPlatformDeps): DocsPlatform {
     // The browser prints instead — a different operation, offered under its own
     // name through the port below.
     pdfExport: null,
+    hwpx: createWebDocsHwpxPort(deps.store),
     print: createWebDocsPrintPort(deps.printPage),
+  }
+}
+
+/**
+ * HWPX export, entirely in the browser.
+ *
+ * Non-null here, unlike `pdfExport`, and the two are not alike. A browser-side
+ * PDF exporter would have to re-render the document and would produce something
+ * *different* from what the desktop writes under the same command name. This
+ * runs the very same converter the Electron host runs: @genoffice/hwpx-convert
+ * assembles the package from an embedded template, so there is no filesystem on
+ * the path and no second implementation to diverge.
+ *
+ * Written through `saveBytesAs`, which deliberately mints no ref: an export is
+ * an artifact the user takes away, not a document this app goes on editing, so
+ * the `.docx` it came from stays the open document.
+ */
+export function createWebDocsHwpxPort(store: WebDocumentStore): DocsHwpxPort {
+  return {
+    exportDocument: async (defaultName, html): Promise<HwpxExportResult> => {
+      try {
+        // On demand: the converter is the heaviest thing in this bundle, and a
+        // session that never exports should not download it.
+        const { htmlToHwpx } = await import('@genoffice/hwpx-convert')
+        const bytes = await htmlToHwpx(html)
+        const suggested = `${defaultName.replace(/\.docx$/i, '')}.hwpx`
+        const written = await store.saveBytesAs(suggested, bytes, HWPX_FILE_TYPES)
+        // A dismissed dialog is `ok: false` with no error, matching the PDF
+        // export port's convention; the caller reports it as a cancellation.
+        if (written === null) return { ok: false }
+        // A browser gives a name, never a path. `path` is display-only, and the
+        // name is the most honest thing to put in it.
+        return { ok: true, path: written }
+      } catch (error) {
+        return { ok: false, error: messageOf(error) }
+      }
+    },
   }
 }
 

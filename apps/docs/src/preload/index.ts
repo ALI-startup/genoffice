@@ -47,6 +47,8 @@ const api: DesktopApi = {
   },
   saveDocxAs: (defaultName: string, data: ArrayBuffer) =>
     ipcRenderer.invoke('docs:save-as', defaultName, data),
+  exportHwpx: (defaultName: string, html: string) =>
+    ipcRenderer.invoke('docs:export-hwpx', defaultName, html),
   saveDocxNew: (defaultName: string, data: ArrayBuffer) =>
     ipcRenderer.invoke('docs:save-new', defaultName, data),
   getRecentFiles: () => ipcRenderer.invoke('docs:recent'),

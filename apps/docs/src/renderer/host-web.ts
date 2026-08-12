@@ -28,7 +28,7 @@ import {
   createWebAttachmentsPort,
   createWebLanguagePort,
   ATTACHMENT_TEXT_EXTS,
-  DOCX_FILE_TYPES,
+  DOCUMENT_FILE_TYPES,
   WebDocumentStore,
   type WebAttachmentExtractor,
   type WebAttachmentSource,
@@ -133,7 +133,10 @@ export const createDocsPlatform: CreateDocsPlatform = async () => {
     // in another app's recent list when both run on the same origin.
     handles: createIndexedDbHandleStore(indexedDB, `${DOCUMENT_DB_NAME}-docs`),
     pickers,
-    fileTypes: DOCX_FILE_TYPES,
+    // Both formats docs opens. A .hwpx is converted on the way in and becomes
+    // an unsaved .docx, so the store never saves back to one — see the import
+    // branch in platform-web.ts.
+    fileTypes: DOCUMENT_FILE_TYPES,
     pickerId: 'genoffice-docx',
   })
   return createWebDocsPlatform({

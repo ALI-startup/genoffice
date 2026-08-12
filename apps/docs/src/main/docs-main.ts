@@ -66,6 +66,8 @@ import type {
   DocsTabInfo,
   MenuCommand,
   OpenFileResult,
+  ImportFileResult,
+  OpenResult,
 } from '../shared/ipc'
 import { ATTACHMENT_IMAGE_EXTS } from '../shared/ipc'
 import { findDocxPath } from '../shared/open-file'
@@ -86,6 +88,9 @@ const tMain = createI18n({
   zh: {
     dlgOpenDoc: '打开文档',
     filterWord: 'Word 文档',
+    filterDocuments: '文档',
+    filterHwpx: '韩文文档 (HWPX)',
+    menuExportHwpx: '导出为 HWPX…',
     dlgSaveAs: '另存为',
     closeUnsavedMsg: '此文档有未保存的更改。',
     closeUnsavedDetail: '关闭前是否保存？',
@@ -178,6 +183,9 @@ const tMain = createI18n({
   en: {
     dlgOpenDoc: 'Open Document',
     filterWord: 'Word Documents',
+    filterDocuments: 'Documents',
+    filterHwpx: 'Hangul Documents (HWPX)',
+    menuExportHwpx: 'Export as HWPX…',
     dlgSaveAs: 'Save As',
     closeUnsavedMsg: 'This document has unsaved changes.',
     closeUnsavedDetail: 'Do you want to save them before closing?',
@@ -272,6 +280,9 @@ const tMain = createI18n({
   ja: {
     dlgOpenDoc: '文書を開く',
     filterWord: 'Word 文書',
+    filterDocuments: '文書',
+    filterHwpx: 'HWPX 文書',
+    menuExportHwpx: 'HWPX としてエクスポート…',
     dlgSaveAs: '名前を付けて保存',
     closeUnsavedMsg: 'このドキュメントに未保存の変更があります。',
     closeUnsavedDetail: '閉じる前に保存しますか？',
@@ -366,6 +377,9 @@ const tMain = createI18n({
   ko: {
     dlgOpenDoc: '문서 열기',
     filterWord: 'Word 문서',
+    filterDocuments: '문서',
+    filterHwpx: '한글 문서 (HWPX)',
+    menuExportHwpx: 'HWPX로 내보내기…',
     dlgSaveAs: '다른 이름으로 저장',
     closeUnsavedMsg: '이 문서에 저장하지 않은 변경 사항이 있습니다.',
     closeUnsavedDetail: '닫기 전에 저장하시겠습니까?',
@@ -461,6 +475,9 @@ const tMain = createI18n({
   fr: {
     dlgOpenDoc: 'Ouvrir un document',
     filterWord: 'Documents Word',
+    filterDocuments: 'Documents',
+    filterHwpx: 'Documents Hangul (HWPX)',
+    menuExportHwpx: 'Exporter au format HWPX…',
     dlgSaveAs: 'Enregistrer sous',
     closeUnsavedMsg: 'Ce document contient des modifications non enregistrées.',
     closeUnsavedDetail: 'Voulez-vous les enregistrer avant de fermer ?',
@@ -557,6 +574,9 @@ const tMain = createI18n({
   de: {
     dlgOpenDoc: 'Dokument öffnen',
     filterWord: 'Word-Dokumente',
+    filterDocuments: 'Dokumente',
+    filterHwpx: 'Hangul-Dokumente (HWPX)',
+    menuExportHwpx: 'Als HWPX exportieren…',
     dlgSaveAs: 'Speichern unter',
     closeUnsavedMsg: 'Dieses Dokument enthält ungespeicherte Änderungen.',
     closeUnsavedDetail: 'Vor dem Schließen speichern?',
@@ -653,6 +673,9 @@ const tMain = createI18n({
   es: {
     dlgOpenDoc: 'Abrir documento',
     filterWord: 'Documentos de Word',
+    filterDocuments: 'Documentos',
+    filterHwpx: 'Documentos Hangul (HWPX)',
+    menuExportHwpx: 'Exportar como HWPX…',
     dlgSaveAs: 'Guardar como',
     closeUnsavedMsg: 'Este documento tiene cambios sin guardar.',
     closeUnsavedDetail: '¿Desea guardarlos antes de cerrar?',
@@ -748,6 +771,9 @@ const tMain = createI18n({
   th: {
     dlgOpenDoc: 'เปิดเอกสาร',
     filterWord: 'เอกสาร Word',
+    filterDocuments: 'เอกสาร',
+    filterHwpx: 'เอกสาร Hangul (HWPX)',
+    menuExportHwpx: 'ส่งออกเป็น HWPX…',
     dlgSaveAs: 'บันทึกเป็น',
     closeUnsavedMsg: 'เอกสารนี้มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก',
     closeUnsavedDetail: 'ต้องการบันทึกก่อนปิดหรือไม่?',
@@ -842,6 +868,9 @@ const tMain = createI18n({
   id: {
     dlgOpenDoc: 'Buka Dokumen',
     filterWord: 'Dokumen Word',
+    filterDocuments: 'Dokumen',
+    filterHwpx: 'Dokumen Hangul (HWPX)',
+    menuExportHwpx: 'Ekspor sebagai HWPX…',
     dlgSaveAs: 'Simpan Sebagai',
     closeUnsavedMsg: 'Dokumen ini memiliki perubahan yang belum disimpan.',
     closeUnsavedDetail: 'Simpan sebelum menutup?',
@@ -936,6 +965,9 @@ const tMain = createI18n({
   ru: {
     dlgOpenDoc: 'Открыть документ',
     filterWord: 'Документы Word',
+    filterDocuments: 'Документы',
+    filterHwpx: 'Документы Hangul (HWPX)',
+    menuExportHwpx: 'Экспорт в HWPX…',
     dlgSaveAs: 'Сохранить как',
     closeUnsavedMsg: 'В этом документе есть несохранённые изменения.',
     closeUnsavedDetail: 'Сохранить их перед закрытием?',
@@ -1031,6 +1063,9 @@ const tMain = createI18n({
   ar: {
     dlgOpenDoc: 'فتح مستند',
     filterWord: 'مستندات Word',
+    filterDocuments: 'المستندات',
+    filterHwpx: 'مستندات هانغول (HWPX)',
+    menuExportHwpx: 'تصدير بصيغة HWPX…',
     dlgSaveAs: 'حفظ باسم',
     closeUnsavedMsg: 'يحتوي هذا المستند على تغييرات غير محفوظة.',
     closeUnsavedDetail: 'هل تريد حفظها قبل الإغلاق؟',
@@ -1126,6 +1161,9 @@ const tMain = createI18n({
   pt: {
     dlgOpenDoc: 'Abrir Documento',
     filterWord: 'Documentos do Word',
+    filterDocuments: 'Documentos',
+    filterHwpx: 'Documentos Hangul (HWPX)',
+    menuExportHwpx: 'Exportar como HWPX…',
     dlgSaveAs: 'Salvar Como',
     closeUnsavedMsg: 'Este documento tem alterações não salvas.',
     closeUnsavedDetail: 'Deseja salvá-las antes de fechar?',
@@ -1221,6 +1259,9 @@ const tMain = createI18n({
   it: {
     dlgOpenDoc: 'Apri documento',
     filterWord: 'Documenti Word',
+    filterDocuments: 'Documenti',
+    filterHwpx: 'Documenti Hangul (HWPX)',
+    menuExportHwpx: 'Esporta come HWPX…',
     dlgSaveAs: 'Salva con nome',
     closeUnsavedMsg: 'Questo documento contiene modifiche non salvate.',
     closeUnsavedDetail: 'Salvarle prima di chiudere?',
@@ -1316,6 +1357,9 @@ const tMain = createI18n({
   pl: {
     dlgOpenDoc: 'Otwórz dokument',
     filterWord: 'Dokumenty programu Word',
+    filterDocuments: 'Dokumenty',
+    filterHwpx: 'Dokumenty Hangul (HWPX)',
+    menuExportHwpx: 'Eksportuj jako HWPX…',
     dlgSaveAs: 'Zapisz jako',
     closeUnsavedMsg: 'Ten dokument zawiera niezapisane zmiany.',
     closeUnsavedDetail: 'Czy zapisać je przed zamknięciem?',
@@ -1411,6 +1455,9 @@ const tMain = createI18n({
   nl: {
     dlgOpenDoc: 'Document openen',
     filterWord: 'Word-documenten',
+    filterDocuments: 'Documenten',
+    filterHwpx: 'Hangul-documenten (HWPX)',
+    menuExportHwpx: 'Exporteren als HWPX…',
     dlgSaveAs: 'Opslaan als',
     closeUnsavedMsg: 'Dit document bevat niet-opgeslagen wijzigingen.',
     closeUnsavedDetail: 'Wilt u ze opslaan voordat u sluit?',
@@ -1506,6 +1553,9 @@ const tMain = createI18n({
   ms: {
     dlgOpenDoc: 'Buka Dokumen',
     filterWord: 'Dokumen Word',
+    filterDocuments: 'Dokumen',
+    filterHwpx: 'Dokumen Hangul (HWPX)',
+    menuExportHwpx: 'Eksport sebagai HWPX…',
     dlgSaveAs: 'Simpan Sebagai',
     closeUnsavedMsg: 'Dokumen ini mempunyai perubahan yang belum disimpan.',
     closeUnsavedDetail: 'Adakah anda mahu menyimpannya sebelum menutup?',
@@ -1601,6 +1651,9 @@ const tMain = createI18n({
   he: {
     dlgOpenDoc: 'פתיחת מסמך',
     filterWord: 'מסמכי Word',
+    filterDocuments: 'מסמכים',
+    filterHwpx: 'מסמכי Hangul (HWPX)',
+    menuExportHwpx: 'ייצוא כ-HWPX…',
     dlgSaveAs: 'שמירה בשם',
     closeUnsavedMsg: 'במסמך זה יש שינויים שלא נשמרו.',
     closeUnsavedDetail: 'האם לשמור אותם לפני הסגירה?',
@@ -1694,6 +1747,9 @@ const tMain = createI18n({
   hi: {
     dlgOpenDoc: 'दस्तावेज़ खोलें',
     filterWord: 'Word दस्तावेज़',
+    filterDocuments: 'दस्तावेज़',
+    filterHwpx: 'Hangul दस्तावेज़ (HWPX)',
+    menuExportHwpx: 'HWPX के रूप में निर्यात करें…',
     dlgSaveAs: 'इस रूप में सहेजें',
     closeUnsavedMsg: 'इस दस्तावेज़ में सहेजे नहीं गए परिवर्तन हैं।',
     closeUnsavedDetail: 'क्या आप बंद करने से पहले उन्हें सहेजना चाहते हैं?',
@@ -1789,6 +1845,9 @@ const tMain = createI18n({
   'zh-TW': {
     dlgOpenDoc: '開啟文件',
     filterWord: 'Word 文件',
+    filterDocuments: '文件',
+    filterHwpx: '韓文文件 (HWPX)',
+    menuExportHwpx: '匯出為 HWPX…',
     dlgSaveAs: '另存新檔',
     closeUnsavedMsg: '此文件有未儲存的變更。',
     closeUnsavedDetail: '關閉前是否要儲存？',
@@ -1971,13 +2030,13 @@ export function uniquePathIn(dir: string, fileName: string): string {
 }
 
 export function openExternalDocx(filePath: string | null): void {
-  if (!filePath || !/\.docx$/i.test(filePath)) return
+  if (!filePath || !DOC_OPEN_RE.test(filePath)) return
   const win = BrowserWindow.getFocusedWindow() ?? mainWindow
   if (!rendererReady || !win) {
     pendingOpenPath = filePath
     return
   }
-  void loadDocx(filePath, win.webContents.id)
+  void loadDocument(filePath, win.webContents.id)
     .then((result) => {
       if (!result || win.isDestroyed()) return
       if (win.isMinimized()) win.restore()
@@ -2282,6 +2341,44 @@ async function maybeRecoverDocBytes(filePath: string, original: Buffer): Promise
   }
   clearRecoveryCopy(filePath)
   return original
+}
+
+/** Formats the open dialog accepts: .docx is opened, .hwpx is converted on the way in. */
+const DOC_OPEN_RE = /\.(docx|hwpx)$/i
+const HWPX_RE = /\.hwpx$/i
+
+/**
+ * Read a .hwpx as an import.
+ *
+ * Deliberately none of loadDocx's bookkeeping: no recent entry, no archived
+ * original, no write authorization and no remembered disk state. All of that
+ * exists so a later save can overwrite the file it came from, and an import has
+ * no such file — the editor writes .docx, and writing .hwpx again is the
+ * separate export command.
+ */
+async function loadHwpx(filePath: string): Promise<ImportFileResult | null> {
+  if (!existsSync(filePath)) return null
+  const { hwpxToHtml } = await import('@genoffice/hwpx-convert')
+  const imported = await hwpxToHtml(await readFile(filePath))
+  const sourceName = basename(filePath)
+  return {
+    html: imported.html,
+    align: imported.align,
+    droppedImages: imported.droppedImages,
+    sourceName,
+    name: `${sourceName.replace(HWPX_RE, '')}.docx`,
+  }
+}
+
+/** Open dialog / Finder / recent entry: opens a .docx, imports a .hwpx. */
+async function loadDocument(filePath: string, wcId: number): Promise<OpenResult | null> {
+  if (typeof filePath !== 'string' || !DOC_OPEN_RE.test(filePath)) return null
+  if (HWPX_RE.test(filePath)) {
+    const imported = await loadHwpx(filePath)
+    return imported ? { kind: 'import', ...imported } : null
+  }
+  const document = await loadDocx(filePath, wcId)
+  return document ? { kind: 'document', ...document } : null
 }
 
 async function loadDocx(filePath: string, wcId: number): Promise<OpenFileResult | null> {
@@ -2883,14 +2980,20 @@ export function registerDocsIpc(): void {
   ipcMain.handle('docs:open', async (event) => {
     const result = await openDialog(event, {
       title: tm('dlgOpenDoc'),
-      filters: [{ name: tm('filterWord'), extensions: ['docx'] }],
+      filters: [
+        { name: tm('filterDocuments'), extensions: ['docx', 'hwpx'] },
+        { name: tm('filterWord'), extensions: ['docx'] },
+        { name: tm('filterHwpx'), extensions: ['hwpx'] },
+      ],
       properties: ['openFile'],
     })
     if (result.canceled || result.filePaths.length === 0) return null
-    return loadDocx(result.filePaths[0], event.sender.id)
+    return loadDocument(result.filePaths[0], event.sender.id)
   })
 
-  ipcMain.handle('docs:open-path', (event, filePath: string) => loadDocx(filePath, event.sender.id))
+  ipcMain.handle('docs:open-path', (event, filePath: string) =>
+    loadDocument(filePath, event.sender.id),
+  )
 
   ipcMain.handle('docs:consume-pending-open', (event) => {
     rendererReady = true
@@ -2898,11 +3001,11 @@ export function registerDocsIpc(): void {
     const queued = pendingWindowOpens.get(event.sender.id)
     if (queued) {
       pendingWindowOpens.delete(event.sender.id)
-      return loadDocx(queued, event.sender.id)
+      return loadDocument(queued, event.sender.id)
     }
     const filePath = pendingOpenPath
     pendingOpenPath = null
-    return filePath ? loadDocx(filePath, event.sender.id) : null
+    return filePath ? loadDocument(filePath, event.sender.id) : null
   })
 
   /** returns true when this tab was opened via "New Document" and should start blank */
@@ -2987,6 +3090,33 @@ export function registerDocsIpc(): void {
       return { ok: true }
     } catch {
       return { ok: false }
+    }
+  })
+
+  /**
+   * Export the document as .hwpx.
+   *
+   * Its own dialog and its own destination: the export never touches the file
+   * the document was opened from, and no write authorization is recorded for the
+   * path it writes, because nothing here may later be overwritten by a save.
+   * Not added to the recent list either — reopening the export would import it
+   * back through the lossy path rather than reopen the document.
+   */
+  ipcMain.handle('docs:export-hwpx', async (event, defaultName: string, html: string) => {
+    if (tornDownWcIds.has(event.sender.id)) return { ok: false }
+    const result = await saveDialog(event, {
+      title: tm('menuExportHwpx'),
+      defaultPath: defaultName.replace(/\.docx$/i, '') + '.hwpx',
+      filters: [{ name: tm('filterHwpx'), extensions: ['hwpx'] }],
+    })
+    if (result.canceled || !result.filePath) return { ok: false }
+    if (tornDownWcIds.has(event.sender.id)) return { ok: false }
+    try {
+      const { htmlToHwpx } = await import('@genoffice/hwpx-convert')
+      await atomicWriteFile(result.filePath, Buffer.from(await htmlToHwpx(html)))
+      return { ok: true, path: result.filePath }
+    } catch (err) {
+      return { ok: false, error: String(err) }
     }
   })
 
@@ -3376,6 +3506,7 @@ export function buildDocsMenu(): void {
         { type: 'separator' },
         { label: tm('menuPageSetup'), click: () => sendCommand('page-setup') },
         { label: tm('menuExportPdf'), click: () => sendCommand('export-pdf') },
+        { label: tm('menuExportHwpx'), click: () => sendCommand('export-hwpx') },
         {
           label: tm('menuPrint'),
           accelerator: 'CmdOrCtrl+P',

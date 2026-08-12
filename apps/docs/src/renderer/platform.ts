@@ -27,12 +27,16 @@
  *   - `pdfExport` — PDF export/print, or `null` on a host that has none.
  *   - `print` — handing the current view to the host's print flow, or `null` on a
  *     host whose print flow the renderer does not drive.
+ *   - `hwpx` — writing the document out as `.hwpx`, or `null` on a host that
+ *     cannot convert. Non-null on both hosts today.
  *
- * Five of those are `X | null`. Four are capabilities the web host (Phase 4b)
- * genuinely cannot back, and the fifth (`print`) runs the other way: it is the
- * Electron host that leaves it null, because there printing belongs to the native
- * application menu. See `DocsPlatform` for why each is nullable rather than
- * optional, and host-web.ts / platform-electron.ts for why each is null there.
+ * Six of those are `X | null`. Four are capabilities the web host (Phase 4b)
+ * genuinely cannot back; `print` runs the other way, because it is the Electron
+ * host that leaves it null (there printing belongs to the native application
+ * menu); and `hwpx` is backed by both, kept nullable so a host that cannot
+ * convert has something honest to report. See `DocsPlatform` for why each is
+ * nullable rather than optional, and host-web.ts / platform-electron.ts for why
+ * each is null there.
  *
  * Ports deliberately left out, and why:
  *   - `aiSettings` (setAiSettings) — docs' preload forwards 'ai:set-settings'
@@ -82,6 +86,55 @@ export interface OpenedDocument {
   /** sha256 of the file as opened; the host archives the original under this hash. */
   hash: string
 }
+
+/**
+ * A foreign-format file the host converted on the way in.
+ *
+ * Deliberately not an `OpenedDocument` with some fields left null. An import has
+ * no `ref` and no bytes to save back to, because it is not a document this app
+ * can write: `.hwpx` reaches the editor as content only, and the result is an
+ * unsaved document that the normal save path will write as `.docx`. Modelling it
+ * as its own variant is what stops a caller from handing an import to `save()`
+ * and discovering at runtime that there was nothing behind it.
+ *
+ * Round-tripping back out is a separate, explicit command — see `DocsHwpxPort`.
+ */
+export interface ImportedDocument {
+  /**
+   * The document body as a restricted HTML fragment: `h1`–`h6`, `p`,
+   * `ul`/`ol`/`li`, `strong`/`em`/`u`/`s`, `a`, `br` and tables. The same subset
+   * the AI panel's `insert_content` accepts, and parsed by the same code.
+   */
+  html: string
+  /**
+   * Paragraph alignment, one entry per top-level block of `html`, because the
+   * fragment's tag set has nowhere to carry it. Applied positionally, and only
+   * when the length matches the blocks actually parsed.
+   */
+  align: ReadonlyArray<'center' | 'right' | 'justify' | null>
+  /**
+   * Pictures the fragment could not carry.
+   *
+   * Reported rather than swallowed: an import that silently drops the figures
+   * out of a report is worse than one that says how many it dropped.
+   */
+  droppedImages: number
+  /** Name of the source file, e.g. `report.hwpx`, for the status message. */
+  sourceName: string
+  /** What to call the imported document, e.g. `report.docx`. */
+  name: string
+}
+
+/**
+ * What an open request produced.
+ *
+ * Two outcomes, because the host may have opened a document or converted one.
+ * The discriminant exists so the renderer cannot treat the second as the first —
+ * see `ImportedDocument`.
+ */
+export type OpenOutcome =
+  | { kind: 'document'; document: OpenedDocument }
+  | { kind: 'import'; imported: ImportedDocument }
 
 /** A document the host renamed underneath us (renamed in the shell Home list). */
 export interface DocumentRenamed {
@@ -164,17 +217,17 @@ export interface SaveNamedDocumentResult {
  */
 export interface DocsFilePort {
   /** Take the document the host queued for this view at tab creation; null if none. */
-  consumePending(): Promise<OpenedDocument | null>
+  consumePending(): Promise<OpenOutcome | null>
   /** Take the one-shot "this tab was created blank" flag. */
   consumeNewBlank(): Promise<boolean>
   /** Documents the host opens while the app is running (Finder/Explorer). */
-  onOpenDocument(handler: (opened: OpenedDocument) => void): () => void
+  onOpenDocument(handler: (opened: OpenOutcome) => void): () => void
   /** The host renamed the open document; the renderer re-points its ref and title. */
   onDocumentRenamed(handler: (change: DocumentRenamed) => void): () => void
   /** Host open dialog; null when the user dismisses it. */
-  openDocument(): Promise<OpenedDocument | null>
+  openDocument(): Promise<OpenOutcome | null>
   /** Re-open a ref the host issued earlier (a recent entry, or a menu open-path payload). */
-  openDocumentByRef(ref: DocumentRef): Promise<OpenedDocument | null>
+  openDocumentByRef(ref: DocumentRef): Promise<OpenOutcome | null>
   /** Overwrite the document behind `ref`. `auto` marks an autosave (no dialogs). */
   save(ref: DocumentRef, data: ArrayBuffer, auto?: boolean): Promise<SaveDocumentResult>
   /** Save As: the host picks the destination and names it. */
@@ -244,6 +297,26 @@ export type DocsTabsPort = Pick<WindowPort, 'openNewTab' | 'listTabs' | 'focusTa
  * pdf's Save As handshake in beside the shared close guard.
  */
 export type DocsWindowPort = Pick<WindowPort, 'onCloseSaveRequest' | 'reportCloseSaveResult'> & {
+  /**
+   * Whether the host draws the window frame and the application menu itself.
+   *
+   * True under Electron, false in a browser, and it settles two ribbon questions
+   * that the operating system alone cannot answer:
+   *
+   *   - **Where the File menu lives.** Word for Mac has no File *tab*, because
+   *     its file commands sit in the macOS menu bar. That is only true when
+   *     something is drawing a menu bar; a browser tab on macOS has none, so
+   *     keying the decision on the platform string alone hides the File menu and
+   *     leaves Open, Save As and Export unreachable.
+   *   - **Window-chrome padding.** The tab row reserves space for macOS traffic
+   *     lights or the Windows caption-button overlay. A browser draws neither, so
+   *     reserving it there is dead space.
+   *
+   * A plain boolean rather than a port because there is nothing to call: the
+   * renderer only asks what kind of window it is in. `IN_TAB` already covers the
+   * shell's tab strip, which owns the chrome on the host's behalf.
+   */
+  nativeChrome: boolean
   /**
    * The host is about to close this view and wants the renderer's decision.
    *
@@ -341,6 +414,40 @@ export interface DocsPrintPort {
   print(): Promise<void>
 }
 
+/** Outcome of writing an exported file: `path` is display-only. */
+export interface HwpxExportResult {
+  ok: boolean
+  path?: string
+  error?: string
+}
+
+/**
+ * Writing the document back out as `.hwpx`.
+ *
+ * Export only. Import arrives through `DocsFilePort` because it is reached from
+ * the ordinary Open dialog, but there is no matching "save as hwpx over the open
+ * file": the format is lossy in both directions, so writing one is always an
+ * explicit, separately-named command and never something the Save key does.
+ *
+ * Behind the host rather than called directly, because *where* the conversion
+ * runs differs: the Electron adapter forwards to the main process, and the web
+ * adapter runs @genoffice/hwpx-convert in the page and writes through the File
+ * System Access API. Both use the same converter, so neither host can produce a
+ * different document from the other.
+ *
+ * Still nullable, for the reason every port here is: so a host that cannot
+ * convert says so and the command is not offered. See `DocsPlatform.hwpx`.
+ */
+export interface DocsHwpxPort {
+  /**
+   * Convert a restricted HTML fragment to `.hwpx` and let the host write it out.
+   *
+   * `ok: false` with no `error` is the user dismissing the save dialog, matching
+   * the PDF export port's convention.
+   */
+  exportDocument(defaultName: string, html: string): Promise<HwpxExportResult>
+}
+
 /**
  * docs' composed platform.
  *
@@ -389,6 +496,26 @@ export type DocsPlatform = Platform<'language' | 'ai' | 'attachments'> & {
   genspark: GensparkPort | null
   pdfExport: DocsPdfExportPort | null
   print: DocsPrintPort | null
+  /**
+   * HWPX export, or `null` on a host that cannot convert.
+   *
+   * Non-null on both hosts today, which is what separates it from `pdfExport`
+   * above. A browser-side PDF exporter would have to re-render the document and
+   * would write something *different* from the desktop under one command name;
+   * HWPX runs the identical converter in both places, because
+   * @genoffice/hwpx-convert assembles the package from an embedded template and
+   * so needs no filesystem. Electron converts in the main process, the browser
+   * in the page.
+   *
+   * Kept nullable rather than made required so a future host that cannot convert
+   * has an honest value to report, and the ribbon hides the command instead of
+   * offering a broken one.
+   *
+   * Import is expressed the other way round: it is folded into `DocsFilePort`'s
+   * open calls, so a host that cannot convert simply never returns an `import`
+   * outcome.
+   */
+  hwpx: DocsHwpxPort | null
 }
 
 /**

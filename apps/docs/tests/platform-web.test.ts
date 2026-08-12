@@ -150,8 +150,11 @@ describe('openDocument', () => {
       open: () => Promise.resolve({ ref: 'doc-1', name: 'report.docx' }),
     })
 
-    const opened = await withPort(store).openDocument()
+    const outcome = await withPort(store).openDocument()
 
+    // Always a document, never an import: this host's picker offers .docx alone.
+    expect(outcome?.kind).toBe('document')
+    const opened = outcome?.kind === 'document' ? outcome.document : null
     expect(opened?.ref).toBe('doc-1')
     expect(opened?.name).toBe('report.docx')
     expect(new Uint8Array(opened!.data)).toEqual(DOCX_BYTES)
@@ -173,7 +176,10 @@ describe('openDocumentByRef', () => {
 
     const opened = await withPort(store).openDocumentByRef('doc-1')
 
-    expect(opened).toMatchObject({ ref: 'doc-1', name: 'reopened.docx' })
+    expect(opened).toMatchObject({
+      kind: 'document',
+      document: { ref: 'doc-1', name: 'reopened.docx' },
+    })
   })
 
   it('lets a declined permission prompt surface instead of yielding an empty document', async () => {

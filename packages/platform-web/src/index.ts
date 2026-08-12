@@ -13,9 +13,11 @@
 export {
   browserFilePickers,
   browserMultiFilePicker,
+  DOCUMENT_FILE_TYPES,
   DOCX_FILE_TYPES,
   ensurePermission,
   FilePermissionDeniedError,
+  HWPX_FILE_TYPES,
   IMAGE_FILE_TYPES,
   isPickerCancel,
   PDF_FILE_TYPES,

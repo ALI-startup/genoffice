@@ -288,8 +288,15 @@ export async function submitProtectModal(ctx: ReviewContext): Promise<void> {
 /** Compare: pick a second .docx and diff it against the open document */
 export async function compareWithFile(ctx: ReviewContext): Promise<void> {
   if (!ctx.doc) return
-  const other = await docsPlatform().file.openDocument()
-  if (!other) return
+  const picked = await docsPlatform().file.openDocument()
+  if (!picked) return
+  // Compare diffs two parsed docx documents. An imported .hwpx has no bytes to
+  // parse — it is content only — so it cannot be the other side of a comparison.
+  if (picked.kind !== 'document') {
+    ctx.setStatus(t('appCompareNeedsDocx'))
+    return
+  }
+  const other = picked.document
   try {
     const otherParsed = await parseDocx(new Uint8Array(other.data))
     const entries = compareParagraphs(

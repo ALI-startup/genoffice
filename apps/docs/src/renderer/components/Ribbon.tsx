@@ -124,6 +124,22 @@ interface RibbonProps {
   onOpen: () => void
   onSave: () => void
   onSaveAs: () => void
+  /**
+   * Export the document as .hwpx, or null on a host that cannot convert.
+   *
+   * Null hides the item rather than disabling it, matching how the platform
+   * models the capability: the port is null exactly when the command cannot
+   * work, so an offered command always works.
+   */
+  onExportHwpx?: (() => void) | null
+  /**
+   * Whether the host draws the window frame and application menu itself.
+   *
+   * False in a browser, and it decides two things: whether the File dropdown
+   * renders (macOS puts those commands in the menu bar, but only when there is
+   * one), and whether the tab row reserves space for window controls.
+   */
+  nativeChrome: boolean
   showAi: boolean
   onToggleAi: () => void
   section: SectionSettings | null
@@ -229,16 +245,28 @@ function transformCase(s: string, mode: 'upper' | 'lower' | 'title' | 'sentence'
 }
 
 // Word for Mac has no File ribbon tab: file actions live in the native menu
-// bar (which we provide). Windows Word does have one, so keep it there.
+// bar. That only holds where something is *drawing* a menu bar, which is why
+// both uses below pair this with the host's `nativeChrome` — a browser tab on
+// macOS has no menu bar, so keying off the platform alone would hide the File
+// menu and leave Open, Save As and Export unreachable.
 const IS_MAC = navigator.platform.toLowerCase().includes('mac')
 /** shell tab mode: the tab strip above owns traffic lights / caption buttons */
 const IN_TAB = new URLSearchParams(window.location.search).get('mode') === 'tab'
 
-const TABS = (
-  IS_MAC
-    ? ['home', 'insert', 'draw', 'design', 'layout', 'references', 'review', 'view']
-    : ['file', 'home', 'insert', 'draw', 'design', 'layout', 'references', 'review', 'view']
-) as readonly string[]
+// 'file' is filtered out of the tab row (it renders as its own dropdown button),
+// so listing it unconditionally costs nothing and keeps the tab type stable
+// across hosts.
+const TABS = [
+  'file',
+  'home',
+  'insert',
+  'draw',
+  'design',
+  'layout',
+  'references',
+  'review',
+  'view',
+] as readonly string[]
 const TABLE_TABS = ['tableDesign', 'tableLayout'] as const
 const IMAGE_TABS = ['pictureFormat'] as const
 type RibbonTab = (typeof TABS)[number] | (typeof TABLE_TABS)[number] | (typeof IMAGE_TABS)[number]
@@ -498,6 +526,8 @@ function RibbonInner({
   onOpen,
   onSave,
   onSaveAs,
+  onExportHwpx,
+  nativeChrome,
   showAi,
   onToggleAi,
   section,
@@ -1110,9 +1140,11 @@ function RibbonInner({
   return (
     <div className="ribbon" ref={ribbonRef}>
       <div
-        className={`ribbon-tabs ${IN_TAB ? '' : IS_MAC ? 'ribbon-tabs-mac' : 'ribbon-tabs-win'}`}
+        className={`ribbon-tabs ${
+          IN_TAB || !nativeChrome ? '' : IS_MAC ? 'ribbon-tabs-mac' : 'ribbon-tabs-win'
+        }`}
       >
-        {!IS_MAC && (
+        {!(IS_MAC && nativeChrome) && (
           <div className="file-tab-wrap">
             <button
               className={`ribbon-tab ribbon-tab-file ${dropdown === 'file' ? 'open' : ''}`}
@@ -1148,6 +1180,17 @@ function RibbonInner({
                 >
                   {t('ribbonSaveAs')} <span className="file-menu-key">Ctrl+Shift+S</span>
                 </button>
+                {onExportHwpx && (
+                  <button
+                    disabled={!hasDoc}
+                    onClick={() => {
+                      setDropdown(null)
+                      onExportHwpx()
+                    }}
+                  >
+                    {t('ribbonExportHwpx')}
+                  </button>
+                )}
               </div>
             )}
           </div>

@@ -22,11 +22,12 @@
   "devDependencies": {
     "@genoffice/agent-core": "*",
     "@genoffice/ai-electron": "*",
-    "@genoffice/i18n": "*",
     "@genoffice/ai-provider": "*",
     "@genoffice/ai-search": "*",
     "@genoffice/docx-engine": "*",
     "@genoffice/file-parse": "*",
+    "@genoffice/hwpx-convert": "*",
+    "@genoffice/i18n": "*",
     "@genoffice/platform": "*",
     "@genoffice/platform-electron": "*",
     "@genoffice/platform-web": "*",
@@ -43,7 +44,9 @@
     "electron": "^41.0.3",
     "electron-builder": "^26.0.12",
     "electron-vite": "^5.0.0",
+    "html2hwpx": "github:shreyanshu09/HanForge#d7b47ce",
     "jsdom": "^28.0.0",
+    "neoali-hwpxjs": "github:ALI-startup/neoali-hwpxjs#c6c8dae",
     "opentype.js": "^2.0.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -67,6 +70,11 @@
       {
         "ext": "docx",
         "name": "Word Document",
+        "role": "Editor"
+      },
+      {
+        "ext": "hwpx",
+        "name": "Hangul Document",
         "role": "Editor"
       }
     ],
