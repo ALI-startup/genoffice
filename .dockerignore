@@ -1,0 +1,53 @@
+# Everything the image builds for itself, or must never be baked into a layer.
+#
+# node_modules is excluded deliberately: the `deps` stage runs `npm ci` against
+# the lockfile, and a host tree copied in would shadow it with binaries built for
+# the host's platform (electron, the sheets Rust sidecar).
+
+node_modules
+**/node_modules
+
+# Build output — regenerated inside the image.
+out/
+**/out/
+dist/
+**/dist/
+release/
+**/release/
+apps/sheets/native/xlsx-engine/target/
+
+# Credentials and local state. The BFF reads its keys from the environment at
+# run time (docker-compose env_file), never from a file in the image.
+#
+# The `**/` forms are load-bearing, not belt-and-braces: .dockerignore patterns
+# are matched against the whole path from the context root, so a bare `.env`
+# excludes ./.env and nothing else. services/ai-bff/.env is a real file in this
+# repo — `npm run start -w @genoffice/ai-bff` loads it via tsx
+# --env-file-if-exists — and without these lines it is copied into the bff image
+# with a live provider credential inside it.
+.env
+.env.*
+**/.env
+**/.env.*
+electron-builder.env
+**/electron-builder.env
+.git
+.github
+.claude
+.vscode
+.idea
+.task
+.refs
+
+# Not needed to build a web bundle.
+e2e/
+fixtures/
+docs-archive/
+notes/
+example/
+scripts/drivers/
+**/*.log
+.DS_Store
+*.dmg
+*.exe
+*.zip

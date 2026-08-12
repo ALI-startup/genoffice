@@ -1,0 +1,107 @@
+# The web stack: the shell as the entry point, plus docs and pdf on their own
+# ports, plus the AI BFF that all three proxy to.
+#
+#   http://localhost:8080   shell — the entry point. Home, tab strip, and docs
+#                           and pdf hosted as same-origin frames under
+#                           /app/docs/ and /app/pdf/ of this origin.
+#   http://localhost:8081   docs, standalone on its own origin
+#   http://localhost:8082   pdf, standalone on its own origin
+#
+# The BFF is reachable only on the compose network. It holds the provider
+# credentials and applies no authentication of its own, so publishing it would
+# let anyone who can reach the port spend those credentials — see
+# docs/web-migration.md §6.2. The browsers never address it directly either:
+# each app's CSP is `connect-src 'self'`, so nginx re-exposes it same-origin
+# under /v1/ai.
+#
+#   ./docker/docker.sh up          build and start everything
+#   ./docker/docker.sh logs shell  follow one service
+#   ./docker/docker.sh down        stop
+#
+# Copy docker/env.example to .env and fill in a provider credential first; with
+# none set the apps load and the AI panel reports no configured provider.
+#
+# No ssh-agent is needed: the two git+ssh dependencies in package-lock.json are
+# fetched over HTTPS by the build. See GIT_SSH_TO_HTTPS in the Dockerfile for
+# what to change if either repository becomes private.
+
+name: genoffice
+
+x-web-build: &web-build
+  context: .
+  dockerfile: Dockerfile
+  target: web
+
+x-web-service: &web-service
+  image: genoffice/web:local
+  build: *web-build
+  depends_on:
+    ai-bff:
+      condition: service_healthy
+  restart: unless-stopped
+  networks:
+    - genoffice
+
+services:
+  ai-bff:
+    image: genoffice/ai-bff:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: bff
+    environment:
+      # Inside a container, loopback is the container. The service is kept
+      # private by having no `ports:` entry, not by its bind address.
+      GENOFFICE_AI_BFF_HOST: 0.0.0.0
+      GENOFFICE_AI_BFF_PORT: '8788'
+    env_file:
+      # Provider keys and models. Optional so the stack still starts without it.
+      - path: .env
+        required: false
+    expose:
+      - '8788'
+    restart: unless-stopped
+    networks:
+      - genoffice
+
+  # The entry point.
+  shell:
+    <<: *web-service
+    container_name: genoffice-shell
+    environment:
+      GENOFFICE_WEB_ROOT: /srv/shell
+      GENOFFICE_WEB_PORT: '8080'
+      GENOFFICE_AI_BFF_UPSTREAM: http://ai-bff:8788
+      # Must match AI_BFF_BASE_PATH in packages/platform-web/src/ai-wire.ts.
+      # ./docker/docker.sh check verifies that.
+      GENOFFICE_AI_BFF_PATH: /v1/ai
+    ports:
+      - '${GENOFFICE_SHELL_PORT:-8080}:8080'
+
+  # Standalone docs, on its own origin rather than as a frame of the shell.
+  docs:
+    <<: *web-service
+    container_name: genoffice-docs
+    environment:
+      GENOFFICE_WEB_ROOT: /srv/docs
+      GENOFFICE_WEB_PORT: '8080'
+      GENOFFICE_AI_BFF_UPSTREAM: http://ai-bff:8788
+      GENOFFICE_AI_BFF_PATH: /v1/ai
+    ports:
+      - '${GENOFFICE_DOCS_PORT:-9081}:8080'
+
+  # Standalone pdf, likewise.
+  pdf:
+    <<: *web-service
+    container_name: genoffice-pdf
+    environment:
+      GENOFFICE_WEB_ROOT: /srv/pdf
+      GENOFFICE_WEB_PORT: '8080'
+      GENOFFICE_AI_BFF_UPSTREAM: http://ai-bff:8788
+      GENOFFICE_AI_BFF_PATH: /v1/ai
+    ports:
+      - '${GENOFFICE_PDF_PORT:-9082}:8080'
+
+networks:
+  genoffice:
+    driver: bridge

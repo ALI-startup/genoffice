@@ -31,3 +31,6 @@ __pycache__/
 /notes/
 /MEMORY.md
 .vscode
+
+# Self-signed TLS material for the Docker stack (docker/docker.sh certs).
+/docker/certs/

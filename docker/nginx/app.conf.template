@@ -1,0 +1,113 @@
+# One server block, three uses. Which bundle it serves is GENOFFICE_WEB_ROOT:
+# /srv/shell (the composed shell, with docs and pdf under /app/docs/ and
+# /app/pdf/), /srv/docs, or /srv/pdf. The nginx entrypoint substitutes the
+# GENOFFICE_* variables from the environment; every other $variable here is
+# nginx's own and is left untouched, because envsubst only replaces names that
+# are actually exported.
+
+server {
+    listen      ${GENOFFICE_WEB_PORT};
+    listen      [::]:${GENOFFICE_WEB_PORT};
+    server_name _;
+
+    root  ${GENOFFICE_WEB_ROOT};
+    index index.html;
+
+    # nginx appends the trailing slash on /app/docs -> /app/docs/ by rebuilding
+    # an absolute URL from server_name and the *listen* port, which is not the
+    # published one. Relative redirects avoid sending the browser to a port it
+    # cannot reach.
+    absolute_redirect off;
+
+    charset       utf-8;
+    server_tokens off;
+
+    gzip              on;
+    gzip_vary         on;
+    gzip_min_length   1024;
+    gzip_proxied      any;
+    gzip_types        text/plain text/css text/javascript application/javascript
+                      application/json application/wasm image/svg+xml font/woff2;
+
+    # Documents can be large — a pptx or a scanned pdf opened from the page is
+    # not uploaded anywhere, but attachments and AI request bodies pass through
+    # the /v1/ai proxy below.
+    client_max_body_size 64m;
+
+    # The apps carry their own Content-Security-Policy in a <meta> tag, which is
+    # the one that must stay authoritative — it differs per app (pdf needs
+    # 'wasm-unsafe-eval', docs does not). These are the headers a meta tag
+    # cannot express.
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy        same-origin always;
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # The AI backend-for-frontend, re-exposed on this origin.
+    #
+    # Load-bearing, not a convenience: every app sets `connect-src 'self'`, so
+    # the browser blocks a cross-origin AI request before it is sent. The route
+    # prefix is the contract and is declared once, as AI_BFF_BASE_PATH in
+    # packages/platform-web/src/ai-wire.ts — GENOFFICE_AI_BFF_PATH must match it.
+    #
+    # /v1/ai/stream is Server-Sent Events. Buffering has to be off in both
+    # directions or tokens arrive in blocks, or not until the turn ends.
+    # `^~` so the static-asset regex below can never win this prefix back.
+    location ^~ ${GENOFFICE_AI_BFF_PATH} {
+        proxy_pass ${GENOFFICE_AI_BFF_UPSTREAM};
+        proxy_http_version 1.1;
+
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # Keep the upstream connection alive rather than forwarding a stale
+        # Connection header from the client.
+        proxy_set_header Connection        "";
+
+        proxy_buffering          off;
+        proxy_request_buffering  off;
+        proxy_cache              off;
+        chunked_transfer_encoding off;
+
+        # A long turn on a slow model must not be cut off mid-stream.
+        proxy_connect_timeout 10s;
+        proxy_send_timeout    3600s;
+        proxy_read_timeout    3600s;
+    }
+
+    # Vite emits content-hashed filenames, so the bundle is immutable and the
+    # entry documents are not.
+    #
+    # `mjs` is here for pdf.js's worker; the Dockerfile maps its media type,
+    # because a module script served as application/octet-stream is refused
+    # outright by the browser.
+    #
+    # One add_header, not `expires 1y` alongside it: the expires directive emits
+    # its own Cache-Control, and the response would carry the header twice.
+    location ~* \.(?:js|mjs|css|woff2?|ttf|otf|png|jpg|jpeg|gif|svg|webp|wasm)$ {
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header X-Content-Type-Options nosniff always;
+        try_files $uri =404;
+    }
+
+    location ~* /index\.html$ {
+        add_header Cache-Control "no-cache" always;
+        add_header X-Content-Type-Options nosniff always;
+        try_files $uri =404;
+    }
+
+    # No SPA rewrite, deliberately. The shell routes over the *hash* precisely so
+    # that whatever serves the files needs no rewrite rule and no deep link can
+    # 404 (apps/shell/src/renderer/src/host-web.ts). docs and pdf are single
+    # documents at their root. A catch-all /index.html fallback would therefore
+    # buy nothing and would hide a genuinely missing asset under /app/docs/ by
+    # answering it with the shell's own page.
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
