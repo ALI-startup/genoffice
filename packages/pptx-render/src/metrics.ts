@@ -7,12 +7,16 @@
  * any environment (including node unit tests) yields deterministic wrapping and
  * line-height results.
  *
- * Design: FontMetricsProvider interface + two implementations:
- *   1. OpentypeMetrics — real fonts (opentype.Font), pixel-accurate.
+ * Design: FontMetricsProvider interface + three implementations:
+ *   1. OpentypeMetrics — real fonts (opentype.Font), pixel-accurate. What a host with
+ *      access to font files uses, which is the Electron main process.
  *   2. HeuristicMetrics — deterministic fallback without font files (advance
  *      estimated by character class), keeping wrapping logic unit-testable and
  *      cross-environment consistent; once the frontend loads real fonts it
  *      switches to exact metrics automatically.
+ *   3. CanvasMetrics — the browser's own text engine, for a host that has no font files
+ *      but *is* the thing that will draw the text. See its own comment for why that makes
+ *      it the accurate choice there rather than a second-best one.
  */
 
 export interface RunStyle {
@@ -50,7 +54,9 @@ export interface FontMetricsProvider {
 // ── Grapheme clusters ───────────────────────────────────────────────
 
 const SEGMENTER: Intl.Segmenter | null =
-  typeof Intl !== 'undefined' && 'Segmenter' in Intl ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null
+  typeof Intl !== 'undefined' && 'Segmenter' in Intl
+    ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+    : null
 
 /**
  * Split by grapheme cluster (combining marks / ZWJ emoji / flags / skin-tone
@@ -104,7 +110,7 @@ function charAdvanceEm(code: number): number {
   // emoji ranges (rough)
   if (code >= 0x1f000 || (code >= 0x2600 && code <= 0x27bf)) return 1.0
   // narrow characters
-  if ('iIlj.,:;\'!|'.includes(String.fromCharCode(code))) return 0.28
+  if ("iIlj.,:;'!|".includes(String.fromCharCode(code))) return 0.28
   if (' ftr'.includes(String.fromCharCode(code))) return 0.32
   if ('mwMW'.includes(String.fromCharCode(code))) return 0.82
   // general Latin / digits
@@ -199,5 +205,139 @@ export class OpentypeMetrics implements FontMetricsProvider {
     } catch {
       return this.fallback.measure(text, style)
     }
+  }
+}
+
+// ── Browser metrics via a canvas 2D context ─────────────────────────
+
+/**
+ * What `CanvasMetrics` needs of a 2D canvas context.
+ *
+ * Minimal on purpose, the same way `OpentypeFontLike` is: this package carries no DOM
+ * types, and the host injects the real `CanvasRenderingContext2D`, which satisfies this
+ * structurally.
+ */
+export interface TextMeasureContext {
+  /** CSS font shorthand, e.g. `bold 18px "Arial", sans-serif`. Assigned before measuring. */
+  font: string
+  measureText(text: string): TextMeasureResult
+}
+
+/** The part of `TextMetrics` this provider reads. The font-box fields are optional because older engines omit them. */
+export interface TextMeasureResult {
+  width: number
+  fontBoundingBoxAscent?: number
+  fontBoundingBoxDescent?: number
+}
+
+export interface CanvasMetricsOptions {
+  /**
+   * A run's font family to the family *stack* the renderer will draw with.
+   *
+   * Load-bearing rather than cosmetic: a browser measures and draws with whatever the stack
+   * resolves to, so measuring the bare family while drawing a stack would reintroduce exactly
+   * the measure/draw drift this provider exists to remove. Identity by default.
+   */
+  familyStack?: (family: string) => string
+  /** Used when the context reports no font box, and when a measurement throws. */
+  fallback?: FontMetricsProvider
+  /** Distinct (font, text) pairs kept before the width cache is dropped. */
+  cacheLimit?: number
+}
+
+/**
+ * Metrics from the browser's own text engine.
+ *
+ * The third provider, and the one a browser host wants. `OpentypeMetrics` is exact about a
+ * *font file*, which is what the Electron main process has: it parses the file itself and
+ * lays text out before any canvas exists. A page has no font files -- reading them needs the
+ * `queryLocalFonts()` permission -- but it has something better for this purpose: the very
+ * engine that will draw the text. Measuring through it means layout and drawing agree by
+ * construction, including the parts a sum of advance widths gets wrong: kerning, and the
+ * shaping of Arabic and Indic runs, which the desktop needs HarfBuzz to approximate.
+ *
+ * Deterministic across runs of the same browser, which is what a renderer needs; it is not
+ * deterministic across engines, which is why unit tests still use `HeuristicMetrics`.
+ */
+export class CanvasMetrics implements FontMetricsProvider {
+  private readonly familyStack: (family: string) => string
+  private readonly fallback: FontMetricsProvider
+  private readonly cacheLimit: number
+  /** Font-box metrics, per font string: independent of the text, so one entry serves every run. */
+  private readonly lines = new Map<string, FontMetrics | null>()
+  /** Advance widths, per font string plus text. Text layout re-measures the same words constantly. */
+  private readonly widths = new Map<string, number>()
+
+  constructor(
+    private readonly context: TextMeasureContext,
+    options: CanvasMetricsOptions = {},
+  ) {
+    this.familyStack = options.familyStack ?? ((family) => family)
+    this.fallback = options.fallback ?? new HeuristicMetrics()
+    this.cacheLimit = options.cacheLimit ?? 20_000
+  }
+
+  /**
+   * The CSS font shorthand, in the order the renderer's own draw path produces.
+   *
+   * Konva builds `<style> <variant> <size>px <family stack>` and quotes any family whose name
+   * contains a space; this reproduces that string so the measurement is of the same font the
+   * draw will use, not merely of a similar one.
+   */
+  private fontOf(style: RunStyle): string {
+    const parts: string[] = []
+    if (style.bold) parts.push('bold')
+    if (style.italic) parts.push('italic')
+    const stack = this.familyStack(style.fontFamily)
+      .split(',')
+      .map((family) => {
+        const name = family.trim()
+        return name.includes(' ') && !/["']/.test(name) ? `"${name}"` : name
+      })
+      .join(', ')
+    return `${parts.join(' ') || 'normal'} normal ${style.fontSizePx}px ${stack}`
+  }
+
+  metrics(style: RunStyle): FontMetrics {
+    const font = this.fontOf(style)
+    const cached = this.lines.get(font)
+    if (cached !== undefined) return cached ?? this.fallback.metrics(style)
+    let measured: FontMetrics | null = null
+    try {
+      this.context.font = font
+      // 'Mg' rather than the run's own text: the font box is a property of the font, and
+      // asking for it once per font is what makes this cache worth having.
+      const box = this.context.measureText('Mg')
+      if (box.fontBoundingBoxAscent !== undefined && box.fontBoundingBoxDescent !== undefined) {
+        const ascent = box.fontBoundingBoxAscent
+        const descent = box.fontBoundingBoxDescent
+        measured = { ascent, descent, lineHeight: ascent + descent }
+      }
+    } catch {
+      measured = null
+    }
+    this.lines.set(font, measured)
+    return measured ?? this.fallback.metrics(style)
+  }
+
+  measure(text: string, style: RunStyle): number {
+    if (text === '') return 0
+    const font = this.fontOf(style)
+    const key = `${font} ${text}`
+    const cached = this.widths.get(key)
+    if (cached !== undefined) return cached
+    let width: number
+    try {
+      this.context.font = font
+      width = this.context.measureText(text).width
+    } catch {
+      width = this.fallback.measure(text, style)
+    }
+    // Dropped wholesale rather than evicted one by one: the cache exists to make a layout
+    // pass cheap, and a layout pass re-measures whatever it still needs. A bound with no
+    // bookkeeping.
+    if (this.widths.size >= this.cacheLimit) this.widths.clear()
+    this.widths.set(key, width)
+    return width
   }
 }

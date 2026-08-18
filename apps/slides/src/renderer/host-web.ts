@@ -16,7 +16,7 @@
  * the page's CSP is `connect-src 'self'`, so a cross-origin AI request would be blocked by
  * the browser, and same-origin is also what keeps every credential out of this page.
  */
-import { HeuristicMetrics } from '@genoffice/pptx-render'
+import { CanvasMetrics, HeuristicMetrics, type FontMetricsProvider } from '@genoffice/pptx-render'
 import {
   browserDownloadEnv,
   browserFilePickers,
@@ -36,24 +36,27 @@ import { setSlideRenderEnv } from '../domain/session'
 import type { OpsLabelKey, OpsTranslate } from '../domain/ops'
 import { tOps } from '../shared/ops-i18n'
 import { getLang } from './i18n/locale'
+import { displayFontFamily } from './konva-adapter'
 import type { CreateSlidesPlatform } from './platform'
 import { createWebSlidesPlatform, PPTX_MIME, WebSlidesSession } from './platform-web'
 
 /**
- * Text metrics for this host.
+ * Text metrics for this host: the browser's own text engine, through a detached canvas.
  *
- * `HeuristicMetrics` measures by character class instead of by font file, which is the
- * fallback pptx-render was built with and the same one Electron drops to for a font it
- * cannot load. It is deterministic and never wrong about *which* glyphs are on a line, but
- * its advances are estimates, so wrapping can differ from the desktop's by a word on a
- * tightly-fitted text box.
+ * Electron parses font files with opentype.js because its layout runs in the main process,
+ * where no canvas exists. A page cannot read font files at all without the
+ * `queryLocalFonts()` permission — and does not need to, because it *is* what will draw the
+ * text. Measuring through the same engine, with the same font stack `glyphToDraw` hands
+ * Konva, makes layout and drawing agree by construction, and gets kerning and Arabic/Indic
+ * shaping right for free (the desktop needs HarfBuzz alongside opentype for the latter).
  *
- * The exact answer in a browser is `queryLocalFonts()` — real font files, parsed with the
- * same opentype.js the main process uses — which needs a permission prompt and is Phase 7c.
- * This is the seam it plugs into: swapping the provider here changes nothing else.
+ * `HeuristicMetrics` remains the answer where there is no 2D context — jsdom, or a browser
+ * that refuses one under memory pressure — so this never fails to produce a layout.
  */
-function webFontMetrics(): HeuristicMetrics {
-  return new HeuristicMetrics()
+function webFontMetrics(): FontMetricsProvider {
+  const context = document.createElement('canvas').getContext('2d')
+  if (!context) return new HeuristicMetrics()
+  return new CanvasMetrics(context, { familyStack: displayFontFamily })
 }
 
 /** MIME by extension, so `createImageBitmap` gets a Blob it can sniff. */

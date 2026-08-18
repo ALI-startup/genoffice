@@ -345,14 +345,30 @@ builtins (`pptx-render` likewise: 15 modules, zero).
 real font files with opentype.js, including splitting `.ttc` collections by hand
 because opentype.js cannot read them. Text layout fidelity depends on it.
 
-- **Browser answer: `queryLocalFonts()`** (Chromium 103+, permission-gated).
-  It returns real font blobs you can feed to the _unchanged_ opentype.js code.
-- **`shaped-metrics.ts` is already harfbuzz-WASM** (`harfbuzzjs`) for
-  Arabic/Hebrew/Thai/Devanagari — it ports as-is. Note it currently deep-imports
-  `../../../../node_modules/harfbuzzjs/dist/harfbuzz.js` and uses a `?asset`
-  import for the wasm, both of which need revisiting for a web build.
-- Fallback if `queryLocalFonts` is unavailable or denied: bundle metrics for the
-  common OOXML fonts and keep the existing `HeuristicMetrics` path.
+**Resolved differently, and better than the plan below.** The plan was
+`queryLocalFonts()` (Chromium 103+, permission-gated) feeding the unchanged
+opentype.js code, with `shaped-metrics.ts`'s harfbuzz-WASM ported alongside it for
+Arabic/Hebrew/Thai/Devanagari. What shipped is `CanvasMetrics`
+(`packages/pptx-render/src/metrics.ts`): the browser's own text engine, measured
+through a detached canvas with the same font stack `glyphToDraw` hands Konva.
+
+The reason is that the main process and a page are not in the same position.
+Electron lays text out where no canvas exists, so it must parse font files, and
+then approximate the shaping the renderer will do — that is what harfbuzz is for
+there. A page _is_ the thing that will draw the text, so measuring through it makes
+layout and drawing agree by construction, and gets kerning and complex-script
+shaping for free. It also needs no permission prompt, no font parsing at startup,
+and no wasm.
+
+So `queryLocalFonts()` is not needed for slides, and `shaped-metrics.ts` stays
+Electron-only — its deep `node_modules/harfbuzzjs` import and `?asset` wasm never
+have to reach a browser build. Nothing outside `src/main/` imports it.
+
+`HeuristicMetrics` remains the fallback where there is no 2D context (jsdom, or a
+browser refusing one), so a layout is always produced.
+
+Still open: **docs**' own `line-metrics.ts` is a separate heuristic implementation
+for docx pagination and was not part of this. The same substitution applies to it.
 
 ### 5.4 Relocate before you write the seam
 
@@ -397,10 +413,11 @@ the precedent to copy rather than inventing a new arrangement.
    `window.slidesApi`; `host-electron.ts` is the only module that reads a global. Seven
    ports are `X | null` (presenter, pdfExport, clipboard, genspark, search, cloud, menu)
    and their thirty call sites branch. `@host` is wired as in docs and pdf.
-3. **7c — fonts.** `queryLocalFonts()` + harfbuzz-wasm in the browser. Note that
-   `shaped-metrics.ts` cannot even be loaded outside Electron today — its `?asset` wasm
-   import resolves to a path Node tries to import as a module — so
-   `tests/render-env-wiring.test.ts` stubs it. That import is the first thing to fix.
+3. **7c — fonts.** Done, via `CanvasMetrics` rather than `queryLocalFonts()` — see §5.3
+   for why that is the accurate choice in a page rather than a second-best one. The
+   consequence for `shaped-metrics.ts` is that it never needs to leave Electron: its
+   `?asset` wasm import (which cannot even be loaded outside Electron today, hence the stub
+   in `tests/render-env-wiring.test.ts`) stays a main-process concern.
 4. **7d — web host** and the slides frame in the shell. Read §5.5 first.
 
 ### 5.5 7d: what is done, and what is left
@@ -451,10 +468,8 @@ with nothing mocked.
 
   Three things the host had to decide, each recorded where it is made rather than here:
 
-  - **Fonts.** `HeuristicMetrics`, the provider pptx-render falls back to when a font file
-    cannot be read — deterministic, but its advances are estimates, so a tightly-fitted text
-    box can wrap a word earlier or later than the desktop. `queryLocalFonts()` is the exact
-    answer and is 7c; `host-web.ts` is the one line that changes.
+  - **Fonts.** `CanvasMetrics` — the browser's own text engine (§5.3). `HeuristicMetrics`
+    where there is no 2D context.
   - **TIFF.** `decodeTiff: null`. Chromium decodes none, and the interface's `null` is how a
     host says so: those pictures render blank rather than wrongly, and their bytes survive a
     save untouched.
@@ -647,9 +662,10 @@ updates; account sign-in (shells out to the `gsk` CLI); native tab menus; sheets
 and slides cards (no web build yet). A reload reopens an empty tab of the right
 kind, not the document.
 
-**Everywhere:** Chromium only, by decision — File System Access and
-`queryLocalFonts` have no Safari/Firefox equivalent. A browser without them gets
-a loud failure, not a silent fallback.
+**Everywhere:** Chromium only, by decision — File System Access has no
+Safari/Firefox equivalent. A browser without it gets a loud failure, not a silent
+fallback. (`queryLocalFonts` was the second reason for this line and no longer
+applies: §5.3 measures through the canvas instead, which every engine has.)
 
 **Not click-tested.** Phase 5b's shell, close-guard handshake, tab strip and
 routing are covered by unit tests against injected fakes. Dev servers, the proxy,
