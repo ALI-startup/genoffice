@@ -134,6 +134,17 @@ export {
   type AlignRect,
 } from './align'
 export { createBlankPptx } from './blank'
+// Byte/text conversions, re-exported because the apps need the same ones the engine
+// does: a renderer building a data URL for a media part has no Buffer either.
+export {
+  base64Bytes,
+  bytesToBase64,
+  concatBytes,
+  randomGuid,
+  sha256Hex,
+  utf8Bytes,
+  utf8Text,
+} from './bytes'
 export { promoteSlideBackground, isBackgroundLikeElement } from './background-promote'
 export {
   applyThemeToArchive,

@@ -107,13 +107,18 @@ describe('the engine without Node', () => {
     expect(texts).toContain('Browser')
   })
 
-  it('builds a section id, which used to come from node:crypto', async () => {
-    const { createBlankPptx, openPptx, setSections, getSections } = await import('../src/index')
+  it('mints a section id, which used to come from node:crypto', async () => {
+    const { createBlankPptx, openPptx, addSection, getSections, randomGuid } =
+      await import('../src/index')
     const opened = await openPptx(await createBlankPptx())
 
-    setSections(opened, [{ name: 'Intro', slideIndices: [0] }])
+    // `addSection` is the path that calls `newSectionId()` — the one wrapper around
+    // `randomGuid` — so this covers the replacement rather than passing an id in.
+    addSection(opened, 0, 'Intro')
 
-    expect(getSections(opened).map((s) => s.name)).toEqual(['Intro'])
+    expect(getSections(opened).map((s) => s.name)).toContain('Intro')
+    expect(getSections(opened).every((s) => /^\{[0-9A-F-]{36}\}$/.test(s.id))).toBe(true)
+    expect(randomGuid()).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-/)
   })
 
   it('generates the poster png, which used to come from node:zlib', async () => {

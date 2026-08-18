@@ -244,6 +244,7 @@ import {
   takeSnapshot,
   windowRefs,
   type Session,
+  installSlidesRenderEnv,
 } from './session-state'
 import { registerAiIpc, registerSlidesOnlyAiIpc } from './ai-ipc'
 
@@ -922,6 +923,11 @@ let ipcRegistered = false
 export function registerSlidesIpc(): void {
   if (ipcRegistered) return
   ipcRegistered = true
+
+  // The document session is host-neutral (src/domain/session.ts); this is where this
+  // host hands it the two things it cannot supply itself — real system-font metrics
+  // and a TIFF decoder. Before any deck can be opened, and once per process.
+  installSlidesRenderEnv()
 
   // shared with the other editor modules — last (identical) registration wins
   ipcMain.removeHandler('app:get-language')
