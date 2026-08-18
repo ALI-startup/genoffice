@@ -44,8 +44,6 @@ import {
   copySlide,
   pasteSlide,
   type SlideBundle,
-  editChartElement,
-  markChartEditable,
   openPptx,
   mergeSlideFromPptx,
   promoteSlideBackground,
@@ -53,7 +51,6 @@ import {
   savePptx,
   commitSaved,
   setElementImageFill,
-  setElementTextAnchor,
   moveSlide,
   type SectionInfo,
   type ElementClipboardItem,
@@ -63,8 +60,8 @@ import { savePptxToFile } from '@genoffice/pptx-engine/node'
 import { EMU_PER_PX_96, type RenderSlide } from '@genoffice/pptx-render'
 import { refineComplexWidths, shapedMetricsReady } from './shaped-metrics'
 import { slideOps as ops } from '../domain/ops'
-// Three helpers moved with the operations that use them; these host handlers still do.
-import { CHART_COLOR_SCHEMES, chartColorSchemes, deckDefaultFont } from '../domain/ops'
+// A helper that moved with the operations using it; one host handler still needs it.
+import { deckDefaultFont } from '../domain/ops'
 import { cfbKind, isCfbHeader } from './cfb-sniff'
 import { unplayableAudioCodec } from './mp4-audio-sniff'
 import type {
@@ -149,7 +146,6 @@ import {
   dialogParent,
   pushHistory,
   rebuildSlide,
-  rebuildSlideWithReparse,
   restoreSnapshot,
   runtime,
   sessions,
@@ -1387,66 +1383,28 @@ export function registerSlidesIpc(): void {
     ops.editTableStyle(sessions.get(e.sender.id), op),
   )
 
-  ipcMain.handle('slides:edit-chart', async (e, op: EditChartOp) => {
-    const session = sessions.get(e.sender.id)
-    if (!session) return null
-    const slide = session.opened.deck.slides[op.slideIndex]
-    if (!slide) return null
-    // A reparse regenerates element ids: look up the new id by element index; the renderer uses it to keep the selection
-    const elIdx = slide.elements.findIndex((el) => el.id === op.sourceId)
-    // Confirm before the first edit of a chart from an imported file: editing rebuilds it from the template,
-    // and unmodeled fine-grained formatting (number formats/trendlines/error bars/per-point styles) is lost
-    const chartEl = slide.elements[elIdx] as { type?: string; descr?: string } | undefined
-    if (chartEl?.type === 'chart' && chartEl.descr !== 'aislides-chart') {
-      const parent = dialogParent()
-      const options = {
-        type: 'warning' as const,
-        buttons: [tm('chartSimplifyOk'), tm('btnCancel')],
-        defaultId: 0,
-        cancelId: 1,
-        message: tm('chartSimplifyTitle'),
-        detail: tm('chartSimplifyBody'),
-      }
-      const r = parent
-        ? await dialog.showMessageBox(parent, options)
-        : await dialog.showMessageBox(options)
-      if (r.response !== 0) return null
+  // The confirmation this passes is the host's: a native warning box here, and whatever a
+  // browser can show there. The decision it reports — proceed or not — is the only thing
+  // the operation needs, so the operation itself stays host-neutral.
+  const confirmChartSimplify = async (): Promise<boolean> => {
+    const parent = dialogParent()
+    const options = {
+      type: 'warning' as const,
+      buttons: [tm('chartSimplifyOk'), tm('btnCancel')],
+      defaultId: 0,
+      cancelId: 1,
+      message: tm('chartSimplifyTitle'),
+      detail: tm('chartSimplifyBody'),
     }
-    pushHistory(session)
-    // Mark aislides-chart on first edit (the conversion itself is lossless; no re-prompt after one confirmation)
-    markChartEditable(slide, op.sourceId)
-    const patch: Parameters<typeof editChartElement>[3] = {
-      ...(op.kind ? { kind: op.kind === 'barH' ? 'bar' : op.kind } : {}),
-      ...(op.kind === 'barH' ? { barDir: 'bar' as const } : {}),
-      ...(op.categories ? { categories: op.categories } : {}),
-      ...(op.series ? { series: op.series } : {}),
-      ...(op.title !== undefined ? { title: op.title } : {}),
-      ...(op.colorScheme
-        ? {
-            colorScheme:
-              chartColorSchemes(session.opened, tm).find((s) => s.key === op.colorScheme)?.colors ??
-              CHART_COLOR_SCHEMES[op.colorScheme],
-          }
-        : {}),
-      ...(op.legendPos ? { legendPos: op.legendPos } : {}),
-      ...(op.dataLabels !== undefined ? { dataLabels: op.dataLabels } : {}),
-      ...(op.gridlines !== undefined ? { gridlines: op.gridlines } : {}),
-      ...(op.catAxisTitle !== undefined ? { catAxisTitle: op.catAxisTitle } : {}),
-      ...(op.valAxisTitle !== undefined ? { valAxisTitle: op.valAxisTitle } : {}),
-      ...(op.gapWidthPct !== undefined ? { gapWidthPct: op.gapWidthPct } : {}),
-      ...(op.switchRowCol ? { switchRowCol: true } : {}),
-      ...(op.pointColors ? { pointColors: op.pointColors } : {}),
-    }
-    if (!editChartElement(session.opened, op.slideIndex, op.sourceId, patch)) {
-      session.undoStack.pop()
-      return null
-    }
-    // The chart part XML is updated; reparse the whole page to refresh the model
-    const rebuilt = rebuildSlideWithReparse(session, op.slideIndex)
-    if (!rebuilt) return null
-    const newId = session.opened.deck.slides[op.slideIndex]?.elements[elIdx]?.id ?? null
-    return { slide: rebuilt, sourceId: newId }
-  })
+    const r = parent
+      ? await dialog.showMessageBox(parent, options)
+      : await dialog.showMessageBox(options)
+    return r.response === 0
+  }
+
+  ipcMain.handle('slides:edit-chart', async (e, op: EditChartOp) =>
+    ops.editChart(sessions.get(e.sender.id), op, confirmChartSimplify, tm),
+  )
 
   ipcMain.handle('slides:chart-color-schemes', (e) =>
     ops.chartColorSchemes(sessions.get(e.sender.id), tm),
@@ -1462,18 +1420,8 @@ export function registerSlidesIpc(): void {
 
   ipcMain.handle(
     'slides:set-text-anchor',
-    (e, op: { slideIndex: number; sourceId: string; anchor: 'top' | 'middle' | 'bottom' }) => {
-      const session = sessions.get(e.sender.id)
-      if (!session) return null
-      const slide = session.opened.deck.slides[op.slideIndex]
-      if (!slide) return null
-      pushHistory(session)
-      if (!setElementTextAnchor(slide, op.sourceId, op.anchor)) {
-        session.undoStack.pop()
-        return null
-      }
-      return rebuildSlide(session, op.slideIndex)
-    },
+    (e, op: { slideIndex: number; sourceId: string; anchor: 'top' | 'middle' | 'bottom' }) =>
+      ops.setTextAnchor(sessions.get(e.sender.id), op),
   )
 
   ipcMain.handle('slides:clipboard-external', () => {

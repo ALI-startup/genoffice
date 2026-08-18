@@ -3,6 +3,7 @@
  * element copy/cut/paste/duplicate, slide copy/paste, external clipboard
  * ingestion, and the format painter. Functions take the ActionCtx built fresh per call.
  */
+import { slidesDeckClipboard } from './platform'
 import type { ActionCtx } from './action-context'
 import type { PasteSlideMode } from '../shared/ipc'
 import { FIT_WIDTH } from './app-constants'
@@ -26,7 +27,7 @@ export async function deleteSelected(ctx: ActionCtx): Promise<void> {
 
 export async function copySelected(ctx: ActionCtx): Promise<void> {
   if (ctx.selectedIds.length === 0) return
-  const n = await slidesDoc().copyElements({
+  const n = await slidesDeckClipboard().copyElements({
     slideIndex: ctx.current,
     sourceIds: ctx.selectedIds,
   })
@@ -38,7 +39,7 @@ export async function copySelected(ctx: ActionCtx): Promise<void> {
 
 export async function cutSelected(ctx: ActionCtx): Promise<void> {
   if (ctx.selectedIds.length === 0) return
-  const n = await slidesDoc().copyElements({
+  const n = await slidesDeckClipboard().copyElements({
     slideIndex: ctx.current,
     sourceIds: ctx.selectedIds,
   })
@@ -99,7 +100,7 @@ export async function copySlideAt(ctx: ActionCtx, index: number): Promise<void> 
   } catch {
     png = undefined
   }
-  const ok = await slidesDoc().copySlide(index, png)
+  const ok = await slidesDeckClipboard().copySlide(index, png)
   ctx.setCanPasteSlide(ok)
   ctx.setStatus(ok ? t('appStatusSlideCopied') : t('appStatusSlideCopyFailed'))
 }
@@ -109,7 +110,11 @@ export async function pasteSlideAfter(
   index: number,
   mode: PasteSlideMode = 'theme',
 ): Promise<void> {
-  const r = await slidesDoc().pasteSlide({ afterIndex: index, fitWidthPx: FIT_WIDTH, mode })
+  const r = await slidesDeckClipboard().pasteSlide({
+    afterIndex: index,
+    fitWidthPx: FIT_WIDTH,
+    mode,
+  })
   if (!r) {
     ctx.setStatus(t('appStatusSlidePasteFailed'))
     return
@@ -125,7 +130,7 @@ export async function pasteSlideAfter(
 /** Paste-options floater: redo the just-completed paste with another mode. */
 export async function repasteSlideAs(ctx: ActionCtx, mode: PasteSlideMode): Promise<void> {
   if (ctx.pasteFloater?.mode === mode) return
-  const r = await slidesDoc().repasteSlide({ mode, fitWidthPx: FIT_WIDTH })
+  const r = await slidesDeckClipboard().repasteSlide({ mode, fitWidthPx: FIT_WIDTH })
   if (!r) {
     ctx.setPasteFloater(null)
     ctx.setStatus(t('appStatusPasteOptionsExpired'))
@@ -176,7 +181,10 @@ export async function pasteClipboard(ctx: ActionCtx): Promise<void> {
     }
     return
   }
-  const r = await slidesDoc().pasteElements({ slideIndex: ctx.current, fitWidthPx: FIT_WIDTH })
+  const r = await slidesDeckClipboard().pasteElements({
+    slideIndex: ctx.current,
+    fitWidthPx: FIT_WIDTH,
+  })
   if (r) {
     ctx.applySlide(ctx.current, r.slide)
     ctx.setSelectedIds(r.sourceIds)

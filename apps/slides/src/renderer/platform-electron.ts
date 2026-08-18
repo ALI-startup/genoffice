@@ -22,12 +22,14 @@ export function createElectronSlidesPlatform(
   return {
     doc: api,
     file: api,
+    deckClipboard: api,
     window: api,
     language: api,
     ai: api,
+    print: api,
     attachments: files,
     project,
-    // The six a browser has to answer `null` for. Electron backs every one, so the
+    // The seven a browser has to answer `null` for. Electron backs every one, so the
     // renderer's capability checks always pass here and the desktop app is unchanged.
     presenter: api,
     pdfExport: api,
@@ -35,6 +37,7 @@ export function createElectronSlidesPlatform(
     genspark: api,
     search: api,
     cloud: api,
+    styleTemplates: api,
     menu: api,
   }
 }

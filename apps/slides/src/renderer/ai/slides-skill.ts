@@ -1,3 +1,4 @@
+import { slidesAi } from '../platform'
 import type { AgentSkill, ToolDisplay } from '@genoffice/agent-core'
 import type {
   GroupRenderNode,
@@ -2012,7 +2013,7 @@ async function executeTool(
       const refs = Array.isArray(call.input.referenceImageUrls)
         ? (call.input.referenceImageUrls as unknown[]).map(String).filter(Boolean)
         : undefined
-      const r = await slidesDoc().generateImage({
+      const r = await slidesAi().generateImage({
         prompt,
         model: call.input.model ? String(call.input.model) : undefined,
         referenceImageUrls: refs,
@@ -2040,7 +2041,7 @@ async function executeTool(
       const requirements = String(call.input.requirements ?? '').trim()
       if (!mediaUrls.length) return fail(t('aiFailMedia'), 'mediaUrls must not be empty')
       if (!requirements) return fail(t('aiFailMedia'), 'requirements must not be empty')
-      const r = await slidesDoc().analyzeMedia({ mediaUrls, requirements })
+      const r = await slidesAi().analyzeMedia({ mediaUrls, requirements })
       if (!r.text) return fail(t('aiFailMedia'), r.error ?? 'Analysis failed')
       // Analysis text can be very long; truncate to protect context (first 6000 chars are enough to generate deck content)
       const MAX_LEN = 6000

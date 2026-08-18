@@ -368,7 +368,7 @@ export async function insertEquation(ctx: ActionCtx, text: string): Promise<void
 
 export async function insertMediaFile(ctx: ActionCtx, kind: 'video' | 'audio'): Promise<void> {
   if (!ctx.slide) return
-  const r = await slidesDoc().insertMedia(ctx.current, kind, FIT_WIDTH)
+  const r = await slidesFile().insertMedia(ctx.current, kind, FIT_WIDTH)
   if (r) {
     ctx.applySlide(ctx.current, r.slide)
     ctx.setSelectedIds([r.sourceId])

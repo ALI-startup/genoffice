@@ -1,3 +1,4 @@
+import { slidesAi, slidesDeckClipboard } from './platform'
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type {
   GroupRenderNode,
@@ -765,12 +766,12 @@ export function App() {
   useEffect(() => slidesWindow().onRenamed((p) => setPath(p)), [])
 
   useEffect(() => {
-    void slidesDoc().getAiSettings().then(setAiSettings)
+    void slidesAi().getAiSettings().then(setAiSettings)
   }, [])
 
   // Recent files for the start screen
   useEffect(() => {
-    if (slides.length === 0) void slidesDoc().getRecentFiles().then(setRecent)
+    if (slides.length === 0) void slidesFile().getRecentFiles().then(setRecent)
   }, [slides.length])
 
   const toggleAi = useCallback(() => {
@@ -2345,7 +2346,7 @@ export function App() {
                 onContextMenu={(e) => {
                   e.preventDefault()
                   setCurrent(i)
-                  void slidesPlatform().clipboard?.hasSlideClipboard().then(setCanPasteSlide)
+                  void slidesDeckClipboard().hasSlideClipboard().then(setCanPasteSlide)
                   setCtxMenu({ kind: 'thumb', x: e.clientX, y: e.clientY, index: i })
                 }}
               >
@@ -2445,9 +2446,7 @@ export function App() {
                             setCurrent(i)
                             setSelectedIds([])
                             setEditing(null)
-                            void slidesPlatform()
-                              .clipboard?.hasSlideClipboard()
-                              .then(setCanPasteSlide)
+                            void slidesDeckClipboard().hasSlideClipboard().then(setCanPasteSlide)
                             setCtxMenu({ kind: 'thumb', x: e.clientX, y: e.clientY, index: i })
                           }}
                         >
@@ -2884,7 +2883,7 @@ export function App() {
                 onTransform={onTransform}
                 onFill={(id, fill) => void onFill(id, fill)}
                 onImageFill={(id) =>
-                  void slidesDoc()
+                  void slidesFile()
                     .editImageFill({ slideIndex: current, sourceId: id })
                     .then((r) => r && applySlide(current, r))
                 }

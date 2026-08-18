@@ -2,6 +2,7 @@
  * File actions extracted from App.tsx: save / save-as, image & PDF
  * export, and printing. Each function takes the ActionCtx built fresh per call.
  */
+import { slidesPrint } from './platform'
 import type { RenderSlide } from '@genoffice/pptx-render'
 import type { ActionCtx } from './action-context'
 import { renderSlidesToPngBase64 } from './export-render'
@@ -151,7 +152,7 @@ export async function printSlides(
             ctx.slides.flatMap((sl, i) => (sl.hidden ? [] : [slidesDoc().getNotes(i)])),
           )
         : undefined
-    const r = await slidesDoc().printSlides({
+    const r = await slidesPrint().printSlides({
       pngsBase64: pngs,
       widthPx: visible[0].widthPx,
       heightPx: visible[0].heightPx,

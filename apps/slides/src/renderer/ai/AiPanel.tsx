@@ -536,7 +536,7 @@ export function AiPanel({
             ),
           timeoutMs,
         )
-        const unsub = slidesDoc().onAiStream((chunk) => {
+        const unsub = slidesAi().onAiStream((chunk) => {
           if (chunk.requestId !== requestId) return
           if (chunk.type === 'delta') buf += chunk.text ?? ''
           else if (chunk.type === 'done')
@@ -605,7 +605,13 @@ export function AiPanel({
         insertAt?: number,
       ) => {
         try {
-          const res = await slidesDoc().htmlToPptx(pagesHtml, fitWidthPx, mode, insertAt, deckName)
+          const res = await slidesPlatform().cloud?.htmlToPptx(
+            pagesHtml,
+            fitWidthPx,
+            mode,
+            insertAt,
+            deckName,
+          )
           if (res && 'slides' in res && Array.isArray(res.slides)) {
             const appendedFrom =
               'appendedFrom' in res && typeof res.appendedFrom === 'number' ? res.appendedFrom : 0
@@ -651,7 +657,12 @@ export function AiPanel({
       },
       regenerateSlide: async (slideIndex: number, html: string) => {
         try {
-          const res = await slidesDoc().htmlToPptx([html], fitWidthPx, 'replace_at', slideIndex)
+          const res = await slidesPlatform().cloud?.htmlToPptx(
+            [html],
+            fitWidthPx,
+            'replace_at',
+            slideIndex,
+          )
           if (res && 'slides' in res && Array.isArray(res.slides)) {
             applyDeckRef.current(res.slides, slideIndex)
             if (res.path) onPathChangeRef.current?.(res.path)
@@ -891,14 +902,18 @@ export function AiPanel({
       },
       listStyleTemplates: async () => {
         try {
-          return await slidesDoc().listStyleTemplates()
+          // No template port means no templates, which the panel already renders as an
+          // empty gallery — the same thing a host with none installed reports.
+          return (await slidesPlatform().styleTemplates?.listStyleTemplates()) ?? []
         } catch {
           return []
         }
       },
       loadStyleTemplate: async (name) => {
         try {
-          return await slidesDoc().loadStyleTemplate(name)
+          const port = slidesPlatform().styleTemplates
+          if (!port) return { ok: false, error: 'style templates are not available here' }
+          return await port.loadStyleTemplate(name)
         } catch {
           return { ok: false, error: String('') }
         }

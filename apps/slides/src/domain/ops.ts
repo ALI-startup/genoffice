@@ -103,7 +103,15 @@ import {
   ungroupElement,
   updateConnectorsForMoved,
 } from '@genoffice/pptx-engine'
-import { parseTheme, patchBodyPrAutofit, patchSlideXml, utf8Bytes } from '@genoffice/pptx-engine'
+import {
+  editChartElement,
+  markChartEditable,
+  parseTheme,
+  patchBodyPrAutofit,
+  patchSlideXml,
+  setElementTextAnchor,
+  utf8Bytes,
+} from '@genoffice/pptx-engine'
 import type {
   OpenedPptx,
   Slide,
@@ -136,6 +144,7 @@ import type {
   DeleteElementOp,
   DuplicateElementsOp,
   EditBackgroundOp,
+  EditChartOp,
   EditConnectorEndpointsOp,
   EditFillOp,
   EditPictureOpacityOp,
@@ -1619,6 +1628,84 @@ export const slideOps = {
     session.metaDirty = true
     session.fitWidthPx = op.fitWidthPx
     return buildAllRenderSlides(session.opened, op.fitWidthPx)
+  },
+
+  /**
+   * Edit a chart's data or presentation.
+   *
+   * `confirmSimplify` is asked once, before the first edit of a chart that came from
+   * another program: the edit rebuilds it from this app's template, and formatting the
+   * model does not carry (number formats, trendlines, error bars, per-point styles) is
+   * lost. Injected because the question is the host's to put on screen — a native warning
+   * box on the desktop, whatever a browser can manage there — while the answer is all
+   * this operation needs.
+   */
+  async editChart(
+    session: Session | undefined,
+    op: EditChartOp,
+    confirmSimplify: () => Promise<boolean>,
+    tm: OpsTranslate,
+  ) {
+    if (!session) return null
+    const slide = session.opened.deck.slides[op.slideIndex]
+    if (!slide) return null
+    // A reparse regenerates element ids: look up the new id by element index; the renderer uses it to keep the selection
+    const elIdx = slide.elements.findIndex((el) => el.id === op.sourceId)
+    // Confirm before the first edit of a chart from an imported file: editing rebuilds it from the template,
+    // and unmodeled fine-grained formatting (number formats/trendlines/error bars/per-point styles) is lost
+    const chartEl = slide.elements[elIdx] as { type?: string; descr?: string } | undefined
+    if (chartEl?.type === 'chart' && chartEl.descr !== 'aislides-chart') {
+      if (!(await confirmSimplify())) return null
+    }
+    pushHistory(session)
+    // Mark aislides-chart on first edit (the conversion itself is lossless; no re-prompt after one confirmation)
+    markChartEditable(slide, op.sourceId)
+    const patch: Parameters<typeof editChartElement>[3] = {
+      ...(op.kind ? { kind: op.kind === 'barH' ? 'bar' : op.kind } : {}),
+      ...(op.kind === 'barH' ? { barDir: 'bar' as const } : {}),
+      ...(op.categories ? { categories: op.categories } : {}),
+      ...(op.series ? { series: op.series } : {}),
+      ...(op.title !== undefined ? { title: op.title } : {}),
+      ...(op.colorScheme
+        ? {
+            colorScheme:
+              chartColorSchemes(session.opened, tm).find((s) => s.key === op.colorScheme)?.colors ??
+              CHART_COLOR_SCHEMES[op.colorScheme],
+          }
+        : {}),
+      ...(op.legendPos ? { legendPos: op.legendPos } : {}),
+      ...(op.dataLabels !== undefined ? { dataLabels: op.dataLabels } : {}),
+      ...(op.gridlines !== undefined ? { gridlines: op.gridlines } : {}),
+      ...(op.catAxisTitle !== undefined ? { catAxisTitle: op.catAxisTitle } : {}),
+      ...(op.valAxisTitle !== undefined ? { valAxisTitle: op.valAxisTitle } : {}),
+      ...(op.gapWidthPct !== undefined ? { gapWidthPct: op.gapWidthPct } : {}),
+      ...(op.switchRowCol ? { switchRowCol: true } : {}),
+      ...(op.pointColors ? { pointColors: op.pointColors } : {}),
+    }
+    if (!editChartElement(session.opened, op.slideIndex, op.sourceId, patch)) {
+      session.undoStack.pop()
+      return null
+    }
+    // The chart part XML is updated; reparse the whole page to refresh the model
+    const rebuilt = rebuildSlideWithReparse(session, op.slideIndex)
+    if (!rebuilt) return null
+    const newId = session.opened.deck.slides[op.slideIndex]?.elements[elIdx]?.id ?? null
+    return { slide: rebuilt, sourceId: newId }
+  },
+
+  setTextAnchor(
+    session: Session | undefined,
+    op: { slideIndex: number; sourceId: string; anchor: 'top' | 'middle' | 'bottom' },
+  ) {
+    if (!session) return null
+    const slide = session.opened.deck.slides[op.slideIndex]
+    if (!slide) return null
+    pushHistory(session)
+    if (!setElementTextAnchor(slide, op.sourceId, op.anchor)) {
+      session.undoStack.pop()
+      return null
+    }
+    return rebuildSlide(session, op.slideIndex)
   },
 
   setTransition(session: Session | undefined, op: SetTransitionOp) {

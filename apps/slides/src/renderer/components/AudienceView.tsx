@@ -127,8 +127,8 @@ export function AudienceView() {
   }, [slides])
 
   useEffect(() => {
-    const offSync = slidesDoc().onShowSync(setSync)
-    const offInk = slidesDoc().onShowInk((ev) => {
+    const offSync = slidesPlatform().presenter?.onShowSync(setSync)
+    const offInk = slidesPlatform().presenter?.onShowInk((ev) => {
       if (ev.type === 'clear') {
         setStrokes([])
         setLaser(null)
@@ -151,8 +151,10 @@ export function AudienceView() {
         if (s) setSync((prev) => prev ?? s)
       })
     return () => {
-      offSync()
-      offInk()
+      // Undefined where there is no presenter port; there was nothing to subscribe to and
+      // so nothing to unsubscribe from. This whole view only exists in a presenter window.
+      offSync?.()
+      offInk?.()
     }
   }, [])
 

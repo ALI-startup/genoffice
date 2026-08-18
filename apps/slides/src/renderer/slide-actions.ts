@@ -4,6 +4,7 @@
  * clipboard lives in clipboard-actions.ts. Functions read the latest App
  * state through ActionCtx.
  */
+import { slidesDeckClipboard } from './platform'
 import { FIT_WIDTH } from './app-constants'
 import type { ActionCtx } from './action-context'
 import { renderSlidesToPngBase64 } from './export-render'
@@ -81,7 +82,7 @@ export async function cutSlideAt(ctx: ActionCtx, index: number): Promise<void> {
   } catch {
     png = undefined
   }
-  const ok = await slidesDoc().copySlide(index, png)
+  const ok = await slidesDeckClipboard().copySlide(index, png)
   if (!ok) {
     ctx.setStatus(t('appStatusSlideCopyFailed'))
     return
