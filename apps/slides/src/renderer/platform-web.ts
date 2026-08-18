@@ -24,7 +24,9 @@ import {
   bytesToBase64,
   type OpenedPptx,
 } from '@genoffice/pptx-engine'
+import type { LanguagePort } from '@genoffice/platform'
 import {
+  createWebUnloadPrompt,
   ensurePermission,
   isPickerCancel,
   type FilePickerAcceptType,
@@ -41,7 +43,15 @@ import {
   type OpsTranslate,
   type SlideClipboardEntry,
 } from '../domain/ops'
-import type { SlidesDeckClipboardPort, SlidesDocumentPort, SlidesFilePort } from './platform'
+import type {
+  SlidesDeckClipboardPort,
+  SlidesDocumentPort,
+  SlidesFilePort,
+  SlidesLanguagePort,
+  SlidesPrintPort,
+  SlidesWindowPort,
+} from './platform'
+import { buildPrintHtml } from '../domain/print-html'
 import type { OpenResult } from '../shared/ipc'
 
 /**
@@ -513,5 +523,91 @@ export function createWebSlidesFilePort(
      * `search` is null for.
      */
     insertImageUrl: async () => null,
+  }
+}
+
+/**
+ * The window integration for a browser.
+ *
+ * Three of the six members do real work and three are honest silences, which is worth being
+ * exact about:
+ *
+ *   - `isDirty` works, and does not go anywhere to find out: the deck is in this page, so the
+ *     same predicate the main process runs (`slideOps.isDirty`) runs here.
+ *   - `onCloseSaveRequest` / `reportCloseSaveResult` are the desktop's "save, then tell me how
+ *     it went, and I will wait" handshake. `beforeunload` cannot express that — a page may not
+ *     await anything before it goes away — so there is no moment at which this host could
+ *     honestly make the request. The subscription is real and simply never fires, and the
+ *     unload guard below is what actually protects unsaved work: it asks the browser to show
+ *     its own "Leave site?" prompt while the deck is dirty. Same conclusion docs reached.
+ *   - `setAutoSavePref` is accepted and recorded. On the desktop it tells the main process to
+ *     save silently while closing a window; here there is no other process to tell, and an
+ *     unload handler cannot await a write anyway.
+ *   - `onOpened` / `onRenamed` are subscriptions with no emissions: nothing outside this page
+ *     opens a document into it or renames one underneath it.
+ */
+export function createWebSlidesWindowPort(
+  session: () => Session | undefined,
+  unloadPrompt: typeof createWebUnloadPrompt = createWebUnloadPrompt,
+): SlidesWindowPort {
+  let autoSave = false
+  // Installed once, for the life of the page: the browser's own leave-site prompt is the only
+  // close guard a page gets, and it must be armed before the first edit rather than at close.
+  unloadPrompt(() => {
+    const current = session()
+    return !!current && slideOps.isDirty(current) === true
+  })
+  return {
+    isDirty: async () => slideOps.isDirty(session()) === true,
+    setAutoSavePref: (on) => {
+      autoSave = on
+      void autoSave
+    },
+    onCloseSaveRequest: () => () => {},
+    reportCloseSaveResult: () => {},
+    onOpened: () => () => {},
+    onRenamed: () => () => {},
+  }
+}
+
+/** The UI language, from the shared web language storage every app uses. */
+export function createWebSlidesLanguagePort(language: LanguagePort): SlidesLanguagePort {
+  return {
+    // The union slides declares is a stale eleven-value copy of @genoffice/i18n's nineteen
+    // (§6.4 of the migration doc, a live bug on both hosts). The cast is that gap, not a new
+    // one: the shared port answers with a real Lang and this port's type admits fewer.
+    getLanguage: async () =>
+      (await language.getLanguage()) as Awaited<ReturnType<SlidesLanguagePort['getLanguage']>>,
+    onLanguageChanged: (handler) =>
+      language.onLanguageChanged((lang) =>
+        handler(lang as Parameters<Parameters<SlidesLanguagePort['onLanguageChanged']>[0]>[0]),
+      ),
+  }
+}
+
+/**
+ * Printing, from a frame.
+ *
+ * The same HTML the desktop renders in a hidden window (src/domain/print-html.ts), so a
+ * printout does not differ between hosts. It goes in an iframe rather than the page because
+ * the page is the editor: printing the editor would print the editor.
+ *
+ * `printFrame` is injected — it is the only part that touches the DOM — and resolves once the
+ * print dialog has closed, which a page can observe through `afterprint` in the frame.
+ */
+export function createWebSlidesPrintPort(
+  printFrame: (html: string) => Promise<void>,
+): SlidesPrintPort {
+  return {
+    printSlides: async (op) => {
+      try {
+        await printFrame(buildPrintHtml(op))
+        // A page cannot tell whether the user printed or cancelled — the same limit docs
+        // documented for its own print port — so this reports that the flow ran.
+        return { ok: true }
+      } catch (error) {
+        return { ok: false, error: messageOf(error) }
+      }
+    },
   }
 }

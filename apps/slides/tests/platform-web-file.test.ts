@@ -15,7 +15,10 @@ import { createBlankPptx, openPptx, savePptx } from '@genoffice/pptx-engine'
 import type { WebDocumentStore } from '@genoffice/platform-web'
 import { setSlideRenderEnv } from '../src/domain/session'
 import {
+  createWebSlidesDocPort,
   createWebSlidesFilePort,
+  createWebSlidesPrintPort,
+  createWebSlidesWindowPort,
   WebSlidesSession,
   type WebFileServices,
 } from '../src/renderer/platform-web'
@@ -260,5 +263,92 @@ describe('the picker-driven inserts', () => {
         fitWidthPx: FIT,
       }),
     ).resolves.toBeNull()
+  })
+})
+
+describe('the window port in a page', () => {
+  it('answers isDirty from this page, with no host to ask', async () => {
+    const port = createWebSlidesFilePort(slot, services())
+    await port.openPptx(FIT)
+    const win = createWebSlidesWindowPort(
+      () => slot.get(),
+      () => () => {},
+    )
+
+    expect(await win.isDirty()).toBe(false)
+    // An edit through the document port is what makes it dirty — same predicate as the desktop.
+    const doc = createWebSlidesDocPort(() => slot.get(), {
+      commentAuthor: () => 'T',
+      translate: (k) => k,
+      confirmChartSimplify: async () => true,
+    })
+    await doc.addElement({
+      slideIndex: 0,
+      kind: 'textbox',
+      xPx: 10,
+      yPx: 10,
+      wPx: 80,
+      hPx: 40,
+      fitWidthPx: FIT,
+      paragraphs: [{ runs: [{ text: 'dirty now' }] }],
+    })
+
+    expect(await win.isDirty()).toBe(true)
+  })
+
+  it('arms the browser leave-site prompt, and only while the deck is dirty', async () => {
+    let shouldPrompt: (() => boolean) | null = null
+    const port = createWebSlidesFilePort(slot, services())
+    await port.openPptx(FIT)
+    createWebSlidesWindowPort(
+      () => slot.get(),
+      (predicate) => {
+        shouldPrompt = predicate
+        return () => {}
+      },
+    )
+
+    expect(shouldPrompt).not.toBeNull()
+    expect(shouldPrompt!()).toBe(false)
+    slot.get()!.metaDirty = true
+    expect(shouldPrompt!()).toBe(true)
+  })
+
+  it('does not pretend the close handshake works, but stays subscribable', () => {
+    const win = createWebSlidesWindowPort(
+      () => slot.get(),
+      () => () => {},
+    )
+
+    // A real subscription with no emissions: every caller keeps working, and nothing waits for
+    // a save this host could not await during unload.
+    expect(typeof win.onCloseSaveRequest(() => {})).toBe('function')
+    expect(() => win.reportCloseSaveResult(true)).not.toThrow()
+    expect(typeof win.onOpened(() => {})).toBe('function')
+  })
+})
+
+describe('the print port in a page', () => {
+  it('prints the same html the desktop renders, from a frame', async () => {
+    const printed: string[] = []
+    const print = createWebSlidesPrintPort(async (html) => void printed.push(html))
+
+    const r = await print.printSlides({ pngsBase64: ['AAA'], widthPx: 1600, heightPx: 900 })
+
+    expect(r.ok).toBe(true)
+    expect(printed[0]).toContain('data:image/png;base64,AAA')
+    // The @page rule is what makes a printout paginate at the slide's own ratio.
+    expect(printed[0]).toContain('@page')
+  })
+
+  it('reports a failed handover instead of throwing at the caller', async () => {
+    const print = createWebSlidesPrintPort(async () => {
+      throw new Error('printing is blocked in this frame')
+    })
+
+    await expect(print.printSlides({ pngsBase64: [], widthPx: 16, heightPx: 9 })).resolves.toEqual({
+      ok: false,
+      error: 'printing is blocked in this frame',
+    })
   })
 })
