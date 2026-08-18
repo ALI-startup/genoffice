@@ -104,7 +104,10 @@ import {
   updateConnectorsForMoved,
 } from '@genoffice/pptx-engine'
 import {
+  base64Bytes,
+  copySlide,
   editChartElement,
+  pasteSlide,
   markChartEditable,
   parseTheme,
   patchBodyPrAutofit,
@@ -113,6 +116,8 @@ import {
   utf8Bytes,
 } from '@genoffice/pptx-engine'
 import type {
+  ElementClipboardItem,
+  SlideBundle,
   OpenedPptx,
   Slide,
   Paragraph,
@@ -143,8 +148,12 @@ import type {
   DeleteCommentOp,
   DeleteElementOp,
   DuplicateElementsOp,
+  CopyElementsOp,
   EditBackgroundOp,
   EditChartOp,
+  PasteElementsOp,
+  PasteSlideOp,
+  RepasteSlideOp,
   EditConnectorEndpointsOp,
   EditFillOp,
   EditPictureOpacityOp,
@@ -447,6 +456,83 @@ const AV_MIME: Record<string, string> = {
   m4a: 'audio/mp4',
   aac: 'audio/aac',
   ogg: 'audio/ogg',
+}
+
+/**
+ * Where a copied slide or set of elements is kept, owned by the host.
+ *
+ * Injected rather than held here because the two hosts store it differently, and the
+ * difference is a real capability rather than an implementation detail. Electron keeps the
+ * copied *slide* in the main process so it can be pasted into a deck open in another
+ * window, and the element clipboard and last-paste record per renderer; a page keeps all
+ * three in the page, which crosses slides within one deck and no further.
+ *
+ * `markCopied` is the system-clipboard marker the desktop writes so that a later paste can
+ * tell whether this app or another application copied most recently. A host with no system
+ * clipboard has nothing to mark and says so by doing nothing.
+ */
+export interface DeckClipboardStore {
+  slide(): SlideClipboardEntry | null
+  setSlide(entry: SlideClipboardEntry | null): void
+  elements(): ElementClipboardEntry | null
+  setElements(entry: ElementClipboardEntry | null): void
+  lastPaste(): LastSlidePaste | null
+  setLastPaste(record: LastSlidePaste | null): void
+  markCopied(kind: 'slide' | 'elements'): void
+}
+
+/** A slide on the clipboard, with the thumbnail a picture-paste needs. */
+export interface SlideClipboardEntry {
+  bundle: SlideBundle
+  png?: string
+}
+
+/** Elements on the clipboard, with the paste counter that cascades the offset. */
+export interface ElementClipboardEntry {
+  items: ElementClipboardItem[]
+  pasteCount: number
+}
+
+/** Where the last slide paste landed, so the paste-options floater can redo it. */
+export interface LastSlidePaste {
+  afterIndex: number
+  undoLen: number
+}
+
+function performSlidePaste(
+  session: Session,
+  op: PasteSlideOp,
+  clip: DeckClipboardStore,
+): { slides: RenderSlide[]; index: number; sourceId?: string } | null {
+  const entry = clip.slide()
+  if (!entry) return null
+  if (op.mode === 'picture') {
+    const { deck } = session.opened
+    const anchorIndex = Math.min(Math.max(op.afterIndex, 0), deck.slides.length - 1)
+    const slide = deck.slides[anchorIndex]
+    if (!slide || !entry.png) return null
+    const el = addPicture(session.opened, slide, {
+      bytes: base64Bytes(entry.png),
+      ext: 'png',
+      offset: { x: 0, y: 0, cx: deck.size.cx, cy: deck.size.cy },
+    })
+    if (!el) return null
+    session.fitWidthPx = op.fitWidthPx
+    return {
+      slides: buildAllRenderSlides(session.opened, op.fitWidthPx),
+      index: anchorIndex,
+      sourceId: el.id,
+    }
+  }
+  const slide = pasteSlide(session.opened, op.afterIndex, entry.bundle, {
+    keepSourceFormatting: op.mode === 'source',
+  })
+  if (!slide) return null
+  session.fitWidthPx = op.fitWidthPx
+  return {
+    slides: buildAllRenderSlides(session.opened, op.fitWidthPx),
+    index: session.opened.deck.slides.indexOf(slide),
+  }
 }
 
 // ── The operations ──
@@ -1696,6 +1782,93 @@ export const slideOps = {
     if (!rebuilt) return null
     const newId = session.opened.deck.slides[op.slideIndex]?.elements[elIdx]?.id ?? null
     return { slide: rebuilt, sourceId: newId }
+  },
+
+  copySlide(
+    session: Session | undefined,
+    slideIndex: number,
+    pngBase64?: string,
+    clip?: DeckClipboardStore,
+  ) {
+    if (!session || !clip) return false
+    const bundle = copySlide(session.opened, slideIndex)
+    if (!bundle) return false
+    clip.setSlide({ bundle, ...(pngBase64 ? { png: pngBase64 } : {}) })
+    // Marker so plain paste knows the latest copy was a slide (element copies / external copies overwrite it)
+    clip.markCopied('slide')
+    return true
+  },
+
+  pasteSlide(session: Session | undefined, op: PasteSlideOp, clip: DeckClipboardStore) {
+    if (!session || !clip.slide()) return null
+    pushHistory(session)
+    const r = performSlidePaste(session, op, clip)
+    if (!r) {
+      session.undoStack.pop()
+      return null
+    }
+    clip.setLastPaste({ afterIndex: op.afterIndex, undoLen: session.undoStack.length })
+    return r
+  },
+
+  // Paste-options floater: undo the just-completed paste and redo it with another
+  // mode. Refused when anything (edits, undo) touched the deck in between.
+  repasteSlide(session: Session | undefined, op: RepasteSlideOp, clip: DeckClipboardStore) {
+    const rec = clip.lastPaste()
+    if (!session || !clip.slide() || !rec) return null
+    if (session.undoStack.length !== rec.undoLen) return null
+    const snap = session.undoStack.pop()
+    if (!snap) return null
+    restoreSnapshot(session, snap)
+    pushHistory(session)
+    const r = performSlidePaste(
+      session,
+      { afterIndex: rec.afterIndex, fitWidthPx: op.fitWidthPx, mode: op.mode },
+      clip,
+    )
+    if (!r) {
+      session.undoStack.pop()
+      return null
+    }
+    clip.setLastPaste({ ...rec, undoLen: session.undoStack.length })
+    return r
+  },
+
+  copyElements(session: Session | undefined, op: CopyElementsOp, clip: DeckClipboardStore) {
+    if (!session) return 0
+    const slide = session.opened.deck.slides[op.slideIndex]
+    if (!slide) return 0
+    const items = op.sourceIds
+      .map((id) => slide.elements.find((el) => el.id === id))
+      .filter((el): el is NonNullable<typeof el> => !!el)
+      .map((el) => copyElementData(session.opened, slide, el))
+    if (items.length) {
+      clip.setElements({ items, pasteCount: 0 })
+      // Mark the system clipboard: an external copy overwrites it, so at paste time it tells
+      // whether internal or external is newer.
+      clip.markCopied('elements')
+    }
+    return items.length
+  },
+
+  pasteElements(session: Session | undefined, op: PasteElementsOp, clip: DeckClipboardStore) {
+    const entry = clip.elements()
+    if (!session || !entry?.items.length) return null
+    if (!session.opened.deck.slides[op.slideIndex]) return null
+    const baseWidthPx = session.opened.deck.size.cx / EMU_PER_PX_96
+    const scale = op.fitWidthPx / baseWidthPx
+    // Cascading offset: each paste shifts another 16px relative to the original
+    const shift = Math.round(((16 * (entry.pasteCount + 1)) / scale) * EMU_PER_PX_96)
+    pushHistory(session)
+    const r = pasteElements(session.opened, op.slideIndex, entry.items, { dx: shift, dy: shift })
+    if (!r) {
+      session.undoStack.pop()
+      return null
+    }
+    entry.pasteCount++
+    session.fitWidthPx = op.fitWidthPx
+    const rebuilt = rebuildSlide(session, op.slideIndex)
+    return rebuilt ? { slide: rebuilt, sourceIds: r.elementIds } : null
   },
 
   setTextAnchor(

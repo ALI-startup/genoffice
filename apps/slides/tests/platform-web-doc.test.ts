@@ -12,6 +12,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createBlankPptx, openPptx, type OpenedPptx } from '@genoffice/pptx-engine'
 import { setSlideRenderEnv } from '../src/domain/session'
 import {
+  createWebSlidesDeckClipboardPort,
   createWebSlidesDocPort,
   WebSlidesSession,
   type WebDocumentServices,
@@ -132,5 +133,52 @@ describe('the document port in a page', () => {
     expect(await empty.getRenderSlides()).toBeNull()
     expect(await empty.getSlideSize()).toBeNull()
     expect(await empty.undo()).toBeNull()
+  })
+})
+
+describe('the deck clipboard in a page', () => {
+  it('copies a slide and pastes it back, all in this page', async () => {
+    const clip = createWebSlidesDeckClipboardPort(() => session.get())
+    expect(await clip.hasSlideClipboard()).toBe(false)
+
+    expect(await clip.copySlide(0)).toBe(true)
+    expect(await clip.hasSlideClipboard()).toBe(true)
+    const pasted = await clip.pasteSlide({ afterIndex: 0, fitWidthPx: FIT, mode: 'theme' })
+
+    expect(pasted?.slides.length).toBe(2)
+    expect(opened.deck.slides.length).toBe(2)
+  })
+
+  it('copies elements and cascades the offset on each paste, as the desktop does', async () => {
+    const clip = createWebSlidesDeckClipboardPort(() => session.get())
+    const added = await port.addElement({
+      slideIndex: 0,
+      kind: 'textbox',
+      xPx: 100,
+      yPx: 100,
+      wPx: 200,
+      hPx: 60,
+      fitWidthPx: FIT,
+      paragraphs: [{ runs: [{ text: 'copy me' }] }],
+    })
+
+    expect(await clip.copyElements({ slideIndex: 0, sourceIds: [added!.sourceId] })).toBe(1)
+    const first = await clip.pasteElements({ slideIndex: 0, fitWidthPx: FIT })
+    const second = await clip.pasteElements({ slideIndex: 0, fitWidthPx: FIT })
+
+    expect(first?.sourceIds.length).toBe(1)
+    expect(second?.sourceIds.length).toBe(1)
+    // Each paste shifts another 16px, so the two copies do not land on top of each other.
+    const boxes = second!.slide.nodes
+      .filter((n) => n.sourceId && n.sourceId !== added!.sourceId)
+      .map((n) => n.box.x)
+    expect(new Set(boxes).size).toBe(boxes.length)
+  })
+
+  it('pastes nothing when nothing was copied', async () => {
+    const clip = createWebSlidesDeckClipboardPort(() => session.get())
+
+    expect(await clip.pasteSlide({ afterIndex: 0, fitWidthPx: FIT, mode: 'theme' })).toBeNull()
+    expect(await clip.pasteElements({ slideIndex: 0, fitWidthPx: FIT })).toBeNull()
   })
 })

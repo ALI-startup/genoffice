@@ -18,8 +18,15 @@
  */
 import type { OpenedPptx } from '@genoffice/pptx-engine'
 import type { Session } from '../domain/session'
-import { slideOps, type OpsTranslate } from '../domain/ops'
-import type { SlidesDocumentPort } from './platform'
+import {
+  slideOps,
+  type DeckClipboardStore,
+  type ElementClipboardEntry,
+  type LastSlidePaste,
+  type OpsTranslate,
+  type SlideClipboardEntry,
+} from '../domain/ops'
+import type { SlidesDeckClipboardPort, SlidesDocumentPort } from './platform'
 
 /**
  * The one deck this page has open, and the session every operation acts on.
@@ -172,5 +179,50 @@ export function createWebSlidesDocPort(
     getChartColorSchemes: async () => slideOps.chartColorSchemes(session(), services.translate),
     editChart: async (op) =>
       slideOps.editChart(session(), op, services.confirmChartSimplify, services.translate),
+  }
+}
+
+/**
+ * The in-app deck clipboard, kept in this page.
+ *
+ * The narrower half of what Electron promises, and honestly so. There the copied slide
+ * lives in the main process, so it can be pasted into a deck open in another window; here
+ * it lives in the page, so it crosses slides within this deck and no further. That is a
+ * real capability rather than a stub, which is why this port is required while reading the
+ * *system* clipboard is a nullable one.
+ *
+ * `markCopied` does nothing here: the desktop writes a marker to the system clipboard so a
+ * later paste can tell whether this app or another application copied most recently, and a
+ * page that cannot read the system clipboard has no such question to answer.
+ */
+export function createWebSlidesDeckClipboardPort(
+  session: () => Session | undefined,
+): SlidesDeckClipboardPort {
+  let slide: SlideClipboardEntry | null = null
+  let elements: ElementClipboardEntry | null = null
+  let lastPaste: LastSlidePaste | null = null
+  const store: DeckClipboardStore = {
+    slide: () => slide,
+    setSlide: (entry) => {
+      slide = entry
+    },
+    elements: () => elements,
+    setElements: (entry) => {
+      elements = entry
+    },
+    lastPaste: () => lastPaste,
+    setLastPaste: (record) => {
+      lastPaste = record
+    },
+    markCopied: () => {},
+  }
+  return {
+    copySlide: async (slideIndex, pngBase64) =>
+      slideOps.copySlide(session(), slideIndex, pngBase64, store),
+    hasSlideClipboard: async () => slide !== null,
+    pasteSlide: async (op) => slideOps.pasteSlide(session(), op, store),
+    repasteSlide: async (op) => slideOps.repasteSlide(session(), op, store),
+    copyElements: async (op) => slideOps.copyElements(session(), op, store),
+    pasteElements: async (op) => slideOps.pasteElements(session(), op, store),
   }
 }
