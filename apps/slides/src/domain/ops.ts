@@ -1940,6 +1940,50 @@ export const slideOps = {
     return rebuilt ? { slide: rebuilt, sourceId: added.elementId } : null
   },
 
+  /**
+   * Insert a picture, scaled to at most half the page and centred.
+   *
+   * `natural` is the image's own pixel size, which the host measures because only the host
+   * can: Electron asks `nativeImage`, a browser decodes the bytes with `createImageBitmap`,
+   * and neither belongs in here. It falls back to 4:3 when a host cannot tell — the same
+   * default the desktop has always used for an image it failed to read.
+   */
+  insertPictureBytes(
+    session: Session | undefined,
+    op: {
+      slideIndex: number
+      bytes: Uint8Array
+      ext: string
+      natural: { width: number; height: number }
+      fitWidthPx: number
+    },
+  ) {
+    if (!session) return null
+    const slide = session.opened.deck.slides[op.slideIndex]
+    if (!slide) return null
+    const deckSize = session.opened.deck.size
+    const maxW = deckSize.cx / 2
+    const maxH = deckSize.cy / 2
+    const scale = Math.min(maxW / op.natural.width, maxH / op.natural.height)
+    const cx = Math.round(op.natural.width * scale)
+    const cy = Math.round(op.natural.height * scale)
+    const offset = {
+      x: Math.round((deckSize.cx - cx) / 2),
+      y: Math.round((deckSize.cy - cy) / 2),
+      cx,
+      cy,
+    }
+    pushHistory(session)
+    const el = addPicture(session.opened, slide, { bytes: op.bytes, ext: op.ext, offset })
+    if (!el) {
+      session.undoStack.pop()
+      return { error: 'unsupported' as const, ext: op.ext }
+    }
+    session.fitWidthPx = op.fitWidthPx
+    const rebuilt = rebuildSlide(session, op.slideIndex)
+    return rebuilt ? { slide: rebuilt, sourceId: el.id } : null
+  },
+
   setTextAnchor(
     session: Session | undefined,
     op: { slideIndex: number; sourceId: string; anchor: 'top' | 'middle' | 'bottom' },

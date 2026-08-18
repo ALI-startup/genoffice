@@ -16,9 +16,24 @@
  * `window`, and host-web.ts is the only place globals are read — the same division docs
  * and pdf use.
  */
-import type { OpenedPptx } from '@genoffice/pptx-engine'
-import type { Session } from '../domain/session'
 import {
+  commitSaved,
+  createBlankPptx,
+  openPptx,
+  savePptx,
+  bytesToBase64,
+  type OpenedPptx,
+} from '@genoffice/pptx-engine'
+import {
+  ensurePermission,
+  isPickerCancel,
+  type FilePickerAcceptType,
+  type FilePickers,
+  type WebDocumentStore,
+} from '@genoffice/platform-web'
+import { buildAllRenderSlides, type Session } from '../domain/session'
+import {
+  deckDefaultFont,
   slideOps,
   type DeckClipboardStore,
   type ElementClipboardEntry,
@@ -26,7 +41,8 @@ import {
   type OpsTranslate,
   type SlideClipboardEntry,
 } from '../domain/ops'
-import type { SlidesDeckClipboardPort, SlidesDocumentPort } from './platform'
+import type { SlidesDeckClipboardPort, SlidesDocumentPort, SlidesFilePort } from './platform'
+import type { OpenResult } from '../shared/ipc'
 
 /**
  * The one deck this page has open, and the session every operation acts on.
@@ -224,5 +240,278 @@ export function createWebSlidesDeckClipboardPort(
     repasteSlide: async (op) => slideOps.repasteSlide(session(), op, store),
     copyElements: async (op) => slideOps.copyElements(session(), op, store),
     pasteElements: async (op) => slideOps.pasteElements(session(), op, store),
+  }
+}
+
+/** The browser surfaces the file port needs, injected so this module reaches no global. */
+export interface WebFileServices {
+  /** The deck store: ref → handle, persisted in IndexedDB so a deck survives a reload. */
+  store: WebDocumentStore
+  /** Pickers for the one-off reads — a picture, a media file, a 3D model. */
+  pickers: FilePickers
+  /**
+   * An image's own pixel size, which only a host can measure. `null` when the bytes cannot be
+   * decoded, and the operation then falls back to 4:3 exactly as the desktop does.
+   */
+  imageSize: (bytes: Uint8Array, ext: string) => Promise<{ width: number; height: number } | null>
+  /** Hand the deck to the user as a download, for a deck with nowhere to save to. */
+  download: (fileName: string, bytes: Uint8Array) => void
+}
+
+/** An error's message, for the `error` field a failed save reports. */
+function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
+/** The pptx media type, for the Blob a download is delivered as. */
+export const PPTX_MIME = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+
+const IMAGE_TYPES: FilePickerAcceptType[] = [
+  {
+    description: 'Images',
+    accept: {
+      'image/png': ['.png'],
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/gif': ['.gif'],
+      'image/bmp': ['.bmp'],
+      'image/webp': ['.webp'],
+      'image/tiff': ['.tif', '.tiff'],
+    },
+  },
+]
+
+const AV_TYPES: Record<'video' | 'audio', FilePickerAcceptType[]> = {
+  video: [{ description: 'Video', accept: { 'video/*': ['.mp4', '.m4v', '.mov', '.webm'] } }],
+  audio: [
+    { description: 'Audio', accept: { 'audio/*': ['.mp3', '.wav', '.m4a', '.aac', '.ogg'] } },
+  ],
+}
+
+const MODEL_TYPES: FilePickerAcceptType[] = [
+  {
+    description: '3D models',
+    accept: { 'model/gltf-binary': ['.glb'], 'model/gltf+json': ['.gltf'] },
+  },
+]
+
+/** Read one picked file, or `null` when the user dismissed the dialog. */
+async function pickBytes(
+  pickers: FilePickers,
+  types: FilePickerAcceptType[],
+  id: string,
+): Promise<{ bytes: Uint8Array; name: string; ext: string } | null> {
+  let handle
+  try {
+    handle = await pickers.openFile({ types, id })
+  } catch (error) {
+    if (isPickerCancel(error)) return null
+    throw error
+  }
+  await ensurePermission(handle, 'read')
+  const file = await handle.getFile()
+  return {
+    bytes: new Uint8Array(await file.arrayBuffer()),
+    name: file.name,
+    ext: file.name.split('.').pop()?.toLowerCase() ?? '',
+  }
+}
+
+/**
+ * Getting a deck in and out of a browser.
+ *
+ * The store issues an opaque ref per document and resolves it to a `FileSystemFileHandle`, so
+ * `OpenResult.path` carries that ref where Electron's carries an absolute path — and `name`
+ * carries what to show, which is why the renderer no longer derives one.
+ *
+ * Two members report a capability this host does not have, and both do it through the value
+ * their signature already allows rather than by pretending:
+ *
+ *   - `consumePendingOpen` — the desktop queues a document for a tab it is about to create.
+ *     Nothing queues one here, so there is never a pending document and it answers `null`,
+ *     which is the same answer the desktop gives for a tab opened empty.
+ *   - `getRecentFiles` — returns paths, which the renderer puts straight in a list. This host
+ *     has refs, and a ref is not something to show a user, so it reports none. The handles
+ *     *are* persisted; surfacing them needs a name-carrying shape, the same gap pdf has.
+ */
+export function createWebSlidesFilePort(
+  sessionSlot: WebSlidesSession,
+  services: WebFileServices,
+): SlidesFilePort {
+  const { store, pickers } = services
+  const session = () => sessionSlot.get()
+
+  const adopt = async (ref: string, name: string, fitWidthPx: number): Promise<OpenResult> => {
+    const opened = await openPptx(await store.read(ref))
+    sessionSlot.open(ref, opened, fitWidthPx)
+    return {
+      path: ref,
+      name,
+      slides: buildAllRenderSlides(opened, fitWidthPx),
+      size: { cx: opened.deck.size.cx, cy: opened.deck.size.cy },
+      ...(deckDefaultFont(opened) ? { defaultFont: deckDefaultFont(opened) } : {}),
+    }
+  }
+
+  /** Write the deck's current bytes to `ref`. `auto` never prompts; see WebDocumentStore.write. */
+  const writeTo = async (ref: string, auto: boolean): Promise<void> => {
+    const current = session()!
+    await store.write(ref, await savePptx(current.opened), { prompt: !auto })
+  }
+
+  return {
+    openPptx: async (fitWidthPx) => {
+      const picked = await store.open()
+      return picked ? adopt(picked.ref, picked.name, fitWidthPx) : null
+    },
+
+    // `path` is this host's own ref, handed back from the recent list or a reload.
+    openPptxPath: async (path, fitWidthPx) => {
+      const reopened = await store.reopen(path)
+      return adopt(reopened.ref, reopened.name, fitWidthPx)
+    },
+
+    consumePendingOpen: async () => null,
+
+    newBlank: async (fitWidthPx) => {
+      const opened = await openPptx(await createBlankPptx())
+      sessionSlot.open('', opened, fitWidthPx)
+      return {
+        path: '',
+        name: '',
+        slides: buildAllRenderSlides(opened, fitWidthPx),
+        size: { cx: opened.deck.size.cx, cy: opened.deck.size.cy },
+      }
+    },
+
+    /**
+     * Save the deck where it already lives.
+     *
+     * A deck with no ref — a new blank one — has nowhere to live yet, and this host has no
+     * folder it may write to unasked. A save the user asked for therefore goes through Save
+     * As; an automatic one declines, because a dialog nobody asked for is the bug this flag
+     * exists to prevent. That is the same rule docs' `saveNew` follows.
+     */
+    save: async (auto) => {
+      const current = session()
+      if (!current) return { ok: false, error: 'no file open' }
+      if (!current.path) {
+        if (auto) return { ok: false, error: 'not saved yet: use Save to choose a destination' }
+        const saved = await store.saveAsDocument(
+          'presentation.pptx',
+          await savePptx(current.opened),
+        )
+        if (!saved) return { ok: false }
+        current.path = saved.ref
+        commitSaved(current.opened)
+        current.metaDirty = false
+        return {
+          ok: true,
+          path: saved.ref,
+          name: saved.name,
+          slides: buildAllRenderSlides(current.opened, current.fitWidthPx),
+        }
+      }
+      try {
+        await writeTo(current.path, auto)
+        // Bake the saved patches back into the model, exactly as the desktop does: a reopen
+        // would re-read and unzip the whole package and double the latency on a large deck.
+        commitSaved(current.opened)
+        current.metaDirty = false
+        return {
+          ok: true,
+          path: current.path,
+          name: (await store.recent()).find((r) => r.ref === current.path)?.name ?? '',
+          slides: buildAllRenderSlides(current.opened, current.fitWidthPx),
+        }
+      } catch (error) {
+        return { ok: false, error: messageOf(error) }
+      }
+    },
+
+    saveAs: async (defaultName) => {
+      const current = session()
+      if (!current) return { ok: false, error: 'no file open' }
+      try {
+        const saved = await store.saveAsDocument(defaultName, await savePptx(current.opened))
+        if (!saved) return { ok: false }
+        current.path = saved.ref
+        commitSaved(current.opened)
+        current.metaDirty = false
+        return {
+          ok: true,
+          path: saved.ref,
+          name: saved.name,
+          slides: buildAllRenderSlides(current.opened, current.fitWidthPx),
+        }
+      } catch (error) {
+        return { ok: false, error: messageOf(error) }
+      }
+    },
+
+    getRecentFiles: async () => [],
+
+    insertImage: async (slideIndex, fitWidthPx) => {
+      const picked = await pickBytes(pickers, IMAGE_TYPES, 'genoffice-slides-image')
+      if (!picked) return null
+      const natural = (await services.imageSize(picked.bytes, picked.ext)) ?? {
+        width: 4,
+        height: 3,
+      }
+      return slideOps.insertPictureBytes(session(), {
+        slideIndex,
+        bytes: picked.bytes,
+        ext: picked.ext,
+        natural,
+        fitWidthPx,
+      })
+    },
+
+    editImageFill: async (op) => {
+      const picked = await pickBytes(pickers, IMAGE_TYPES, 'genoffice-slides-image')
+      if (!picked) return null
+      return slideOps.setImageFillBytes(session(), {
+        slideIndex: op.slideIndex,
+        sourceId: op.sourceId,
+        bytes: picked.bytes,
+        ext: picked.ext,
+      })
+    },
+
+    insertMedia: async (slideIndex, kind, fitWidthPx) => {
+      const picked = await pickBytes(pickers, AV_TYPES[kind], `genoffice-slides-${kind}`)
+      if (!picked) return null
+      return slideOps.addMediaBytes(session(), {
+        slideIndex,
+        kind,
+        base64: bytesToBase64(picked.bytes),
+        ext: picked.ext,
+        fitWidthPx,
+        name: picked.name,
+      })
+    },
+
+    insertModel3d: async (slideIndex, fitWidthPx) => {
+      const picked = await pickBytes(pickers, MODEL_TYPES, 'genoffice-slides-model')
+      if (!picked) return null
+      // No poster: the desktop asks the OS for a thumbnail and a page has no equivalent, so
+      // the engine writes its own placeholder — which is also the desktop's fallback.
+      return slideOps.addModel3dBytes(session(), {
+        slideIndex,
+        bytes: picked.bytes,
+        ext: picked.ext,
+        name: picked.name,
+        fitWidthPx,
+      })
+    },
+
+    /**
+     * Insert an image the AI found on the web.
+     *
+     * Not available here, and the reason is the CSP rather than the API: every app is served
+     * with `connect-src 'self'`, so the page cannot fetch an arbitrary image host. Routing it
+     * through the BFF is the fix and needs a route that does not exist yet — the same gap
+     * `search` is null for.
+     */
+    insertImageUrl: async () => null,
   }
 }

@@ -36,7 +36,6 @@ import { getUiLang, normalizeLang, setUiLang } from '@genoffice/i18n'
 import { ProjectStore } from '@genoffice/project-store'
 import {
   addMedia,
-  addPicture,
   createBlankPptx,
   deleteSlide,
   type SlideBundle,
@@ -1173,8 +1172,7 @@ export function registerSlidesIpc(): void {
     const bytes = await readFile(filePath)
     const ext = filePath.split('.').pop()!.toLowerCase()
 
-    // Scale proportionally to at most half the page width/height, centered
-    const deckSize = session.opened.deck.size
+    // The image's own size, which this host reads from the file it just picked.
     let natural = { width: 4, height: 3 }
     if (ext === 'tif' || ext === 'tiff') {
       const decoded = tiffToPng(new Uint8Array(bytes))
@@ -1183,27 +1181,13 @@ export function registerSlidesIpc(): void {
       const img = nativeImage.createFromPath(filePath)
       if (!img.isEmpty()) natural = img.getSize()
     }
-    const maxW = deckSize.cx / 2
-    const maxH = deckSize.cy / 2
-    const scale = Math.min(maxW / natural.width, maxH / natural.height)
-    const cx = Math.round(natural.width * scale)
-    const cy = Math.round(natural.height * scale)
-    const offset = {
-      x: Math.round((deckSize.cx - cx) / 2),
-      y: Math.round((deckSize.cy - cy) / 2),
-      cx,
-      cy,
-    }
-
-    pushHistory(session)
-    const el = addPicture(session.opened, slide, { bytes: new Uint8Array(bytes), ext, offset })
-    if (!el) {
-      session.undoStack.pop()
-      return { error: 'unsupported' as const, ext }
-    }
-    session.fitWidthPx = fitWidthPx
-    const rebuilt = rebuildSlide(session, slideIndex)
-    return rebuilt ? { slide: rebuilt, sourceId: el.id } : null
+    return ops.insertPictureBytes(session, {
+      slideIndex,
+      bytes: new Uint8Array(bytes),
+      ext,
+      natural,
+      fitWidthPx,
+    })
   })
 
   ipcMain.handle('slides:edit-fill', (e, op: EditFillOp) =>
