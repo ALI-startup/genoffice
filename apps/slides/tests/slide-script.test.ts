@@ -8,6 +8,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { RenderSlide, RenderNode, ShapeRenderNode, PlacedBox } from '@genoffice/pptx-render'
 import { runLayoutScript, type LayoutScriptElement } from '../src/renderer/ai/layout-script'
 import { createSlidesSkill, type DeckAccess } from '../src/renderer/ai/slides-skill'
+import { installTestPlatform } from './helpers/platform'
 
 const box = (x: number, y: number, w: number, h: number, rot = 0): PlacedBox => ({
   x,
@@ -373,7 +374,7 @@ describe('execute_slide_script tool', () => {
     ])
     // Simulate the main process's editing IPCs: modify nodes per op and return a new RenderSlide
     ;(globalThis as any).window = {
-      slidesApi: {
+      slidesApi: installTestPlatform({
         beginHistoryBatch: vi.fn(async () => true),
         endHistoryBatch: vi.fn(async () => true),
         batchEditTransform: vi.fn(async (op: any) => {
@@ -410,7 +411,7 @@ describe('execute_slide_script tool', () => {
         }),
         editFill: vi.fn(async () => ({ ...slide })),
         editStroke: vi.fn(async () => ({ ...slide })),
-      },
+      }),
     }
   })
 

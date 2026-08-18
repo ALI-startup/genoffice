@@ -17,6 +17,7 @@ import {
   type WordArtPreset,
 } from './insert-presets'
 import { t } from './i18n/locale'
+import { slidesDoc, slidesFile } from './platform'
 
 export async function insertElement(ctx: ActionCtx, kind: InsertKind): Promise<void> {
   const { slide, current } = ctx
@@ -27,7 +28,7 @@ export async function insertElement(ctx: ActionCtx, kind: InsertKind): Promise<v
   const isLine = isStraightLine || kind === 'lineBent' || kind === 'lineCurved'
   const w = kind === 'textbox' ? 360 : 240
   const h = kind === 'textbox' ? 60 : isStraightLine ? 0 : 160
-  const r = await window.slidesApi.addElement({
+  const r = await slidesDoc().addElement({
     slideIndex: current,
     kind,
     xPx: Math.round((slide.widthPx - w) / 2),
@@ -50,7 +51,7 @@ export async function insertElement(ctx: ActionCtx, kind: InsertKind): Promise<v
 
 export async function insertImage(ctx: ActionCtx): Promise<void> {
   if (!ctx.slide) return
-  const r = await window.slidesApi.insertImage(ctx.current, FIT_WIDTH)
+  const r = await slidesFile().insertImage(ctx.current, FIT_WIDTH)
   if (!r) return
   if ('error' in r) {
     ctx.setSelectedIds([])
@@ -66,7 +67,7 @@ export async function insertTable(ctx: ActionCtx, rows: number, cols: number): P
   if (!slide) return
   const w = Math.min(Math.round(slide.widthPx * 0.7), 760)
   const h = Math.min(Math.round(slide.heightPx * 0.6), rows * 44)
-  const r = await window.slidesApi.addTable({
+  const r = await slidesDoc().addTable({
     slideIndex: current,
     rows,
     cols,
@@ -101,7 +102,7 @@ export async function insertIcon(ctx: ActionCtx, def: IconDef, color: string): P
     canvas.getContext('2d')!.drawImage(img, 0, 0, 512, 512)
     const base64 = canvas.toDataURL('image/png').split(',')[1]!
     const size = 96
-    const r = await window.slidesApi.addImageBytes({
+    const r = await slidesDoc().addImageBytes({
       slideIndex: current,
       base64,
       ext: 'png',
@@ -128,7 +129,7 @@ export async function insertChart(ctx: ActionCtx, kind: ChartPresetDef['kind']):
   const data = chartSampleData(kind)
   const w = Math.round(slide.widthPx * 0.62)
   const h = Math.round(slide.heightPx * 0.62)
-  const r = await window.slidesApi.addChart({
+  const r = await slidesDoc().addChart({
     slideIndex: current,
     kind,
     categories: data.categories,
@@ -151,7 +152,7 @@ export async function insertSmartArt(ctx: ActionCtx, def: SmartArtDef): Promise<
   if (!slide) return
   const w = Math.round(slide.widthPx * 0.7)
   const h = Math.round(slide.heightPx * 0.5)
-  const r = await window.slidesApi.addSmartArt({
+  const r = await slidesDoc().addSmartArt({
     slideIndex: current,
     layout: def.layout,
     items: def.defaultItems,
@@ -173,7 +174,7 @@ export async function insertWordArt(ctx: ActionCtx, preset: WordArtPreset): Prom
   if (!slide) return
   const w = 520
   const h = 100
-  const r = await window.slidesApi.addElement({
+  const r = await slidesDoc().addElement({
     slideIndex: current,
     kind: 'textbox',
     xPx: Math.round((slide.widthPx - w) / 2),
@@ -211,7 +212,7 @@ export async function insertField(ctx: ActionCtx, type: 'datetime' | 'slidenum')
   const isDate = type === 'datetime'
   const w = isDate ? 240 : 100
   const h = 44
-  const r = await window.slidesApi.addElement({
+  const r = await slidesDoc().addElement({
     slideIndex: current,
     kind: 'textbox',
     xPx: Math.round((slide.widthPx - w) / 2),
@@ -250,7 +251,7 @@ export async function openLinkDialog(ctx: ActionCtx): Promise<void> {
   }
   if (ctx.selectedIds.length !== 1) return
   const sourceId = ctx.selectedIds[0]!
-  const initial = await window.slidesApi.getLink(ctx.current, sourceId)
+  const initial = await slidesDoc().getLink(ctx.current, sourceId)
   ctx.setLinkDialog({ sourceId, initial })
 }
 
@@ -263,7 +264,7 @@ export async function applyLink(ctx: ActionCtx, target: LinkTargetOp | null): Pr
     return
   }
   if (!ctx.linkDialog.sourceId) return
-  const updated = await window.slidesApi.setLink({
+  const updated = await slidesDoc().setLink({
     slideIndex: ctx.current,
     sourceId: ctx.linkDialog.sourceId,
     target,
@@ -281,7 +282,7 @@ export async function insertZoom(ctx: ActionCtx, target: number): Promise<void> 
   if (!slide) return
   const w = 200
   const h = 60
-  const r = await window.slidesApi.addElement({
+  const r = await slidesDoc().addElement({
     slideIndex: current,
     kind: 'roundRect',
     xPx: slide.widthPx - w - 28,
@@ -305,7 +306,7 @@ export async function insertZoom(ctx: ActionCtx, target: number): Promise<void> 
     ],
   })
   if (!r) return
-  const linked = await window.slidesApi.setLink({
+  const linked = await slidesDoc().setLink({
     slideIndex: current,
     sourceId: r.sourceId,
     target: { kind: 'slide', slideIndex: target },
@@ -316,7 +317,7 @@ export async function insertZoom(ctx: ActionCtx, target: number): Promise<void> 
 
 export async function openHeaderFooter(ctx: ActionCtx): Promise<void> {
   if (!ctx.slide) return
-  ctx.setHfDialog(await window.slidesApi.getHeaderFooter(ctx.current))
+  ctx.setHfDialog(await slidesDoc().getHeaderFooter(ctx.current))
 }
 
 export async function applyHf(
@@ -324,7 +325,7 @@ export async function applyHf(
   opts: { footer: string | null; slideNum: boolean; date: string | null; dateAuto: boolean },
 ): Promise<void> {
   ctx.setHfDialog(null)
-  const updated = await window.slidesApi.applyHeaderFooter({ ...opts, fitWidthPx: FIT_WIDTH })
+  const updated = await slidesDoc().applyHeaderFooter({ ...opts, fitWidthPx: FIT_WIDTH })
   if (updated) {
     ctx.setSlides(updated)
     ctx.setSelectedIds([])
@@ -343,7 +344,7 @@ export async function insertEquation(ctx: ActionCtx, text: string): Promise<void
   if (!slide) return
   const w = 420
   const h = 84
-  const r = await window.slidesApi.addElement({
+  const r = await slidesDoc().addElement({
     slideIndex: current,
     kind: 'textbox',
     xPx: Math.round((slide.widthPx - w) / 2),
@@ -367,7 +368,7 @@ export async function insertEquation(ctx: ActionCtx, text: string): Promise<void
 
 export async function insertMediaFile(ctx: ActionCtx, kind: 'video' | 'audio'): Promise<void> {
   if (!ctx.slide) return
-  const r = await window.slidesApi.insertMedia(ctx.current, kind, FIT_WIDTH)
+  const r = await slidesDoc().insertMedia(ctx.current, kind, FIT_WIDTH)
   if (r) {
     ctx.applySlide(ctx.current, r.slide)
     ctx.setSelectedIds([r.sourceId])
@@ -377,7 +378,7 @@ export async function insertMediaFile(ctx: ActionCtx, kind: 'video' | 'audio'): 
 
 export async function insertModel3dFile(ctx: ActionCtx): Promise<void> {
   if (!ctx.slide) return
-  const r = await window.slidesApi.insertModel3d(ctx.current, FIT_WIDTH)
+  const r = await slidesFile().insertModel3d(ctx.current, FIT_WIDTH)
   if (r) {
     ctx.applySlide(ctx.current, r.slide)
     ctx.setSelectedIds([r.sourceId])
@@ -418,7 +419,7 @@ export async function toggleScreenRecord(ctx: ActionCtx): Promise<void> {
       for (let i = 0; i < buf.length; i += 0x8000) {
         bin += String.fromCharCode(...buf.subarray(i, i + 0x8000))
       }
-      const r = await window.slidesApi.addMediaBytes({
+      const r = await slidesDoc().addMediaBytes({
         slideIndex,
         kind: 'video',
         base64: btoa(bin),

@@ -10,6 +10,8 @@ import type { AddSmartArtOp, AgentToolCall, AgentToolDef, EditParagraph } from '
 import { auditSlideLayout, formatAudit } from './layout-audit'
 import { runLayoutScript, type LayoutScriptElement, type SlideStylePatch } from './layout-script'
 import { t } from '../i18n/locale'
+import { slidesDoc, slidesFile } from '../platform'
+import { slidesPlatform } from '../platform'
 
 /**
  * Slides capability as an AgentSkill: deck outline context + three tools (read structure /
@@ -1610,7 +1612,7 @@ async function executeTool(
       const target = resolveEditTarget(slide, sourceId)
       const terr = targetError(target, sourceId, idx + 1)
       if (terr || !target || 'nested' in target) return fail(t('aiFailEditText'), terr!)
-      const updated = await window.slidesApi.editText({
+      const updated = await slidesDoc().editText({
         slideIndex: idx,
         sourceId,
         paragraphs,
@@ -1650,7 +1652,7 @@ async function executeTool(
       if (!cur.length) return fail(t('aiFailStyle'), 'This element has no text to format')
       const ov = call.input as SlideStylePatch
       const paragraphs = mergeStyleIntoParagraphs(cur, ov)
-      const updated = await window.slidesApi.editText({
+      const updated = await slidesDoc().editText({
         slideIndex: idx,
         sourceId,
         paragraphs,
@@ -1685,7 +1687,7 @@ async function executeTool(
         h?: number
         rotationDeg?: number
       }
-      const updated = await window.slidesApi.editTransform({
+      const updated = await slidesDoc().editTransform({
         slideIndex: idx,
         sourceId,
         ...(target.groupId ? { groupId: target.groupId } : {}),
@@ -1750,7 +1752,7 @@ async function executeTool(
       //   each step using the returned new slide as the next step's current state. One failure doesn't crash the whole run; report faithfully.
       // Balanced with the end in the finally below; an unbalanced pair would leave
       // the session mid-batch, where undo/redo refuse to run
-      const batchOpened = (await window.slidesApi.beginHistoryBatch?.()) === true
+      const batchOpened = (await slidesDoc().beginHistoryBatch?.()) === true
       try {
         let current = slide
         const failures: string[] = []
@@ -1758,7 +1760,7 @@ async function executeTool(
         const topOps = r.ops.filter((op) => !op.groupId)
         const grpOps = r.ops.filter((op) => op.groupId)
         if (topOps.length > 0) {
-          const updated = await window.slidesApi.batchEditTransform({
+          const updated = await slidesDoc().batchEditTransform({
             slideIndex: idx,
             fitWidthPx: access.fitWidthPx,
             items: topOps.map((op) => ({
@@ -1784,7 +1786,7 @@ async function executeTool(
         for (const op of grpOps) {
           const gnode = findNodeById(current.nodes, op.groupId!)
           const updated = gnode
-            ? await window.slidesApi.editTransform({
+            ? await slidesDoc().editTransform({
                 slideIndex: idx,
                 sourceId: op.id,
                 groupId: op.groupId!,
@@ -1809,7 +1811,7 @@ async function executeTool(
           const grp = e.groupId ? { groupId: e.groupId } : {}
           let updated: RenderSlide | null
           if (e.kind === 'text') {
-            updated = await window.slidesApi.editText({
+            updated = await slidesDoc().editText({
               slideIndex: idx,
               sourceId: e.id,
               paragraphs: e.paragraphs,
@@ -1833,7 +1835,7 @@ async function executeTool(
               failures.push(`setStyle("${e.id}"): this element has no text to format`)
               continue
             }
-            updated = await window.slidesApi.editText({
+            updated = await slidesDoc().editText({
               slideIndex: idx,
               sourceId: e.id,
               paragraphs: mergeStyleIntoParagraphs(cur, e.style),
@@ -1844,7 +1846,7 @@ async function executeTool(
               continue
             }
           } else if (e.kind === 'fill') {
-            updated = await window.slidesApi.editFill({
+            updated = await slidesDoc().editFill({
               slideIndex: idx,
               sourceId: e.id,
               fill: e.fill,
@@ -1855,7 +1857,7 @@ async function executeTool(
               continue
             }
           } else {
-            updated = await window.slidesApi.editStroke({
+            updated = await slidesDoc().editStroke({
               slideIndex: idx,
               sourceId: e.id,
               stroke: e.stroke,
@@ -1893,7 +1895,7 @@ async function executeTool(
           summary: t('aiSumScript', { n: idx + 1, count: totalApplied }),
         }
       } finally {
-        if (batchOpened) await window.slidesApi.endHistoryBatch?.()
+        if (batchOpened) await slidesDoc().endHistoryBatch?.()
       }
     }
 
@@ -1905,7 +1907,7 @@ async function executeTool(
       const target = resolveEditTarget(slides[idx]!, sourceId)
       const terr = targetError(target, sourceId, idx + 1)
       if (terr || !target || 'nested' in target) return fail(t('aiFailFill'), terr!)
-      const updated = await window.slidesApi.editFill({
+      const updated = await slidesDoc().editFill({
         slideIndex: idx,
         sourceId,
         fill: String(call.input.fill),
@@ -1932,7 +1934,7 @@ async function executeTool(
       const target = resolveEditTarget(slides[idx]!, sourceId)
       const terr = targetError(target, sourceId, idx + 1)
       if (terr || !target || 'nested' in target) return fail(t('aiFailStroke'), terr!)
-      const updated = await window.slidesApi.editStroke({
+      const updated = await slidesDoc().editStroke({
         slideIndex: idx,
         sourceId,
         stroke,
@@ -1950,7 +1952,11 @@ async function executeTool(
     case 'web_search': {
       const query = String(call.input.query ?? '').trim()
       if (!query) return fail(t('aiFailWebSearch'), 'query must not be empty')
-      const r = await window.slidesApi.webSearch(query, Number(call.input.maxResults) || 6)
+      // Reported to the model as a failed tool call rather than thrown: an agent loop can
+      // work around a tool that is unavailable on this host, but not around an exception.
+      const search = slidesPlatform().search
+      if (!search) return fail(t('aiFailWebSearch'), 'web search is not available on this host')
+      const r = await search.webSearch(query, Number(call.input.maxResults) || 6)
       if (state) state.webSearched = true
       // output for the LLM: title+URL+summary (each summary truncated to 120 chars to stay lean)
       const SNIPPET_MAX = 120
@@ -1977,7 +1983,11 @@ async function executeTool(
     case 'image_search': {
       const query = String(call.input.query ?? '').trim()
       if (!query) return fail(t('aiFailImageSearch'), 'query must not be empty')
-      const r = await window.slidesApi.imageSearch(query, Number(call.input.maxResults) || 8)
+      const search = slidesPlatform().search
+      if (!search) {
+        return fail(t('aiFailImageSearch'), 'image search is not available on this host')
+      }
+      const r = await search.imageSearch(query, Number(call.input.maxResults) || 8)
       // output for the LLM: keep the existing format (the LLM needs to read URLs into image_queries; format unchanged)
       const lines = r.images.map(
         (im, i) =>
@@ -2002,7 +2012,7 @@ async function executeTool(
       const refs = Array.isArray(call.input.referenceImageUrls)
         ? (call.input.referenceImageUrls as unknown[]).map(String).filter(Boolean)
         : undefined
-      const r = await window.slidesApi.generateImage({
+      const r = await slidesDoc().generateImage({
         prompt,
         model: call.input.model ? String(call.input.model) : undefined,
         referenceImageUrls: refs,
@@ -2030,7 +2040,7 @@ async function executeTool(
       const requirements = String(call.input.requirements ?? '').trim()
       if (!mediaUrls.length) return fail(t('aiFailMedia'), 'mediaUrls must not be empty')
       if (!requirements) return fail(t('aiFailMedia'), 'requirements must not be empty')
-      const r = await window.slidesApi.analyzeMedia({ mediaUrls, requirements })
+      const r = await slidesDoc().analyzeMedia({ mediaUrls, requirements })
       if (!r.text) return fail(t('aiFailMedia'), r.error ?? 'Analysis failed')
       // Analysis text can be very long; truncate to protect context (first 6000 chars are enough to generate deck content)
       const MAX_LEN = 6000
@@ -2048,7 +2058,7 @@ async function executeTool(
         return fail(t('aiFailInsertImage'), `slideIndex out of range (0-${slides.length - 1})`)
       const url = String(call.input.url ?? '')
       if (!/^https?:\/\//.test(url)) return fail(t('aiFailInsertImage'), 'Invalid url')
-      const r = await window.slidesApi.insertImageUrl({
+      const r = await slidesFile().insertImageUrl({
         slideIndex: idx,
         url,
         xPx: Number(call.input.x),
@@ -2206,7 +2216,7 @@ async function executeTool(
         return fail(t('aiFailDeleteSlide'), `slideIndex out of range (0-${slides.length - 1})`)
       if (slides.length <= 1)
         return fail(t('aiFailDeleteSlide'), 'Only one page remains; cannot delete')
-      const r = await window.slidesApi.deleteSlide(idx)
+      const r = await slidesDoc().deleteSlide(idx)
       if (!r) return fail(t('aiFailDeleteSlide'), 'Deletion failed')
       access.applyDeck(r, Math.max(0, Math.min(idx, r.length - 1)))
       return {
@@ -2829,7 +2839,7 @@ async function executeTool(
       const src = Number(call.input.sourceIndex)
       if (!slides[src])
         return fail(t('aiFailNewSlide'), `sourceIndex out of range (0-${slides.length - 1})`)
-      const r = await window.slidesApi.addSlide({
+      const r = await slidesDoc().addSlide({
         sourceIndex: src,
         clearText: call.input.clearText !== false,
         fitWidthPx: access.fitWidthPx,
@@ -2858,7 +2868,7 @@ async function executeTool(
       if (isShape && !/^[a-zA-Z][a-zA-Z0-9]*$/.test(kind)) {
         return fail(t('aiFailNewShape'), `Invalid shape name: ${kind}`)
       }
-      const r = await window.slidesApi.addElement({
+      const r = await slidesDoc().addElement({
         slideIndex: idx,
         kind,
         xPx: Number(call.input.x),
@@ -2905,7 +2915,7 @@ async function executeTool(
       const defH = Math.round(slide.heightPx * 0.62)
       const w = Number(call.input.w) || defW
       const h = Number(call.input.h) || defH
-      const r = await window.slidesApi.addChart({
+      const r = await slidesDoc().addChart({
         slideIndex: idx,
         kind: String(call.input.kind) as
           'bar' | 'barStacked' | 'line' | 'area' | 'pie' | 'doughnut',
@@ -2949,7 +2959,7 @@ async function executeTool(
       const defH = Math.round(slide.heightPx * 0.5)
       const w = Number(call.input.w) || defW
       const h = Number(call.input.h) || defH
-      const r = await window.slidesApi.addSmartArt({
+      const r = await slidesDoc().addSmartArt({
         slideIndex: idx,
         layout: String(call.input.layout) as AddSmartArtOp['layout'],
         items,
@@ -2994,7 +3004,7 @@ async function executeTool(
       const defH = Math.round(Math.min(slide.heightPx * 0.6, rows * 40 + 20))
       const w = Number(call.input.w) || defW
       const h = Number(call.input.h) || defH
-      const r = await window.slidesApi.addTable({
+      const r = await slidesDoc().addTable({
         slideIndex: idx,
         rows,
         cols,
@@ -3020,7 +3030,7 @@ async function executeTool(
         for (let ci = 0; ci < Math.min(rowCells.length, cols); ci++) {
           const text = String(rowCells[ci] ?? '')
           if (!text) continue
-          const u = await window.slidesApi.editTableCell({
+          const u = await slidesDoc().editTableCell({
             slideIndex: idx,
             sourceId: r.sourceId,
             row: ri,
@@ -3050,7 +3060,7 @@ async function executeTool(
       if (!paragraphs) return fail(t('aiFailEditTable'), 'paragraphs must be a non-empty array')
       const row = Number(call.input.row)
       const col = Number(call.input.col)
-      const updated = await window.slidesApi.editTableCell({
+      const updated = await slidesDoc().editTableCell({
         slideIndex: idx,
         sourceId,
         row,
@@ -3080,7 +3090,7 @@ async function executeTool(
       if (!['insert-row', 'delete-row', 'insert-col', 'delete-col'].includes(kind)) {
         return fail(t('aiFailTableStructure'), 'Invalid kind')
       }
-      const r = await window.slidesApi.tableStructure({
+      const r = await slidesDoc().tableStructure({
         slideIndex: idx,
         sourceId,
         kind,
@@ -3125,7 +3135,7 @@ async function executeTool(
       if (call.input.borderWidthPt != null) op.borderWidthPt = Number(call.input.borderWidthPt)
       if (call.input.borderPreset != null)
         op.borderPreset = String(call.input.borderPreset) as 'all' | 'none'
-      const updated = await window.slidesApi.editTableStyle(op)
+      const updated = await slidesDoc().editTableStyle(op)
       if (!updated)
         return fail(
           t('aiFailTableStyle'),
@@ -3166,7 +3176,7 @@ async function executeTool(
       if (typeof call.input.dataLabels === 'boolean') op.dataLabels = call.input.dataLabels
       if (typeof call.input.gridlines === 'boolean') op.gridlines = call.input.gridlines
       if (call.input.switchRowCol === true) op.switchRowCol = true
-      const updated = await window.slidesApi.editChart(op)
+      const updated = await slidesDoc().editChart(op)
       if (!updated)
         return fail(
           t('aiFailChartEdit'),
@@ -3188,7 +3198,7 @@ async function executeTool(
         return fail(t('aiFailBackground'), `slideIndex out of range (0-${slides.length - 1} or -1)`)
       if (!/^#?[0-9a-fA-F]{6}$/.test(color))
         return fail(t('aiFailBackground'), 'color must be #RRGGBB')
-      const r = await window.slidesApi.editBackground({
+      const r = await slidesDoc().editBackground({
         slideIndex: idx,
         color: color.startsWith('#') ? color : `#${color}`,
         fitWidthPx: access.fitWidthPx,
@@ -3219,7 +3229,7 @@ async function executeTool(
           `Element ${sourceId} is inside a group${gid ? ` (${gid})` : ''}; call ungroup_element on the group first and then delete it, or delete the whole group`,
         )
       }
-      const updated = await window.slidesApi.deleteElement({ slideIndex: idx, sourceId })
+      const updated = await slidesDoc().deleteElement({ slideIndex: idx, sourceId })
       if (!updated)
         return fail(
           t('aiFailDeleteElement'),
@@ -3252,7 +3262,7 @@ async function executeTool(
         return fail(t('aiFailUngroup'), `${sourceId} is not a group (type: ${node.type})`)
       if (node.decoration)
         return fail(t('aiFailUngroup'), `${sourceId} is a layout decoration, read-only`)
-      const updated = await window.slidesApi.ungroupElement({ slideIndex: idx, sourceId })
+      const updated = await slidesDoc().ungroupElement({ slideIndex: idx, sourceId })
       if (!updated) return fail(t('aiFailUngroup'), 'Ungroup failed')
       access.applySlide(idx, updated)
       // Ungrouping rewrites the page and re-ids every element; echo the fresh list so no extra read_slide is needed

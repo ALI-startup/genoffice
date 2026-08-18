@@ -20,6 +20,8 @@ import { AnimatedSlideStage, useAnimPlayer } from './AnimatedSlide'
 import { useI18n } from '../i18n/locale'
 import { SlideThumb } from '../SlideThumb'
 import { InkLayer, type InkStroke } from './ShowInk'
+import { slidesDoc } from '../platform'
+import { slidesPlatform } from '../platform'
 
 /** Layout constants (aligned with styles.css) */
 const SIDE_W = 340
@@ -103,10 +105,10 @@ export function PresenterView({
 
   useEffect(() => {
     let cancelled = false
-    void Promise.all(slides.map((_, i) => window.slidesApi.getAnimations(i))).then((lists) => {
+    void Promise.all(slides.map((_, i) => slidesDoc().getAnimations(i))).then((lists) => {
       if (!cancelled) setAllAnims(lists)
     })
-    void Promise.all(slides.map((_, i) => window.slidesApi.getNotes(i))).then((notes) => {
+    void Promise.all(slides.map((_, i) => slidesDoc().getNotes(i))).then((notes) => {
       if (!cancelled) setAllNotes(notes)
     })
     return () => {
@@ -128,12 +130,14 @@ export function PresenterView({
   // ── Multi-screen: open the audience window on entry, close on exit ─────────────
   useEffect(() => {
     let disposed = false
-    void window.slidesApi.presenterStart().then((r) => {
-      if (!disposed) setHasAudience(r.audience)
-    })
+    void slidesPlatform()
+      .presenter?.presenterStart()
+      .then((r) => {
+        if (!disposed) setHasAudience(r.audience)
+      })
     return () => {
       disposed = true
-      void window.slidesApi.presenterEnd()
+      void slidesPlatform().presenter?.presenterEnd()
     }
   }, [])
 
@@ -147,14 +151,14 @@ export function PresenterView({
       ended,
       black,
     }
-    window.slidesApi.presenterSync(state)
+    slidesPlatform().presenter?.presenterSync(state)
   }, [player.epoch, player.played, player.playing, ended, black])
 
   // Clear ink on page turn (the audience side clears in sync)
   useEffect(() => {
     setStrokes([])
     setLaser(null)
-    window.slidesApi.presenterInk({ type: 'clear' })
+    slidesPlatform().presenter?.presenterInk({ type: 'clear' })
   }, [pos])
 
   const exitRef = useRef(() => {})
@@ -207,7 +211,7 @@ export function PresenterView({
   prevRef.current = prev
   useEffect(
     () =>
-      window.slidesApi.onAudienceNav((action) => {
+      slidesPlatform().presenter?.onAudienceNav((action) => {
         if (action === 'next') nextRef.current()
         else if (action === 'prev') prevRef.current()
         else exitRef.current()
@@ -261,7 +265,7 @@ export function PresenterView({
   const clearInk = useCallback(() => {
     setStrokes([])
     setLaser(null)
-    window.slidesApi.presenterInk({ type: 'clear' })
+    slidesPlatform().presenter?.presenterInk({ type: 'clear' })
   }, [])
 
   // ── Ink pointer events (normalized coordinates, each side restores its own) ────────────
@@ -282,7 +286,12 @@ export function PresenterView({
       e.currentTarget.setPointerCapture(e.pointerId)
       drawingRef.current = true
       setStrokes((ss) => [...ss, { color: PEN_COLOR, points: [p.x, p.y] }])
-      window.slidesApi.presenterInk({ type: 'stroke-start', x: p.x, y: p.y, color: PEN_COLOR })
+      slidesPlatform().presenter?.presenterInk({
+        type: 'stroke-start',
+        x: p.x,
+        y: p.y,
+        color: PEN_COLOR,
+      })
     },
     [tool, normPoint],
   )
@@ -297,7 +306,7 @@ export function PresenterView({
           if (!last) return ss
           return [...ss.slice(0, -1), { ...last, points: [...last.points, p.x, p.y] }]
         })
-        window.slidesApi.presenterInk({ type: 'stroke-move', x: p.x, y: p.y })
+        slidesPlatform().presenter?.presenterInk({ type: 'stroke-move', x: p.x, y: p.y })
       } else if (tool === 'laser') {
         const p = normPoint(e)
         if (!p) return
@@ -305,7 +314,7 @@ export function PresenterView({
         const now = performance.now()
         if (now - laserSentAtRef.current > 30) {
           laserSentAtRef.current = now
-          window.slidesApi.presenterInk({ type: 'laser', x: p.x, y: p.y })
+          slidesPlatform().presenter?.presenterInk({ type: 'laser', x: p.x, y: p.y })
         }
       }
     },
@@ -319,7 +328,7 @@ export function PresenterView({
   const onStagePointerLeave = useCallback(() => {
     if (tool === 'laser') {
       setLaser(null)
-      window.slidesApi.presenterInk({ type: 'laser', x: -1, y: -1 })
+      slidesPlatform().presenter?.presenterInk({ type: 'laser', x: -1, y: -1 })
     }
   }, [tool])
 
@@ -353,7 +362,7 @@ export function PresenterView({
         <button
           className="pv-top-btn"
           disabled={!hasAudience}
-          onClick={() => void window.slidesApi.presenterSwap()}
+          onClick={() => void slidesPlatform().presenter?.presenterSwap()}
           title={hasAudience ? t('panePresenterSwapTip') : t('panePresenterNoSecond')}
         >
           ⇄ {t('panePresenterSwap')}

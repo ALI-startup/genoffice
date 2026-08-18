@@ -6,6 +6,7 @@ import type { PictureRenderNode } from '@genoffice/pptx-render'
 import { FIT_WIDTH } from './app-constants'
 import type { ActionCtx } from './action-context'
 import { t } from './i18n/locale'
+import { slidesDoc } from './platform'
 
 /** Enter picture crop mode: find the selected picture node and read its box and srcRect */
 export function startCrop(ctx: ActionCtx): void {
@@ -28,7 +29,7 @@ export async function commitCrop(
   if (!ctx.cropTarget) return
   const sourceId = ctx.cropTarget.sourceId
   ctx.setCropTarget(null)
-  const updated = await window.slidesApi.editPictureSrcRect({
+  const updated = await slidesDoc().editPictureSrcRect({
     slideIndex: ctx.current,
     sourceId,
     srcRect: rect,
@@ -81,7 +82,7 @@ export async function applyCutout(ctx: ActionCtx, pngDataUrl: string): Promise<v
     ctx.setStatus(t('appStatusCutoutEncodeFailed'))
     return
   }
-  const added = await window.slidesApi.addImageBytes({
+  const added = await slidesDoc().addImageBytes({
     slideIndex: ctx.current,
     base64,
     ext: 'png',
@@ -99,7 +100,7 @@ export async function applyCutout(ctx: ActionCtx, pngDataUrl: string): Promise<v
   let updated = added.slide
   // Inherit rotation (addImageBytes takes no rotation parameter)
   if (pic.box.rotationDeg) {
-    const r = await window.slidesApi.editTransform({
+    const r = await slidesDoc().editTransform({
       slideIndex: ctx.current,
       sourceId: added.sourceId,
       xPx: pic.box.x,
@@ -113,14 +114,14 @@ export async function applyCutout(ctx: ActionCtx, pngDataUrl: string): Promise<v
   }
   // Inherit crop (the result PNG is processed from the full source image, srcRect semantics unchanged)
   if (pic.srcRect) {
-    const r = await window.slidesApi.editPictureSrcRect({
+    const r = await slidesDoc().editPictureSrcRect({
       slideIndex: ctx.current,
       sourceId: added.sourceId,
       srcRect: pic.srcRect,
     })
     if (r) updated = r
   }
-  const afterDelete = await window.slidesApi.deleteElement({
+  const afterDelete = await slidesDoc().deleteElement({
     slideIndex: ctx.current,
     sourceId: targetId,
   })

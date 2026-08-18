@@ -9,6 +9,7 @@ import type { ActionCtx } from './action-context'
 import { FIT_WIDTH } from './app-constants'
 import { inkNodesOf, rasterizeStroke, type InkStroke } from './ink'
 import { t } from './i18n/locale'
+import { slidesDoc } from './platform'
 
 export async function groupSelected(ctx: ActionCtx): Promise<void> {
   const { slide, selectedIds, current } = ctx
@@ -18,7 +19,7 @@ export async function groupSelected(ctx: ActionCtx): Promise<void> {
     .map((id) => slide.nodes.find((n) => n.sourceId === id))
     .filter(Boolean) as RenderNode[]
   if (nodes.some((n) => !GROUPABLE.has(n.type))) return
-  const result = await window.slidesApi.groupElements({
+  const result = await slidesDoc().groupElements({
     slideIndex: current,
     sourceIds: selectedIds,
   })
@@ -38,7 +39,7 @@ export async function ungroupSelected(ctx: ActionCtx): Promise<void> {
   if (!node || node.type !== 'group') return
   const groupNode = node as GroupRenderNode
   const childIds = groupNode.children.map((c) => c.sourceId)
-  const updated = await window.slidesApi.ungroupElement({
+  const updated = await slidesDoc().ungroupElement({
     slideIndex: current,
     sourceId: id,
   })
@@ -145,7 +146,7 @@ export async function alignSelected(ctx: ActionCtx, op: AlignOp): Promise<void> 
     rotationDeg: n.box.rotationDeg,
   }))
 
-  const updated = await window.slidesApi.batchEditTransform({
+  const updated = await slidesDoc().batchEditTransform({
     slideIndex: current,
     fitWidthPx: FIT_WIDTH,
     items,
@@ -161,7 +162,7 @@ export async function reorderSelected(
   sourceId: string,
   dir: ReorderDirection,
 ): Promise<void> {
-  const updated = await window.slidesApi.reorderElement({
+  const updated = await slidesDoc().reorderElement({
     slideIndex: ctx.current,
     sourceId,
     dir,
@@ -174,7 +175,7 @@ export async function reorderSelected(
 export async function commitInk(ctx: ActionCtx, stroke: InkStroke): Promise<void> {
   if (!ctx.slide) return
   const raster = rasterizeStroke(stroke)
-  const r = await window.slidesApi.addInk({
+  const r = await slidesDoc().addInk({
     slideIndex: ctx.current,
     base64: raster.base64,
     xPx: raster.xPx,
@@ -195,7 +196,7 @@ export async function commitInk(ctx: ActionCtx, stroke: InkStroke): Promise<void
 export async function flipSelected(ctx: ActionCtx, axis: 'h' | 'v'): Promise<void> {
   if (ctx.selectedIds.length === 0) return
   const groupId = ctx.groupIdOf(ctx.selectedIds[0]!)
-  const updated = await window.slidesApi.flipElements({
+  const updated = await slidesDoc().flipElements({
     slideIndex: ctx.current,
     sourceIds: ctx.selectedIds,
     axis,
@@ -209,7 +210,7 @@ export async function flipSelected(ctx: ActionCtx, axis: 'h' | 'v'): Promise<voi
 
 export async function eraseInk(ctx: ActionCtx, sourceIds: string[]): Promise<void> {
   for (const id of sourceIds) {
-    const updated = await window.slidesApi.deleteElement({ slideIndex: ctx.current, sourceId: id })
+    const updated = await slidesDoc().deleteElement({ slideIndex: ctx.current, sourceId: id })
     if (updated) ctx.applySlide(ctx.current, updated)
   }
 }

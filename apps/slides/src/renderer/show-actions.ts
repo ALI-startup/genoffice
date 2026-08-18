@@ -6,6 +6,7 @@
 import type { ActionCtx } from './action-context'
 import type { CustomShow } from './slideshow-utils'
 import { t } from './i18n/locale'
+import { slidesDoc } from './platform'
 
 export function startSlideShow(ctx: ActionCtx, fromStart: boolean): void {
   if (ctx.slides.length === 0 || ctx.slideShow || ctx.presenter) return
@@ -68,7 +69,7 @@ export async function saveRehearseTimings(ctx: ActionCtx): Promise<void> {
     .map((sec, i) => ({ slideIndex: i, ms: sec * 1000 }))
     .filter((t) => t.ms > 0)
   ctx.setPendingRehearse(null)
-  const ok = await window.slidesApi.setAdvanceTimes({ times })
+  const ok = await slidesDoc().setAdvanceTimes({ times })
   if (ok) {
     ctx.setDirty(true)
     ctx.setStatus(t('appStatusRehearseSaved', { count: times.length }))
@@ -99,7 +100,7 @@ export function switchPresenterToShow(ctx: ActionCtx, lastIndex: number): void {
 export async function toggleHidden(ctx: ActionCtx, index: number): Promise<void> {
   const s = ctx.slides[index]
   if (!s) return
-  const updated = await window.slidesApi.setSlideHidden({
+  const updated = await slidesDoc().setSlideHidden({
     slideIndex: index,
     hidden: !s.hidden,
   })

@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createSlidesSkill, type DeckAccess } from '../src/renderer/ai/slides-skill'
 import type { RenderSlide } from '@genoffice/pptx-render'
 import type { AgentToolCall } from '../src/shared/ipc'
+import { installTestPlatform } from './helpers/platform'
 
 const SLIDE = {
   widthPx: 1280,
@@ -37,11 +38,11 @@ const call = (name: string, input: Record<string, unknown>): AgentToolCall => ({
 })
 
 beforeEach(() => {
-  ;(window as any).slidesApi = {
+  installTestPlatform({
     addTable: vi.fn(async (_op: any) => ({ slide: SLIDE, sourceId: 'tbl_1' })),
     editTableCell: vi.fn(async () => SLIDE),
     tableStructure: vi.fn(async () => ({ slide: SLIDE, sourceId: 'tbl_1' })),
-  }
+  })
 })
 
 describe('add_table', () => {

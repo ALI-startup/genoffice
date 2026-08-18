@@ -1,6 +1,7 @@
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
+import { hostAlias } from './vite.shared'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -24,6 +25,8 @@ const workspaceAlias = {
   ),
   '@genoffice/pptx-engine': resolve(here, '../../packages/pptx-engine/src/index.ts'),
   '@genoffice/pptx-render': resolve(here, '../../packages/pptx-render/src/index.ts'),
+  // The build-time host seam; see vite.shared.ts.
+  ...hostAlias('electron'),
 }
 
 export default defineConfig({

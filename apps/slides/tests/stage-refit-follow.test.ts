@@ -27,6 +27,7 @@ vi.mock('react-konva', () => {
 })
 
 import { App } from '../src/renderer/App'
+import { installTestPlatform } from './helpers/platform'
 
 /** Recording ResizeObserver: lets the test fire size changes for a target. */
 class FakeResizeObserver {
@@ -149,7 +150,7 @@ beforeAll(() => {
     configurable: true,
     get: () => stageSize.h,
   })
-  ;(window as unknown as { slidesApi: unknown }).slidesApi = makeSlidesApi()
+  installTestPlatform(makeSlidesApi())
 })
 
 afterEach(() => {

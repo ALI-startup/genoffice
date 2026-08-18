@@ -1,3 +1,5 @@
+import { slidesAi, slidesAttachments, slidesDoc, slidesFile } from '../platform'
+import { slidesPlatform } from '../platform'
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { AgentLoop, composeSkills, type AgentImage, type ToolDisplay } from '@genoffice/agent-core'
 import type { RenderSlide } from '@genoffice/pptx-render'
@@ -432,7 +434,7 @@ export function AiPanel({
   const finishHistoryBatch = async () => {
     if (!historyBatchActiveRef.current) return
     historyBatchActiveRef.current = false
-    const id = await window.slidesApi.endHistoryBatch()
+    const id = await slidesDoc().endHistoryBatch()
     if (typeof id !== 'number') return
     const label = (lastDisplayTextRef.current ?? instructionRef.current).slice(0, 40)
     setSnapshots((prev) =>
@@ -441,7 +443,7 @@ export function AiPanel({
   }
 
   const rollback = async (snapshot: DeckSnapshot) => {
-    const restored = await window.slidesApi.aiSnapshotRestore(snapshot.id)
+    const restored = await slidesAi().aiSnapshotRestore(snapshot.id)
     if (!restored) return
     applyDeckRef.current(restored, Math.min(currentRef.current, restored.length - 1))
     setSnapshots((prev) => prev.filter((s) => s.id !== snapshot.id))
@@ -521,7 +523,7 @@ export function AiPanel({
           signal?.removeEventListener('abort', onAbort)
           unsub()
           // On timeout/abort the main-process stream keeps running; it must be cancelled explicitly or orphan streams eat proxy concurrency
-          if (cancelUpstream) void window.slidesApi.aiStreamCancel(requestId)
+          if (cancelUpstream) void slidesAi().aiStreamCancel(requestId)
           resolve(r)
         }
         const onAbort = () =>
@@ -534,7 +536,7 @@ export function AiPanel({
             ),
           timeoutMs,
         )
-        const unsub = window.slidesApi.onAiStream((chunk) => {
+        const unsub = slidesDoc().onAiStream((chunk) => {
           if (chunk.requestId !== requestId) return
           if (chunk.type === 'delta') buf += chunk.text ?? ''
           else if (chunk.type === 'done')
@@ -548,7 +550,7 @@ export function AiPanel({
         })
         signal?.addEventListener('abort', onAbort, { once: true })
         // If invoke itself rejects (IPC-layer failure), fail immediately instead of waiting out the timeout
-        window.slidesApi
+        slidesAi()
           .aiStream({
             requestId,
             task: 'slides-generation',
@@ -603,13 +605,7 @@ export function AiPanel({
         insertAt?: number,
       ) => {
         try {
-          const res = await window.slidesApi.htmlToPptx(
-            pagesHtml,
-            fitWidthPx,
-            mode,
-            insertAt,
-            deckName,
-          )
+          const res = await slidesDoc().htmlToPptx(pagesHtml, fitWidthPx, mode, insertAt, deckName)
           if (res && 'slides' in res && Array.isArray(res.slides)) {
             const appendedFrom =
               'appendedFrom' in res && typeof res.appendedFrom === 'number' ? res.appendedFrom : 0
@@ -655,12 +651,7 @@ export function AiPanel({
       },
       regenerateSlide: async (slideIndex: number, html: string) => {
         try {
-          const res = await window.slidesApi.htmlToPptx(
-            [html],
-            fitWidthPx,
-            'replace_at',
-            slideIndex,
-          )
+          const res = await slidesDoc().htmlToPptx([html], fitWidthPx, 'replace_at', slideIndex)
           if (res && 'slides' in res && Array.isArray(res.slides)) {
             applyDeckRef.current(res.slides, slideIndex)
             if (res.path) onPathChangeRef.current?.(res.path)
@@ -695,7 +686,7 @@ export function AiPanel({
       },
       isCloudPageGenEnabled: async () => {
         try {
-          return !!(await window.slidesApi.cloudGenStatus())?.enabled
+          return !!(await slidesPlatform().cloud?.cloudGenStatus())?.enabled
         } catch {
           return false
         }
@@ -710,7 +701,7 @@ export function AiPanel({
             briefParts.push(
               `Reference material (all real names/figures/facts come from here; do not invent):\n${args.context.slice(0, 4000)}`,
             )
-          const res = await window.slidesApi.cloudGeneratePage({
+          const res = await slidesPlatform().cloud?.cloudGeneratePage({
             brief: briefParts.join('\n\n'),
             title: args.title,
             styleSkill: args.style,
@@ -876,36 +867,38 @@ export function AiPanel({
       },
       searchImages: async (query: string, maxResults: number) => {
         try {
-          const r = await window.slidesApi.imageSearch(query, maxResults)
-          return r.images.map((im) => im.imageUrl).filter(Boolean)
+          // No search port means no images, which is what this returns for an empty
+          // result set anyway — the panel shows the same "nothing found" either way.
+          const r = await slidesPlatform().search?.imageSearch(query, maxResults)
+          return (r?.images ?? []).map((im) => im.imageUrl).filter(Boolean)
         } catch {
           return []
         }
       },
       saveSidecar: async (data) => {
         try {
-          await window.slidesApi.saveStyleSidecar(data)
+          await slidesFile().saveStyleSidecar(data)
         } catch {
           /* fail-open */
         }
       },
       saveStyleTemplate: async (name, data) => {
         try {
-          return await window.slidesApi.saveStyleTemplate(name, data)
+          return await slidesFile().saveStyleTemplate(name, data)
         } catch {
           return { ok: false, error: String('') }
         }
       },
       listStyleTemplates: async () => {
         try {
-          return await window.slidesApi.listStyleTemplates()
+          return await slidesDoc().listStyleTemplates()
         } catch {
           return []
         }
       },
       loadStyleTemplate: async (name) => {
         try {
-          return await window.slidesApi.loadStyleTemplate(name)
+          return await slidesDoc().loadStyleTemplate(name)
         } catch {
           return { ok: false, error: String('') }
         }
@@ -1021,8 +1014,8 @@ export function AiPanel({
           })
           // Signed-out failures get an inline sign-in button; detected via
           // gsk status rather than matching the localized error text
-          void window.slidesApi
-            .aiGskStatus()
+          void slidesPlatform()
+            .genspark?.aiGskStatus()
             .then((status) => {
               if (status.loggedIn) return
               setChat((prev) => {
@@ -1100,7 +1093,7 @@ export function AiPanel({
     const images: AgentImage[] = []
     const failures: string[] = []
     for (const att of imageAtts.slice(0, MAX_IMAGES_PER_MESSAGE)) {
-      const result = await window.desktop.readAttachmentImage(att.path)
+      const result = await slidesAttachments().readAttachmentImage(att.path)
       if (result.ok && result.base64 && result.mime) {
         images.push({ base64: result.base64, mime: result.mime })
       } else {
@@ -1171,7 +1164,7 @@ export function AiPanel({
         }
         // Clear the flag before run: loop.run sets running synchronously, leaving no re-entry window
         runStartingRef.current = false
-        if (await window.slidesApi.beginHistoryBatch()) historyBatchActiveRef.current = true
+        if (await slidesDoc().beginHistoryBatch()) historyBatchActiveRef.current = true
         loop.run(modelInstruction, images)
       })
       .catch(() => {
@@ -1210,7 +1203,7 @@ export function AiPanel({
           if (slidesRef.current[page]) lines.push(tGlobal('aiQcPageSkipped', { n: page + 1 }))
           continue
         }
-        const batchOpened = await window.slidesApi.beginHistoryBatch()
+        const batchOpened = await slidesDoc().beginHistoryBatch()
         const result = await qcSlidePage({
           access,
           transport,
@@ -1219,14 +1212,14 @@ export function AiPanel({
           systemSuffix: aiLangDirective,
           signal: controller.signal,
         })
-        const batchId = batchOpened ? await window.slidesApi.endHistoryBatch() : null
+        const batchId = batchOpened ? await slidesDoc().endHistoryBatch() : null
         if (controller.signal.aborted) break
         if (result.error) {
           lines.push(tGlobal('aiQcPageFailed', { n: page + 1, error: result.error }))
         } else if (result.edited && result.postIssues > result.preIssues) {
           // The fix made the deterministic audit worse — undo this page's batch
           if (typeof batchId === 'number') {
-            const restored = await window.slidesApi.aiSnapshotRestore(batchId)
+            const restored = await slidesAi().aiSnapshotRestore(batchId)
             if (restored)
               applyDeckRef.current(restored, Math.min(currentRef.current, restored.length - 1))
           }
@@ -1311,31 +1304,31 @@ export function AiPanel({
     }
   }
 
-  const pickAttachments = async () => mergeAttachments(await window.desktop.pickAttachments())
+  const pickAttachments = async () => mergeAttachments(await slidesAttachments().pickAttachments())
 
   const onDrop = async (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setDragOver(false)
     const paths = Array.from(e.dataTransfer.files)
-      .map((f) => window.desktop.getPathForFile(f))
+      .map((f) => slidesAttachments().getPathForFile(f))
       .filter(Boolean)
-    if (paths.length > 0) mergeAttachments(await window.desktop.addAttachmentPaths(paths))
+    if (paths.length > 0) mergeAttachments(await slidesAttachments().addAttachmentPaths(paths))
   }
 
   /** Files pasted into the input box: those with local paths go the regular attachment route; pure bitmaps like screenshots land in a temp file first */
   const onPasteFiles = async (files: File[]) => {
     const paths: string[] = []
     for (const f of files) {
-      const p = window.desktop.getPathForFile(f)
+      const p = slidesAttachments().getPathForFile(f)
       if (p) {
         paths.push(p)
         continue
       }
       const ext = PASTE_MIME_EXT[f.type] ?? f.name.split('.').pop()?.toLowerCase() ?? 'bin'
-      mergeAttachments(await window.desktop.addPastedImage(await f.arrayBuffer(), ext))
+      mergeAttachments(await slidesAttachments().addPastedImage(await f.arrayBuffer(), ext))
     }
-    if (paths.length > 0) mergeAttachments(await window.desktop.addAttachmentPaths(paths))
+    if (paths.length > 0) mergeAttachments(await slidesAttachments().addAttachmentPaths(paths))
   }
 
   const removeAttachment = (path: string) =>
@@ -1515,7 +1508,10 @@ export function AiPanel({
                 <div className="ai-msg-error">{t('aiMsgError', { error: entry.error })}</div>
               )}
               {entry.loginRequired && (
-                <button className="ai-login-btn" onClick={() => void window.slidesApi.aiGskLogin()}>
+                <button
+                  className="ai-login-btn"
+                  onClick={() => void slidesPlatform().genspark?.aiGskLogin()}
+                >
                   {t('aiGskLoginBtn')}
                 </button>
               )}

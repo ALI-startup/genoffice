@@ -6,13 +6,14 @@ import type { ShapeRenderNode } from '@genoffice/pptx-render'
 import type { AnimEffectKind, AnimTrigger, AnimationItem, TransitionKind } from '../shared/ipc'
 import type { ActionCtx } from './action-context'
 import { t } from './i18n/locale'
+import { slidesDoc } from './platform'
 
 export async function applyTransition(
   ctx: ActionCtx,
   kind: TransitionKind,
   allSlides: boolean,
 ): Promise<void> {
-  const ok = await window.slidesApi.setTransition({
+  const ok = await slidesDoc().setTransition({
     slideIndex: allSlides ? -1 : ctx.current,
     kind,
   })
@@ -55,13 +56,13 @@ export function hoverPreviewAnimation(
 
 /** Commit the whole page's animation list overwrite-style, then read back on success (target names/stale items per the main process). */
 export async function commitAnimations(ctx: ActionCtx, items: AnimationItem[]): Promise<void> {
-  const ok = await window.slidesApi.setAnimations({
+  const ok = await slidesDoc().setAnimations({
     slideIndex: ctx.current,
     items: items.map(({ targetName: _t, ...rest }) => rest),
   })
   if (!ok) return
   ctx.setDirty(true)
-  ctx.setAnimations(await window.slidesApi.getAnimations(ctx.current))
+  ctx.setAnimations(await slidesDoc().getAnimations(ctx.current))
 }
 
 /** Paragraph count of a text-bearing node ("by paragraph" animation splitting). */

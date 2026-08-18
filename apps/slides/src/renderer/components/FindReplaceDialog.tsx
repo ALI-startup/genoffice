@@ -4,6 +4,7 @@
  * through the main-process model layer (in-run matching, byte-faithful patches), and on success
  * the whole RenderSlide set refreshes.
  */
+import { slidesDoc } from '../platform'
 import React, { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../i18n/locale'
 import type {
@@ -115,7 +116,7 @@ export function FindReplaceDialog({
       findNext()
       return
     }
-    const r = await window.slidesApi.findReplace({
+    const r = await slidesDoc().findReplace({
       find: query,
       replace: replaceText,
       matchCase,

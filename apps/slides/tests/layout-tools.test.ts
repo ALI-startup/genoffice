@@ -9,6 +9,7 @@ import type { RenderSlide, RenderNode, ShapeRenderNode, PlacedBox } from '@genof
 import { runLayoutScript, type LayoutScriptElement } from '../src/renderer/ai/layout-script'
 import { auditSlideLayout } from '../src/renderer/ai/layout-audit'
 import { createSlidesSkill, type DeckAccess } from '../src/renderer/ai/slides-skill'
+import { installTestPlatform } from './helpers/platform'
 
 const box = (x: number, y: number, w: number, h: number, rot = 0): PlacedBox => ({
   x,
@@ -224,7 +225,7 @@ describe('execute_layout_script tool', () => {
     ])
     // Simulate the main process's batchEditTransform: update boxes per items and return a new RenderSlide
     ;(globalThis as any).window = {
-      slidesApi: {
+      slidesApi: installTestPlatform({
         batchEditTransform: vi.fn(async (op: any) => {
           const nodes = slide.nodes.map((n) => {
             const item = op.items.find((it: any) => it.sourceId === n.sourceId)
@@ -233,7 +234,7 @@ describe('execute_layout_script tool', () => {
           })
           return { ...slide, nodes }
         }),
-      },
+      }),
     }
   })
 

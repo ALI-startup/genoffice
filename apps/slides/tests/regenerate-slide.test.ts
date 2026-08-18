@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createSlidesSkill, type DeckAccess } from '../src/renderer/ai/slides-skill'
 import type { RenderSlide } from '@genoffice/pptx-render'
 import type { AgentToolCall } from '../src/shared/ipc'
+import { installTestPlatform } from './helpers/platform'
 
 const page = { widthPx: 1280, heightPx: 720, nodes: [] } as unknown as RenderSlide
 
@@ -29,7 +30,7 @@ const call = (name: string, input: Record<string, unknown>): AgentToolCall => ({
 })
 
 beforeEach(() => {
-  ;(window as any).slidesApi = { deleteSlide: vi.fn(async () => [page, page]) }
+  installTestPlatform({ deleteSlide: vi.fn(async () => [page, page]) })
 })
 
 const cloudOk = () => vi.fn(async () => ({ ok: true, marker: 'cloudpptx:/tmp/p.pptx' }))

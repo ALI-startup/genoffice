@@ -16,6 +16,7 @@ import * as pictureEditActions from './picture-edit-actions'
 import * as tableActions from './table-actions'
 import { TABLE_SHADING_COLORS } from './components/table-shading-colors'
 import { t } from './i18n/locale'
+import { slidesDoc } from './platform'
 
 export function buildCtxItems(ctx: ActionCtx): Array<CtxItem | null> {
   const { ctxMenu, slides, sections, selectedIds, slide, current } = ctx
@@ -170,7 +171,7 @@ export function buildCtxItems(ctx: ActionCtx): Array<CtxItem | null> {
         {
           label: t('appCtxCellAnchorTop'),
           onClick: () =>
-            void window.slidesApi
+            void slidesDoc()
               .setTableCellAnchor({
                 slideIndex: current,
                 sourceId: ctxMenu.targetId,
@@ -183,7 +184,7 @@ export function buildCtxItems(ctx: ActionCtx): Array<CtxItem | null> {
         {
           label: t('appCtxCellAnchorMiddle'),
           onClick: () =>
-            void window.slidesApi
+            void slidesDoc()
               .setTableCellAnchor({
                 slideIndex: current,
                 sourceId: ctxMenu.targetId,
@@ -196,7 +197,7 @@ export function buildCtxItems(ctx: ActionCtx): Array<CtxItem | null> {
         {
           label: t('appCtxCellAnchorBottom'),
           onClick: () =>
-            void window.slidesApi
+            void slidesDoc()
               .setTableCellAnchor({
                 slideIndex: current,
                 sourceId: ctxMenu.targetId,
@@ -224,7 +225,7 @@ export function buildCtxItems(ctx: ActionCtx): Array<CtxItem | null> {
           label: t('appCtxCellShading'),
           swatches: [...TABLE_SHADING_COLORS, 'none'],
           onSwatch: (c) =>
-            void window.slidesApi
+            void slidesDoc()
               .editTableStyle({
                 slideIndex: current,
                 sourceId: ctxMenu.targetId,

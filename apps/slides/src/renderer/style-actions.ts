@@ -17,6 +17,7 @@ import {
 import type { FormatCmd } from './components/Ribbon'
 import type { SlideThemePreset } from './themes'
 import { t } from './i18n/locale'
+import { slidesDoc } from './platform'
 
 export function onFormat(cmd: FormatCmd): void {
   if (cmd === 'fontSizeUp') resizeSelectionFont(1.2)
@@ -32,7 +33,7 @@ export function onFontFamily(ctx: ActionCtx, family: string): void {
   }
   if (!ctx.selectedIds.length) return
   const groupId = ctx.groupIdOf(ctx.selectedIds[0]!)
-  void window.slidesApi
+  void slidesDoc()
     .setElementFont({
       slideIndex: ctx.current,
       sourceIds: ctx.selectedIds,
@@ -49,7 +50,7 @@ export function onFontSize(ctx: ActionCtx, pt: number): void {
   }
   if (!ctx.selectedIds.length) return
   const groupId = ctx.groupIdOf(ctx.selectedIds[0]!)
-  void window.slidesApi
+  void slidesDoc()
     .setElementFont({
       slideIndex: ctx.current,
       sourceIds: ctx.selectedIds,
@@ -75,7 +76,7 @@ export function onAlign(ctx: ActionCtx, align: 'left' | 'center' | 'right' | 'ju
   }
   if (!ctx.selectedIds.length) return
   const groupId = ctx.groupIdOf(ctx.selectedIds[0]!)
-  void window.slidesApi
+  void slidesDoc()
     .setElementParagraphFormat({
       slideIndex: ctx.current,
       sourceIds: ctx.selectedIds,
@@ -103,7 +104,7 @@ export function onTextToggle(
     if (!runs.length || runs.some((r) => !r[kind])) allOn = false
   }
   const groupId = ctx.groupIdOf(ctx.selectedIds[0]!)
-  void window.slidesApi
+  void slidesDoc()
     .setElementFont({
       slideIndex: ctx.current,
       sourceIds: ctx.selectedIds,
@@ -117,7 +118,7 @@ export function onTextToggle(
 export function onElementTextColor(ctx: ActionCtx, hex: string): void {
   if (!ctx.selectedIds.length) return
   const groupId = ctx.groupIdOf(ctx.selectedIds[0]!)
-  void window.slidesApi
+  void slidesDoc()
     .setElementFont({
       slideIndex: ctx.current,
       sourceIds: ctx.selectedIds,
@@ -176,7 +177,7 @@ export function onParagraphFormat(ctx: ActionCtx, patch: ParagraphFormatPatch): 
     if (cur === patch.bullet) patch = { ...patch, bullet: 'none' }
   }
   const groupId = ctx.groupIdOf(ctx.selectedIds[0]!)
-  void window.slidesApi
+  void slidesDoc()
     .setElementParagraphFormat({
       slideIndex: ctx.current,
       sourceIds: ctx.selectedIds,
@@ -192,7 +193,7 @@ export async function onFill(
   fill: string | GradientFillSpec,
 ): Promise<void> {
   const groupId = ctx.groupIdOf(sourceId)
-  const updated = await window.slidesApi.editFill({
+  const updated = await slidesDoc().editFill({
     slideIndex: ctx.current,
     sourceId,
     fill,
@@ -207,7 +208,7 @@ export async function onStroke(
   stroke: { color: string; widthPt: number; dash?: string } | null,
 ): Promise<void> {
   const groupId = ctx.groupIdOf(sourceId)
-  const updated = await window.slidesApi.editStroke({
+  const updated = await slidesDoc().editStroke({
     slideIndex: ctx.current,
     sourceId,
     stroke,
@@ -222,7 +223,7 @@ export async function onBackground(
   allSlides: boolean,
 ): Promise<void> {
   if (!ctx.slide) return
-  const r = await window.slidesApi.editBackground({
+  const r = await slidesDoc().editBackground({
     slideIndex: allSlides ? -1 : ctx.current,
     color,
     fitWidthPx: FIT_WIDTH,
@@ -238,7 +239,7 @@ export async function onBackground(
 // All element ids change (save→reopen); selection/edit state is cleared too.
 export async function applyThemePreset(ctx: ActionCtx, preset: SlideThemePreset): Promise<void> {
   if (!ctx.slide) return
-  const r = await window.slidesApi.applyTheme({
+  const r = await slidesDoc().applyTheme({
     name: preset.name,
     colors: preset.colors,
     ...(preset.majorFont ? { majorFont: preset.majorFont } : {}),
@@ -265,7 +266,7 @@ export async function onEditTableStyle(
 ): Promise<void> {
   if (!ctx.selectedNode || ctx.selectedNode.type !== 'table') return
   const oldId = ctx.selectedNode.sourceId
-  const result = await window.slidesApi.editTableStyle({
+  const result = await slidesDoc().editTableStyle({
     ...op,
     slideIndex: ctx.current,
     sourceId: oldId,
@@ -287,7 +288,7 @@ export async function onEditChart(
   op: Omit<EditChartOp, 'slideIndex' | 'sourceId'>,
 ): Promise<void> {
   if (!ctx.selectedNode || ctx.selectedNode.type !== 'chart') return
-  const result = await window.slidesApi.editChart({
+  const result = await slidesDoc().editChart({
     ...op,
     slideIndex: ctx.current,
     sourceId: ctx.selectedNode.sourceId,
@@ -302,7 +303,7 @@ export async function onEditChart(
 /** Open the chart data edit dialog */
 export async function openChartDataDialog(ctx: ActionCtx): Promise<void> {
   if (!ctx.selectedNode || ctx.selectedNode.type !== 'chart') return
-  const data = await window.slidesApi.getChartData(ctx.current, ctx.selectedNode.sourceId)
+  const data = await slidesDoc().getChartData(ctx.current, ctx.selectedNode.sourceId)
   if (data) {
     ctx.setChartDataDialogInit(data)
     ctx.setChartDataDialogOpen(true)

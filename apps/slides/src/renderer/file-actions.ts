@@ -6,6 +6,8 @@ import type { RenderSlide } from '@genoffice/pptx-render'
 import type { ActionCtx } from './action-context'
 import { renderSlidesToPngBase64 } from './export-render'
 import { t } from './i18n/locale'
+import { slidesDoc, slidesFile } from './platform'
+import { slidesPlatform } from './platform'
 
 /**
  * If a text box/table is still being edited on ⌘S/close-save, blur first so the
@@ -40,7 +42,7 @@ export function adoptSavedSlides(ctx: ActionCtx, next: RenderSlide[]): void {
 export async function save(ctx: ActionCtx): Promise<boolean> {
   await flushActiveEdit(ctx)
   await ctx.flushNotes()
-  const r = await window.slidesApi.save()
+  const r = await slidesFile().save()
   if (r.ok) {
     if (r.slides) adoptSavedSlides(ctx, r.slides)
     if (r.path) ctx.setPath(r.path)
@@ -54,7 +56,7 @@ export async function saveAs(ctx: ActionCtx): Promise<void> {
   await flushActiveEdit(ctx)
   await ctx.flushNotes()
   const name = ctx.path?.split('/').pop() ?? 'presentation.pptx'
-  const r = await window.slidesApi.saveAs(name)
+  const r = await slidesFile().saveAs(name)
   if (r.ok) {
     if (r.slides) adoptSavedSlides(ctx, r.slides)
     ctx.setPath(r.path ?? ctx.path)
@@ -75,12 +77,16 @@ export async function exportImages(ctx: ActionCtx): Promise<void> {
     ctx.setStatus(t('appExportNoSlides'))
     return
   }
-  const dir = await window.slidesApi.pickExportDir()
+  // Null on a host that cannot render outside the renderer; the command is not offered
+  // there, so this is the type's guard rather than a silent no-op.
+  const port = slidesPlatform().pdfExport
+  if (!port) return
+  const dir = await port.pickExportDir()
   if (!dir) return
   ctx.setStatus(t('appExportImagesProgress', { count: visible.length }))
   try {
     const pngs = await renderSlidesToPngBase64(visible, ctx.images)
-    const r = await window.slidesApi.exportImages({
+    const r = await port.exportImages({
       dir,
       baseName: exportBaseName(ctx),
       pngsBase64: pngs,
@@ -102,12 +108,14 @@ export async function exportPdf(ctx: ActionCtx): Promise<void> {
     ctx.setStatus(t('appExportNoSlides'))
     return
   }
-  const target = await window.slidesApi.pickExportPdfPath(`${exportBaseName(ctx)}.pdf`)
+  const port = slidesPlatform().pdfExport
+  if (!port) return
+  const target = await port.pickExportPdfPath(`${exportBaseName(ctx)}.pdf`)
   if (!target) return
   ctx.setStatus(t('appExportPdfProgress'))
   try {
     const pngs = await renderSlidesToPngBase64(visible, ctx.images)
-    const r = await window.slidesApi.exportPdf({
+    const r = await port.exportPdf({
       filePath: target,
       pngsBase64: pngs,
       widthPx: visible[0].widthPx,
@@ -140,10 +148,10 @@ export async function printSlides(
     const notes =
       layout === 'notes'
         ? await Promise.all(
-            ctx.slides.flatMap((sl, i) => (sl.hidden ? [] : [window.slidesApi.getNotes(i)])),
+            ctx.slides.flatMap((sl, i) => (sl.hidden ? [] : [slidesDoc().getNotes(i)])),
           )
         : undefined
-    const r = await window.slidesApi.printSlides({
+    const r = await slidesDoc().printSlides({
       pngsBase64: pngs,
       widthPx: visible[0].widthPx,
       heightPx: visible[0].heightPx,

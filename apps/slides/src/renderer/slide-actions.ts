@@ -8,10 +8,11 @@ import { FIT_WIDTH } from './app-constants'
 import type { ActionCtx } from './action-context'
 import { renderSlidesToPngBase64 } from './export-render'
 import { t } from './i18n/locale'
+import { slidesDoc } from './platform'
 
 export async function addSlide(ctx: ActionCtx): Promise<void> {
   if (!ctx.slide) return
-  const r = await window.slidesApi.addBlankSlide({
+  const r = await slidesDoc().addBlankSlide({
     sourceIndex: ctx.current,
     fitWidthPx: FIT_WIDTH,
   })
@@ -26,7 +27,7 @@ export async function addSlide(ctx: ActionCtx): Promise<void> {
 
 export async function addSlideWithLayout(ctx: ActionCtx, layoutPath: string): Promise<void> {
   if (!ctx.slide) return
-  const r = await window.slidesApi.addSlideWithLayout({
+  const r = await slidesDoc().addSlideWithLayout({
     sourceIndex: ctx.current,
     layoutPath,
     fitWidthPx: FIT_WIDTH,
@@ -41,7 +42,7 @@ export async function addSlideWithLayout(ctx: ActionCtx, layoutPath: string): Pr
 }
 
 export async function duplicateSlideAt(ctx: ActionCtx, index: number): Promise<void> {
-  const r = await window.slidesApi.addSlide({
+  const r = await slidesDoc().addSlide({
     sourceIndex: index,
     clearText: false,
     fitWidthPx: FIT_WIDTH,
@@ -56,7 +57,7 @@ export async function duplicateSlideAt(ctx: ActionCtx, index: number): Promise<v
 }
 
 export async function deleteSlideAt(ctx: ActionCtx, index: number): Promise<void> {
-  const r = await window.slidesApi.deleteSlide(index)
+  const r = await slidesDoc().deleteSlide(index)
   if (r) {
     ctx.setSlides(r)
     ctx.setCurrent((c) => Math.min(c > index ? c - 1 : c, r.length - 1))
@@ -80,7 +81,7 @@ export async function cutSlideAt(ctx: ActionCtx, index: number): Promise<void> {
   } catch {
     png = undefined
   }
-  const ok = await window.slidesApi.copySlide(index, png)
+  const ok = await slidesDoc().copySlide(index, png)
   if (!ok) {
     ctx.setStatus(t('appStatusSlideCopyFailed'))
     return
@@ -93,7 +94,7 @@ export async function cutSlideAt(ctx: ActionCtx, index: number): Promise<void> {
 // ── Section management ─────────────────────────────────────────────────
 
 export async function addSectionAt(ctx: ActionCtx, index: number): Promise<void> {
-  const r = await window.slidesApi.addSection({
+  const r = await slidesDoc().addSection({
     atSlideIndex: index,
     name: t('appSectionUntitled'),
   })
@@ -105,7 +106,7 @@ export async function addSectionAt(ctx: ActionCtx, index: number): Promise<void>
 }
 
 export async function renameSectionTo(ctx: ActionCtx, id: string, name: string): Promise<void> {
-  const r = await window.slidesApi.renameSection({ id, name })
+  const r = await slidesDoc().renameSection({ id, name })
   if (r) {
     ctx.setSections(r)
     ctx.setDirty(true)
@@ -113,7 +114,7 @@ export async function renameSectionTo(ctx: ActionCtx, id: string, name: string):
 }
 
 export async function removeSectionAt(ctx: ActionCtx, id: string): Promise<void> {
-  const r = await window.slidesApi.removeSection({ id })
+  const r = await slidesDoc().removeSection({ id })
   if (r) {
     ctx.setSections(r)
     ctx.setDirty(true)
@@ -126,7 +127,7 @@ export async function moveSectionDir(
   id: string,
   dir: 'up' | 'down',
 ): Promise<void> {
-  const r = await window.slidesApi.moveSection({ id, dir })
+  const r = await slidesDoc().moveSection({ id, dir })
   if (r) {
     ctx.setSlides(r.slides)
     ctx.setSections(r.sections)
@@ -140,7 +141,7 @@ export async function moveSectionDir(
 export async function moveSlideTo(ctx: ActionCtx, from: number, insertAt: number): Promise<void> {
   const to = insertAt > from ? insertAt - 1 : insertAt
   if (to === from) return
-  const r = await window.slidesApi.moveSlide({ fromIndex: from, toIndex: to })
+  const r = await slidesDoc().moveSlide({ fromIndex: from, toIndex: to })
   if (r) {
     ctx.setSlides(r.slides)
     ctx.setSections(r.sections)

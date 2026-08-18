@@ -81,6 +81,9 @@ import * as tableActions from './table-actions'
 import * as styleActions from './style-actions'
 import { handleGlobalKeydown } from './keyboard-actions'
 import { buildCtxItems } from './context-menu-items'
+import { slidesDoc, slidesFile, slidesWindow } from './platform'
+import type { SlidesDocumentPort, SlidesFilePort } from './platform'
+import { slidesPlatform } from './platform'
 
 const _IS_MAC = navigator.platform.toLowerCase().includes('mac')
 
@@ -275,7 +278,7 @@ export function App() {
   )
   useEffect(() => {
     localStorage.setItem('ai-slides-auto-save', autoSave ? '1' : '0')
-    window.slidesApi.setAutoSavePref?.(autoSave)
+    slidesWindow().setAutoSavePref?.(autoSave)
   }, [autoSave])
   const [showAi, setShowAi] = useState(() => localStorage.getItem('ai-slides-show-ai') !== '0')
   const [showFormat, setShowFormat] = useState(false)
@@ -289,9 +292,7 @@ export function App() {
     slideShot?: boolean
   } | null>(null)
   const [_recent, setRecent] = useState<string[]>([])
-  const consumePendingRef = useRef<ReturnType<typeof window.slidesApi.consumePendingOpen> | null>(
-    null,
-  )
+  const consumePendingRef = useRef<ReturnType<SlidesFilePort['consumePendingOpen']> | null>(null)
   const bootHandledRef = useRef(false)
   const [images, setImages] = useState<Map<string, HTMLImageElement>>(new Map())
   const imageLoaderRef = useRef<ReturnType<typeof createImageLoader> | null>(null)
@@ -419,7 +420,7 @@ export function App() {
     const pending = notesDraftRef.current
     if (!pending) return
     notesDraftRef.current = null
-    const ok = await window.slidesApi.setNotes({ slideIndex: pending.index, text: pending.text })
+    const ok = await slidesDoc().setNotes({ slideIndex: pending.index, text: pending.text })
     if (ok) setDirty(true)
   }, [])
 
@@ -520,7 +521,9 @@ export function App() {
           : t('appStatusNewBlank'),
       )
       // Fetch the layout list asynchronously (doesn't block opening)
-      void window.slidesApi.getLayouts().then((r) => setLayouts(r?.layouts ?? []))
+      void slidesDoc()
+        .getLayouts()
+        .then((r) => setLayouts(r?.layouts ?? []))
     },
     [fitZoom],
   )
@@ -564,7 +567,7 @@ export function App() {
   )
 
   const openDialog = useCallback(async () => {
-    const r = await window.slidesApi.openPptx(FIT_WIDTH)
+    const r = await slidesFile().openPptx(FIT_WIDTH)
     applyOpen(r)
   }, [applyOpen])
 
@@ -576,10 +579,10 @@ export function App() {
 
   // Close guard (closing tab/window) chose "Save": run the full save flow and report the result
   useEffect(() => {
-    return window.slidesApi.onCloseSaveRequest?.(() => {
+    return slidesWindow().onCloseSaveRequest?.(() => {
       void save().then(
-        (ok) => window.slidesApi.reportCloseSaveResult(ok),
-        () => window.slidesApi.reportCloseSaveResult(false),
+        (ok) => slidesWindow().reportCloseSaveResult(ok),
+        () => slidesWindow().reportCloseSaveResult(false),
       )
     })
   }, [save])
@@ -606,13 +609,15 @@ export function App() {
     let saving = false
     const tick = () => {
       if (saving || editing || editingCell || mouseDownRef.current) return
-      void window.slidesApi.isDirty().then((d) => {
-        if (!d || saving) return
-        saving = true
-        void save().finally(() => {
-          saving = false
+      void slidesWindow()
+        .isDirty()
+        .then((d) => {
+          if (!d || saving) return
+          saving = true
+          void save().finally(() => {
+            saving = false
+          })
         })
-      })
     }
     const id = window.setInterval(tick, 30_000)
     window.addEventListener('blur', tick)
@@ -655,7 +660,7 @@ export function App() {
     setPasteFloater(null) // The paste the floater refers to may have just been undone
     notesDraftRef.current = null // Undo overrides the unsaved draft, avoiding writing an old draft back
     setAnnotationsNonce((n) => n + 1) // Notes/comments aren't in RenderSlide; re-fetch
-    void window.slidesApi.isDirty().then(setDirty)
+    void slidesWindow().isDirty().then(setDirty)
   }, [])
 
   const undo = useCallback(async () => {
@@ -665,7 +670,7 @@ export function App() {
       document.execCommand('undo')
       return
     }
-    applyHistoryResult(await window.slidesApi.undo())
+    applyHistoryResult(await slidesDoc().undo())
   }, [editing, applyHistoryResult])
 
   const redo = useCallback(async () => {
@@ -673,7 +678,7 @@ export function App() {
       document.execCommand('redo')
       return
     }
-    applyHistoryResult(await window.slidesApi.redo())
+    applyHistoryResult(await slidesDoc().redo())
   }, [editing, applyHistoryResult])
 
   // Global shortcuts (keyboard-actions.ts): the handler reads the latest state via ctxRef, so attach once
@@ -728,7 +733,7 @@ export function App() {
   }, [hasDoc, viewMode])
 
   const newBlank = useCallback(async () => {
-    const r = await window.slidesApi.newBlank(FIT_WIDTH)
+    const r = await slidesFile().newBlank(FIT_WIDTH)
     applyOpen(r)
     return r
   }, [applyOpen])
@@ -738,8 +743,8 @@ export function App() {
   // StrictMode runs the mount effect twice, but the pending queue can only be consumed once, so the
   // consume Promise is stored in a shared ref and its result is processed only once.
   useEffect(() => {
-    const off = window.slidesApi.onOpened((r) => applyOpen(r))
-    consumePendingRef.current ??= window.slidesApi.consumePendingOpen(FIT_WIDTH)
+    const off = slidesWindow().onOpened((r) => applyOpen(r))
+    consumePendingRef.current ??= slidesFile().consumePendingOpen(FIT_WIDTH)
     void consumePendingRef.current
       .then((r) => {
         if (bootHandledRef.current) return
@@ -757,15 +762,15 @@ export function App() {
   }, [applyOpen, newBlank])
 
   // File renamed externally (shell Home list rename) → sync the title-bar path (content unchanged, dirty untouched)
-  useEffect(() => window.slidesApi.onRenamed((p) => setPath(p)), [])
+  useEffect(() => slidesWindow().onRenamed((p) => setPath(p)), [])
 
   useEffect(() => {
-    void window.slidesApi.getAiSettings().then(setAiSettings)
+    void slidesDoc().getAiSettings().then(setAiSettings)
   }, [])
 
   // Recent files for the start screen
   useEffect(() => {
-    if (slides.length === 0) void window.slidesApi.getRecentFiles().then(setRecent)
+    if (slides.length === 0) void slidesDoc().getRecentFiles().then(setRecent)
   }, [slides.length])
 
   const toggleAi = useCallback(() => {
@@ -968,7 +973,7 @@ export function App() {
   // Reflect the current page's transition effect on page/document changes
   useEffect(() => {
     if (!hasDoc) return
-    void window.slidesApi.getTransition(current).then(setTransition)
+    void slidesDoc().getTransition(current).then(setTransition)
   }, [hasDoc, current, path])
 
   const applyTransition = useCallback(
@@ -984,9 +989,11 @@ export function App() {
       return
     }
     let cancelled = false
-    void window.slidesApi.getAnimations(current).then((items) => {
-      if (!cancelled) setAnimations(items)
-    })
+    void slidesDoc()
+      .getAnimations(current)
+      .then((items) => {
+        if (!cancelled) setAnimations(items)
+      })
     return () => {
       cancelled = true
     }
@@ -1178,7 +1185,7 @@ export function App() {
     if (!hasDoc || !showNotes) return
     let cancelled = false
     void flushNotes()
-      .then(() => window.slidesApi.getNotes(current))
+      .then(() => slidesDoc().getNotes(current))
       .then((t) => {
         if (!cancelled) setNotesText(t)
       })
@@ -1202,9 +1209,11 @@ export function App() {
       return
     }
     let cancelled = false
-    void window.slidesApi.getComments(current).then((c) => {
-      if (!cancelled) setComments(c)
-    })
+    void slidesDoc()
+      .getComments(current)
+      .then((c) => {
+        if (!cancelled) setComments(c)
+      })
     return () => {
       cancelled = true
     }
@@ -1212,7 +1221,7 @@ export function App() {
 
   const addComment = useCallback(
     async (text: string) => {
-      const r = await window.slidesApi.addComment({ slideIndex: current, text })
+      const r = await slidesDoc().addComment({ slideIndex: current, text })
       if (r) {
         setComments(r)
         setDirty(true)
@@ -1224,7 +1233,7 @@ export function App() {
 
   const deleteComment = useCallback(
     async (c: SlideComment) => {
-      const r = await window.slidesApi.deleteComment({
+      const r = await slidesDoc().deleteComment({
         slideIndex: current,
         authorId: c.authorId,
         idx: c.idx,
@@ -1259,19 +1268,19 @@ export function App() {
     setEditingCell(null)
     setSelectedIds([])
     setCtxMenu(null)
-    const r = await window.slidesApi.masterEnter(FIT_WIDTH)
+    const r = await slidesDoc().masterEnter(FIT_WIDTH)
     if (r?.items.length) setMasterItems(r.items)
   }, [hasDoc])
 
   const closeMasterView = useCallback(async () => {
-    const all = await window.slidesApi.masterClose()
+    const all = await slidesDoc().masterClose()
     setMasterItems(null)
     if (all) {
       // The inheritance chain changed: replace the whole render tree (all-new element ids)
       setSlides(all)
       setSelectedIds([])
     }
-    void window.slidesApi.isDirty().then(setDirty)
+    void slidesWindow().isDirty().then(setDirty)
   }, [])
 
   const zoomToFit = useCallback(() => {
@@ -1323,9 +1332,11 @@ export function App() {
       return
     }
     let alive = true
-    void window.slidesApi.getSections().then((r) => {
-      if (alive) setSections(r ?? [])
-    })
+    void slidesDoc()
+      .getSections()
+      .then((r) => {
+        if (alive) setSections(r ?? [])
+      })
     return () => {
       alive = false
     }
@@ -1454,7 +1465,7 @@ export function App() {
 
   // Menu commands. Cut/copy/paste dispatch by context: text mode goes back to the native clipboard, canvas mode uses the element clipboard
   useEffect(() => {
-    return window.slidesApi.onMenuCommand((cmd) => {
+    return slidesPlatform().menu?.onMenuCommand((cmd) => {
       // Master view: only allow save (undo/clipboard etc. target normal pages, not applicable inside the master)
       if (masterItems) {
         if (cmd === 'save') void save()
@@ -1474,14 +1485,14 @@ export function App() {
       else if (cmd === 'redo') void redo()
       else if (cmd === 'cut') {
         if (editing || inTextField() || hasDomTextSelection())
-          void window.slidesApi.nativeClipboard('cut')
+          void slidesPlatform().clipboard?.nativeClipboard('cut')
         else void cutSelected()
       } else if (cmd === 'copy') {
         if (editing || inTextField() || hasDomTextSelection())
-          void window.slidesApi.nativeClipboard('copy')
+          void slidesPlatform().clipboard?.nativeClipboard('copy')
         else void copySelected()
       } else if (cmd === 'paste') {
-        if (editing || inTextField()) void window.slidesApi.nativeClipboard('paste')
+        if (editing || inTextField()) void slidesPlatform().clipboard?.nativeClipboard('paste')
         else void pasteClipboard()
       }
     })
@@ -1577,7 +1588,7 @@ export function App() {
   useEffect(() => setMediaPlay(null), [current])
   const startMediaPlayback = useCallback(
     async (sourceId: string) => {
-      const r = await window.slidesApi.getMediaData(current, sourceId)
+      const r = await slidesDoc().getMediaData(current, sourceId)
       if (r) setMediaPlay({ sourceId, ...r })
     },
     [current],
@@ -1650,7 +1661,7 @@ export function App() {
   const commitEdit = useCallback(
     async (paragraphs: EditParagraph[]) => {
       if (!editing) return
-      const updated = await window.slidesApi.editText({
+      const updated = await slidesDoc().editText({
         slideIndex: current,
         sourceId: editing.sourceId,
         paragraphs,
@@ -1687,7 +1698,7 @@ export function App() {
       preview?: boolean,
       groupId?: string,
     ) => {
-      const updated = await window.slidesApi.editTransform({
+      const updated = await slidesDoc().editTransform({
         slideIndex: current,
         sourceId,
         xPx: box.x,
@@ -1720,7 +1731,7 @@ export function App() {
         end?: { targetId: string; idx: number } | null
       },
     ) => {
-      const updated = await window.slidesApi.editConnectorEndpoints({
+      const updated = await slidesDoc().editConnectorEndpoints({
         slideIndex: current,
         sourceId,
         x1Px: ep.x1,
@@ -1822,16 +1833,18 @@ export function App() {
       return
     }
     let alive = true
-    void window.slidesApi.getLink(current, selectedIds[0]!).then((l) => {
-      if (alive) setSelectedLink(l)
-    })
+    void slidesDoc()
+      .getLink(current, selectedIds[0]!)
+      .then((l) => {
+        if (alive) setSelectedLink(l)
+      })
     return () => {
       alive = false
     }
   }, [selectedIds, current, slides])
 
   const [selectedChartData, setSelectedChartData] = useState<Awaited<
-    ReturnType<typeof window.slidesApi.getChartData>
+    ReturnType<SlidesDocumentPort['getChartData']>
   > | null>(null)
   useEffect(() => {
     if (selectedNode?.type !== 'chart') {
@@ -1839,9 +1852,11 @@ export function App() {
       return
     }
     let alive = true
-    void window.slidesApi.getChartData(current, selectedNode.sourceId).then((d) => {
-      if (alive) setSelectedChartData(d)
-    })
+    void slidesDoc()
+      .getChartData(current, selectedNode.sourceId)
+      .then((d) => {
+        if (alive) setSelectedChartData(d)
+      })
     return () => {
       alive = false
     }
@@ -1897,9 +1912,11 @@ export function App() {
     if (selectedNode?.type !== 'chart') return
     let stale = false
     // Optional call: degrade to the fixed palette when the preload build is too old, no blank screen
-    void window.slidesApi.getChartColorSchemes?.().then((r) => {
-      if (!stale && r) setChartColorSchemes(r)
-    })
+    void slidesDoc()
+      .getChartColorSchemes?.()
+      .then((r) => {
+        if (!stale && r) setChartColorSchemes(r)
+      })
     return () => {
       stale = true
     }
@@ -2145,25 +2162,27 @@ export function App() {
         animByParagraph={animByParagraph}
         onToggleAnimByParagraph={() => setAnimByParagraph((v) => !v)}
         onSetLayout={(layoutPath) =>
-          void window.slidesApi
+          void slidesDoc()
             .setSlideLayout({ slideIndex: current, layoutPath })
             .then((r) => r && applySlide(current, r))
         }
         onResetLayout={() =>
-          void window.slidesApi
+          void slidesDoc()
             .setSlideLayout({ slideIndex: current })
             .then((r) => r && applySlide(current, r))
         }
         onSlideSize={(cx, cy) =>
-          void window.slidesApi.setSlideSize({ cx, cy }).then((all) => {
-            if (all) {
-              setSlides(all)
-              // Every slide re-materializes with fresh element ids
-              setSelectedIds([])
-              setEditing(null)
-              setDirty(true)
-            }
-          })
+          void slidesDoc()
+            .setSlideSize({ cx, cy })
+            .then((all) => {
+              if (all) {
+                setSlides(all)
+                // Every slide re-materializes with fresh element ids
+                setSelectedIds([])
+                setEditing(null)
+                setDirty(true)
+              }
+            })
         }
         slideSizeKey={
           slide
@@ -2251,7 +2270,7 @@ export function App() {
         onPictureCutout={startCutout}
         onPictureOpacity={(opacity) => {
           if (!selectedNode || selectedNode.type !== 'picture') return
-          void window.slidesApi
+          void slidesDoc()
             .editPictureOpacity({ slideIndex: current, sourceId: selectedNode.sourceId, opacity })
             .then((r) => r && applySlide(current, r))
         }}
@@ -2326,7 +2345,7 @@ export function App() {
                 onContextMenu={(e) => {
                   e.preventDefault()
                   setCurrent(i)
-                  void window.slidesApi.hasSlideClipboard().then(setCanPasteSlide)
+                  void slidesPlatform().clipboard?.hasSlideClipboard().then(setCanPasteSlide)
                   setCtxMenu({ kind: 'thumb', x: e.clientX, y: e.clientY, index: i })
                 }}
               >
@@ -2426,7 +2445,9 @@ export function App() {
                             setCurrent(i)
                             setSelectedIds([])
                             setEditing(null)
-                            void window.slidesApi.hasSlideClipboard().then(setCanPasteSlide)
+                            void slidesPlatform()
+                              .clipboard?.hasSlideClipboard()
+                              .then(setCanPasteSlide)
                             setCtxMenu({ kind: 'thumb', x: e.clientX, y: e.clientY, index: i })
                           }}
                         >
@@ -2863,12 +2884,12 @@ export function App() {
                 onTransform={onTransform}
                 onFill={(id, fill) => void onFill(id, fill)}
                 onImageFill={(id) =>
-                  void window.slidesApi
+                  void slidesDoc()
                     .editImageFill({ slideIndex: current, sourceId: id })
                     .then((r) => r && applySlide(current, r))
                 }
                 onTextAnchor={(id, anchor) =>
-                  void window.slidesApi
+                  void slidesDoc()
                     .setTextAnchor({ slideIndex: current, sourceId: id, anchor })
                     .then((r) => r && applySlide(current, r))
                 }

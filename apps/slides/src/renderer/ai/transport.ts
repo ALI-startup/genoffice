@@ -1,12 +1,13 @@
 import { createIpcTransport, type AgentTransport } from '@genoffice/agent-core'
 import { t } from '../i18n/locale'
+import { slidesAi, slidesDoc } from '../platform'
 
 /** The shared IPC transport wired to the slides preload bridge (window.slidesApi). */
 export function createElectronTransport(): AgentTransport {
   return createIpcTransport({
-    onStream: (listener) => window.slidesApi.onAiStream(listener),
-    start: (request) => window.slidesApi.aiStream(request),
-    cancel: (requestId) => void window.slidesApi.aiStreamCancel(requestId),
+    onStream: (listener) => slidesDoc().onAiStream(listener),
+    start: (request) => slidesAi().aiStream(request),
+    cancel: (requestId) => void slidesAi().aiStreamCancel(requestId),
     task: 'chat',
     unknownErrorText: () => t('aiErrUnknown'),
     timeoutErrorText: () => t('aiErrStreamTimeout'),

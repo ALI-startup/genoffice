@@ -9,6 +9,7 @@
  * - →/space/enter/PgDn/click next step/page; ←/PgUp/right-click previous page; Home/End first/last page;
  *   Esc exits; advancing past the last page shows the "end of show" black screen
  */
+import { slidesDoc } from '../platform'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { RenderNode, RenderSlide, ShapeRenderNode } from '@genoffice/pptx-render'
 import type { AnimationItem, LinkTargetOp, ShapeKey, TransitionKind } from '../../shared/ipc'
@@ -89,22 +90,22 @@ export function SlideShowView({
 
   useEffect(() => {
     let cancelled = false
-    void Promise.all(slides.map((_, i) => window.slidesApi.getTransition(i))).then((kinds) => {
+    void Promise.all(slides.map((_, i) => slidesDoc().getTransition(i))).then((kinds) => {
       if (!cancelled) transRef.current = kinds
     })
-    void Promise.all(slides.map((_, i) => window.slidesApi.getAnimations(i))).then((lists) => {
+    void Promise.all(slides.map((_, i) => slidesDoc().getAnimations(i))).then((lists) => {
       if (!cancelled) setAllAnims(lists)
     })
-    void Promise.all(slides.map((_, i) => window.slidesApi.getShapeKeys(i))).then((keys) => {
+    void Promise.all(slides.map((_, i) => slidesDoc().getShapeKeys(i))).then((keys) => {
       if (!cancelled) keysRef.current = keys
     })
-    void Promise.all(slides.map((_, i) => window.slidesApi.getSlideLinks(i))).then((lists) => {
+    void Promise.all(slides.map((_, i) => slidesDoc().getSlideLinks(i))).then((lists) => {
       if (!cancelled)
         linksRef.current = lists.map(
           (list) => new Map(list.map(({ sourceId, target }) => [sourceId, target])),
         )
     })
-    void Promise.all(slides.map((_, i) => window.slidesApi.getRunLinks(i))).then((lists) => {
+    void Promise.all(slides.map((_, i) => slidesDoc().getRunLinks(i))).then((lists) => {
       if (!cancelled)
         runLinksRef.current = lists.map(
           (list) =>
@@ -445,9 +446,11 @@ function ShowMediaLayer({
     setUrls({})
     setPlaying({})
     for (const n of nodes) {
-      void window.slidesApi.getMediaData(slideIndex, n.sourceId).then((d) => {
-        if (!cancelled && d) setUrls((u) => ({ ...u, [n.sourceId]: d }))
-      })
+      void slidesDoc()
+        .getMediaData(slideIndex, n.sourceId)
+        .then((d) => {
+          if (!cancelled && d) setUrls((u) => ({ ...u, [n.sourceId]: d }))
+        })
     }
     return () => {
       cancelled = true

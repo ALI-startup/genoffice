@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createSlidesSkill, type DeckAccess } from '../src/renderer/ai/slides-skill'
 import type { RenderSlide, PlacedBox, ShapeRenderNode } from '@genoffice/pptx-render'
 import type { AgentToolCall } from '../src/shared/ipc'
+import { installTestPlatform } from './helpers/platform'
 
 const box = (x: number, y: number, w: number, h: number): PlacedBox => ({
   x,
@@ -92,10 +93,10 @@ const call = (name: string): AgentToolCall => ({
 })
 
 beforeEach(() => {
-  ;(window as any).slidesApi = {
+  installTestPlatform({
     addElement: vi.fn(async () => ({ slide: blankDeck, sourceId: 'e1' })),
     addSmartArt: vi.fn(async () => ({ slide: blankDeck, sourceId: 's1' })),
-  }
+  })
 })
 
 describe('anti hand-building from scratch', () => {

@@ -1,5 +1,6 @@
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { hostAlias } from './vite.shared'
 import { defineConfig } from 'vitest/config'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -23,6 +24,8 @@ export default defineConfig({
       ),
       '@genoffice/pptx-engine': resolve(here, '../../packages/pptx-engine/src/index.ts'),
       '@genoffice/pptx-render': resolve(here, '../../packages/pptx-render/src/index.ts'),
+      // Tests exercise the Electron host, the same one tsconfig maps `@host` to.
+      ...hostAlias('electron'),
     },
   },
   test: {

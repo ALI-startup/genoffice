@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createSlidesSkill, type DeckAccess } from '../src/renderer/ai/slides-skill'
 import type { RenderSlide, PlacedBox, ShapeRenderNode } from '@genoffice/pptx-render'
 import type { AgentToolCall } from '../src/shared/ipc'
+import { installTestPlatform } from './helpers/platform'
 
 const box = (x: number, y: number, w: number, h: number): PlacedBox => ({
   x,
@@ -83,11 +84,11 @@ const chartCall = (extra: Record<string, unknown> = {}): AgentToolCall => ({
 })
 
 beforeEach(() => {
-  ;(window as any).slidesApi = {
+  installTestPlatform({
     addChart: vi.fn(async () => ({ slide: richDeck, sourceId: 'c1' })),
     editChart: vi.fn(async () => ({ slide: richDeck })),
     webSearch: vi.fn(async () => ({ answer: '', results: [] })),
-  }
+  })
 })
 
 describe('add_chart provenance gate', () => {

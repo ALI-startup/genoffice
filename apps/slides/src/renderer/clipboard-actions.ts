@@ -13,10 +13,12 @@ import {
   buildEditParagraphsWithFormat,
 } from './format-brush'
 import { t } from './i18n/locale'
+import { slidesDoc } from './platform'
+import { slidesPlatform } from './platform'
 
 export async function deleteSelected(ctx: ActionCtx): Promise<void> {
   for (const id of ctx.selectedIds) {
-    const updated = await window.slidesApi.deleteElement({ slideIndex: ctx.current, sourceId: id })
+    const updated = await slidesDoc().deleteElement({ slideIndex: ctx.current, sourceId: id })
     if (updated) ctx.applySlide(ctx.current, updated)
   }
   ctx.setSelectedIds([])
@@ -24,7 +26,7 @@ export async function deleteSelected(ctx: ActionCtx): Promise<void> {
 
 export async function copySelected(ctx: ActionCtx): Promise<void> {
   if (ctx.selectedIds.length === 0) return
-  const n = await window.slidesApi.copyElements({
+  const n = await slidesDoc().copyElements({
     slideIndex: ctx.current,
     sourceIds: ctx.selectedIds,
   })
@@ -36,7 +38,7 @@ export async function copySelected(ctx: ActionCtx): Promise<void> {
 
 export async function cutSelected(ctx: ActionCtx): Promise<void> {
   if (ctx.selectedIds.length === 0) return
-  const n = await window.slidesApi.copyElements({
+  const n = await slidesDoc().copyElements({
     slideIndex: ctx.current,
     sourceIds: ctx.selectedIds,
   })
@@ -67,7 +69,7 @@ export async function insertExternalImage(
   const h = Math.max(24, dims.h * k)
   const x = atPx ? atPx.x - w / 2 : ((ctx.slide?.widthPx ?? FIT_WIDTH) - w) / 2
   const y = atPx ? atPx.y - h / 2 : ((ctx.slide?.heightPx ?? FIT_WIDTH * 0.5625) - h) / 2
-  const r = await window.slidesApi.addImageBytes({
+  const r = await slidesDoc().addImageBytes({
     slideIndex: ctx.current,
     base64,
     ext,
@@ -97,7 +99,7 @@ export async function copySlideAt(ctx: ActionCtx, index: number): Promise<void> 
   } catch {
     png = undefined
   }
-  const ok = await window.slidesApi.copySlide(index, png)
+  const ok = await slidesDoc().copySlide(index, png)
   ctx.setCanPasteSlide(ok)
   ctx.setStatus(ok ? t('appStatusSlideCopied') : t('appStatusSlideCopyFailed'))
 }
@@ -107,7 +109,7 @@ export async function pasteSlideAfter(
   index: number,
   mode: PasteSlideMode = 'theme',
 ): Promise<void> {
-  const r = await window.slidesApi.pasteSlide({ afterIndex: index, fitWidthPx: FIT_WIDTH, mode })
+  const r = await slidesDoc().pasteSlide({ afterIndex: index, fitWidthPx: FIT_WIDTH, mode })
   if (!r) {
     ctx.setStatus(t('appStatusSlidePasteFailed'))
     return
@@ -123,7 +125,7 @@ export async function pasteSlideAfter(
 /** Paste-options floater: redo the just-completed paste with another mode. */
 export async function repasteSlideAs(ctx: ActionCtx, mode: PasteSlideMode): Promise<void> {
   if (ctx.pasteFloater?.mode === mode) return
-  const r = await window.slidesApi.repasteSlide({ mode, fitWidthPx: FIT_WIDTH })
+  const r = await slidesDoc().repasteSlide({ mode, fitWidthPx: FIT_WIDTH })
   if (!r) {
     ctx.setPasteFloater(null)
     ctx.setStatus(t('appStatusPasteOptionsExpired'))
@@ -142,7 +144,12 @@ export async function repasteSlideAs(ctx: ActionCtx, mode: PasteSlideMode): Prom
  * overwritten externally) → external images → external text into a text box
  */
 export async function pasteClipboard(ctx: ActionCtx): Promise<void> {
-  const external = await window.slidesApi.clipboardExternal()
+  // `internal` is the "nothing from another application" case, so it is also the right
+  // answer on a host with no native clipboard at all: the in-app element clipboard below
+  // still works, and nothing pretends to have read the system one.
+  const external = (await slidesPlatform().clipboard?.clipboardExternal()) ?? {
+    kind: 'internal' as const,
+  }
   if (external.kind === 'slide') {
     await pasteSlideAfter(ctx, ctx.current)
     return
@@ -153,7 +160,7 @@ export async function pasteClipboard(ctx: ActionCtx): Promise<void> {
   }
   if (external.kind === 'text') {
     const w = 400
-    const r = await window.slidesApi.addElement({
+    const r = await slidesDoc().addElement({
       slideIndex: ctx.current,
       kind: 'textbox',
       xPx: ((ctx.slide?.widthPx ?? FIT_WIDTH) - w) / 2,
@@ -169,7 +176,7 @@ export async function pasteClipboard(ctx: ActionCtx): Promise<void> {
     }
     return
   }
-  const r = await window.slidesApi.pasteElements({ slideIndex: ctx.current, fitWidthPx: FIT_WIDTH })
+  const r = await slidesDoc().pasteElements({ slideIndex: ctx.current, fitWidthPx: FIT_WIDTH })
   if (r) {
     ctx.applySlide(ctx.current, r.slide)
     ctx.setSelectedIds(r.sourceIds)
@@ -185,7 +192,7 @@ export async function duplicateSelected(
   dyPx = 16,
 ): Promise<void> {
   if (!ids.length) return
-  const r = await window.slidesApi.duplicateElements({
+  const r = await slidesDoc().duplicateElements({
     slideIndex: ctx.current,
     sourceIds: ids,
     dxPx,
@@ -221,7 +228,7 @@ export async function pasteFormat(ctx: ActionCtx): Promise<void> {
     const plan = computeBrushApply(ctx.brushFormat, node)
     // Apply fill
     if (plan.fillColor !== undefined) {
-      await window.slidesApi.editFill({
+      await slidesDoc().editFill({
         slideIndex: ctx.current,
         sourceId: id,
         fill: plan.fillColor,
@@ -229,7 +236,7 @@ export async function pasteFormat(ctx: ActionCtx): Promise<void> {
     }
     // Apply stroke
     if (plan.stroke !== undefined) {
-      await window.slidesApi.editStroke({
+      await slidesDoc().editStroke({
         slideIndex: ctx.current,
         sourceId: id,
         stroke: plan.stroke,
@@ -239,7 +246,7 @@ export async function pasteFormat(ctx: ActionCtx): Promise<void> {
     if ((plan.runFormat || plan.align) && (node.type === 'shape' || node.type === 'text')) {
       const paras = buildEditParagraphsWithFormat(node, plan.runFormat, plan.align)
       if (paras) {
-        const updated = await window.slidesApi.editText({
+        const updated = await slidesDoc().editText({
           slideIndex: ctx.current,
           sourceId: id,
           paragraphs: paras,
@@ -248,7 +255,7 @@ export async function pasteFormat(ctx: ActionCtx): Promise<void> {
       }
     } else if (plan.fillColor !== undefined || plan.stroke !== undefined) {
       // fill/stroke were applied; re-render to get the latest page
-      const updated = await window.slidesApi.editFill({
+      const updated = await slidesDoc().editFill({
         slideIndex: ctx.current,
         sourceId: id,
         fill: plan.fillColor ?? 'none',
@@ -293,7 +300,7 @@ export async function applyBrushToElement(ctx: ActionCtx, targetId: string): Pro
   const plan = computeBrushApply(ctx.brushFormat, node)
 
   if (plan.fillColor !== undefined) {
-    const updated = await window.slidesApi.editFill({
+    const updated = await slidesDoc().editFill({
       slideIndex: ctx.current,
       sourceId: targetId,
       fill: plan.fillColor,
@@ -301,7 +308,7 @@ export async function applyBrushToElement(ctx: ActionCtx, targetId: string): Pro
     if (updated) ctx.applySlide(ctx.current, updated)
   }
   if (plan.stroke !== undefined) {
-    const updated = await window.slidesApi.editStroke({
+    const updated = await slidesDoc().editStroke({
       slideIndex: ctx.current,
       sourceId: targetId,
       stroke: plan.stroke,
@@ -311,7 +318,7 @@ export async function applyBrushToElement(ctx: ActionCtx, targetId: string): Pro
   if ((plan.runFormat || plan.align) && (node.type === 'shape' || node.type === 'text')) {
     const paras = buildEditParagraphsWithFormat(node, plan.runFormat, plan.align)
     if (paras) {
-      const updated = await window.slidesApi.editText({
+      const updated = await slidesDoc().editText({
         slideIndex: ctx.current,
         sourceId: targetId,
         paragraphs: paras,
