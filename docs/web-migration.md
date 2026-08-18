@@ -382,18 +382,52 @@ the precedent to copy rather than inventing a new arrangement.
 
 ### 5.5 Suggested sub-phases
 
-0. **7-0 — engine browser-safety.** Done: `Buffer` and every Node builtin are out
-   of `pptx-engine`, `node:fs` streaming save moved to the `./node` subpath, guarded
-   by `tests/browser-safety.test.ts`. §5.2 has the details.
-1. **7a — relocate the session.** Move the ~120 document operations out of
-   `registerSlidesIpc` into a platform-neutral session module (the shape sheets uses
-   in `src/{domain,gateway,ai}`), with `session-state` and `edit-text` alongside
-   them and I/O injected. Electron's handlers become delegations and behave
-   identically throughout. Also fix the deep relative imports in §5.2. This is the
-   phase, and it is a big one — see §5.4 for why it comes before the seam.
-2. **7b — the seam.** ~25 real host members, not 147. Mirror 4a.
-3. **7c — fonts.** `queryLocalFonts()` + harfbuzz-wasm in the browser.
-4. **7d — web host** and the slides frame in the shell.
+0. **7-0 — engine browser-safety. Done.** `Buffer` and every Node builtin are out of
+   `pptx-engine`; the `node:fs` streaming save moved to the `./node` subpath, guarded by
+   `tests/browser-safety.test.ts`. §5.2 has the details.
+1. **7a — relocate the session and the operations. Done.** `src/domain/session.ts` holds
+   the session, history and RenderSlide rebuilds, with font metrics and the TIFF decoder
+   injected through `setSlideRenderEnv`. `src/domain/ops.ts` holds all 84 relocatable
+   document operations, moved verbatim — a script diffed every body against the
+   pre-move commit, and the only intentional change is an injected translator argument.
+   `edit-text.ts` moved too. Both files bundle at esbuild `platform: 'browser'` with zero
+   Node builtins and no electron.
+2. **7b — the seam. Done.** `src/renderer/platform.ts`, thirteen ports, every one a
+   `Pick<SlidesApi, …>` so nothing is retyped. 241 call sites moved off
+   `window.slidesApi`; `host-electron.ts` is the only module that reads a global. Seven
+   ports are `X | null` (presenter, pdfExport, clipboard, genspark, search, cloud, menu)
+   and their thirty call sites branch. `@host` is wired as in docs and pdf.
+3. **7c — fonts.** `queryLocalFonts()` + harfbuzz-wasm in the browser. Note that
+   `shaped-metrics.ts` cannot even be loaded outside Electron today — its `?asset` wasm
+   import resolves to a path Node tries to import as a module — so
+   `tests/render-env-wiring.test.ts` stubs it. That import is the first thing to fix.
+4. **7d — web host** and the slides frame in the shell. Read §5.5 first.
+
+### 5.5 What 7d has left to sort out
+
+The seam's `doc` port was split by a heuristic over member names, and it is slightly too
+generous: 76 of its 104 members are backed by an op of the same name, six more differ
+only in spelling (`addSmartArt`/`addSmartart`, `beginHistoryBatch`/`historyBatchBegin`,
+`endHistoryBatch`/`historyBatchEnd`, `getMediaData`/`mediaData`,
+`setSlideHidden`/`setHidden`, `getChartColorSchemes`/`chartColorSchemes`), and the
+remaining ~20 are host-coupled and belong in other ports before a web host can claim
+`doc` honestly:
+
+- **clipboard/paste bookkeeping** — `copySlide`, `pasteSlide`, `repasteSlide`,
+  `copyElements`, `pasteElements`. These keep per-renderer state (`lastSlidePaste`,
+  `clipboards`) and stayed in slides-main for that reason; on web they become
+  page-local, which is simpler, not harder.
+- **dialog-backed** — `editChart` (a confirmation box), `insertMedia`, `getRecentFiles`.
+- **AI settings and streaming** — `getAiSettings`, `setAiSettings`, `onAiStream`,
+  `generateImage`, `analyzeMedia`, `gskStatus`. These belong to the `ai` and `genspark`
+  ports; `aiSettings` in particular is read-only in a browser (§6.2).
+- **presenter callbacks** — `onShowSync`, `onShowInk`, which belong to `presenter`.
+- **still to place** — `htmlToPptx` and `printSlides` (the browser prints, as docs does),
+  `listStyleTemplates`/`loadStyleTemplate`, `editImageFill`, `setTextAnchor`.
+
+Re-splitting those is the first task of 7d, not an afterthought: claiming them on the
+`doc` port would make a web host either lie or stub, which is the failure this whole
+arrangement exists to prevent.
 
 ---
 
