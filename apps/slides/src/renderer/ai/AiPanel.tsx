@@ -1,4 +1,4 @@
-import { slidesAi, slidesAttachments, slidesDoc, slidesFile } from '../platform'
+import { slidesAi, slidesAttachments, slidesDoc } from '../platform'
 import { slidesPlatform } from '../platform'
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { AgentLoop, composeSkills, type AgentImage, type ToolDisplay } from '@genoffice/agent-core'
