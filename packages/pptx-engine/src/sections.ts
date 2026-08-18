@@ -19,7 +19,7 @@
  * unsectioned — an intuitive rule that naturally self-heals stale
  * references.
  */
-import { randomUUID } from 'node:crypto'
+import { randomGuid, utf8Bytes } from './bytes'
 import { resolveTarget } from './zip'
 import { escapeXmlAttr } from './xml-utils'
 import { unescapeXml } from './notes'
@@ -40,7 +40,7 @@ const P14_NS = 'http://schemas.microsoft.com/office/powerpoint/2010/main'
 
 /** New section GUID: uppercase with braces (the format found in pptx files). */
 function newSectionId(): string {
-  return `{${randomUUID().toUpperCase()}}`
+  return `{${randomGuid().toUpperCase()}}`
 }
 
 /** Index array for [start, end). */
@@ -142,7 +142,7 @@ export function setSections(opened: OpenedPptx, sections: SectionInfo[]): void {
       next = next.replace('</p:presentation>', `<p:extLst>${ext}</p:extLst></p:presentation>`)
     }
   }
-  archive.entries.set(PRES_PATH, Buffer.from(next, 'utf8'))
+  archive.entries.set(PRES_PATH, utf8Bytes(next))
 }
 
 /**
@@ -296,7 +296,7 @@ export function moveSlide(opened: OpenedPptx, fromIndex: number, toIndex: number
   tags.splice(to, 0, tag!)
   archive.entries.set(
     PRES_PATH,
-    Buffer.from(pres.replace(m[0], `<p:sldIdLst>${tags.join('')}</p:sldIdLst>`), 'utf8'),
+    utf8Bytes(pres.replace(m[0], `<p:sldIdLst>${tags.join('')}</p:sldIdLst>`)),
   )
 
   // Sync deck.slides
@@ -351,7 +351,7 @@ export function moveSection(
   const newInner = newOldOrder.map((i) => tags[i]!).join('')
   archive.entries.set(
     PRES_PATH,
-    Buffer.from(pres.replace(m[0], `<p:sldIdLst>${newInner}</p:sldIdLst>`), 'utf8'),
+    utf8Bytes(pres.replace(m[0], `<p:sldIdLst>${newInner}</p:sldIdLst>`)),
   )
 
   // Sync deck.slides order

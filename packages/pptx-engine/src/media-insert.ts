@@ -11,7 +11,7 @@
  * no am3d extension XML is written (the schema is complex and easily triggers
  * repair); shows as the poster image in PowerPoint.
  */
-import { deflateSync } from 'node:zlib'
+import { concatBytes, utf8Bytes } from './bytes'
 import type { EmuRect, Slide } from './types'
 import { escapeXmlAttr } from './xml-utils'
 import { relsPathFor } from './zip'
@@ -60,23 +60,87 @@ function crc32(buf: Uint8Array): number {
   return (c ^ -1) >>> 0
 }
 
-function pngChunk(type: string, data: Uint8Array): Buffer {
-  const head = Buffer.alloc(8)
-  head.writeUInt32BE(data.length, 0)
-  head.write(type, 4, 'ascii')
-  const crcBuf = Buffer.alloc(4)
-  crcBuf.writeUInt32BE(crc32(Buffer.concat([Buffer.from(type, 'ascii'), data])), 0)
-  return Buffer.concat([head, data, crcBuf])
+/** Big-endian u32 into `out` at `at`, the one thing `Buffer.writeUInt32BE` was here for. */
+function putU32(out: Uint8Array, at: number, value: number): void {
+  out[at] = (value >>> 24) & 0xff
+  out[at + 1] = (value >>> 16) & 0xff
+  out[at + 2] = (value >>> 8) & 0xff
+  out[at + 3] = value & 0xff
+}
+
+function asciiBytes(text: string): Uint8Array {
+  const out = new Uint8Array(text.length)
+  for (let i = 0; i < text.length; i++) out[i] = text.charCodeAt(i) & 0xff
+  return out
+}
+
+function pngChunk(type: string, data: Uint8Array): Uint8Array {
+  const tag = asciiBytes(type)
+  const out = new Uint8Array(8 + data.length + 4)
+  putU32(out, 0, data.length)
+  out.set(tag, 4)
+  out.set(data, 8)
+  putU32(out, 8 + data.length, crc32(concatBytes([tag, data])))
+  return out
+}
+
+/** Adler-32 of `data`, the checksum a zlib stream ends with. */
+function adler32(data: Uint8Array): number {
+  let a = 1
+  let b = 0
+  for (let i = 0; i < data.length; i++) {
+    a = (a + data[i]!) % 65521
+    b = (b + a) % 65521
+  }
+  return ((b << 16) | a) >>> 0
+}
+
+/**
+ * Wrap `data` in a zlib stream of *stored* (uncompressed) deflate blocks.
+ *
+ * This replaces `node:zlib`'s `deflateSync`, and storing rather than compressing
+ * is a deliberate trade rather than a shortcut. A browser's only built-in deflate
+ * is `CompressionStream`, which is async — and making this async would ripple
+ * through `addMedia` / `addModel3d` and their callers for no benefit, because the
+ * only thing that reaches here is a 16×9 poster placeholder: 441 raw bytes, where
+ * compression would save a few hundred. Stored blocks are valid zlib and valid
+ * PNG, so PowerPoint and every decoder read the result identically.
+ *
+ * If a caller ever needs this for real image data, that is the point to reach for
+ * `CompressionStream` and pay the async cost.
+ */
+function zlibStored(data: Uint8Array): Uint8Array {
+  const MAX_BLOCK = 0xffff
+  const blocks = Math.max(1, Math.ceil(data.length / MAX_BLOCK))
+  const out = new Uint8Array(2 + blocks * 5 + data.length + 4)
+  // 0x78 0x01: deflate, 32K window, no preset dictionary, fastest level.
+  out[0] = 0x78
+  out[1] = 0x01
+  let at = 2
+  for (let block = 0; block < blocks; block++) {
+    const start = block * MAX_BLOCK
+    const len = Math.min(MAX_BLOCK, data.length - start)
+    out[at++] = block === blocks - 1 ? 1 : 0 // BFINAL, BTYPE=00 (stored)
+    // LEN then its one's complement, both little-endian.
+    out[at++] = len & 0xff
+    out[at++] = (len >>> 8) & 0xff
+    out[at++] = ~len & 0xff
+    out[at++] = (~len >>> 8) & 0xff
+    out.set(data.subarray(start, start + len), at)
+    at += len
+  }
+  putU32(out, at, adler32(data))
+  return out
 }
 
 /** Generate a w×h solid-color PNG (RGB, no alpha). Used as a poster frame placeholder. */
-export function solidPng(w: number, h: number, rgb: [number, number, number]): Buffer {
-  const ihdr = Buffer.alloc(13)
-  ihdr.writeUInt32BE(w, 0)
-  ihdr.writeUInt32BE(h, 4)
+export function solidPng(w: number, h: number, rgb: [number, number, number]): Uint8Array {
+  const ihdr = new Uint8Array(13)
+  putU32(ihdr, 0, w)
+  putU32(ihdr, 4, h)
   ihdr[8] = 8 // bit depth
   ihdr[9] = 2 // color type RGB
-  const raw = Buffer.alloc(h * (1 + w * 3))
+  const raw = new Uint8Array(h * (1 + w * 3))
   for (let y = 0; y < h; y++) {
     const row = y * (1 + w * 3)
     raw[row] = 0 // filter none
@@ -86,11 +150,11 @@ export function solidPng(w: number, h: number, rgb: [number, number, number]): B
       raw[row + 3 + x * 3] = rgb[2]
     }
   }
-  return Buffer.concat([
-    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+  return concatBytes([
+    new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     pngChunk('IHDR', ihdr),
-    pngChunk('IDAT', deflateSync(raw)),
-    pngChunk('IEND', Buffer.alloc(0)),
+    pngChunk('IDAT', zlibStored(raw)),
+    pngChunk('IEND', new Uint8Array(0)),
   ])
 }
 
@@ -101,7 +165,7 @@ function ensureDefaultContentType(opened: OpenedPptx, ext: string, mime: string)
   const ct = opened.archive.readText(ctPath)
   if (ct && !new RegExp(`<Default Extension="${ext}"`).test(ct)) {
     const dflt = `<Default Extension="${ext}" ContentType="${mime}"/>`
-    opened.archive.entries.set(ctPath, Buffer.from(ct.replace('</Types>', `${dflt}</Types>`), 'utf8'))
+    opened.archive.entries.set(ctPath, utf8Bytes(ct.replace('</Types>', `${dflt}</Types>`)))
   }
 }
 
@@ -139,7 +203,7 @@ function appendRels(
       `<Relationship Id="${rid}" Type="${rel.type}" Target="${escapeXmlAttr(rel.target)}"${mode}/></Relationships>`,
     )
   }
-  opened.archive.entries.set(relsPath, Buffer.from(xml, 'utf8'))
+  opened.archive.entries.set(relsPath, utf8Bytes(xml))
   return rids
 }
 

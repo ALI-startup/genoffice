@@ -4,7 +4,8 @@ import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import JSZip from 'jszip'
-import { openPptx, savePptx, savePptxToFile, commitSaved, addElement } from '../src/index'
+import { openPptx, savePptx, commitSaved, addElement } from '../src/index'
+import { savePptxToFile } from '../src/save-node'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const fx = (name: string) => readFileSync(join(here, 'fixtures', name))

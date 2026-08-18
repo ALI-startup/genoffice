@@ -6,8 +6,8 @@
  * unmodified entries are written back byte-for-byte (handled by the patch layer).
  * This module only handles reading and metadata.
  */
+import { sha256Hex, utf8Text } from './bytes'
 import JSZip from 'jszip'
-import { createHash } from 'node:crypto'
 import { XMLParser } from 'fast-xml-parser'
 import type { SlideSize } from './types'
 import { asXmlNode, xmlArray } from './xml-utils'
@@ -34,7 +34,7 @@ export class PackageArchive {
   ) {}
 
   static async open(bytes: Uint8Array): Promise<PackageArchive> {
-    const originalHash = createHash('sha256').update(bytes).digest('hex')
+    const originalHash = await sha256Hex(bytes)
     const zip = await JSZip.loadAsync(bytes)
     const entries = new Map<string, Uint8Array>()
     const names = Object.keys(zip.files)
@@ -54,7 +54,7 @@ export class PackageArchive {
   readText(path: string): string | null {
     const bytes = this.entries.get(path)
     if (!bytes) return null
-    return Buffer.from(bytes).toString('utf8')
+    return utf8Text(bytes)
   }
 
   readBytes(path: string): Uint8Array | null {
@@ -124,7 +124,11 @@ export class PackageArchive {
   }
 
   /** Resolve a slide's layout / master part paths (via the rels chain). */
-  resolveSlideChain(slidePath: string): { layoutPath?: string; masterPath?: string; themePath?: string } {
+  resolveSlideChain(slidePath: string): {
+    layoutPath?: string
+    masterPath?: string
+    themePath?: string
+  } {
     const slideRels = this.readRels(slidePath)
     let layoutPath: string | undefined
     for (const rel of slideRels.values()) {

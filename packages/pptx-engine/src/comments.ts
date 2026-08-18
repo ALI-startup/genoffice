@@ -7,6 +7,7 @@
  * land in archive.entries: savePptx persists automatically, and the main process's
  * snapshot-style undo covers them automatically.
  */
+import { utf8Bytes } from './bytes'
 import type { OpenedPptx } from './index'
 import { resolveTarget, type PackageArchive } from './zip'
 import { escapeXmlAttr, escapeXmlText } from './xml-utils'
@@ -35,7 +36,7 @@ export interface SlideComment {
 }
 
 function setEntry(archive: PackageArchive, path: string, xml: string): void {
-  archive.entries.set(path, Buffer.from(xml, 'utf8'))
+  archive.entries.set(path, utf8Bytes(xml))
 }
 
 function addContentTypeOverride(

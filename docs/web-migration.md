@@ -304,6 +304,40 @@ Slides is the opposite: the parse/edit/save engine, session state and text
 editing all have to move down into shared packages before a web host is possible.
 That relocation — not the IPC count — is the real work.
 
+**The engine itself is now browser-safe** (done, see the commit that added
+`packages/pptx-engine/src/bytes.ts`). It was not, and the reasons were invisible to
+the type system:
+
+- 66 `Buffer` uses, almost all `Buffer.from(xml, 'utf8')` where an XML part is
+  written back into the archive. `Buffer` is a global that resolves in Node, so a
+  bundler emits the reference happily and it throws only when a user opens a deck.
+- `node:crypto` for the archive hash (`createHash`) and section GUIDs
+  (`randomUUID`), and `node:zlib` (`deflateSync`) for the poster PNG.
+- `node:fs` / `node:stream` in `savePptxToFile`, behind `await import()` — which
+  reads as lazy but is not, because a bundler still resolves the specifier while
+  building. It now lives at the `@genoffice/pptx-engine/node` subpath, the only
+  module in the package allowed to name a Node builtin.
+
+Replaced with `TextEncoder` / `TextDecoder` / `crypto.subtle` / `atob` — one
+implementation for both hosts, no polyfill and no fallback. Two things worth
+knowing before touching that file:
+
+- `utf8Bytes` copies what `TextEncoder` returns, and the copy is load-bearing.
+  Under jsdom the encoder comes from a different realm than the page's
+  `Uint8Array`, so its output fails `instanceof Uint8Array` — which is exactly how
+  JSZip identifies a part body. Removing the copy fails two slides tests with
+  "Can't read the data of '[Content_Types].xml'".
+- The poster PNG writes _stored_ (uncompressed) deflate blocks. A browser's only
+  built-in deflate is `CompressionStream`, which is async, and the only thing that
+  reaches this path is a 16×9 placeholder — 441 raw bytes. Real image data would
+  justify the async cost; a placeholder does not.
+
+`tests/browser-safety.test.ts` is the guard: every `node:*` module resolves to a
+throwing proxy and `Buffer` is deleted from `globalThis`, then a deck is created,
+opened, edited and saved. Build-time was verified separately by bundling
+`src/index.ts` with esbuild at `platform: 'browser'` — 75 modules, zero Node
+builtins (`pptx-render` likewise: 15 modules, zero).
+
 ### 5.3 Fonts
 
 `apps/slides/src/main/fonts.ts` scans system font directories
@@ -320,13 +354,44 @@ because opentype.js cannot read them. Text layout fidelity depends on it.
 - Fallback if `queryLocalFonts` is unavailable or denied: bundle metrics for the
   common OOXML fonts and keep the existing `HeuristicMetrics` path.
 
-### 5.4 Suggested sub-phases
+### 5.4 Relocate before you write the seam
 
-1. **7a — seam only.** Mirror 4a. 147 handlers is a lot; expect this alone to be
-   a full phase.
-2. **7b — relocate the engine.** Move pptx parse/edit/save, `session-state` and
-   `edit-text` from `src/main` into shared packages, with I/O injected. Electron
-   keeps working throughout. Also fix the deep relative imports in 5.2.
+The sub-phases below say "7a — seam only, mirror 4a". **Do not.** That order was
+inferred from docs, where it was right; for slides it is backwards, and the handler
+list says why. Of the 147 `ipcMain` channels, about 120 are document operations —
+`add-*`, `edit-*`, `set-*`, `get-*`, `delete-*`, `undo`/`redo`, `table-*`,
+`master-*`, `find-replace`, `history-batch-*` — and every one of them is a
+mutation of the `OpenedPptx` that `session-state.ts` holds, followed by a rebuilt
+`RenderSlide`. On a host where the engine runs in the page, those are not host
+calls at all: they are local function calls, and a port member for each would be
+120 members written in 7a and deleted in 7b.
+
+What is genuinely a host service is the other ~25: `open`, `open-path`, `save`,
+`save-as`, `recent`, `consume-pending-open`, `export-pdf`, `pick-export-dir`,
+`pick-export-pdf-path`, `files-pick`, `files-add`, `files-read-image`,
+`native-clipboard`, `clipboard-external`, `media-data`, `is-dirty`,
+`close-save-result`, `autosave-pref`, the five `presenter-*` and two `audience-*`
+channels, `app:get-language` and the seven `ai:*`. That is the size of docs' seam,
+not five times it.
+
+So: relocate the session and the document operations out of `registerSlidesIpc`
+first (Electron's handlers become one-line delegations, behaviour identical), and
+the seam that follows is small. The relocation is the same shape sheets already
+has in `src/{domain,gateway,ai}` — pure TS the renderer imports directly — which is
+the precedent to copy rather than inventing a new arrangement.
+
+### 5.5 Suggested sub-phases
+
+0. **7-0 — engine browser-safety.** Done: `Buffer` and every Node builtin are out
+   of `pptx-engine`, `node:fs` streaming save moved to the `./node` subpath, guarded
+   by `tests/browser-safety.test.ts`. §5.2 has the details.
+1. **7a — relocate the session.** Move the ~120 document operations out of
+   `registerSlidesIpc` into a platform-neutral session module (the shape sheets uses
+   in `src/{domain,gateway,ai}`), with `session-state` and `edit-text` alongside
+   them and I/O injected. Electron's handlers become delegations and behave
+   identically throughout. Also fix the deep relative imports in §5.2. This is the
+   phase, and it is a big one — see §5.4 for why it comes before the seam.
+2. **7b — the seam.** ~25 real host members, not 147. Mirror 4a.
 3. **7c — fonts.** `queryLocalFonts()` + harfbuzz-wasm in the browser.
 4. **7d — web host** and the slides frame in the shell.
 

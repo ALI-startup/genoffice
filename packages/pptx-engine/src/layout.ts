@@ -7,6 +7,7 @@
  *  - insertBlankSlideWithLayout: insert a blank slide after a given position, with
  *    rels pointing at the chosen layout
  */
+import { utf8Bytes } from './bytes'
 import type { PackageArchive } from './zip'
 import { resolveTarget, relsPathFor } from './zip'
 import { escapeXmlAttr } from './xml-utils'
@@ -216,7 +217,7 @@ export function prepareInsertSlideWithLayout(
   const newSlideXml = buildSlideXmlWithPlaceholders(layoutInfo.placeholders)
 
   const newPath = nextSlidePath(archive)
-  archive.entries.set(newPath, Buffer.from(newSlideXml, 'utf8'))
+  archive.entries.set(newPath, utf8Bytes(newSlideXml))
 
   // slide rels → point at the chosen layout
   const relTarget = `../${layoutPath.slice(4)}` // 'ppt/' → '../'
@@ -225,7 +226,7 @@ export function prepareInsertSlideWithLayout(
     '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
     `<Relationship Id="rId1" Type="${LAYOUT_REL_TYPE}" Target="${escapeXmlAttr(relTarget)}"/>` +
     '</Relationships>'
-  archive.entries.set(relsPathFor(newPath), Buffer.from(relsXml, 'utf8'))
+  archive.entries.set(relsPathFor(newPath), utf8Bytes(relsXml))
 
   // [Content_Types].xml
   const ctPath = '[Content_Types].xml'
@@ -233,12 +234,11 @@ export function prepareInsertSlideWithLayout(
   if (ct && !ct.includes(`PartName="/${newPath}"`)) {
     archive.entries.set(
       ctPath,
-      Buffer.from(
+      utf8Bytes(
         ct.replace(
           '</Types>',
           `<Override PartName="/${newPath}" ContentType="${SLIDE_CONTENT_TYPE}"/></Types>`,
         ),
-        'utf8',
       ),
     )
   }
@@ -256,7 +256,7 @@ export function prepareInsertSlideWithLayout(
   const relEntry = `<Relationship Id="${newRid}" Type="${SLIDE_REL_TYPE}" Target="${newPath.slice('ppt/'.length)}"/>`
   archive.entries.set(
     presRelsPath,
-    Buffer.from(presRels.replace('</Relationships>', `${relEntry}</Relationships>`), 'utf8'),
+    utf8Bytes(presRels.replace('</Relationships>', `${relEntry}</Relationships>`)),
   )
 
   let maxSldId = 255
@@ -274,7 +274,7 @@ export function prepareInsertSlideWithLayout(
   const nextPres = srcTag
     ? pres.replace(srcTag, `${srcTag}${newSldTag}`)
     : pres.replace('</p:sldIdLst>', `${newSldTag}</p:sldIdLst>`)
-  archive.entries.set(presPath, Buffer.from(nextPres, 'utf8'))
+  archive.entries.set(presPath, utf8Bytes(nextPres))
 
   return newPath
 }

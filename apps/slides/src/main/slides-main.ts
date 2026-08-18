@@ -105,7 +105,6 @@ import {
   reorderElement,
   reparseDeck,
   savePptx,
-  savePptxToFile,
   commitSaved,
   setElementFont,
   replaceAllInDeck,
@@ -142,6 +141,8 @@ import {
   type Slide,
   type TextElement,
 } from '@genoffice/pptx-engine'
+// Node-only streaming save; see the subpath's module header.
+import { savePptxToFile } from '@genoffice/pptx-engine/node'
 import { buildRenderSlide, EMU_PER_PX_96, type RenderSlide } from '@genoffice/pptx-render'
 import { refineComplexWidths, shapedMetricsReady } from './shaped-metrics'
 import { applyEditParagraphs, collectParagraphFormatPatches, levelsChanged } from './edit-text'

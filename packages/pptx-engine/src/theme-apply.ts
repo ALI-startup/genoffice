@@ -11,6 +11,7 @@
  * layout/master/theme" rule — the whole point of the theme gallery is to replace
  * the theme; layout/master themselves are still untouched.
  */
+import { utf8Bytes } from './bytes'
 import type { OpenedPptx } from './index'
 import { escapeXmlAttr } from './xml-utils'
 
@@ -83,7 +84,7 @@ export function applyThemeToArchive(opened: OpenedPptx, spec: ThemeSpec): number
     if (!xml) continue
     const next = patchThemeXml(xml, spec)
     if (next !== xml) {
-      archive.entries.set(path, Buffer.from(next, 'utf8'))
+      archive.entries.set(path, utf8Bytes(next))
       patched++
     }
   }
@@ -239,7 +240,7 @@ export function remapDeckColors(opened: OpenedPptx, spec: ThemeSpec): number {
     const xml = archive.readText(path)
     if (!xml) continue
     const next = recolorXml(xml, map)
-    if (next !== xml) archive.entries.set(path, Buffer.from(next, 'utf8'))
+    if (next !== xml) archive.entries.set(path, utf8Bytes(next))
   }
   return map.size
 }

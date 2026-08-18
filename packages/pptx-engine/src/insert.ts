@@ -8,6 +8,7 @@
  * Both change the spTree structure, driving a full-slide rebuild via
  * slide.structureDirty.
  */
+import { utf8Bytes } from './bytes'
 import type { EmuRect, Paragraph, PictureElement, Slide, SlideElement, TextElement } from './types'
 import { generateParagraphXml, generateXfrmXml } from './generate'
 import { escapeXmlAttr } from './xml-utils'
@@ -270,7 +271,7 @@ export function addImageMediaAndRel(
   const ct = archive.readText(ctPath)
   if (ct && !new RegExp(`<Default Extension="${ext}"`).test(ct)) {
     const dflt = `<Default Extension="${ext}" ContentType="${mime}"/>`
-    archive.entries.set(ctPath, Buffer.from(ct.replace('</Types>', `${dflt}</Types>`), 'utf8'))
+    archive.entries.set(ctPath, utf8Bytes(ct.replace('</Types>', `${dflt}</Types>`)))
   }
 
   // 3) slide rels: new rId (the rels file may not exist)
@@ -284,7 +285,7 @@ export function addImageMediaAndRel(
   const relXml = `<Relationship Id="${rid}" Type="${IMAGE_REL_TYPE}" Target="../media/image${maxNum + 1}.${ext}"/>`
   archive.entries.set(
     relsPath,
-    Buffer.from(rels.replace('</Relationships>', `${relXml}</Relationships>`), 'utf8'),
+    utf8Bytes(rels.replace('</Relationships>', `${relXml}</Relationships>`)),
   )
   return { rid, mediaPath }
 }
