@@ -1,14 +1,14 @@
 import type { AgentSkill } from '@genoffice/agent-core'
-import type { AttachmentMeta } from '../../shared/ipc'
-import { ATTACHMENT_IMAGE_EXTS } from '../../shared/ipc'
+import { ATTACHMENT_IMAGE_EXTS, type AttachmentMeta, type AttachmentRef } from '@genoffice/platform'
 import { t } from '../i18n/locale'
 import { slidesAttachments } from '../platform'
 
 /**
  * Chat-attachment capability as an AgentSkill (isomorphic to apps/docs files-skill):
  * each turn's context lists the attached local files; read_attachment reads their
- * extracted text in pages (parsing happens in the main process; files never leave
- * this machine).
+ * extracted text in pages. Where the parsing happens is the host's business — the main
+ * process on Electron, the page itself in a browser — and either way the bytes never
+ * leave the machine. This skill only ever holds an opaque `AttachmentRef`.
  */
 
 const READ_CHUNK_CHARS = 24_000
@@ -29,7 +29,7 @@ function formatSize(bytes: number): string {
 export function createFilesSkill(
   getAttachments: () => AttachmentMeta[],
   /** Called on each successful text read — lets the deck generator gate on unread attachments */
-  onTextRead?: (path: string) => void,
+  onTextRead?: (ref: AttachmentRef) => void,
 ): AgentSkill {
   return {
     id: 'files',
@@ -81,7 +81,7 @@ export function createFilesSkill(
         }
       }
       const offset = Math.max(0, Number(call.input.offset) || 0)
-      const result = await slidesAttachments().readAttachment(att.path, offset, READ_CHUNK_CHARS)
+      const result = await slidesAttachments().readAttachment(att.ref, offset, READ_CHUNK_CHARS)
       if (!result.ok) {
         return {
           output: result.error ?? 'Read failed',
@@ -89,7 +89,7 @@ export function createFilesSkill(
           summary: t('aiSumReadAttachmentName', { name: att.name }),
         }
       }
-      onTextRead?.(att.path)
+      onTextRead?.(att.ref)
       const end = (result.offset ?? 0) + (result.text?.length ?? 0)
       const header = `File ${att.name}, total characters ${result.totalChars}, this chunk covers ${result.offset}-${end}${
         end < (result.totalChars ?? 0)

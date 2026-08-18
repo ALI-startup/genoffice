@@ -51,6 +51,15 @@ export interface OpenResult {
 }
 
 // ---- Chat attachments (local files fed to the agent via tools; structure copied from apps/docs) ----
+//
+// These declare the *preload bridge* (`window.desktop`) and are path-based on purpose: the
+// main process addresses attachments by path and always will. The renderer no longer speaks
+// this shape — it holds the ref-based `AttachmentsPort` from @genoffice/platform, and the
+// ref↔path mapping happens in the Electron adapter (§6.3). Same split apps/docs has.
+//
+// The image-extension set below is the main process's copy and must stay identical to
+// `ATTACHMENT_IMAGE_EXTS` in @genoffice/platform, which is the one the renderer reads: the
+// two sides decide the same image/text split, one on a path and one on a ref.
 
 /** Image attachment extensions: no text extraction; read as base64 on send and passed to the model as multimodal images with the user message */
 export const ATTACHMENT_IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp'])

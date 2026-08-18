@@ -10,12 +10,12 @@ import type {
   PictureRenderNode,
   TableRenderNode,
 } from '@genoffice/pptx-render'
+import type { AttachmentMeta } from '@genoffice/platform'
 import type {
   AiSettings,
   AnimEffectKind,
   AnimTrigger,
   AnimationItem,
-  AttachmentMeta,
   EditChartOp,
   EditParagraph,
   EditTableStyleOp,

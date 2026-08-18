@@ -437,6 +437,13 @@ with nothing mocked.
   a frame), and `ai` over the BFF.
 - `attachments`, which is still path-based here while docs' became ref-based in Phase 4a.
   §6.3 is that collapse and it has to happen before a browser can back this port.
+  **Done:** slides' `attachments` is now the shared `AttachmentsPort`. The renderer holds an
+  opaque `AttachmentRef`; the chip's tooltip reads the optional `location` instead of a path;
+  the unread-attachment gate that fed `generate_deck` keys on refs. `DesktopFilesApi` and the
+  whole main-process side are untouched, because the ref↔path mapping happens in the adapter
+  — which moved to `packages/platform-electron/src/attachments.ts`, since docs, slides and
+  sheets all expose the same six path-based methods and there is no reason for three copies of
+  one mapping.
 - Then `createWebSlidesPlatform`, `host-web.ts`, `vite.web.config.ts`, and an `index.html`
   with a CSP.
 
@@ -527,6 +534,15 @@ inbound direction.
 declare their own path-based attachment methods locally rather than importing
 `AttachmentsPort`. That is why the ref-based refactor in Phase 4 did not break
 them. Phases 6 and 7 should collapse that duplication onto the shared port.
+
+**slides: done (Phase 7d).** Its renderer now holds the shared ref-based port; the
+local declarations in `shared/ipc.ts` stayed, because they describe the _preload
+bridge_, which is legitimately path-based — the main process addresses attachments
+by path and always will. The mapping lives once, in
+`packages/platform-electron/src/attachments.ts`, and is the only code allowed to
+read a ref as a path. **sheets is still to do** and is the last copy; the same
+adapter already fits its bridge unchanged, so that collapse is renderer-side work
+only (`App.tsx`, `ExcelShell.tsx`, `ai/AiChatPanel.tsx`, `ai/files-skill.ts`).
 
 ### 6.4 Stale `Lang` unions
 

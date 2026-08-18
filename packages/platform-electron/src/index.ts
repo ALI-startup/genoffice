@@ -11,9 +11,11 @@
  * which keeps the adapters unit-testable and the coupling to `window` explicit
  * and confined to each renderer's bootstrap.
  *
- * Scope: pdf (Phase 2) and docs (Phase 4a). slides / sheets adapters land with
- * their own migrations, so that each one is written against real call sites
- * rather than guessed at.
+ * Scope: pdf (Phase 2) and docs (Phase 4a); the attachments adapter is shared by
+ * every app whose preload exposes the path-based attachment methods, which as of
+ * Phase 7 is docs and slides. The remaining sheets adapters land with their own
+ * migration, so that each one is written against real call sites rather than
+ * guessed at.
  *
  * Only the *shared* ports live here. Each app's own surfaces stay in the app,
  * next to the port declarations they satisfy — pdf's document operations and
@@ -22,10 +24,13 @@
  * apps/docs/src/renderer/platform-electron.ts.
  */
 export type {
+  ElectronAttachmentAddResultBridge,
+  ElectronAttachmentMetaBridge,
+  ElectronAttachmentsBridge,
+} from './attachments.js'
+export { createElectronAttachmentsPort } from './attachments.js'
+export type {
   DocsAiBridge,
-  DocsAttachmentAddResultBridge,
-  DocsAttachmentMetaBridge,
-  DocsAttachmentsBridge,
   DocsCloseSaveBridge,
   DocsCloseSaveSlice,
   DocsGensparkBridge,
@@ -36,7 +41,6 @@ export type {
 } from './docs.js'
 export {
   createDocsAiPort,
-  createDocsAttachmentsPort,
   createDocsCloseSavePort,
   createDocsGensparkPort,
   createDocsLanguagePort,

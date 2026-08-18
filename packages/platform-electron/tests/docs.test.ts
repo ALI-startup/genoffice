@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { AttachmentReadResult } from '@genoffice/platform'
 import {
-  createDocsAttachmentsPort,
   createDocsCloseSavePort,
   createDocsLanguagePort,
   createDocsTabsPort,
+  createElectronAttachmentsPort,
 } from '../src/index'
 
 /**
@@ -105,10 +105,15 @@ describe('createDocsLanguagePort', () => {
   })
 })
 
-describe('createDocsAttachmentsPort', () => {
+/**
+ * The attachments adapter is app-independent (src/attachments.ts) but exercised
+ * here, against the real shape of docs' bridge — which is also slides' and sheets',
+ * since all three copied the same six path-based methods.
+ */
+describe('createElectronAttachmentsPort', () => {
   it('maps bridge metadata onto refs, keeping the path as the display location', async () => {
     const { bridge, accepted } = createFakeBridge()
-    const result = await createDocsAttachmentsPort(bridge).pickAttachments()
+    const result = await createElectronAttachmentsPort(bridge).pickAttachments()
     expect(result).toEqual({
       accepted: [
         {
@@ -125,7 +130,7 @@ describe('createDocsAttachmentsPort', () => {
 
   it('passes refs straight through as paths and keeps rejections', async () => {
     const { bridge, calls } = createFakeBridge()
-    const port = createDocsAttachmentsPort(bridge)
+    const port = createElectronAttachmentsPort(bridge)
 
     const added = await port.addAttachments(['/a.md', '/b.md'])
     expect(added.rejected).toEqual(['too-big.bin'])
@@ -143,12 +148,14 @@ describe('createDocsAttachmentsPort', () => {
 
   it('turns an unaddressable File into an explicit null instead of an empty path', async () => {
     const file = new File([], 'clip.png')
-    expect(await createDocsAttachmentsPort(createFakeBridge().bridge).refForFile(file)).toBe(
+    expect(await createElectronAttachmentsPort(createFakeBridge().bridge).refForFile(file)).toBe(
       '/tmp/dropped.md',
     )
     // webUtils.getPathForFile returns '' for a clipboard bitmap; the old port let
     // that empty string flow onward as if it were a path.
-    expect(await createDocsAttachmentsPort(createFakeBridge('').bridge).refForFile(file)).toBeNull()
+    expect(
+      await createElectronAttachmentsPort(createFakeBridge('').bridge).refForFile(file),
+    ).toBeNull()
   })
 })
 

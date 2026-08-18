@@ -14,12 +14,12 @@
  */
 import {
   createDocsAiPort,
-  createDocsAttachmentsPort,
   createDocsCloseSavePort,
   createDocsGensparkPort,
   createDocsLanguagePort,
   createDocsSearchPort,
   createDocsTabsPort,
+  createElectronAttachmentsPort,
 } from '@genoffice/platform-electron'
 import type { DesktopApi, OpenResult } from '../shared/ipc'
 import type {
@@ -194,7 +194,7 @@ export function createElectronDocsPlatform(bridge: DesktopApi): DocsPlatform {
   return {
     language: createDocsLanguagePort(bridge),
     ai: createDocsAiPort(bridge),
-    attachments: createDocsAttachmentsPort(bridge),
+    attachments: createElectronAttachmentsPort(bridge),
     window: createDocsWindowPort(bridge),
     file: createDocsFilePort(bridge),
     tabs: createDocsTabsPort(bridge),

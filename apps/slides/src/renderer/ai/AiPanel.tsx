@@ -3,8 +3,13 @@ import { slidesPlatform } from '../platform'
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { AgentLoop, composeSkills, type AgentImage, type ToolDisplay } from '@genoffice/agent-core'
 import type { RenderSlide } from '@genoffice/pptx-render'
-import type { AiSettings, AttachmentAddResult, AttachmentMeta } from '../../shared/ipc'
-import { ATTACHMENT_IMAGE_EXTS } from '../../shared/ipc'
+import type { AiSettings } from '../../shared/ipc'
+import {
+  ATTACHMENT_IMAGE_EXTS,
+  type AttachmentAddResult,
+  type AttachmentMeta,
+  type AttachmentRef,
+} from '@genoffice/platform'
 import {
   createSlidesSkill,
   type DeckAccess,
@@ -301,9 +306,9 @@ export function AiPanel({
   imagesRef.current = images
   const attachmentsRef = useRef(attachments)
   attachmentsRef.current = attachments
-  // Paths of text attachments already read via read_attachment — generate_deck refuses to run
+  // Refs of text attachments already read via read_attachment — generate_deck refuses to run
   // while any current text attachment is still unread
-  const readAttachmentPathsRef = useRef<Set<string>>(new Set())
+  const readAttachmentRefsRef = useRef<Set<AttachmentRef>>(new Set())
 
   const instructionRef = useRef('')
   const lastInstructionRef = useRef('')
@@ -396,9 +401,11 @@ export function AiPanel({
         ...(tools && tools.length > 0 ? { tools } : {}),
         ...(attachments && attachments.length > 0
           ? {
+              // The project store records a local path (main-process bookkeeping, not
+              // migrated yet); `location` is what this host can offer for it.
               attachments: attachments.map((a) => ({
                 name: a.name,
-                path: a.path,
+                path: a.location,
                 ext: a.ext,
                 sizeBytes: a.sizeBytes,
               })),
@@ -923,7 +930,7 @@ export function AiPanel({
       unreadTextAttachments: () =>
         attachmentsRef.current
           .filter(
-            (a) => !ATTACHMENT_IMAGE_EXTS.has(a.ext) && !readAttachmentPathsRef.current.has(a.path),
+            (a) => !ATTACHMENT_IMAGE_EXTS.has(a.ext) && !readAttachmentRefsRef.current.has(a.ref),
           )
           .map((a) => a.name),
     }
@@ -935,7 +942,7 @@ export function AiPanel({
         createSlidesSkill(access),
         createFilesSkill(
           () => attachmentsRef.current,
-          (path) => readAttachmentPathsRef.current.add(path),
+          (ref) => readAttachmentRefsRef.current.add(ref),
         ),
       ]),
       // Page-by-page deck generation needs more tool rounds
@@ -1054,12 +1061,12 @@ export function AiPanel({
   useEffect(() => {
     if (!preset) return
     // Attachments from the start screen: merge into attachments first (ref updated synchronously so this runWith can read them),
-    // then trigger the run. Deduplicated by path, safe under StrictMode double runs.
+    // then trigger the run. Deduplicated by ref, safe under StrictMode double runs.
     if (preset.attachments && preset.attachments.length > 0) {
-      const seen = new Set(attachmentsRef.current.map((a) => a.path))
+      const seen = new Set(attachmentsRef.current.map((a) => a.ref))
       const merged = [
         ...attachmentsRef.current,
-        ...preset.attachments.filter((a) => !seen.has(a.path)),
+        ...preset.attachments.filter((a) => !seen.has(a.ref)),
       ]
       attachmentsRef.current = merged
       setAttachments(merged)
@@ -1110,7 +1117,7 @@ export function AiPanel({
     const images: AgentImage[] = []
     const failures: string[] = []
     for (const att of imageAtts.slice(0, MAX_IMAGES_PER_MESSAGE)) {
-      const result = await slidesAttachments().readAttachmentImage(att.path)
+      const result = await slidesAttachments().readAttachmentImage(att.ref)
       if (result.ok && result.base64 && result.mime) {
         images.push({ base64: result.base64, mime: result.mime })
       } else {
@@ -1311,8 +1318,8 @@ export function AiPanel({
     if (!result) return
     if (result.accepted.length > 0) {
       setAttachments((prev) => {
-        const seen = new Set(prev.map((a) => a.path))
-        return [...prev, ...result.accepted.filter((a) => !seen.has(a.path))]
+        const seen = new Set(prev.map((a) => a.ref))
+        return [...prev, ...result.accepted.filter((a) => !seen.has(a.ref))]
       })
     }
     if (result.rejected.length > 0) {
@@ -1327,29 +1334,34 @@ export function AiPanel({
     e.preventDefault()
     e.stopPropagation()
     setDragOver(false)
-    const paths = Array.from(e.dataTransfer.files)
-      .map((f) => slidesAttachments().getPathForFile(f))
-      .filter(Boolean)
-    if (paths.length > 0) mergeAttachments(await slidesAttachments().addAttachmentPaths(paths))
+    const port = slidesAttachments()
+    const resolved = await Promise.all(
+      Array.from(e.dataTransfer.files).map((f) => port.refForFile(f)),
+    )
+    const refs = resolved.filter((ref): ref is AttachmentRef => ref !== null)
+    if (refs.length > 0) mergeAttachments(await port.addAttachments(refs))
   }
 
-  /** Files pasted into the input box: those with local paths go the regular attachment route; pure bitmaps like screenshots land in a temp file first */
+  /** Files pasted into the input box: ones the host can address go the regular attachment route; pure bitmaps like screenshots hand their bytes over instead */
   const onPasteFiles = async (files: File[]) => {
-    const paths: string[] = []
+    const port = slidesAttachments()
+    const refs: AttachmentRef[] = []
     for (const f of files) {
-      const p = slidesAttachments().getPathForFile(f)
-      if (p) {
-        paths.push(p)
+      // null is a real answer, not a failure: a clipboard bitmap has no backing file for
+      // any host to name, which is exactly what addPastedImage is for.
+      const ref = await port.refForFile(f)
+      if (ref !== null) {
+        refs.push(ref)
         continue
       }
       const ext = PASTE_MIME_EXT[f.type] ?? f.name.split('.').pop()?.toLowerCase() ?? 'bin'
-      mergeAttachments(await slidesAttachments().addPastedImage(await f.arrayBuffer(), ext))
+      mergeAttachments(await port.addPastedImage(await f.arrayBuffer(), ext))
     }
-    if (paths.length > 0) mergeAttachments(await slidesAttachments().addAttachmentPaths(paths))
+    if (refs.length > 0) mergeAttachments(await port.addAttachments(refs))
   }
 
-  const removeAttachment = (path: string) =>
-    setAttachments((prev) => prev.filter((a) => a.path !== path))
+  const removeAttachment = (ref: AttachmentRef) =>
+    setAttachments((prev) => prev.filter((a) => a.ref !== ref))
 
   const resizeCleanupRef = useRef<(() => void) | null>(null)
   useEffect(() => () => resizeCleanupRef.current?.(), [])
@@ -1649,12 +1661,12 @@ export function AiPanel({
           {attachments.length > 0 && (
             <div className="ai-attachments">
               {attachments.map((a) => (
-                <span key={a.path} className="ai-attachment-chip" title={a.path}>
+                <span key={a.ref} className="ai-attachment-chip" title={a.location}>
                   <IconPaperclip size={11} />
                   {a.name}
                   <button
                     className="ai-attachment-remove"
-                    onClick={() => removeAttachment(a.path)}
+                    onClick={() => removeAttachment(a.ref)}
                     title={t('aiRemoveAttachment')}
                   >
                     ×

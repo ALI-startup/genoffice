@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { AttachmentMeta, AttachmentReadResult } from '../src/shared/ipc'
+import type { AttachmentMeta, AttachmentReadResult } from '@genoffice/platform'
 import { createFilesSkill } from '../src/renderer/ai/files-skill'
 import { installTestPlatform } from './helpers/platform'
 
 const ATT: AttachmentMeta = {
-  path: '/tmp/notes.md',
+  ref: 'att-notes',
   name: 'notes.md',
   ext: 'md',
   sizeBytes: 2048,
@@ -41,7 +41,7 @@ describe('slides files skill', () => {
       name: 'read_attachment',
       input: { index: 0 },
     })
-    expect(readAttachment).toHaveBeenCalledWith('/tmp/notes.md', 0, 24_000)
+    expect(readAttachment).toHaveBeenCalledWith('att-notes', 0, 24_000)
     expect(result.isError).toBeFalsy()
     expect(result.mutated).toBeFalsy()
     expect(result.output).toContain('total characters 50000')
@@ -63,7 +63,7 @@ describe('slides files skill', () => {
   it('answers image attachments locally without reading text', async () => {
     const readAttachment = mockDesktop({ ok: true })
     const skill = createFilesSkill(() => [
-      { path: '/tmp/photo.png', name: 'photo.png', ext: 'png', sizeBytes: 1024 },
+      { ref: 'att-photo', name: 'photo.png', ext: 'png', sizeBytes: 1024 },
     ])
     const result = await skill.executeTool({
       id: 't-img',

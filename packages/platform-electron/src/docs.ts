@@ -15,6 +15,10 @@
  * operations, the close-check handshake, the native-menu channel and PDF export
  * — are adapted in apps/docs, next to the port declarations they satisfy, which
  * is the same division pdf uses for its Save As handshake.
+ *
+ * `AttachmentsPort` is not here either, and for the opposite reason: docs, slides and
+ * sheets all expose the same six path-based attachment methods, so that adapter is
+ * app-independent and lives in attachments.ts.
  */
 import type {
   AiSettings,
@@ -25,11 +29,6 @@ import type {
 import type { Lang } from '@genoffice/i18n'
 import type {
   AiPort,
-  AttachmentAddResult,
-  AttachmentImageResult,
-  AttachmentMeta,
-  AttachmentReadResult,
-  AttachmentsPort,
   GensparkPort,
   ImageSearchResult,
   LanguagePort,
@@ -63,29 +62,6 @@ export interface DocsSearchBridge {
   webSearch(query: string, maxResults?: number): Promise<WebSearchResult>
   imageSearch(query: string, maxResults?: number): Promise<ImageSearchResult>
   fetchImage(url: string): Promise<{ base64: string; mime: string } | null>
-}
-
-/** Attachment metadata as the docs bridge reports it: keyed by absolute path. */
-export interface DocsAttachmentMetaBridge {
-  path: string
-  name: string
-  ext: string
-  sizeBytes: number
-}
-
-export interface DocsAttachmentAddResultBridge {
-  accepted: DocsAttachmentMetaBridge[]
-  rejected: string[]
-}
-
-/** The attachment members of DesktopApi — all six path-based, all six unchanged. */
-export interface DocsAttachmentsBridge {
-  pickAttachments(): Promise<DocsAttachmentAddResultBridge | null>
-  addAttachmentPaths(paths: string[]): Promise<DocsAttachmentAddResultBridge>
-  addPastedImage(data: ArrayBuffer, ext: string): Promise<DocsAttachmentAddResultBridge>
-  readAttachment(path: string, offset: number, maxChars: number): Promise<AttachmentReadResult>
-  readAttachmentImage(path: string): Promise<AttachmentImageResult>
-  getPathForFile(file: File): string
 }
 
 /** The tab members of DesktopApi. Note the `Docs` infix the port drops. */
@@ -153,48 +129,6 @@ export function createDocsSearchPort(bridge: DocsSearchBridge): SearchPort {
     webSearch: (query, maxResults) => bridge.webSearch(query, maxResults),
     imageSearch: (query, maxResults) => bridge.imageSearch(query, maxResults),
     fetchImage: (url) => bridge.fetchImage(url),
-  }
-}
-
-/** Bridge metadata → port metadata: the path becomes both the ref and the display location. */
-function toAttachmentMeta(meta: DocsAttachmentMetaBridge): AttachmentMeta {
-  return {
-    ref: meta.path,
-    name: meta.name,
-    ext: meta.ext,
-    sizeBytes: meta.sizeBytes,
-    // This host has a real location, so the attachment chip's tooltip keeps
-    // showing the absolute path exactly as it always has.
-    location: meta.path,
-  }
-}
-
-function toAddResult(result: DocsAttachmentAddResultBridge): AttachmentAddResult {
-  return { accepted: result.accepted.map(toAttachmentMeta), rejected: result.rejected }
-}
-
-/**
- * AttachmentsPort over the docs bridge.
- *
- * Electron's `AttachmentRef` *is* the absolute path, so this adapter is the one
- * place allowed to read a ref as a path — that is what makes it the Electron
- * adapter. Nothing on the main-process side changes.
- */
-export function createDocsAttachmentsPort(bridge: DocsAttachmentsBridge): AttachmentsPort {
-  return {
-    pickAttachments: async () => {
-      const result = await bridge.pickAttachments()
-      return result ? toAddResult(result) : null
-    },
-    // webUtils.getPathForFile returns '' for a File with no backing file (a
-    // clipboard bitmap). That empty string is the whole reason this port was
-    // reshaped: it type-checked as a path and flowed onward. It stops here and
-    // becomes an explicit null the caller has to branch on.
-    refForFile: async (file) => bridge.getPathForFile(file) || null,
-    addAttachments: async (refs) => toAddResult(await bridge.addAttachmentPaths(refs)),
-    addPastedImage: async (data, ext) => toAddResult(await bridge.addPastedImage(data, ext)),
-    readAttachment: (ref, offset, maxChars) => bridge.readAttachment(ref, offset, maxChars),
-    readAttachmentImage: (ref) => bridge.readAttachmentImage(ref),
   }
 }
 

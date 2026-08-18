@@ -10,8 +10,8 @@
  * object it always used.
  *
  * The split is the design. Eight ports are required and a web host must answer all of
- * them; seven are `X | null`, and each of those is a capability a browser genuinely cannot
- * back — not a stub, and not an optional method:
+ * them; ten are `X | null` — nine capabilities a browser genuinely cannot back, plus
+ * `project` (§6.1). None of them is a stub, and none is an optional method:
  *
  *   - `aiMedia` — image generation and media analysis, which call a provider directly with a
  *     credential the browser must never hold and have no BFF route.
@@ -28,13 +28,13 @@
  *   - `styleTemplates` — read off the host's filesystem today.
  *   - `menu` — the native application menu; a page has no menu bar.
  *
- * That eight of the fifteen are required — including all 84 document operations — is what
+ * That eight of the eighteen are required — including all 84 document operations — is what
  * phase 7a bought. Before it, `doc` was a main-process surface and a browser could only
  * have faked it.
  */
-import { createPlatformSlot } from '@genoffice/platform'
+import { createPlatformSlot, type AttachmentsPort } from '@genoffice/platform'
 import type { ProjectApi } from '@genoffice/project-store'
-import type { DesktopFilesApi, SlidesApi } from '../shared/ipc'
+import type { SlidesApi } from '../shared/ipc'
 
 /**
  * Every document operation and query: edits, inserts, deletes, undo/redo, tables, master
@@ -271,22 +271,19 @@ export type SlidesStyleTemplatePort = Pick<
 export type SlidesMenuPort = Pick<SlidesApi, 'onMenuCommand'>
 
 /**
- * The attachment surface the AI panel uses, which slides reaches through `window.desktop`
- * rather than `window.slidesApi`.
+ * The attachment surface the AI panel uses.
  *
- * Still path-based here, unlike docs' `AttachmentsPort`, which became ref-based in Phase
- * 4a. Collapsing the two is §6.3 of the migration doc and is the next thing to do on this
- * port; until then a web host has to mint something a path-shaped field can carry.
+ * Not a `Pick` of anything slides owns: it is the shared `AttachmentsPort`, the same port
+ * docs has used since Phase 4a. Slides' own surface (`DesktopFilesApi`, reached through
+ * `window.desktop` rather than `window.slidesApi`) was path-based, and its
+ * `getPathForFile(file: File): string` was the sharp edge — a browser had nothing to
+ * return but `''`, which type-checks as a path and flows onward silently. Collapsing the
+ * two was §6.3: the renderer now holds an opaque `AttachmentRef` it may only hand back,
+ * Electron resolves that ref to a path in the adapter, and a browser resolves it to a blob
+ * it is holding. `DesktopFilesApi` itself is unchanged — it is the preload bridge contract,
+ * and the ref↔path mapping happens above it.
  */
-export type SlidesAttachmentsPort = Pick<
-  DesktopFilesApi,
-  | 'addAttachmentPaths'
-  | 'addPastedImage'
-  | 'getPathForFile'
-  | 'pickAttachments'
-  | 'readAttachment'
-  | 'readAttachmentImage'
->
+export type SlidesAttachmentsPort = AttachmentsPort
 
 /** slides' composed platform. */
 export interface SlidesPlatform {
