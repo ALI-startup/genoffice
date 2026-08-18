@@ -701,9 +701,14 @@ export const slideOps = {
     return rebuildSlide(session, op.slideIndex)
   },
 
-  getRenderSlides(session: Session | undefined) {
+  getRenderSlides(session: Session | undefined): RenderSlide[] | null {
     if (!session) return null
-    return session.opened.deck.slides.map((_, i) => rebuildSlide(session, i))
+    // `rebuildSlide` returns null only for an index outside the deck, and every index here
+    // comes from the deck itself. The assertion is the type catching up with the loop, not a
+    // claim about anything the caller passed — and it is stated because the IPC declaration
+    // has always promised `RenderSlide[] | null`, which structured cloning let it get away
+    // with. A direct call does not.
+    return session.opened.deck.slides.map((_, i) => rebuildSlide(session, i)!)
   },
 
   batchEditTransform(session: Session | undefined, op: BatchEditTransformOp) {
