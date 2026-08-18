@@ -403,7 +403,44 @@ the precedent to copy rather than inventing a new arrangement.
    `tests/render-env-wiring.test.ts` stubs it. That import is the first thing to fix.
 4. **7d — web host** and the slides frame in the shell. Read §5.5 first.
 
-### 5.5 What 7d has left to sort out
+### 5.5 7d: what is done, and what is left
+
+**Done.** The `doc` port's split was corrected first, as this section used to warn it had to
+be: all 84 of its members now map one-to-one onto an operation in `src/domain/ops.ts` (78 by
+name, 6 by a spelling difference the adapters absorb), and the ~20 host-coupled members that
+the name heuristic had put there moved to the ports they belong to — the paste bookkeeping to
+a new required `deckClipboard`, printing to a new required `print`, AI settings and streaming
+to `ai`, `gskStatus` to `genspark`, the presenter callbacks to `presenter`, `htmlToPptx` to
+`cloud`, and the style templates to a new nullable `styleTemplates`. Fifteen ports: eight
+required, seven `X | null`.
+
+Nine more operations were relocated to make that honest: `setTextAnchor` (pure, missed by the
+first inventory, whose regex needed the channel on the same line as `ipcMain.handle(`); the
+five clipboard operations, which now take a `DeckClipboardStore` the host owns; `editChart`,
+which takes its confirmation as a parameter; and `setImageFillBytes` / `addModel3dBytes`,
+split from their file dialogs so the second half is shared.
+
+`platform-web.ts` backs two ports so far — `doc` (all 84 members, calling the operations
+directly in the page) and `deckClipboard` (page-local, so it crosses slides within one deck
+and no further, which is narrower than the desktop's cross-window clipboard and says so).
+Both are covered by `tests/platform-web-doc.test.ts`, which opens a real deck and edits it
+with nothing mocked.
+
+**Left.** Five ports, then the host:
+
+- `file` (12 members) over the File System Access API: open, reopen by ref, new blank, save,
+  Save As, and the four picker-driven inserts, which now have operations waiting for their
+  bytes. `getRecentFiles` returns paths today, so on web it should report an empty list
+  rather than hand the renderer a ref to display — the same call pdf made.
+- `window` (the close guard over `beforeunload`, `isDirty`), `language` (the shared web
+  language port), `print` (the same HTML the desktop renders in a hidden window, printed from
+  a frame), and `ai` over the BFF.
+- `attachments`, which is still path-based here while docs' became ref-based in Phase 4a.
+  §6.3 is that collapse and it has to happen before a browser can back this port.
+- Then `createWebSlidesPlatform`, `host-web.ts`, `vite.web.config.ts`, and an `index.html`
+  with a CSP.
+
+### 5.6 The original notes on what 7d had to sort out
 
 The seam's `doc` port was split by a heuristic over member names, and it is slightly too
 generous: 76 of its 104 members are backed by an op of the same name, six more differ
