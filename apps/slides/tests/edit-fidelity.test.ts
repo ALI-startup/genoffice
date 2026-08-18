@@ -19,7 +19,7 @@ import {
   releaseEditorLayoutConstraints,
   applySelectionParagraphFormat,
 } from '../src/renderer/TextEditOverlay'
-import { applyEditParagraphs, collectParagraphFormatPatches } from '../src/main/edit-text'
+import { applyEditParagraphs, collectParagraphFormatPatches } from '../src/domain/edit-text'
 
 const vp = makeViewport({ cx: 12192000, cy: 6858000 }, 1280) // scale = 1
 const metrics = new HeuristicMetrics()
