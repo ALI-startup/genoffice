@@ -40,15 +40,15 @@ export function adoptSavedSlides(ctx: ActionCtx, next: RenderSlide[]): void {
   ctx.setSlides(next)
 }
 
-export async function save(ctx: ActionCtx): Promise<boolean> {
+export async function save(ctx: ActionCtx, auto = false): Promise<boolean> {
   await flushActiveEdit(ctx)
   await ctx.flushNotes()
-  const r = await slidesFile().save()
+  const r = await slidesFile().save(auto)
   if (r.ok) {
     if (r.slides) adoptSavedSlides(ctx, r.slides)
     if (r.path) ctx.setPath(r.path)
     ctx.setDirty(false)
-    ctx.setStatus(t('appStatusSaved', { name: r.path?.split('/').pop() ?? '' }))
+    ctx.setStatus(t('appStatusSaved', { name: r.name ?? '' }))
   } else ctx.setStatus(t('appStatusSaveFailed', { error: r.error ?? t('appErrorCanceled') }))
   return r.ok
 }
@@ -56,19 +56,21 @@ export async function save(ctx: ActionCtx): Promise<boolean> {
 export async function saveAs(ctx: ActionCtx): Promise<void> {
   await flushActiveEdit(ctx)
   await ctx.flushNotes()
-  const name = ctx.path?.split('/').pop() ?? 'presentation.pptx'
+  // The name the host last reported, never derived from `ctx.path`: on a browser host that is
+  // an opaque store key.
+  const name = ctx.name || 'presentation.pptx'
   const r = await slidesFile().saveAs(name)
   if (r.ok) {
     if (r.slides) adoptSavedSlides(ctx, r.slides)
     ctx.setPath(r.path ?? ctx.path)
     ctx.setDirty(false)
-    ctx.setStatus(t('appStatusSavedAs', { name: r.path?.split('/').pop() ?? '' }))
+    ctx.setStatus(t('appStatusSavedAs', { name: r.name ?? '' }))
   }
 }
 
 /** Export base name: file name without the .pptx extension */
 export function exportBaseName(ctx: ActionCtx): string {
-  return (ctx.path?.split('/').pop() ?? t('appUntitledPresentation')).replace(/\.pptx$/i, '')
+  return (ctx.name || t('appUntitledPresentation')).replace(/\.pptx$/i, '')
 }
 
 /** Export as images: each page (skipping hidden ones) rendered offscreen to 2x PNG, written to disk by the main process */

@@ -149,6 +149,14 @@ import {
 } from './session-state'
 import { registerAiIpc, registerSlidesOnlyAiIpc } from './ai-ipc'
 
+/**
+ * Last path segment, for the display name the renderer shows.
+ *
+ * Deriving it is this side's job: the renderer used to `split('/')` a path it was handed,
+ * which only works while a `path` happens to be one. A browser's is an opaque store key.
+ */
+const baseName = (p: string): string => (p ? p.split(/[\\/]/).pop() || '' : '')
+
 /** One slide, copied from any deck open in this process, waiting to be pasted into another. */
 let slideClipboard: { bundle: SlideBundle; png?: string } | null = null
 
@@ -581,6 +589,7 @@ async function openAndBuild(
   if (await refineComplexWidths(wc)) slides = buildAllRenderSlides(opened, fitWidthPx)
   return {
     path,
+    name: baseName(path),
     slides,
     size: { cx: opened.deck.size.cx, cy: opened.deck.size.cy },
     defaultFont: deckDefaultFont(opened),
@@ -744,6 +753,7 @@ export function registerSlidesIpc(): void {
       session.fitWidthPx = fitWidthPx
       return {
         path: session.path,
+        name: baseName(session.path),
         slides: buildAllRenderSlides(session.opened, fitWidthPx),
         size: { cx: session.opened.deck.size.cx, cy: session.opened.deck.size.cy },
         defaultFont: deckDefaultFont(session.opened),
@@ -917,6 +927,7 @@ export function registerSlidesIpc(): void {
           }
           return {
             path: existing.path,
+            name: baseName(existing.path),
             slides: buildAllRenderSlides(existing.opened, fitWidthPx),
             size: { cx: existing.opened.deck.size.cx, cy: existing.opened.deck.size.cy },
             defaultFont: deckDefaultFont(existing.opened),
@@ -971,6 +982,7 @@ export function registerSlidesIpc(): void {
           }
           return {
             path: existing.path,
+            name: baseName(existing.path),
             slides: buildAllRenderSlides(existing.opened, fitWidthPx),
             size: { cx: existing.opened.deck.size.cx, cy: existing.opened.deck.size.cy },
             defaultFont: deckDefaultFont(existing.opened),
@@ -1021,6 +1033,7 @@ export function registerSlidesIpc(): void {
           }
           return {
             path: existing.path,
+            name: baseName(existing.path),
             slides: buildAllRenderSlides(existing.opened, fitWidthPx),
             size: { cx: existing.opened.deck.size.cx, cy: existing.opened.deck.size.cy },
             defaultFont: deckDefaultFont(existing.opened),
@@ -1046,6 +1059,7 @@ export function registerSlidesIpc(): void {
         await saveDraftAfterGenerate(e.sender, replaceSession, bytes, 'replace', deckName)
         return {
           path: replaceSession.path,
+          name: baseName(replaceSession.path),
           slides: buildAllRenderSlides(opened, fitWidthPx),
           size: { cx: opened.deck.size.cx, cy: opened.deck.size.cy },
           defaultFont: deckDefaultFont(opened),
@@ -1061,6 +1075,7 @@ export function registerSlidesIpc(): void {
     sessions.set(e.sender.id, { path: '', opened, fitWidthPx, undoStack: [], redoStack: [] })
     return {
       path: '',
+      name: baseName(''),
       slides: buildAllRenderSlides(opened, fitWidthPx),
       size: { cx: opened.deck.size.cx, cy: opened.deck.size.cy },
       defaultFont: deckDefaultFont(opened),
@@ -1721,7 +1736,10 @@ export function registerSlidesIpc(): void {
 
   ipcMain.handle('slides:is-dirty', (e) => ops.isDirty(sessions.get(e.sender.id)))
 
-  ipcMain.handle('slides:save', async (e) => {
+  // `_auto` is not read, and that is this host's whole story: it writes into its own drafts
+  // folder or over the open file with no permission to ask for, so an unattended save and a
+  // deliberate one are the same silent write. The flag exists for hosts that must ask.
+  ipcMain.handle('slides:save', async (e, _auto: boolean) => {
     const session = sessions.get(e.sender.id)
     if (!session) return { ok: false, error: 'no file open' }
     // Untitled (new blank file): the first save lands silently in the drafts folder (Save As keeps its dialog)
@@ -1746,6 +1764,7 @@ export function registerSlidesIpc(): void {
       return {
         ok: true,
         path: session.path,
+        name: baseName(session.path),
         slides: buildAllRenderSlides(session.opened, session.fitWidthPx),
       }
     } catch (err) {
@@ -1777,6 +1796,7 @@ export function registerSlidesIpc(): void {
       return {
         ok: true,
         path: r.filePath,
+        name: baseName(r.filePath),
         slides: buildAllRenderSlides(session.opened, session.fitWidthPx),
       }
     } catch (err) {

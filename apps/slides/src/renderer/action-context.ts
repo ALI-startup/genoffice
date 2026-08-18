@@ -91,6 +91,9 @@ export interface ActionCtx {
   slide: RenderSlide | undefined
   path: string | null
   setPath: Set<string | null>
+  /** The host's display name for the open deck; never derived from `path`. */
+  name: string
+  setName: Set<string>
   setDirty: Set<boolean>
   setStatus: Set<string>
   images: Map<string, HTMLImageElement>

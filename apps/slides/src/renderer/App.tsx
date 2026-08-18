@@ -207,6 +207,10 @@ export function App() {
   const { lang } = useI18n()
   const [slides, setSlides] = useState<RenderSlide[]>([])
   const [path, setPath] = useState<string | null>(null)
+  // The host's display name for the open deck. Held rather than derived: `path` is an
+  // absolute path on the desktop and an opaque store key in a browser, so only the host can
+  // say what to show. Empty until a deck is opened or saved.
+  const [deckName, setDeckName] = useState('')
   /** AiPanel reset key: incremented only on applyOpen (open/new file), not on draft path updates */
   const [aiPanelKey, setAiPanelKey] = useState(0)
   /** Theme body default font (fallback for the font box when the selection has no text element) */
@@ -501,11 +505,14 @@ export function App() {
   }, [hasDoc, fitZoom, rawFit, viewMode])
 
   const applyOpen = useCallback(
-    (result: { path: string; slides: RenderSlide[]; defaultFont?: string } | null) => {
+    (
+      result: { path: string; name: string; slides: RenderSlide[]; defaultFont?: string } | null,
+    ) => {
       if (!result) return
       setSlides(result.slides)
       setDefaultFont(result.defaultFont ?? null)
       setPath(result.path)
+      setDeckName(result.name)
       setCurrent(0)
       setSelectedIds([])
       setEditing(null)
@@ -516,7 +523,7 @@ export function App() {
       setStatus(
         result.path
           ? t('appStatusOpened', {
-              name: result.path.split('/').pop()!,
+              name: result.name,
               count: result.slides.length,
             })
           : t('appStatusNewBlank'),
@@ -576,7 +583,10 @@ export function App() {
   const editingActiveRef = useRef(false)
   editingActiveRef.current = !!editing || !!editingCell
 
-  const save = useCallback((): Promise<boolean> => fileActions.save(ctxRef.current), [])
+  const save = useCallback(
+    (auto = false): Promise<boolean> => fileActions.save(ctxRef.current, auto),
+    [],
+  )
 
   // Close guard (closing tab/window) chose "Save": run the full save flow and report the result
   useEffect(() => {
@@ -615,7 +625,10 @@ export function App() {
         .then((d) => {
           if (!d || saving) return
           saving = true
-          void save().finally(() => {
+          // `true`: nobody asked for this save. On a host that can only write through a
+          // permission the user grants, that is the difference between writing and raising a
+          // prompt out of a timer.
+          void save(true).finally(() => {
             saving = false
           })
         })
@@ -763,7 +776,16 @@ export function App() {
   }, [applyOpen, newBlank])
 
   // File renamed externally (shell Home list rename) → sync the title-bar path (content unchanged, dirty untouched)
-  useEffect(() => slidesWindow().onRenamed((p) => setPath(p)), [])
+  useEffect(
+    () =>
+      slidesWindow().onRenamed((p) => {
+        setPath(p)
+        // The rename channel reports a path, so this host derives the name from it; a host
+        // whose refs are not paths has no rename channel to report through.
+        setDeckName(p.split(/[\\/]/).pop() ?? '')
+      }),
+    [],
+  )
 
   useEffect(() => {
     void slidesAi().getAiSettings().then(setAiSettings)
@@ -1997,6 +2019,8 @@ export function App() {
     slide,
     path,
     setPath,
+    name: deckName,
+    setName: setDeckName,
     setDirty,
     setStatus,
     images,
@@ -2102,7 +2126,7 @@ export function App() {
   const inkCount = useMemo(() => (slide ? inkNodesOf(slide).length : 0), [slide])
   const clearInk = useCallback(() => arrangeActions.clearInk(ctxRef.current), [])
 
-  const _fileName = slide ? path?.split('/').pop() || t('appUntitledPresentation') : undefined
+  const _fileName = slide ? deckName || t('appUntitledPresentation') : undefined
 
   return (
     <div className="app">

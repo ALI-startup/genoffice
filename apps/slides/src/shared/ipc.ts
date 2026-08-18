@@ -32,7 +32,17 @@ export { AI_PROVIDERS } from '@genoffice/ai-provider'
 export type { AgentToolCall, AgentToolDef } from '@genoffice/agent-core'
 
 export interface OpenResult {
+  /**
+   * The host's handle on the document: an absolute path in Electron, an opaque store key in
+   * a browser. Never parsed by the renderer — see `name`.
+   */
   path: string
+  /**
+   * What to show the user. Supplied by the host because only the host can derive it: a
+   * browser's `path` is a UUID, and the renderer used to `split('/')` this itself. Empty for
+   * a deck that has never been saved, which the renderer renders as "Untitled".
+   */
+  name: string
   slides: RenderSlide[]
   /** Slide page size in EMU */
   size: { cx: number; cy: number }
@@ -1266,10 +1276,30 @@ export interface SlidesApi {
   exportPdf: (op: ExportPdfOp) => Promise<ExportPdfResult>
   /** Print (system dialog; cancel counts as ok=false without an error) */
   printSlides: (op: PrintSlidesOp) => Promise<{ ok: boolean; error?: string }>
-  save: () => Promise<{ ok: boolean; path?: string; error?: string; slides?: RenderSlide[] }>
-  saveAs: (
-    defaultName: string,
-  ) => Promise<{ ok: boolean; path?: string; error?: string; slides?: RenderSlide[] }>
+  /**
+   * Write the deck to wherever it already lives.
+   *
+   * `auto` marks a save the user did not ask for — the 30-second autosave tick. It is
+   * required because the answer is always known at the call site and a forgotten `true` is
+   * the bug it exists to prevent: on a host that can only write through a permission the
+   * user must grant, an unattended save would raise that prompt from a timer. Electron
+   * ignores the flag and writes either way.
+   */
+  save: (auto: boolean) => Promise<{
+    ok: boolean
+    path?: string
+    name?: string
+    error?: string
+    slides?: RenderSlide[]
+  }>
+  saveAs: (defaultName: string) => Promise<{
+    ok: boolean
+    path?: string
+    /** Display name of the destination, supplied by the host. */
+    name?: string
+    error?: string
+    slides?: RenderSlide[]
+  }>
   /** The close guard chose "Save": the main process asks the renderer to run the full save flow */
   onCloseSaveRequest: (handler: () => void) => () => void
   reportCloseSaveResult: (ok: boolean) => void

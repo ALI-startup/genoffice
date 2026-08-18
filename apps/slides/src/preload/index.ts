@@ -237,7 +237,7 @@ const api: SlidesApi = {
     ipcRenderer.invoke('slides:pick-export-pdf-path', defaultName),
   exportPdf: (op: ExportPdfOp) => ipcRenderer.invoke('slides:export-pdf', op),
   printSlides: (op: PrintSlidesOp) => ipcRenderer.invoke('slides:print', op),
-  save: () => ipcRenderer.invoke('slides:save'),
+  save: (auto: boolean) => ipcRenderer.invoke('slides:save', auto),
   saveAs: (defaultName: string) => ipcRenderer.invoke('slides:save-as', defaultName),
   onCloseSaveRequest: (handler: () => void) => {
     const listener = () => handler()
