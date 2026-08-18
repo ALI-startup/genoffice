@@ -132,7 +132,7 @@ import type {
   ShapeKey,
 } from '../shared/ipc'
 
-import { tm } from './i18n-main'
+import { tm, tmOps } from './i18n-main'
 import { tiffToPng } from './tiff-decode'
 import {
   buildAllRenderSlides,
@@ -1359,8 +1359,8 @@ export function registerSlidesIpc(): void {
       buttons: [tm('chartSimplifyOk'), tm('btnCancel')],
       defaultId: 0,
       cancelId: 1,
-      message: tm('chartSimplifyTitle'),
-      detail: tm('chartSimplifyBody'),
+      message: tmOps('chartSimplifyTitle'),
+      detail: tmOps('chartSimplifyBody'),
     }
     const r = parent
       ? await dialog.showMessageBox(parent, options)
@@ -1369,11 +1369,11 @@ export function registerSlidesIpc(): void {
   }
 
   ipcMain.handle('slides:edit-chart', async (e, op: EditChartOp) =>
-    ops.editChart(sessions.get(e.sender.id), op, confirmChartSimplify, tm),
+    ops.editChart(sessions.get(e.sender.id), op, confirmChartSimplify, tmOps),
   )
 
   ipcMain.handle('slides:chart-color-schemes', (e) =>
-    ops.chartColorSchemes(sessions.get(e.sender.id), tm),
+    ops.chartColorSchemes(sessions.get(e.sender.id), tmOps),
   )
 
   ipcMain.handle('slides:get-chart-data', (e, slideIndex: number, sourceId: string) =>
@@ -1632,7 +1632,7 @@ export function registerSlidesIpc(): void {
 
   // ── Shape animations (<p:timing>; the spid <-> temporary element id mapping happens here) ──
   ipcMain.handle('slides:get-animations', (e, slideIndex: number): AnimationItem[] =>
-    ops.getAnimations(sessions.get(e.sender.id), slideIndex, tm),
+    ops.getAnimations(sessions.get(e.sender.id), slideIndex, tmOps),
   )
 
   // Pairing keys for Morph transitions: sourceId changes on every reparse, so match across pages by cNvPr id/name

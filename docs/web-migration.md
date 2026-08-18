@@ -445,7 +445,25 @@ with nothing mocked.
   sheets all expose the same six path-based methods and there is no reason for three copies of
   one mapping.
 - Then `createWebSlidesPlatform`, `host-web.ts`, `vite.web.config.ts`, and an `index.html`
-  with a CSP.
+  with a CSP. **Done.** `npm run slides:web` serves the editor at :5185 with the BFF beside
+  it, and `npm run build:slides:web` writes `dist/web`. The existing `index.html` needed no
+  change — both hosts share it, and its CSP was already `connect-src 'self'`.
+
+  Three things the host had to decide, each recorded where it is made rather than here:
+
+  - **Fonts.** `HeuristicMetrics`, the provider pptx-render falls back to when a font file
+    cannot be read — deterministic, but its advances are estimates, so a tightly-fitted text
+    box can wrap a word earlier or later than the desktop. `queryLocalFonts()` is the exact
+    answer and is 7c; `host-web.ts` is the one line that changes.
+  - **TIFF.** `decodeTiff: null`. Chromium decodes none, and the interface's `null` is how a
+    host says so: those pictures render blank rather than wrongly, and their bytes survive a
+    save untouched.
+  - **Printing.** The same HTML the desktop renders in a hidden window, printed from a hidden
+    same-origin iframe, because the page itself is the editor.
+
+  Verified in Chromium (Playwright): the app boots to a blank deck, the ribbon's New Slide
+  goes through the in-page operations and the thumbnail pane follows, and the bundle contains
+  no Node builtin, no `electron`, and no `window.slidesApi`.
 
 ### 5.6 The original notes on what 7d had to sort out
 

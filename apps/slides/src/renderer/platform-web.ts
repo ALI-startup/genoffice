@@ -24,7 +24,7 @@ import {
   bytesToBase64,
   type OpenedPptx,
 } from '@genoffice/pptx-engine'
-import type { AiPort, LanguagePort } from '@genoffice/platform'
+import type { AiPort, AttachmentsPort, LanguagePort } from '@genoffice/platform'
 import {
   createWebUnloadPrompt,
   ensurePermission,
@@ -49,6 +49,7 @@ import type {
   SlidesAiPort,
   SlidesFilePort,
   SlidesLanguagePort,
+  SlidesPlatform,
   SlidesPrintPort,
   SlidesWindowPort,
 } from './platform'
@@ -635,5 +636,67 @@ export function createWebSlidesAiPort(
     aiStreamCancel: (requestId) => shared.aiStreamCancel(requestId),
     onAiStream: (handler) => shared.onAiStream(handler),
     aiSnapshotRestore: async (id) => slideOps.aiSnapshotRestore(session(), id),
+  }
+}
+
+/** Everything the composed web platform needs from its host. */
+export interface WebSlidesPlatformDeps {
+  /** The page's one deck. Held by the host so the render env and the ports share it. */
+  session: WebSlidesSession
+  store: WebDocumentStore
+  pickers: FilePickers
+  language: LanguagePort
+  ai: AiPort
+  attachments: AttachmentsPort
+  /** The services the document port cannot answer for itself. */
+  document: WebDocumentServices
+  /** An image's own pixel size; see `WebFileServices.imageSize`. */
+  imageSize: WebFileServices['imageSize']
+  /** Hand the deck to the user as a download, for a deck with nowhere to save to. */
+  download: WebFileServices['download']
+  /** Print the given HTML from a frame; see `createWebSlidesPrintPort`. */
+  printFrame: (html: string) => Promise<void>
+  /** Install a `beforeunload` guard; injected so tests can drive it. Defaults to the real one. */
+  unloadPrompt?: typeof createWebUnloadPrompt
+}
+
+/**
+ * slides' platform for a browser: eight ports backed, nine answered `null`.
+ *
+ * The `null`s are the same list platform.ts documents, and each is a capability this host
+ * genuinely lacks rather than one left for later — a second screen it cannot open, a system
+ * clipboard it cannot read, a provider credential it must never hold, a filesystem of style
+ * templates, a native menu bar. The renderer already tests every one of them, because
+ * Electron's `SlidesApi` never had them optional; it has them non-null.
+ *
+ * `project` is `null` for a different reason and says so in platform.ts: the chat/project
+ * store is a main-process database (§6.1), and no browser-side one exists yet.
+ */
+export function createWebSlidesPlatform(deps: WebSlidesPlatformDeps): SlidesPlatform {
+  const session = () => deps.session.get()
+  return {
+    doc: createWebSlidesDocPort(session, deps.document),
+    file: createWebSlidesFilePort(deps.session, {
+      store: deps.store,
+      pickers: deps.pickers,
+      imageSize: deps.imageSize,
+      download: deps.download,
+    }),
+    deckClipboard: createWebSlidesDeckClipboardPort(session),
+    window: createWebSlidesWindowPort(session, deps.unloadPrompt),
+    language: createWebSlidesLanguagePort(deps.language),
+    ai: createWebSlidesAiPort(deps.ai, session),
+    print: createWebSlidesPrintPort(deps.printFrame),
+    attachments: deps.attachments,
+    project: null,
+    aiMedia: null,
+    presenter: null,
+    pdfExport: null,
+    clipboard: null,
+    genspark: null,
+    search: null,
+    cloud: null,
+    styleTemplates: null,
+    menu: null,
   }
 }

@@ -21,6 +21,7 @@ export {
   IMAGE_FILE_TYPES,
   isPickerCancel,
   PDF_FILE_TYPES,
+  PRESENTATION_FILE_TYPES,
 } from './fs-access.js'
 export type {
   DirectoryPickerOptions,
@@ -77,6 +78,7 @@ export {
 } from './language.js'
 export type { LanguageHostEnv } from './language.js'
 
+export { createBrowserAttachmentExtractor } from './attachment-extract.js'
 export { browserDownloadEnv, DOWNLOAD_URL_TTL_MS, downloadBytes } from './download.js'
 export type { DownloadEnv } from './download.js'
 

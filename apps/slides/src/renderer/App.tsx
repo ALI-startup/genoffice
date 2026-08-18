@@ -788,7 +788,14 @@ export function App() {
   )
 
   useEffect(() => {
-    void slidesAi().getAiSettings().then(setAiSettings)
+    // A host that cannot answer leaves the assistant closed rather than failing the page. On
+    // the desktop this is an IPC call that always resolves; in a browser it is a request to
+    // the BFF, and an unreachable one must not surface as an unhandled rejection.
+    void slidesAi()
+      .getAiSettings()
+      .then(setAiSettings, (error: unknown) => {
+        console.warn('AI settings unavailable; the assistant stays closed', error)
+      })
   }, [])
 
   // Recent files for the start screen

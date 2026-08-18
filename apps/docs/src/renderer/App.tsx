@@ -588,7 +588,14 @@ export function App() {
 
   useEffect(() => {
     void docsPlatform().file.recentDocuments().then(setRecent)
-    void docsPlatform().ai.getAiSettings().then(setSettings)
+    // Same reasoning as slides': on the desktop this always resolves, but in a browser it is
+    // a request to the BFF, and an unreachable one would otherwise be an unhandled rejection.
+    // The defaults already loaded stay in place.
+    void docsPlatform()
+      .ai.getAiSettings()
+      .then(setSettings, (error: unknown) => {
+        console.warn('AI settings unavailable; keeping the defaults', error)
+      })
   }, [])
 
   useEffect(() => {

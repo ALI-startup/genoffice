@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@genoffice/ai-provider": "*",
+    "@genoffice/file-parse": "*",
     "@genoffice/i18n": "*",
     "@genoffice/pdf-edit": "*",
     "@genoffice/platform": "*"

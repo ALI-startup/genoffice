@@ -138,6 +138,22 @@ export const DOCUMENT_FILE_TYPES: FilePickerAcceptType[] = [
 ]
 
 /**
+ * PowerPoint presentations, which slides opens and saves.
+ *
+ * One entry, one format: `.ppt` is deliberately absent because nothing in the codebase
+ * parses the legacy binary format on any host, so offering it would open a file the deck
+ * reader cannot read.
+ */
+export const PRESENTATION_FILE_TYPES: FilePickerAcceptType[] = [
+  {
+    description: 'PowerPoint Presentation',
+    accept: {
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+    },
+  },
+]
+
+/**
  * Image types for "insert a picture".
  *
  * png / jpeg / gif only, and deliberately not webp: the callers' result type
