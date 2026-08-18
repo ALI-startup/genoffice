@@ -32,8 +32,9 @@
  *   - `onOpenDocument` / `onDocumentRenamed` are real subscriptions with no
  *     emissions; see `createWebDocsFilePort`.
  *
- * And `saveNew` is conditional on a user gesture, which is a browser rule rather
- * than a gap — see the comment on it.
+ * And `saveNew` refuses an *automatic* save outright, which is a browser rule
+ * rather than a gap — see the comment on it, and `download` for where the bytes of
+ * a never-saved document go instead.
  *
  * One member does reach for `window` directly: `createWebDocsPrintPort` listens
  * for `afterprint`, an event with no injectable source (the dialog it reports on
@@ -53,12 +54,14 @@ import {
 import type { PickImageResult } from '../shared/ipc'
 import type {
   CloseCheckState,
+  DocsDownloadPort,
   DocsFilePort,
   DocsHwpxPort,
   DocsPlatform,
   DocsPrintPort,
   DocsWindowPort,
   DocumentRef,
+  DownloadResult,
   HwpxExportResult,
   OpenOutcome,
   RecentDocument,
@@ -85,6 +88,12 @@ const HWPX_NAME = /\.hwpx$/i
  * read directly so this module stays testable, and so the fallback for a browser
  * without the API is a single, visible decision (assume activation and let the
  * picker itself reject) instead of scattered guards.
+ *
+ * What it must not be used for is deciding whether a save *should* open a dialog.
+ * Activation is renewed by every keystroke and outlives it by seconds, so a
+ * document being edited holds it continuously — an automatic save would pass this
+ * probe every time. Intent comes from the caller (`saveNew`'s `auto`); this only
+ * answers whether the browser would permit the dialog at all.
  */
 export interface UserActivationProbe {
   (): boolean
@@ -124,6 +133,23 @@ export interface WebDocsPlatformDeps {
   frame?: FrameChildLink | null
   /** Opens the browser's print dialog; injected so tests can drive it. Defaults to `window.print`. */
   printPage?: () => void
+  /**
+   * Hands a file to the user's downloads. Injected like every other browser
+   * surface here, so `download` is exercisable without a DOM; host-web.ts supplies
+   * @genoffice/platform-web's `downloadBytes`.
+   */
+  deliverDownload: DownloadDelivery
+}
+
+/**
+ * Start a download of `data` under `fileName`.
+ *
+ * Synchronous and returning nothing, because that is the truth of the operation:
+ * a page can only hand the bytes to the browser. It throws only if the handover
+ * itself fails.
+ */
+export interface DownloadDelivery {
+  (fileName: string, data: ArrayBuffer, mimeType: string): void
 }
 
 /**
@@ -306,6 +332,16 @@ export function createWebDocsFilePort(
      *     reports `external-modified` too, so nothing is written and the document
      *     stays dirty.
      *
+     * "An autosave never prompts" covers the *permission* grant as well, and that
+     * is the second dialog this host could otherwise raise on a timer. A document
+     * opened through the open dialog is granted read; writing it is a second grant
+     * the browser asks for separately, and a handle restored after a reload starts
+     * with neither. Requesting either from an autosave would either put a
+     * permission dialog on screen unbidden or — with no user activation behind the
+     * request — be rejected outright and read as a failed save. So an autosave
+     * writes through `prompt: false`, which proceeds on a standing grant and
+     * declines with `needs-permission` when there is none.
+     *
      * The one divergence from Electron is the dialog itself: the main process shows
      * a native message box with Overwrite / Cancel buttons, and this host shows the
      * browser's own confirm dialog, which is the closest a page can get. Same
@@ -317,8 +353,14 @@ export function createWebDocsFilePort(
           if (auto === true) return { ok: false, reason: 'external-modified' }
           if (!confirmOverwrite()) return { ok: false, reason: 'external-modified' }
         }
+        // Checked before the write rather than caught after it, so an autosave that
+        // cannot proceed is a reported outcome and not an exception mapped back into
+        // one. A manual save falls through and lets the store ask.
+        if (auto === true && !(await store.writable(ref))) {
+          return { ok: false, reason: 'needs-permission' }
+        }
         const bytes = new Uint8Array(data)
-        await store.write(ref, bytes)
+        await store.write(ref, bytes, { prompt: auto !== true })
         // Re-baseline from what we just wrote, or the next save would flag our own
         // write as somebody else's.
         await remember(ref, await sha256Hex(toArrayBuffer(bytes)))
@@ -335,28 +377,51 @@ export function createWebDocsFilePort(
      *
      * Electron's `saveNew` writes into the host's default documents folder with
      * no dialog. A browser has no folder it may write to unasked, so the only
-     * honest implementation is the Save As dialog — and a dialog needs transient
-     * user activation.
+     * honest implementation is the Save As dialog — and a dialog the user did not
+     * ask for is an interruption, however legal it is.
      *
-     * When there is no activation this reports `{ ok: false, reason:
-     * 'needs-user-gesture' }`, and the `reason` is the point. Most `saveNew`
-     * callers are *not* user gestures — the 30-second recovery tick and the
-     * post-AI-run auto-name both reach it for a document that has never been saved
-     * — so this branch is hit repeatedly and quietly. A bare `{ ok: false }` would
-     * make it indistinguishable from a dismissed dialog and the renderer would
-     * show nothing at all: a save path that resolves without writing and without
-     * saying so, which is precisely the class of silent no-op the web shim was
-     * deleted for. The discriminator lets the renderer say "not being autosaved,
-     * because this document has nowhere to go yet" instead of either lying or
-     * flashing a failure every 30 seconds.
+     * So `auto` is what decides, and it decides first. An automatic save reports
+     * `{ ok: false, reason: 'needs-user-gesture' }` without opening anything, and
+     * the `reason` is the point: a bare `{ ok: false }` would be
+     * indistinguishable from a dismissed dialog and the renderer would show
+     * nothing at all, which is precisely the class of silent no-op the web shim
+     * was deleted for. The discriminator lets the renderer say "not being
+     * autosaved, because this document has nowhere to go yet".
+     *
+     * This used to gate on transient user activation instead, and that was the
+     * bug: `navigator.userActivation.isActive` stays true for seconds after any
+     * keystroke, so a document being typed into holds activation almost
+     * continuously. The recovery tick reached this method every 30 seconds for a
+     * never-saved document, found activation, and opened the Save As dialog —
+     * over and over, on a timer, with nobody having asked to save. Activation
+     * says a dialog *may* open; only the caller knows whether one *should*.
+     *
+     * The probe is still consulted for a deliberate save, where it is a genuine
+     * pre-flight check: a manual save that arrives after its gesture expired (a
+     * long serialization, a menu command routed through a promise) would have the
+     * picker reject, and reporting the same honest reason beats an exception.
      */
-    saveNew: async (defaultName, data): Promise<SaveNamedDocumentResult> => {
-      if (!hasUserActivation()) return { ok: false, reason: 'needs-user-gesture' }
+    saveNew: async (defaultName, data, auto): Promise<SaveNamedDocumentResult> => {
+      if (auto || !hasUserActivation()) return { ok: false, reason: 'needs-user-gesture' }
       return saveNamed(store, remember, defaultName, data)
     },
 
     /** No host-owned recovery location, and nothing that would read one; see the file header. */
     writeRecoveryCopy: async () => ({ ok: false }),
+
+    /**
+     * Neither half of the renderer's recovery tick can land anywhere in a browser:
+     * there is no host-owned location for a copy, and naming a never-saved
+     * document needs a dialog nobody asked for. Answering `false` stops the timer
+     * at the source, which is worth more than the two refusals it saves — the tick
+     * re-serialises the entire document before it discovers there is nowhere to put
+     * it, so on web it was a full docx build every 30 seconds, thrown away.
+     *
+     * The user's protection against losing work here is the unload guard (see
+     * `createWebDocsWindowPort`) plus `download` below, not a copy this host
+     * cannot keep.
+     */
+    crashRecovery: false,
 
     /**
      * The store's own recent list, which survives a reload because the handles do.
@@ -589,6 +654,45 @@ export function createWebDocsPlatform(deps: WebDocsPlatformDeps): DocsPlatform {
     pdfExport: null,
     hwpx: createWebDocsHwpxPort(deps.store),
     print: createWebDocsPrintPort(deps.printPage),
+    // Non-null exactly where Electron's is null. On the desktop Save As is the
+    // better command; here it is the only way a document with no handle — a new
+    // one, or a converted `.hwpx` — can leave the page at all.
+    download: createWebDocsDownloadPort(deps.deliverDownload),
+  }
+}
+
+/** The docx media type, for the Blob a download is delivered as. */
+const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+
+/**
+ * Download the open document as `.docx`.
+ *
+ * Deliberately does not go near the store: no handle, no ref, no permission
+ * grant, no entry in the recent list. It is a copy of the bytes the editor would
+ * have saved, handed to the browser, and the document it came from is untouched —
+ * still dirty if it was dirty, still pointing at whatever it was pointing at.
+ *
+ * That is also why it cannot report whether the file reached the disk. The
+ * browser may put it straight in the downloads folder or ask the user where it
+ * goes, and a page is told neither outcome. `ok: true` means handed over, and the
+ * status message the renderer shows says exactly that much.
+ */
+export function createWebDocsDownloadPort(deliver: DownloadDelivery): DocsDownloadPort {
+  return {
+    download: async (defaultName, data): Promise<DownloadResult> => {
+      // A document opened from a `.hwpx` is a `.docx` from here on (the import
+      // becomes an unsaved docx), and a name is all this port has to go on, so the
+      // extension is corrected rather than trusted.
+      const name = /\.docx$/i.test(defaultName)
+        ? defaultName
+        : `${defaultName.replace(/\.[^./\\]*$/, '')}.docx`
+      try {
+        deliver(name, data, DOCX_MIME)
+        return { ok: true, name }
+      } catch (error) {
+        return { ok: false, error: messageOf(error) }
+      }
+    },
   }
 }
 

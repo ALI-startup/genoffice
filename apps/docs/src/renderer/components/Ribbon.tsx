@@ -133,6 +133,12 @@ interface RibbonProps {
    */
   onExportHwpx?: (() => void) | null
   /**
+   * Download the document as `.docx`, or `null` on a host whose Save As already
+   * writes a real file. Null hides the item rather than disabling it: on the
+   * desktop there is nothing missing to explain.
+   */
+  onDownload?: (() => void) | null
+  /**
    * Whether the host draws the window frame and application menu itself.
    *
    * False in a browser, and it decides two things: whether the File dropdown
@@ -527,6 +533,7 @@ function RibbonInner({
   onSave,
   onSaveAs,
   onExportHwpx,
+  onDownload,
   nativeChrome,
   showAi,
   onToggleAi,
@@ -1180,6 +1187,17 @@ function RibbonInner({
                 >
                   {t('ribbonSaveAs')} <span className="file-menu-key">Ctrl+Shift+S</span>
                 </button>
+                {onDownload && (
+                  <button
+                    disabled={!hasDoc}
+                    onClick={() => {
+                      setDropdown(null)
+                      onDownload()
+                    }}
+                  >
+                    {t('ribbonDownload')}
+                  </button>
+                )}
                 {onExportHwpx && (
                   <button
                     disabled={!hasDoc}

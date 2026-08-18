@@ -187,10 +187,7 @@ function resetEditorHistory(editor: Editor): void {
   editor.registerPlugin(history((plugin.spec as { config?: object }).config))
 }
 
-export async function loadFile(
-  ctx: FileActionContext,
-  outcome: OpenOutcome | null,
-): Promise<void> {
+export async function loadFile(ctx: FileActionContext, outcome: OpenOutcome | null): Promise<void> {
   if (!outcome || !ctx.editor) return
   // A converted file is not a document with bytes behind it; it becomes an
   // unsaved document instead, so it takes a wholly different path.
@@ -495,6 +492,51 @@ export async function exportHwpx(ctx: FileActionContext): Promise<void> {
   }
 }
 
+/**
+ * Hand the document to the user's downloads.
+ *
+ * The browser's counterpart to Save As, and offered only where the port is
+ * non-null — on the desktop Save As already writes a real file the app keeps
+ * editing, so there is nothing for this to add there.
+ *
+ * Serialized exactly as a save would be, through the same `buildDocBytes`, so the
+ * downloaded file is the file a save would have written. What it deliberately does
+ * *not* do is any of a save's bookkeeping: no ref is adopted, the parsed document
+ * is not rebased on the written bytes, and the dirty flag is left alone. A copy in
+ * the downloads folder is not the open document — claiming otherwise would let the
+ * close guard wave through a page whose only copy of the work is in memory.
+ */
+export async function downloadDocument(ctx: FileActionContext): Promise<void> {
+  const { doc, editor } = ctx
+  if (!doc || !editor) return
+  // Null on a host that writes real files instead. The ribbon hides the command
+  // there, so this is the type's guard rather than a silent no-op.
+  const port = docsPlatform().download
+  if (!port) return
+  ctx.setStatus(t('appDownloading'))
+  try {
+    // Flush pending in-place table cell / textbox edits into the PM doc first,
+    // exactly as save() does, or the download would miss the newest cell text.
+    window.dispatchEvent(new Event('ai-docs-commit-tables'))
+    // Null only for a missing doc/editor, both checked above; the branch is the
+    // type's, not a case the UI can reach.
+    const bytes = await buildDocBytes(ctx)
+    if (!bytes) return
+    const buffer = bytes.buffer.slice(
+      bytes.byteOffset,
+      bytes.byteOffset + bytes.byteLength,
+    ) as ArrayBuffer
+    const result = await port.download(doc.fileName, buffer)
+    ctx.setStatus(
+      result.ok
+        ? t('appDownloaded', { name: result.name ?? doc.fileName })
+        : t('appDownloadFailed', { error: result.error ?? '' }),
+    )
+  } catch (err) {
+    ctx.setStatus(t('appDownloadFailed', { error: String(err) }))
+  }
+}
+
 /** Plain text of a PM node's inline content. */
 function pmNodeText(node: PmNode): string {
   if (node.text) return node.text
@@ -662,6 +704,11 @@ export async function buildDocBytes(ctx: FileActionContext): Promise<Uint8Array 
 export async function writeRecoveryCopy(ctx: FileActionContext): Promise<void> {
   const { doc, editor } = ctx
   if (!doc || !editor || ctx.saveInFlightRef.current || !isDocDirty(ctx)) return
+  // A host with no recovery state has nothing for either branch below: no location
+  // to keep a copy in, and no way to name a never-saved document without asking.
+  // Returning here rather than at the two branches is what keeps the browser from
+  // re-serialising the whole document every 30 seconds to discard the bytes.
+  if (!docsPlatform().file.crashRecovery) return
   if (!doc.filePath) {
     if (isBlankDocument(editor)) return
     if (editor.view.composing) return
@@ -740,7 +787,11 @@ async function saveOnce(ctx: FileActionContext, saveAs: boolean, auto: boolean):
       // Save As keeps the dialog; a new document's first save lands silently in the default folder
       const result = saveAs
         ? await docsPlatform().file.saveAs(autoName ?? doc.fileName, buffer)
-        : await docsPlatform().file.saveNew(autoName ?? doc.fileName, buffer)
+        : // `auto` travels with the call: a host that can only name a document
+          // through a dialog must be able to tell a save the user asked for from
+          // one a timer asked for, and decline the second without opening
+          // anything. Electron ignores it and writes silently either way.
+          await docsPlatform().file.saveNew(autoName ?? doc.fileName, buffer, auto)
       if (!result.ok) {
         if (result.error) ctx.setStatus(t('appSaveFailed', { error: result.error }))
         // Not a failure and not a cancellation: the host can only name a document
@@ -760,7 +811,12 @@ async function saveOnce(ctx: FileActionContext, saveAs: boolean, auto: boolean):
       if (!result.ok) {
         // external-modified: the main process already prompted (or the autosave
         // deferred to a manual save) — stay dirty, no second dialog/error banner
-        if (result.reason !== 'external-modified') {
+        if (result.reason === 'needs-permission') {
+          // The host declined to write rather than raise a permission dialog out of
+          // a timer. Not a failure, and not silent either: a user who switched
+          // autosave on has to learn that this document is not being saved yet.
+          ctx.setStatus(t('appSaveNeedsPermission'))
+        } else if (result.reason !== 'external-modified') {
           ctx.setStatus(t('appSaveFailed', { error: result.error ?? '' }))
         }
         return false

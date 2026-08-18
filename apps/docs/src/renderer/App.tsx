@@ -122,6 +122,7 @@ import {
   type PendingNumbering,
 } from './doc-state'
 import {
+  downloadDocument as downloadDocumentImpl,
   exportPdf as exportPdfImpl,
   exportHwpx as exportHwpxImpl,
   loadFile as loadFileImpl,
@@ -642,8 +643,13 @@ export function App() {
   // Crash-recovery copy: while the document is dirty, push a serialized
   // copy to the main process every 30s; a normal save (or discarding on close) removes
   // it, and reopening the file offers Restore/Discard when a newer copy exists.
+  //
+  // Skipped entirely where the host keeps no recovery state (the browser): there is
+  // no location for a copy, and a never-saved document could only be "recovered" by
+  // naming it through a dialog nobody asked for — which is exactly what this timer
+  // used to do every 30 seconds in a browser tab. See DocsFilePort.crashRecovery.
   useEffect(() => {
-    if (tornDown) return
+    if (tornDown || !docsPlatform().file.crashRecovery) return
     const timer = window.setInterval(() => {
       void writeRecoveryCopyImpl(fileCtxRef.current)
     }, 30_000)
@@ -1245,6 +1251,13 @@ export function App() {
    * of offering a broken one.
    */
   const canExportHwpx = docsPlatform().hwpx !== null
+  const downloadDoc = useCallback(() => downloadDocumentImpl(fileCtxRef.current), [])
+  /**
+   * Whether this host hands files to the user as downloads. Non-null only in the
+   * browser: on the desktop Save As writes the real document and keeps editing it,
+   * so a Download item there would be a worse duplicate of a working command.
+   */
+  const canDownload = docsPlatform().download !== null
   /**
    * Whether this host can render a PDF at all. `pdfExport` is null in the browser
    * build (Phase 4c adds a renderer-side exporter), and `exportPdf` returns
@@ -2313,6 +2326,7 @@ export function App() {
     onSave: () => void save(false),
     onSaveAs: () => void save(true),
     onExportHwpx: () => void exportHwpx(),
+    onDownload: () => void downloadDoc(),
     onToggleAi: () => setShowAi((v) => !v),
     onSection: (next: SectionSettings) => {
       // layout applies to the cursor's section; the final section's sectPr goes through SaveOptions.section (also drives canvas geometry)
@@ -2549,6 +2563,7 @@ export function App() {
         // offered and broken. This is the only export surface in the browser,
         // which has no native menu bar to carry it.
         onExportHwpx={canExportHwpx ? ribbonActions.onExportHwpx : null}
+        onDownload={canDownload ? ribbonActions.onDownload : null}
       />
 
       <div className={`workspace ${darkCanvas ? 'workspace-dark' : ''}`}>

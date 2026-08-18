@@ -24,6 +24,7 @@
 import type { PdfBytesIo } from '@genoffice/pdf-edit'
 import {
   ensurePermission,
+  FilePermissionDeniedError,
   isPickerCancel,
   PDF_FILE_TYPES,
   type FilePickerAcceptType,
@@ -81,6 +82,19 @@ export interface WebDocumentStoreOptions {
   newRef?: () => string
   /** Injected for tests; production uses `Date.now`. */
   now?: () => number
+}
+
+/** Options for `WebDocumentStore.write`. */
+export interface WriteOptions {
+  /**
+   * May this write open the browser's write-permission dialog? Defaults to true.
+   *
+   * `false` for an unattended write (an autosave, a recovery tick): the write then
+   * proceeds only on a grant that already exists, and otherwise throws
+   * `FilePermissionDeniedError` for the caller to report as "not saved yet"
+   * without anything having appeared on screen.
+   */
+  prompt?: boolean
 }
 
 export class WebDocumentStore {
@@ -162,6 +176,24 @@ export class WebDocumentStore {
   }
 
   /**
+   * May this document be written *without asking the user*?
+   *
+   * A query, never a request: `queryPermission` reports the standing grant and
+   * opens nothing, which is what makes it safe to call from a timer. A `false` is
+   * not a failure — it means the next write has to be one the user asked for, so
+   * that the browser's permission prompt has a gesture behind it.
+   *
+   * True for a handle that came from a save dialog (writable by construction) and
+   * for one already granted in this session; false for a freshly opened document
+   * whose grant is still read-only, and for one restored from IndexedDB after a
+   * reload.
+   */
+  async writable(ref: string): Promise<boolean> {
+    const handle = await this.handleFor(ref)
+    return (await handle.queryPermission({ mode: 'readwrite' })) === 'granted'
+  }
+
+  /**
    * Overwrite the document in place.
    *
    * `createWritable()` truncates by default, so the file is replaced rather
@@ -169,11 +201,24 @@ export class WebDocumentStore {
    * `savePdf` in @genoffice/pdf-edit, which only writes after the whole edit
    * applied cleanly).
    */
-  async write(ref: string, bytes: Uint8Array): Promise<void> {
+  async write(ref: string, bytes: Uint8Array, options: WriteOptions = {}): Promise<void> {
     const handle = await this.handleFor(ref)
     // A session handle may hold read-only permission even though it never left
     // memory: `showOpenFilePicker` grants read, and write is a second grant.
-    await this.grant(handle)
+    //
+    // `prompt: false` is for a write nobody asked for. Requesting the grant opens
+    // a browser permission dialog, and one of those arriving out of a 30-second
+    // timer is the same interruption a picker would be — worse, from a timer the
+    // request may simply be rejected for want of user activation, which surfaces
+    // as a failed save. So an unattended write asks whether it *already* may, and
+    // declines when it may not.
+    if (options.prompt === false) {
+      if (!(await this.writable(ref))) {
+        throw new FilePermissionDeniedError(handle.name, 'readwrite', 'prompt')
+      }
+    } else {
+      await this.grant(handle)
+    }
     const writable = await handle.createWritable()
     try {
       await writable.write(toBlobPart(bytes))

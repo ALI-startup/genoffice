@@ -442,10 +442,31 @@ Learned the hard way; each item cost real time.
 Not bugs — capabilities deliberately represented as absent rather than stubbed.
 
 **docs:** PDF export (print via `window.print()` only, by decision); AI web and
-image search (needs BFF routes); Genspark sign-in; crash-recovery copies;
-`.pdf` / `.ppt` / `.xls` attachments (rejected at add time with a reason);
-attachment refs do not survive a reload; attachment rejection messages are
-English-only.
+image search (needs BFF routes); Genspark sign-in; crash-recovery copies
+(`DocsFilePort.crashRecovery` is false, so the renderer's 30s tick does not run);
+silent first save of a never-saved document; `.pdf` / `.ppt` / `.xls` attachments
+(rejected at add time with a reason); attachment refs do not survive a reload;
+attachment rejection messages are English-only.
+
+**No automatic save may open a dialog.** Learned from a bug, so it is written down
+here rather than left to each call site. `saveNew` and `save` both take the
+caller's intent, and on web an automatic save refuses (`needs-user-gesture`,
+`needs-permission`) rather than opening a picker or a permission prompt:
+
+- The renderer's recovery tick reached `saveNew` every 30 seconds for a
+  never-saved document. `saveNew` gated on `navigator.userActivation.isActive`,
+  which stays true for seconds after every keystroke — so a document being typed
+  into held activation continuously and the Save As dialog opened on a timer.
+  Activation says a dialog _may_ open, never that anyone wanted one.
+- An autosave of a document that _does_ have a handle writes through
+  `WebDocumentStore.write(..., { prompt: false })`. A handle from the open dialog
+  carries read permission only, and one restored from IndexedDB carries none, so
+  requesting the write grant from a timer would either raise a permission dialog
+  unbidden or be rejected for want of activation and read as a failed save.
+
+Getting a document out of a browser that has no handle for it is
+`DocsPlatform.download` (File → Download), which copies the bytes and adopts
+nothing: no ref, no recent entry, and the document stays as dirty as it was.
 
 **pdf:** Save As (shell-menu-driven); no recent-files UI, though handles _are_
 persisted.

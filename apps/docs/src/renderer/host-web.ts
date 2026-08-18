@@ -18,9 +18,11 @@
  * extraction are recorded.
  */
 import {
+  browserDownloadEnv,
   browserFilePickers,
   browserLanguageEnv,
   browserMultiFilePicker,
+  downloadBytes,
   createFrameChildLink,
   createIndexedDbHandleStore,
   DOCUMENT_DB_NAME,
@@ -155,6 +157,12 @@ export const createDocsPlatform: CreateDocsPlatform = async () => {
     // to be in hand before anything is written. Wording comes from the renderer's
     // i18n, so it is localised in all the languages the desktop prompt is.
     confirmOverwrite: () => window.confirm(t('appSaveExtModified')),
+    // The browser's downloads, which is where a document with no file handle goes
+    // when the user asks for it — a new document, or one imported from `.hwpx`.
+    // Passed as a function so platform-web.ts keeps its promise of touching no
+    // globals; the DOM work is in @genoffice/platform-web's download.ts.
+    deliverDownload: (fileName, data, mimeType) =>
+      downloadBytes(browserDownloadEnv(), fileName, data, mimeType),
     // Non-null only when the web shell hosts this page in its tab strip, which
     // it signals with a query parameter. It is what lets the shell's close guard
     // ask this document whether it has unsaved work, and ask it to save: closing

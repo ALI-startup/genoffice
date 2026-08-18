@@ -89,9 +89,18 @@ export function createDocsFilePort(bridge: DesktopApi): DocsFilePort {
     },
     save: (ref, data, auto) => bridge.saveDocx(ref, data, auto),
     saveAs: async (defaultName, data) => toNamedResult(await bridge.saveDocxAs(defaultName, data)),
-    saveNew: async (defaultName, data) =>
+    // `auto` is not forwarded, and that is the whole story of this host: the main
+    // process writes a never-saved document into its default documents folder
+    // with no dialog, so an automatic first save and a deliberate one are the same
+    // silent write. The flag exists for hosts that must ask, and the desktop
+    // behaviour is byte-for-byte what it was before it existed.
+    saveNew: async (defaultName, data, _auto) =>
       toNamedResult(await bridge.saveDocxNew(defaultName, data)),
     writeRecoveryCopy: (ref, data) => bridge.writeRecoveryCopy(ref, data),
+    // Both halves of the renderer's recovery tick land somewhere real here: the
+    // main process owns a recovery directory under userData, and `saveNew` can
+    // name a document without asking.
+    crashRecovery: true,
     // `location` is the absolute path: this host has one, so a recent entry can
     // still show it. `name` is what any list would render.
     recentDocuments: async () =>
@@ -194,5 +203,8 @@ export function createElectronDocsPlatform(bridge: DesktopApi): DocsPlatform {
     pdfExport: createDocsPdfExportPort(bridge),
     print: null,
     hwpx: createDocsHwpxPort(bridge),
+    // Save and Save As write the real document through a native dialog and keep
+    // editing it; a download would be a second, worse way to produce a copy.
+    download: null,
   }
 }

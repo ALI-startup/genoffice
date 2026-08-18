@@ -24,6 +24,7 @@ export const appStrings = defineStrings({
     appNewFailed: '新建失败: {error}',
     appSaveFailed: '保存失败: {error}',
     appSaveExtModified: '文件已被其他程序修改。仍要保存并覆盖磁盘上的更改吗?',
+    appSaveNeedsPermission: '未自动保存: 尚未获得此文件的写入权限。请手动保存一次以授予权限。',
     appSaveNeedsLocation: '未自动保存: 此文档尚无保存位置。请点击"保存"选择存放位置。',
     appAutoSavedAt: '已自动保存 ({time})',
     appSaved: '已保存',
@@ -65,6 +66,9 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: '导出 HWPX 失败: {error}',
     appExportHwpxCanceled: '已取消导出 HWPX',
     appExportHwpxEmpty: '文档为空,无法导出 HWPX',
+    appDownloading: '正在准备下载…',
+    appDownloaded: '已下载: {name}',
+    appDownloadFailed: '下载失败: {error}',
     appImported: '已导入 {name}(另存为 .docx)',
     appImportedWithoutImages: '已导入 {name}(另存为 .docx;{n} 张图片未能保留)',
     appImportFailed: '导入失败: {error}',
@@ -329,6 +333,8 @@ export const appStrings = defineStrings({
     appSaveFailed: 'Save failed: {error}',
     appSaveExtModified:
       'The file has been modified by another program. Save anyway and overwrite the changes on disk?',
+    appSaveNeedsPermission:
+      'Not auto-saved: this file is not writable yet. Save once to grant permission.',
     appSaveNeedsLocation:
       'Not auto-saved: this document has no location yet. Use Save to choose where to store it.',
     appAutoSavedAt: 'AutoSaved ({time})',
@@ -366,8 +372,12 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: 'HWPX export failed: {error}',
     appExportHwpxCanceled: 'HWPX export canceled',
     appExportHwpxEmpty: 'Nothing to export: the document is empty',
+    appDownloading: 'Preparing download…',
+    appDownloaded: 'Downloaded: {name}',
+    appDownloadFailed: 'Download failed: {error}',
     appImported: 'Imported {name} — saves as .docx',
-    appImportedWithoutImages: 'Imported {name} — saves as .docx; {n} picture(s) could not be carried over',
+    appImportedWithoutImages:
+      'Imported {name} — saves as .docx; {n} picture(s) could not be carried over',
     appImportFailed: 'Import failed: {error}',
     appMixedExportOpening: 'Mixed paper sizes: opening pagination preview to export pages merged…',
     appSelectTextToComment: 'Select the text to comment on first',
@@ -616,6 +626,8 @@ export const appStrings = defineStrings({
     appSaveFailed: '保存に失敗しました: {error}',
     appSaveExtModified:
       'このファイルは別のプログラムによって変更されています。このまま保存してディスク上の変更を上書きしますか?',
+    appSaveNeedsPermission:
+      '自動保存されていません: このファイルへの書き込みが許可されていません。一度手動で保存して許可してください。',
     appSaveNeedsLocation:
       '自動保存されていません: この文書には保存場所がまだありません。「保存」で保存先を選んでください。',
     appAutoSavedAt: '自動保存しました ({time})',
@@ -662,8 +674,12 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: 'HWPX のエクスポートに失敗しました: {error}',
     appExportHwpxCanceled: 'HWPX のエクスポートをキャンセルしました',
     appExportHwpxEmpty: '文書が空のためエクスポートできません',
+    appDownloading: 'ダウンロードを準備中…',
+    appDownloaded: 'ダウンロードしました: {name}',
+    appDownloadFailed: 'ダウンロードに失敗しました: {error}',
     appImported: '{name} を読み込みました(.docx として保存されます)',
-    appImportedWithoutImages: '{name} を読み込みました(.docx として保存されます。画像 {n} 点は引き継げませんでした)',
+    appImportedWithoutImages:
+      '{name} を読み込みました(.docx として保存されます。画像 {n} 点は引き継げませんでした)',
     appImportFailed: '読み込みに失敗しました: {error}',
     appMixedExportOpening:
       '用紙サイズが混在する文書:ページ プレビューを開き、ページごとに結合してエクスポートしています…',
@@ -936,6 +952,8 @@ export const appStrings = defineStrings({
     appSaveFailed: '저장 실패: {error}',
     appSaveExtModified:
       '이 파일이 다른 프로그램에서 수정되었습니다. 그래도 저장하여 디스크의 변경 사항을 덮어쓸까요?',
+    appSaveNeedsPermission:
+      '자동 저장되지 않음: 이 파일에 쓸 권한이 없습니다. 한 번 저장하여 권한을 허용하세요.',
     appSaveNeedsLocation:
       '자동 저장되지 않음: 이 문서에는 아직 저장 위치가 없습니다. "저장"으로 저장할 위치를 선택하세요.',
     appAutoSavedAt: '자동 저장됨 ({time})',
@@ -980,6 +998,9 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: 'HWPX 내보내기 실패: {error}',
     appExportHwpxCanceled: 'HWPX 내보내기를 취소했습니다',
     appExportHwpxEmpty: '문서가 비어 있어 내보낼 수 없습니다',
+    appDownloading: '다운로드 준비 중…',
+    appDownloaded: '다운로드함: {name}',
+    appDownloadFailed: '다운로드 실패: {error}',
     appImported: '{name} 가져옴 — .docx로 저장됩니다',
     appImportedWithoutImages: '{name} 가져옴 — .docx로 저장됩니다. 그림 {n}개는 옮기지 못했습니다',
     appImportFailed: '가져오기 실패: {error}',
@@ -1252,6 +1273,8 @@ export const appStrings = defineStrings({
     appSaveFailed: "Échec de l'enregistrement : {error}",
     appSaveExtModified:
       'Le fichier a été modifié par un autre programme. Enregistrer quand même et écraser les modifications sur le disque ?',
+    appSaveNeedsPermission:
+      "Non enregistré automatiquement : ce fichier n'est pas encore accessible en écriture. Enregistrez une fois pour accorder l'autorisation.",
     appSaveNeedsLocation:
       "Non enregistré automatiquement : ce document n'a pas encore d'emplacement. Utilisez Enregistrer pour choisir où le stocker.",
     appAutoSavedAt: 'Enregistrement automatique ({time})',
@@ -1291,12 +1314,16 @@ export const appStrings = defineStrings({
     appExportPdfCanceled: 'Exportation PDF annulée',
     appExportingHwpx: 'Exportation HWPX…',
     appExportedHwpx: 'HWPX exporté : {path}',
-    appExportHwpxFailed: 'Échec de l\'exportation HWPX : {error}',
+    appExportHwpxFailed: "Échec de l'exportation HWPX : {error}",
     appExportHwpxCanceled: 'Exportation HWPX annulée',
     appExportHwpxEmpty: 'Rien à exporter : le document est vide',
+    appDownloading: 'Préparation du téléchargement…',
+    appDownloaded: 'Téléchargé : {name}',
+    appDownloadFailed: 'Échec du téléchargement : {error}',
     appImported: '{name} importé — sera enregistré en .docx',
-    appImportedWithoutImages: '{name} importé — sera enregistré en .docx ; {n} image(s) non conservée(s)',
-    appImportFailed: 'Échec de l\'importation : {error}',
+    appImportedWithoutImages:
+      '{name} importé — sera enregistré en .docx ; {n} image(s) non conservée(s)',
+    appImportFailed: "Échec de l'importation : {error}",
     appMixedExportOpening:
       "Formats de papier mixtes : ouverture de l'aperçu de pagination pour exporter les pages fusionnées…",
     appSelectTextToComment: "Sélectionnez d'abord le texte à commenter",
@@ -1550,6 +1577,8 @@ export const appStrings = defineStrings({
     appSaveFailed: 'Speichern fehlgeschlagen: {error}',
     appSaveExtModified:
       'Die Datei wurde von einem anderen Programm geändert. Trotzdem speichern und die Änderungen auf dem Datenträger überschreiben?',
+    appSaveNeedsPermission:
+      'Nicht automatisch gespeichert: Diese Datei ist noch nicht beschreibbar. Einmal speichern, um die Berechtigung zu erteilen.',
     appSaveNeedsLocation:
       'Nicht automatisch gespeichert: Dieses Dokument hat noch keinen Speicherort. Wählen Sie über „Speichern“ einen Speicherort.',
     appAutoSavedAt: 'Automatisch gespeichert ({time})',
@@ -1591,8 +1620,12 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: 'HWPX-Export fehlgeschlagen: {error}',
     appExportHwpxCanceled: 'HWPX-Export abgebrochen',
     appExportHwpxEmpty: 'Nichts zu exportieren: das Dokument ist leer',
+    appDownloading: 'Download wird vorbereitet…',
+    appDownloaded: 'Heruntergeladen: {name}',
+    appDownloadFailed: 'Download fehlgeschlagen: {error}',
     appImported: '{name} importiert — wird als .docx gespeichert',
-    appImportedWithoutImages: '{name} importiert — wird als .docx gespeichert; {n} Bild(er) konnten nicht übernommen werden',
+    appImportedWithoutImages:
+      '{name} importiert — wird als .docx gespeichert; {n} Bild(er) konnten nicht übernommen werden',
     appImportFailed: 'Import fehlgeschlagen: {error}',
     appMixedExportOpening:
       'Gemischte Papierformate: Seitenvorschau wird geöffnet, um die Seiten zusammengeführt zu exportieren…',
@@ -1849,6 +1882,8 @@ export const appStrings = defineStrings({
     appSaveFailed: 'Error al guardar: {error}',
     appSaveExtModified:
       'El archivo ha sido modificado por otro programa. ¿Guardar de todos modos y sobrescribir los cambios en el disco?',
+    appSaveNeedsPermission:
+      'No se guardó automáticamente: este archivo aún no permite escritura. Guarda una vez para conceder el permiso.',
     appSaveNeedsLocation:
       'No se guarda automáticamente: este documento aún no tiene ubicación. Usa Guardar para elegir dónde almacenarlo.',
     appAutoSavedAt: 'Guardado automáticamente ({time})',
@@ -1890,8 +1925,12 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: 'Error al exportar HWPX: {error}',
     appExportHwpxCanceled: 'Exportación de HWPX cancelada',
     appExportHwpxEmpty: 'Nada que exportar: el documento está vacío',
+    appDownloading: 'Preparando la descarga…',
+    appDownloaded: 'Descargado: {name}',
+    appDownloadFailed: 'Error al descargar: {error}',
     appImported: '{name} importado: se guardará como .docx',
-    appImportedWithoutImages: '{name} importado: se guardará como .docx; no se pudieron conservar {n} imagen(es)',
+    appImportedWithoutImages:
+      '{name} importado: se guardará como .docx; no se pudieron conservar {n} imagen(es)',
     appImportFailed: 'Error al importar: {error}',
     appMixedExportOpening:
       'Tamaños de papel mixtos: abriendo la vista previa de paginación para exportar las páginas combinadas…',
@@ -2143,6 +2182,8 @@ export const appStrings = defineStrings({
     appSaveFailed: 'บันทึกไม่สำเร็จ: {error}',
     appSaveExtModified:
       'ไฟล์ถูกแก้ไขโดยโปรแกรมอื่น บันทึกต่อไปและเขียนทับการเปลี่ยนแปลงบนดิสก์หรือไม่?',
+    appSaveNeedsPermission:
+      'ยังไม่บันทึกอัตโนมัติ: ไฟล์นี้ยังไม่ได้รับสิทธิ์เขียน กดบันทึกหนึ่งครั้งเพื่ออนุญาต',
     appSaveNeedsLocation:
       'ไม่ได้บันทึกอัตโนมัติ: เอกสารนี้ยังไม่มีตำแหน่งจัดเก็บ ใช้ "บันทึก" เพื่อเลือกที่จัดเก็บ',
     appAutoSavedAt: 'บันทึกอัตโนมัติแล้ว ({time})',
@@ -2182,8 +2223,12 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: 'ส่งออก HWPX ไม่สำเร็จ: {error}',
     appExportHwpxCanceled: 'ยกเลิกการส่งออก HWPX แล้ว',
     appExportHwpxEmpty: 'ไม่มีอะไรให้ส่งออก: เอกสารว่างเปล่า',
+    appDownloading: 'กำลังเตรียมดาวน์โหลด…',
+    appDownloaded: 'ดาวน์โหลดแล้ว: {name}',
+    appDownloadFailed: 'ดาวน์โหลดไม่สำเร็จ: {error}',
     appImported: 'นำเข้า {name} แล้ว — จะบันทึกเป็น .docx',
-    appImportedWithoutImages: 'นำเข้า {name} แล้ว — จะบันทึกเป็น .docx; ไม่สามารถเก็บรูปภาพ {n} รูป',
+    appImportedWithoutImages:
+      'นำเข้า {name} แล้ว — จะบันทึกเป็น .docx; ไม่สามารถเก็บรูปภาพ {n} รูป',
     appImportFailed: 'นำเข้าไม่สำเร็จ: {error}',
     appMixedExportOpening:
       'เอกสารมีขนาดกระดาษผสม: กำลังเปิดตัวอย่างการแบ่งหน้าเพื่อส่งออกแบบรวมทีละหน้า…',
@@ -2433,6 +2478,8 @@ export const appStrings = defineStrings({
     appSaveFailed: 'Gagal menyimpan: {error}',
     appSaveExtModified:
       'File telah diubah oleh program lain. Tetap simpan dan timpa perubahan di disk?',
+    appSaveNeedsPermission:
+      'Tidak disimpan otomatis: file ini belum dapat ditulis. Simpan sekali untuk memberi izin.',
     appSaveNeedsLocation:
       'Tidak disimpan otomatis: dokumen ini belum memiliki lokasi. Gunakan Simpan untuk memilih tempat penyimpanan.',
     appAutoSavedAt: 'Disimpan otomatis ({time})',
@@ -2473,8 +2520,12 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: 'Ekspor HWPX gagal: {error}',
     appExportHwpxCanceled: 'Ekspor HWPX dibatalkan',
     appExportHwpxEmpty: 'Tidak ada yang diekspor: dokumen kosong',
+    appDownloading: 'Menyiapkan unduhan…',
+    appDownloaded: 'Diunduh: {name}',
+    appDownloadFailed: 'Gagal mengunduh: {error}',
     appImported: '{name} diimpor — disimpan sebagai .docx',
-    appImportedWithoutImages: '{name} diimpor — disimpan sebagai .docx; {n} gambar tidak dapat dipertahankan',
+    appImportedWithoutImages:
+      '{name} diimpor — disimpan sebagai .docx; {n} gambar tidak dapat dipertahankan',
     appImportFailed: 'Impor gagal: {error}',
     appMixedExportOpening:
       'Ukuran kertas campuran: membuka pratinjau paginasi untuk mengekspor halaman yang digabungkan…',
@@ -2724,6 +2775,8 @@ export const appStrings = defineStrings({
     appSaveFailed: 'Не удалось сохранить: {error}',
     appSaveExtModified:
       'Файл был изменён другой программой. Всё равно сохранить и перезаписать изменения на диске?',
+    appSaveNeedsPermission:
+      'Автосохранение не выполнено: запись в этот файл ещё не разрешена. Сохраните один раз, чтобы дать разрешение.',
     appSaveNeedsLocation:
       'Автосохранение не выполняется: у документа ещё нет места хранения. Нажмите «Сохранить», чтобы выбрать его.',
     appAutoSavedAt: 'Автосохранение ({time})',
@@ -2765,8 +2818,12 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: 'Не удалось экспортировать HWPX: {error}',
     appExportHwpxCanceled: 'Экспорт HWPX отменен',
     appExportHwpxEmpty: 'Нечего экспортировать: документ пуст',
+    appDownloading: 'Подготовка загрузки…',
+    appDownloaded: 'Загружено: {name}',
+    appDownloadFailed: 'Не удалось загрузить: {error}',
     appImported: '{name} импортирован — сохранится как .docx',
-    appImportedWithoutImages: '{name} импортирован — сохранится как .docx; изображений не перенесено: {n}',
+    appImportedWithoutImages:
+      '{name} импортирован — сохранится как .docx; изображений не перенесено: {n}',
     appImportFailed: 'Не удалось импортировать: {error}',
     appMixedExportOpening:
       'Смешанные форматы бумаги: открывается предварительный просмотр страниц для постраничного объединения при экспорте…',
@@ -3019,6 +3076,8 @@ export const appStrings = defineStrings({
     appSaveFailed: 'فشل الحفظ: {error}',
     appSaveExtModified:
       'تم تعديل الملف بواسطة برنامج آخر. هل تريد الحفظ على أي حال والكتابة فوق التغييرات على القرص؟',
+    appSaveNeedsPermission:
+      'لم يتم الحفظ التلقائي: لا يُسمح بالكتابة إلى هذا الملف بعد. احفظ مرة واحدة لمنح الإذن.',
     appSaveNeedsLocation:
       'لم يتم الحفظ التلقائي: لا يوجد موقع لهذا المستند بعد. استخدم "حفظ" لاختيار مكان تخزينه.',
     appAutoSavedAt: 'تم الحفظ التلقائي ({time})',
@@ -3057,6 +3116,9 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: 'فشل تصدير HWPX: {error}',
     appExportHwpxCanceled: 'تم إلغاء تصدير HWPX',
     appExportHwpxEmpty: 'لا شيء للتصدير: المستند فارغ',
+    appDownloading: 'جارٍ تحضير التنزيل…',
+    appDownloaded: 'تم التنزيل: {name}',
+    appDownloadFailed: 'فشل التنزيل: {error}',
     appImported: 'تم استيراد {name} — سيُحفظ بصيغة .docx',
     appImportedWithoutImages: 'تم استيراد {name} — سيُحفظ بصيغة .docx؛ تعذّر نقل {n} صورة',
     appImportFailed: 'فشل الاستيراد: {error}',
@@ -3305,6 +3367,8 @@ export const appStrings = defineStrings({
     appSaveFailed: 'Falha ao salvar: {error}',
     appSaveExtModified:
       'O arquivo foi modificado por outro programa. Salvar mesmo assim e sobrescrever as alterações no disco?',
+    appSaveNeedsPermission:
+      'Não salvo automaticamente: este arquivo ainda não permite gravação. Salve uma vez para conceder a permissão.',
     appSaveNeedsLocation:
       'Não salvo automaticamente: este documento ainda não tem um local. Use Salvar para escolher onde armazená-lo.',
     appAutoSavedAt: 'Salvo automaticamente ({time})',
@@ -3345,8 +3409,12 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: 'Falha ao exportar HWPX: {error}',
     appExportHwpxCanceled: 'Exportação de HWPX cancelada',
     appExportHwpxEmpty: 'Nada a exportar: o documento está vazio',
+    appDownloading: 'Preparando o download…',
+    appDownloaded: 'Baixado: {name}',
+    appDownloadFailed: 'Falha no download: {error}',
     appImported: '{name} importado — será salvo como .docx',
-    appImportedWithoutImages: '{name} importado — será salvo como .docx; {n} imagem(ns) não puderam ser mantidas',
+    appImportedWithoutImages:
+      '{name} importado — será salvo como .docx; {n} imagem(ns) não puderam ser mantidas',
     appImportFailed: 'Falha na importação: {error}',
     appMixedExportOpening:
       'Tamanhos de papel mistos: abrindo a visualização de paginação para exportar mesclando por página…',
@@ -3597,6 +3665,8 @@ export const appStrings = defineStrings({
     appSaveFailed: 'Salvataggio non riuscito: {error}',
     appSaveExtModified:
       'Il file è stato modificato da un altro programma. Salvare comunque e sovrascrivere le modifiche sul disco?',
+    appSaveNeedsPermission:
+      'Non salvato automaticamente: questo file non è ancora scrivibile. Salva una volta per concedere il permesso.',
     appSaveNeedsLocation:
       'Non salvato automaticamente: questo documento non ha ancora una posizione. Usa Salva per scegliere dove archiviarlo.',
     appAutoSavedAt: 'Salvato automaticamente ({time})',
@@ -3637,8 +3707,12 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: 'Esportazione HWPX non riuscita: {error}',
     appExportHwpxCanceled: 'Esportazione HWPX annullata',
     appExportHwpxEmpty: 'Niente da esportare: il documento è vuoto',
+    appDownloading: 'Preparazione del download…',
+    appDownloaded: 'Scaricato: {name}',
+    appDownloadFailed: 'Download non riuscito: {error}',
     appImported: '{name} importato — verrà salvato come .docx',
-    appImportedWithoutImages: '{name} importato — verrà salvato come .docx; {n} immagine/i non conservate',
+    appImportedWithoutImages:
+      '{name} importato — verrà salvato come .docx; {n} immagine/i non conservate',
     appImportFailed: 'Importazione non riuscita: {error}',
     appMixedExportOpening:
       "Formati carta misti: apertura dell'anteprima di impaginazione per esportare unendo per pagina…",
@@ -3889,6 +3963,8 @@ export const appStrings = defineStrings({
     appSaveFailed: 'Zapisywanie nie powiodło się: {error}',
     appSaveExtModified:
       'Plik został zmodyfikowany przez inny program. Zapisać mimo to i nadpisać zmiany na dysku?',
+    appSaveNeedsPermission:
+      'Nie zapisano automatycznie: ten plik nie jest jeszcze zapisywalny. Zapisz raz, aby udzielić uprawnienia.',
     appSaveNeedsLocation:
       'Brak autozapisu: ten dokument nie ma jeszcze lokalizacji. Użyj polecenia Zapisz, aby wybrać miejsce zapisu.',
     appAutoSavedAt: 'Zapisano automatycznie ({time})',
@@ -3930,8 +4006,12 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: 'Eksport HWPX nie powiódł się: {error}',
     appExportHwpxCanceled: 'Anulowano eksport HWPX',
     appExportHwpxEmpty: 'Nie ma czego eksportować: dokument jest pusty',
+    appDownloading: 'Przygotowywanie pobierania…',
+    appDownloaded: 'Pobrano: {name}',
+    appDownloadFailed: 'Pobieranie nie powiodło się: {error}',
     appImported: 'Zaimportowano {name} — zostanie zapisany jako .docx',
-    appImportedWithoutImages: 'Zaimportowano {name} — zostanie zapisany jako .docx; nie udało się przenieść obrazów: {n}',
+    appImportedWithoutImages:
+      'Zaimportowano {name} — zostanie zapisany jako .docx; nie udało się przenieść obrazów: {n}',
     appImportFailed: 'Import nie powiódł się: {error}',
     appMixedExportOpening:
       'Mieszane rozmiary papieru: otwieranie podglądu podziału na strony w celu eksportu ze scaleniem według stron…',
@@ -4184,6 +4264,8 @@ export const appStrings = defineStrings({
     appSaveFailed: 'Opslaan mislukt: {error}',
     appSaveExtModified:
       'Het bestand is door een ander programma gewijzigd. Toch opslaan en de wijzigingen op schijf overschrijven?',
+    appSaveNeedsPermission:
+      'Niet automatisch opgeslagen: dit bestand is nog niet beschrijfbaar. Sla één keer op om toestemming te geven.',
     appSaveNeedsLocation:
       'Niet automatisch opgeslagen: dit document heeft nog geen locatie. Gebruik Opslaan om een locatie te kiezen.',
     appAutoSavedAt: 'Automatisch opgeslagen ({time})',
@@ -4225,8 +4307,12 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: 'HWPX-export mislukt: {error}',
     appExportHwpxCanceled: 'HWPX-export geannuleerd',
     appExportHwpxEmpty: 'Niets te exporteren: het document is leeg',
+    appDownloading: 'Download voorbereiden…',
+    appDownloaded: 'Gedownload: {name}',
+    appDownloadFailed: 'Downloaden mislukt: {error}',
     appImported: '{name} geïmporteerd — wordt opgeslagen als .docx',
-    appImportedWithoutImages: '{name} geïmporteerd — wordt opgeslagen als .docx; {n} afbeelding(en) konden niet worden overgenomen',
+    appImportedWithoutImages:
+      '{name} geïmporteerd — wordt opgeslagen als .docx; {n} afbeelding(en) konden niet worden overgenomen',
     appImportFailed: 'Importeren mislukt: {error}',
     appMixedExportOpening:
       'Gemengde papierformaten: pagineringsvoorbeeld wordt geopend om per pagina samengevoegd te exporteren…',
@@ -4482,6 +4568,8 @@ export const appStrings = defineStrings({
     appSaveFailed: 'Gagal menyimpan: {error}',
     appSaveExtModified:
       'Fail telah diubah oleh program lain. Simpan juga dan tulis ganti perubahan pada cakera?',
+    appSaveNeedsPermission:
+      'Tidak disimpan automatik: fail ini belum boleh ditulis. Simpan sekali untuk memberi kebenaran.',
     appSaveNeedsLocation:
       'Tidak disimpan automatik: dokumen ini belum mempunyai lokasi. Gunakan Simpan untuk memilih tempat menyimpannya.',
     appAutoSavedAt: 'Disimpan secara automatik ({time})',
@@ -4523,8 +4611,12 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: 'Eksport HWPX gagal: {error}',
     appExportHwpxCanceled: 'Eksport HWPX dibatalkan',
     appExportHwpxEmpty: 'Tiada apa untuk dieksport: dokumen kosong',
+    appDownloading: 'Menyediakan muat turun…',
+    appDownloaded: 'Dimuat turun: {name}',
+    appDownloadFailed: 'Muat turun gagal: {error}',
     appImported: '{name} diimport — akan disimpan sebagai .docx',
-    appImportedWithoutImages: '{name} diimport — akan disimpan sebagai .docx; {n} imej tidak dapat dikekalkan',
+    appImportedWithoutImages:
+      '{name} diimport — akan disimpan sebagai .docx; {n} imej tidak dapat dikekalkan',
     appImportFailed: 'Import gagal: {error}',
     appMixedExportOpening:
       'Saiz kertas bercampur: membuka pratonton penomboran halaman untuk eksport dengan gabungan mengikut halaman…',
@@ -4771,6 +4863,8 @@ export const appStrings = defineStrings({
     appNewFailed: 'יצירת המסמך נכשלה: {error}',
     appSaveFailed: 'השמירה נכשלה: {error}',
     appSaveExtModified: 'הקובץ שונה על ידי תוכנית אחרת. לשמור בכל זאת ולדרוס את השינויים בדיסק?',
+    appSaveNeedsPermission:
+      'לא נשמר אוטומטית: אין עדיין הרשאת כתיבה לקובץ הזה. שמור פעם אחת כדי להעניק הרשאה.',
     appSaveNeedsLocation:
       'לא נשמר אוטומטית: למסמך הזה אין עדיין מקום שמירה. השתמשו ב"שמירה" כדי לבחור היכן לשמור אותו.',
     appAutoSavedAt: 'נשמר אוטומטית ({time})',
@@ -4808,6 +4902,9 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: 'ייצוא HWPX נכשל: {error}',
     appExportHwpxCanceled: 'ייצוא ה-HWPX בוטל',
     appExportHwpxEmpty: 'אין מה לייצא: המסמך ריק',
+    appDownloading: 'מכין הורדה…',
+    appDownloaded: 'הורד: {name}',
+    appDownloadFailed: 'ההורדה נכשלה: {error}',
     appImported: '{name} יובא — יישמר כ-.docx',
     appImportedWithoutImages: '{name} יובא — יישמר כ-.docx; {n} תמונות לא הועברו',
     appImportFailed: 'הייבוא נכשל: {error}',
@@ -5056,6 +5153,8 @@ export const appStrings = defineStrings({
     appSaveFailed: 'सहेजने में विफल: {error}',
     appSaveExtModified:
       'फ़ाइल को किसी अन्य प्रोग्राम ने बदल दिया है। फिर भी सहेजें और डिस्क पर मौजूद बदलावों को अधिलेखित करें?',
+    appSaveNeedsPermission:
+      'स्वतः सहेजा नहीं गया: इस फ़ाइल में लिखने की अनुमति अभी नहीं है। अनुमति देने के लिए एक बार सहेजें।',
     appSaveNeedsLocation:
       'स्वतः सहेजा नहीं गया: इस दस्तावेज़ का कोई स्थान अभी नहीं है। "सहेजें" से स्थान चुनें।',
     appAutoSavedAt: 'स्वतः सहेजा गया ({time})',
@@ -5096,8 +5195,12 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: 'HWPX निर्यात विफल: {error}',
     appExportHwpxCanceled: 'HWPX निर्यात रद्द किया गया',
     appExportHwpxEmpty: 'निर्यात करने के लिए कुछ नहीं: दस्तावेज़ खाली है',
+    appDownloading: 'डाउनलोड तैयार किया जा रहा है…',
+    appDownloaded: 'डाउनलोड हो गया: {name}',
+    appDownloadFailed: 'डाउनलोड विफल: {error}',
     appImported: '{name} आयात किया गया — .docx के रूप में सहेजा जाएगा',
-    appImportedWithoutImages: '{name} आयात किया गया — .docx के रूप में सहेजा जाएगा; {n} चित्र नहीं रखे जा सके',
+    appImportedWithoutImages:
+      '{name} आयात किया गया — .docx के रूप में सहेजा जाएगा; {n} चित्र नहीं रखे जा सके',
     appImportFailed: 'आयात विफल: {error}',
     appMixedExportOpening:
       'मिश्रित कागज़ आकार: पृष्ठ अनुसार मर्ज करके निर्यात के लिए पृष्ठांकन पूर्वावलोकन खोला जा रहा है…',
@@ -5343,6 +5446,7 @@ export const appStrings = defineStrings({
     appNewFailed: '建立失敗: {error}',
     appSaveFailed: '儲存失敗: {error}',
     appSaveExtModified: '檔案已被其他程式修改。仍要儲存並覆寫磁碟上的變更嗎?',
+    appSaveNeedsPermission: '未自動儲存: 尚未取得此檔案的寫入權限。請手動儲存一次以授予權限。',
     appSaveNeedsLocation: '未自動儲存: 此文件尚無儲存位置。請按「儲存」選擇存放位置。',
     appAutoSavedAt: '已自動儲存 ({time})',
     appSaved: '已儲存',
@@ -5379,6 +5483,9 @@ export const appStrings = defineStrings({
     appExportHwpxFailed: '匯出 HWPX 失敗: {error}',
     appExportHwpxCanceled: '已取消匯出 HWPX',
     appExportHwpxEmpty: '文件為空,無法匯出 HWPX',
+    appDownloading: '正在準備下載…',
+    appDownloaded: '已下載: {name}',
+    appDownloadFailed: '下載失敗: {error}',
     appImported: '已匯入 {name}(另存為 .docx)',
     appImportedWithoutImages: '已匯入 {name}(另存為 .docx;{n} 張圖片未能保留)',
     appImportFailed: '匯入失敗: {error}',

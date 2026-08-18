@@ -115,6 +115,73 @@ describe('read and write', () => {
   })
 })
 
+describe('a write nobody asked for', () => {
+  /**
+   * `prompt: false` is what an autosave writes through, and the point of it is a
+   * dialog that does not appear. `requestPermission` is the call that opens one, so
+   * these assertions are about `permissions.requested` staying empty — a store that
+   * asked anyway would still write the bytes and still pass a test that only
+   * checked the file contents.
+   */
+  it('writes on a standing grant, without asking again', async () => {
+    const store = newStore()
+    const handle = fakeFileHandle('report.pdf')
+    pickers.openQueue.push(handle)
+    const doc = await store.open()
+
+    await store.write(doc!.ref, new Uint8Array([1, 2]), { prompt: false })
+
+    expect([...handle.contents]).toEqual([1, 2])
+    expect(handle.permissions.requested).toEqual([])
+  })
+
+  it('refuses rather than requesting a grant it does not have', async () => {
+    const store = newStore()
+    // Read granted, write not: what `showOpenFilePicker` leaves behind, and what a
+    // handle restored from IndexedDB after a reload starts as.
+    const handle = fakeFileHandle('report.pdf', new Uint8Array([9]))
+    handle.queryState = 'prompt'
+    pickers.openQueue.push(handle)
+    const doc = await store.open()
+
+    await expect(
+      store.write(doc!.ref, new Uint8Array([1, 2]), { prompt: false }),
+    ).rejects.toBeInstanceOf(FilePermissionDeniedError)
+
+    // Nothing on screen, and nothing written: the file still holds what it did.
+    expect(handle.permissions.requested).toEqual([])
+    expect([...handle.contents]).toEqual([9])
+  })
+
+  it('is opt-in: an ordinary write still asks, because a user asked for it', async () => {
+    const store = newStore()
+    const handle = fakeFileHandle('report.pdf')
+    handle.queryState = 'prompt'
+    pickers.openQueue.push(handle)
+    const doc = await store.open()
+
+    await store.write(doc!.ref, new Uint8Array([1, 2]))
+
+    expect(handle.permissions.requested).toEqual([{ mode: 'readwrite' }])
+    expect([...handle.contents]).toEqual([1, 2])
+  })
+
+  it('writable() answers the question without opening anything', async () => {
+    const store = newStore()
+    const handle = fakeFileHandle('report.pdf')
+    handle.queryState = 'prompt'
+    pickers.openQueue.push(handle)
+    const doc = await store.open()
+
+    await expect(store.writable(doc!.ref)).resolves.toBe(false)
+    handle.queryState = 'granted'
+    await expect(store.writable(doc!.ref)).resolves.toBe(true)
+
+    expect(handle.permissions.requested).toEqual([])
+    expect(handle.permissions.queried).toEqual([{ mode: 'readwrite' }, { mode: 'readwrite' }])
+  })
+})
+
 describe('reuse of a persisted handle', () => {
   /** Model a page reload: a brand-new store over the same persisted entries. */
   const afterReload = () => new WebDocumentStore({ handles, pickers, newRef: () => 'unused' })

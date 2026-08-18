@@ -66,6 +66,7 @@ export type {
   WebDocument,
   WebDocumentStoreOptions,
   WebRecentDocument,
+  WriteOptions,
 } from './document-store.js'
 
 export {
@@ -75,6 +76,9 @@ export {
   setWebLanguage,
 } from './language.js'
 export type { LanguageHostEnv } from './language.js'
+
+export { browserDownloadEnv, DOWNLOAD_URL_TTL_MS, downloadBytes } from './download.js'
+export type { DownloadEnv } from './download.js'
 
 export { createWebUnloadPrompt, createWebWindowPort } from './window.js'
 export type { CloseGuardEnv, WebWindowSlice } from './window.js'

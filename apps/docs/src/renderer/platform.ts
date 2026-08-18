@@ -29,14 +29,16 @@
  *     host whose print flow the renderer does not drive.
  *   - `hwpx` — writing the document out as `.hwpx`, or `null` on a host that
  *     cannot convert. Non-null on both hosts today.
+ *   - `download` — copying the document out to the user's downloads, or `null` on
+ *     a host whose Save As already writes a real file it keeps editing.
  *
- * Six of those are `X | null`. Four are capabilities the web host (Phase 4b)
- * genuinely cannot back; `print` runs the other way, because it is the Electron
- * host that leaves it null (there printing belongs to the native application
- * menu); and `hwpx` is backed by both, kept nullable so a host that cannot
- * convert has something honest to report. See `DocsPlatform` for why each is
- * nullable rather than optional, and host-web.ts / platform-electron.ts for why
- * each is null there.
+ * Seven of those are `X | null`. Four are capabilities the web host (Phase 4b)
+ * genuinely cannot back; `print` and `download` run the other way, because it is
+ * the Electron host that leaves those null (there printing belongs to the native
+ * application menu, and Save As is a better download than a download); and `hwpx`
+ * is backed by both, kept nullable so a host that cannot convert has something
+ * honest to report. See `DocsPlatform` for why each is nullable rather than
+ * optional, and host-web.ts / platform-electron.ts for why each is null there.
  *
  * Ports deliberately left out, and why:
  *   - `aiSettings` (setAiSettings) — docs' preload forwards 'ai:set-settings'
@@ -133,8 +135,7 @@ export interface ImportedDocument {
  * see `ImportedDocument`.
  */
 export type OpenOutcome =
-  | { kind: 'document'; document: OpenedDocument }
-  | { kind: 'import'; imported: ImportedDocument }
+  { kind: 'document'; document: OpenedDocument } | { kind: 'import'; imported: ImportedDocument }
 
 /** A document the host renamed underneath us (renamed in the shell Home list). */
 export interface DocumentRenamed {
@@ -170,11 +171,23 @@ export interface SaveDocumentResult {
   ok: boolean
   error?: string
   /**
-   * The file changed on disk since it was opened. The host has already
-   * prompted (or, for an autosave, deferred to the next manual save), so the
-   * renderer must not show a second dialog for this reason.
+   * Why the write did not happen, when the reason is neither an error nor a
+   * cancellation.
+   *
+   * `external-modified`: the file changed on disk since it was opened. The host has
+   * already prompted (or, for an autosave, deferred to the next manual save), so
+   * the renderer must not show a second dialog for this reason.
+   *
+   * `needs-permission`: the host may not write this document without asking the
+   * user first, and this write was an autosave — so it declined rather than
+   * putting a permission dialog on screen that nobody asked for. Browser-only: a
+   * document opened through the File System Access API is granted *read* by the
+   * open dialog and write only on a second, separate grant, and a handle restored
+   * after a reload starts with neither. Nothing failed and nothing was written; the
+   * document stays dirty and the next save the user actually performs asks for the
+   * grant with their gesture behind it.
    */
-  reason?: 'external-modified'
+  reason?: 'external-modified' | 'needs-permission'
 }
 
 /**
@@ -195,9 +208,11 @@ export interface SaveNamedDocumentResult {
    * user's cancellation.
    *
    * `needs-user-gesture`: this host can only name a document through a dialog, and
-   * the dialog may only open from a user gesture — so a save reached from a timer
-   * (the recovery tick, the post-AI-run auto-name) genuinely cannot proceed.
-   * Nothing was written and nothing failed.
+   * a dialog needs a user who asked for one — so a save reached from a timer (the
+   * recovery tick, the post-AI-run auto-name) genuinely cannot proceed. Nothing
+   * was written and nothing failed. It is what `saveNew`'s `auto` flag resolves
+   * to on such a host, and the browser adapter answers it from the flag alone,
+   * never from a probe of transient activation.
    *
    * It exists so that outcome is *distinguishable*. Without it the caller sees a
    * plain `{ ok: false }`, reports nothing, and the user is left believing a
@@ -232,10 +247,44 @@ export interface DocsFilePort {
   save(ref: DocumentRef, data: ArrayBuffer, auto?: boolean): Promise<SaveDocumentResult>
   /** Save As: the host picks the destination and names it. */
   saveAs(defaultName: string, data: ArrayBuffer): Promise<SaveNamedDocumentResult>
-  /** First save of a never-saved document: silent, into the host's default location. */
-  saveNew(defaultName: string, data: ArrayBuffer): Promise<SaveNamedDocumentResult>
+  /**
+   * First save of a never-saved document: silent, into the host's default location.
+   *
+   * `auto` carries the *intent*, and on a host that can only name a document
+   * through a dialog it is the difference between a save and an ambush. It is
+   * required rather than defaulted because every caller already knows the answer
+   * and a forgotten `true` is exactly the bug this parameter exists to prevent:
+   * the recovery tick used to reach the browser's Save As dialog every 30
+   * seconds. `true` means no user asked for this save, so the host must either
+   * write silently or decline with `needs-user-gesture` — never open anything.
+   *
+   * Transient user activation is deliberately *not* the test a host should use
+   * instead. `navigator.userActivation.isActive` stays true for seconds after any
+   * keystroke, so a document being actively edited holds activation almost
+   * continuously: probing it tells a host that it *may* open a dialog, never that
+   * anybody wanted one.
+   */
+  saveNew(defaultName: string, data: ArrayBuffer, auto: boolean): Promise<SaveNamedDocumentResult>
   /** Crash-recovery copy of a dirty document, kept by the host outside the document itself. */
   writeRecoveryCopy(ref: DocumentRef, data: ArrayBuffer): Promise<{ ok: boolean }>
+  /**
+   * Does this host keep crash-recovery state at all?
+   *
+   * Both halves of the renderer's recovery tick are host features: a dirty
+   * document with a ref gets `writeRecoveryCopy`, and one that has never been
+   * saved is instead named and written silently through `saveNew`. Electron backs
+   * both, so it answers `true`. A browser backs neither — there is no host-owned
+   * location to write a copy to, and naming a file needs a dialog — so it answers
+   * `false` and the renderer skips the tick entirely rather than re-serialising
+   * the whole document every 30 seconds to throw the bytes away.
+   *
+   * A boolean rather than a nullable port because there is no *operation* to hand
+   * over: `writeRecoveryCopy` still exists on both hosts (the web one honestly
+   * reports `{ ok: false }`), and what the renderer needs to know is whether
+   * running its timer is worth anything. Same shape, and the same reasoning, as
+   * `DocsWindowPort.nativeChrome`.
+   */
+  crashRecovery: boolean
   /** The host's recent-documents list. */
   recentDocuments(): Promise<RecentDocument[]>
   /** Host image picker, for inserting/replacing a picture; null on cancel. */
@@ -448,10 +497,52 @@ export interface DocsHwpxPort {
   exportDocument(defaultName: string, html: string): Promise<HwpxExportResult>
 }
 
+/** Outcome of handing the document to the user as a download. */
+export interface DownloadResult {
+  ok: boolean
+  /** Name the file was delivered under, for the status message. */
+  name?: string
+  error?: string
+}
+
+/**
+ * Handing the document's current bytes to the user as a download.
+ *
+ * The browser's answer to a question the desktop never has to ask. Electron's
+ * Save As writes wherever the user points it and the document keeps editing that
+ * file; a page can only do that for a file the user opened through the File
+ * System Access API, and it can do nothing at all for a document that has never
+ * been saved — a new document, or a `.hwpx` that arrived as an import. Those have
+ * no destination, and inventing one every 30 seconds is what made this port
+ * necessary.
+ *
+ * So this is the deliberate opposite of `DocsFilePort.save`: it does not adopt a
+ * destination, does not mint a ref, and does not mark the document saved. It
+ * copies the bytes out, once, because the user asked. The document stays exactly
+ * as dirty as it was — the copy in the downloads folder is not the open document,
+ * and the close guard must still warn about the page's unsaved state.
+ *
+ * `null` on a host that has somewhere better to put a file. Electron leaves it
+ * null for that reason: Save and Save As already write the real document, and a
+ * "Download" item next to them would offer a worse version of what the desktop
+ * app does properly.
+ */
+export interface DocsDownloadPort {
+  /**
+   * Deliver `data` to the user under `defaultName`.
+   *
+   * Resolves `{ ok: true }` once the download has been handed to the browser.
+   * Whether the user then keeps the file, renames it or cancels the browser's own
+   * save prompt is not observable to a page, and this port does not pretend
+   * otherwise — the promise means "handed over", not "on disk".
+   */
+  download(defaultName: string, data: ArrayBuffer): Promise<DownloadResult>
+}
+
 /**
  * docs' composed platform.
  *
- * Five members are `X | null`, and the nullability is the whole design rather
+ * Seven members are `X | null`, and the nullability is the whole design rather
  * than a convenience. An *optional* member would let a host claim a capability
  * and silently no-op it — the renderer would offer Export PDF and nothing would
  * happen, which is exactly how the hand-written web shims failed. A *required
@@ -516,6 +607,18 @@ export type DocsPlatform = Platform<'language' | 'ai' | 'attachments'> & {
    * outcome.
    */
   hwpx: DocsHwpxPort | null
+  /**
+   * Copying the document out as a download, or `null` on a host that writes real
+   * files instead.
+   *
+   * The mirror image of `print`: there it is the *browser* that leaves the port
+   * null, here it is Electron. A desktop Save As already puts the document
+   * wherever the user wants and keeps editing it there, so a download would be a
+   * strictly worse duplicate of a command that works. In a browser it is the only
+   * way to get a never-saved document out of the page at all, so this is where
+   * the command exists — and, being nullable, it exists exactly there.
+   */
+  download: DocsDownloadPort | null
 }
 
 /**
