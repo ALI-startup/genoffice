@@ -9,6 +9,10 @@ export default defineConfig({
   resolve: {
     alias: {
       // Subpath before the bare name: string aliases are prefix replacements
+      // Kept in step with electron.vite.config.ts: a bare-name alias is a prefix
+      // replacement, so every declared subpath needs its own entry or it resolves
+      // to a path under index.ts.
+      '@genoffice/pptx-engine/node': resolve(here, '../../packages/pptx-engine/src/save-node.ts'),
       '@genoffice/pptx-engine/table-grid': resolve(
         here,
         '../../packages/pptx-engine/src/table-grid.ts',

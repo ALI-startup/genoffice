@@ -8,7 +8,12 @@ const here = dirname(fileURLToPath(import.meta.url))
 // Pin resolution to this repo's workspace sources (matches tsconfig paths;
 // avoids bundling stale implementations when node_modules links point elsewhere)
 const workspaceAlias = {
-  // Subpath before the bare name: string aliases are prefix replacements
+  // Subpath before the bare name: string aliases are prefix replacements, so a bare
+  // '@genoffice/pptx-engine' entry listed first would rewrite every subpath import
+  // into a path *under* index.ts. Every subpath the exports map declares needs an
+  // entry here, or the build fails with "ENOTDIR: not a directory .../index.ts/<sub>"
+  // — which is how the `/node` entry below came to be added.
+  '@genoffice/pptx-engine/node': resolve(here, '../../packages/pptx-engine/src/save-node.ts'),
   '@genoffice/pptx-engine/table-grid': resolve(
     here,
     '../../packages/pptx-engine/src/table-grid.ts',
