@@ -24,7 +24,7 @@ import {
   bytesToBase64,
   type OpenedPptx,
 } from '@genoffice/pptx-engine'
-import type { LanguagePort } from '@genoffice/platform'
+import type { AiPort, LanguagePort } from '@genoffice/platform'
 import {
   createWebUnloadPrompt,
   ensurePermission,
@@ -46,6 +46,7 @@ import {
 import type {
   SlidesDeckClipboardPort,
   SlidesDocumentPort,
+  SlidesAiPort,
   SlidesFilePort,
   SlidesLanguagePort,
   SlidesPrintPort,
@@ -609,5 +610,30 @@ export function createWebSlidesPrintPort(
         return { ok: false, error: messageOf(error) }
       }
     },
+  }
+}
+
+/**
+ * The AI port, over the BFF.
+ *
+ * Four of the five members are the shared `AiPort` verbatim — `getAiSettings`, `aiStream`,
+ * `aiStreamCancel`, `onAiStream` — so `createWebAiPort` from @genoffice/platform-web backs them
+ * with no adapter at all, and slides streams through the same server route docs and pdf do. The
+ * credential lives in the BFF and never reaches this page, which is the whole reason the route
+ * exists.
+ *
+ * The fifth, `aiSnapshotRestore`, is not a network call: it rolls the deck back to a snapshot
+ * this page holds, so it goes to the operations like every other document change.
+ */
+export function createWebSlidesAiPort(
+  shared: AiPort,
+  session: () => Session | undefined,
+): SlidesAiPort {
+  return {
+    getAiSettings: () => shared.getAiSettings(),
+    aiStream: (request) => shared.aiStream(request),
+    aiStreamCancel: (requestId) => shared.aiStreamCancel(requestId),
+    onAiStream: (handler) => shared.onAiStream(handler),
+    aiSnapshotRestore: async (id) => slideOps.aiSnapshotRestore(session(), id),
   }
 }

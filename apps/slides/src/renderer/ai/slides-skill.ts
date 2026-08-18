@@ -1,4 +1,3 @@
-import { slidesAi } from '../platform'
 import type { AgentSkill, ToolDisplay } from '@genoffice/agent-core'
 import type {
   GroupRenderNode,
@@ -2013,7 +2012,11 @@ async function executeTool(
       const refs = Array.isArray(call.input.referenceImageUrls)
         ? (call.input.referenceImageUrls as unknown[]).map(String).filter(Boolean)
         : undefined
-      const r = await slidesAi().generateImage({
+      // Reported to the model as a failed tool call, which an agent loop can work around;
+      // an exception it cannot.
+      const media = slidesPlatform().aiMedia
+      if (!media) return fail(t('aiFailGenImage'), 'image generation is not available on this host')
+      const r = await media.generateImage({
         prompt,
         model: call.input.model ? String(call.input.model) : undefined,
         referenceImageUrls: refs,
@@ -2041,7 +2044,9 @@ async function executeTool(
       const requirements = String(call.input.requirements ?? '').trim()
       if (!mediaUrls.length) return fail(t('aiFailMedia'), 'mediaUrls must not be empty')
       if (!requirements) return fail(t('aiFailMedia'), 'requirements must not be empty')
-      const r = await slidesAi().analyzeMedia({ mediaUrls, requirements })
+      const media = slidesPlatform().aiMedia
+      if (!media) return fail(t('aiFailMedia'), 'media analysis is not available on this host')
+      const r = await media.analyzeMedia({ mediaUrls, requirements })
       if (!r.text) return fail(t('aiFailMedia'), r.error ?? 'Analysis failed')
       // Analysis text can be very long; truncate to protect context (first 6000 chars are enough to generate deck content)
       const MAX_LEN = 6000

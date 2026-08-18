@@ -29,8 +29,9 @@ export function createElectronSlidesPlatform(
     print: api,
     attachments: files,
     project,
-    // The seven a browser has to answer `null` for. Electron backs every one, so the
+    // The eight a browser has to answer `null` for. Electron backs every one, so the
     // renderer's capability checks always pass here and the desktop app is unchanged.
+    aiMedia: api,
     presenter: api,
     pdfExport: api,
     clipboard: api,

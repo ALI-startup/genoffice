@@ -13,6 +13,8 @@
  * them; seven are `X | null`, and each of those is a capability a browser genuinely cannot
  * back — not a stub, and not an optional method:
  *
+ *   - `aiMedia` — image generation and media analysis, which call a provider directly with a
+ *     credential the browser must never hold and have no BFF route.
  *   - `presenter` — a second window mirrored to a projector, plus its ink channel.
  *   - `pdfExport` — the main process renders with `printToPDF` and merges with pdf-lib. The
  *     same decision docs made in Phase 4c: a renderer-side exporter would write a
@@ -205,14 +207,7 @@ export type SlidesLanguagePort = Pick<SlidesApi, 'getLanguage' | 'onLanguageChan
  */
 export type SlidesAiPort = Pick<
   SlidesApi,
-  | 'aiSnapshotRestore'
-  | 'aiStream'
-  | 'aiStreamCancel'
-  | 'analyzeMedia'
-  | 'generateImage'
-  | 'getAiSettings'
-  | 'onAiStream'
-  | 'setAiSettings'
+  'aiSnapshotRestore' | 'aiStream' | 'aiStreamCancel' | 'getAiSettings' | 'onAiStream'
 >
 
 /**
@@ -223,6 +218,15 @@ export type SlidesAiPort = Pick<
  * the editor, not the printout. A browser prints that same HTML from a frame.
  */
 export type SlidesPrintPort = Pick<SlidesApi, 'printSlides'>
+
+/**
+ * Image generation and media analysis.
+ *
+ * Separate from `ai` because the BFF has no route for either: both call a provider directly
+ * with a credential the browser must never hold. The streaming channel above has a route and
+ * so stays required.
+ */
+export type SlidesAiMediaPort = Pick<SlidesApi, 'analyzeMedia' | 'generateImage'>
 
 /** Presenter view, the audience window, and the ink and sync channels between them. */
 export type SlidesPresenterPort = Pick<
@@ -297,6 +301,7 @@ export interface SlidesPlatform {
   /** Chat/project history, or `null` on a host with no store behind it (§6.1). */
   project: ProjectApi | null
   presenter: SlidesPresenterPort | null
+  aiMedia: SlidesAiMediaPort | null
   pdfExport: SlidesPdfExportPort | null
   clipboard: SlidesClipboardPort | null
   genspark: SlidesGensparkPort | null
