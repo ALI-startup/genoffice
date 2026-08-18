@@ -104,10 +104,12 @@ import {
   updateConnectorsForMoved,
 } from '@genoffice/pptx-engine'
 import {
+  addModel3d,
   base64Bytes,
   copySlide,
   editChartElement,
   pasteSlide,
+  setElementImageFill,
   markChartEditable,
   parseTheme,
   patchBodyPrAutofit,
@@ -1869,6 +1871,73 @@ export const slideOps = {
     session.fitWidthPx = op.fitWidthPx
     const rebuilt = rebuildSlide(session, op.slideIndex)
     return rebuilt ? { slide: rebuilt, sourceIds: r.elementIds } : null
+  },
+
+  /**
+   * Replace a picture's image with `bytes`.
+   *
+   * The half of "change picture" that is not the file dialog: the host picks the file — a
+   * native dialog or the File System Access API — and hands the bytes here.
+   */
+  setImageFillBytes(
+    session: Session | undefined,
+    op: { slideIndex: number; sourceId: string; bytes: Uint8Array; ext: string },
+  ) {
+    if (!session) return null
+    const slide = session.opened.deck.slides[op.slideIndex]
+    if (!slide) return null
+    pushHistory(session)
+    if (!setElementImageFill(session.opened, slide, op.sourceId, op.bytes, op.ext)) {
+      session.undoStack.pop()
+      return null
+    }
+    return rebuildSlide(session, op.slideIndex)
+  },
+
+  /**
+   * Insert a 3D model, centred at half the page height.
+   *
+   * `poster` is the still image shown in its place, and it is optional because only some
+   * hosts can render one: Electron asks the OS for a thumbnail, and a browser has no
+   * equivalent — the engine then writes its own dark-grey placeholder, which is what the
+   * desktop also falls back to when the thumbnail fails.
+   */
+  addModel3dBytes(
+    session: Session | undefined,
+    op: {
+      slideIndex: number
+      bytes: Uint8Array
+      ext: string
+      poster?: { bytes: Uint8Array; ext: string }
+      /** Display name for the element, which the host takes from whatever it picked. */
+      name?: string
+      fitWidthPx: number
+    },
+  ) {
+    if (!session) return null
+    const deckSize = session.opened.deck.size
+    const cy = Math.round(deckSize.cy * 0.5)
+    const cx = cy
+    pushHistory(session)
+    const added = addModel3d(session.opened, op.slideIndex, {
+      bytes: op.bytes,
+      ext: op.ext,
+      ...(op.poster ? { poster: op.poster } : {}),
+      offset: {
+        x: Math.round((deckSize.cx - cx) / 2),
+        y: Math.round((deckSize.cy - cy) / 2),
+        cx,
+        cy,
+      },
+      ...(op.name ? { name: op.name } : {}),
+    })
+    if (!added) {
+      session.undoStack.pop()
+      return null
+    }
+    session.fitWidthPx = op.fitWidthPx
+    const rebuilt = rebuildSlide(session, op.slideIndex)
+    return rebuilt ? { slide: rebuilt, sourceId: added.elementId } : null
   },
 
   setTextAnchor(

@@ -154,8 +154,6 @@ export type SlidesFilePort = Pick<
   | 'openPptxPath'
   | 'save'
   | 'saveAs'
-  | 'saveStyleSidecar'
-  | 'saveStyleTemplate'
 >
 
 /**
@@ -260,7 +258,10 @@ export type SlidesSearchPort = Pick<SlidesApi, 'imageSearch' | 'webSearch'>
 export type SlidesCloudPort = Pick<SlidesApi, 'cloudGenStatus' | 'cloudGeneratePage' | 'htmlToPptx'>
 
 /** The style templates the AI can generate against, read from the host's own files. */
-export type SlidesStyleTemplatePort = Pick<SlidesApi, 'listStyleTemplates' | 'loadStyleTemplate'>
+export type SlidesStyleTemplatePort = Pick<
+  SlidesApi,
+  'listStyleTemplates' | 'loadStyleTemplate' | 'saveStyleSidecar' | 'saveStyleTemplate'
+>
 
 /** Commands from the native application menu. */
 export type SlidesMenuPort = Pick<SlidesApi, 'onMenuCommand'>

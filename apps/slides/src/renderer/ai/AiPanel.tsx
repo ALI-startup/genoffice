@@ -888,14 +888,16 @@ export function AiPanel({
       },
       saveSidecar: async (data) => {
         try {
-          await slidesFile().saveStyleSidecar(data)
+          await slidesPlatform().styleTemplates?.saveStyleSidecar(data)
         } catch {
           /* fail-open */
         }
       },
       saveStyleTemplate: async (name, data) => {
         try {
-          return await slidesFile().saveStyleTemplate(name, data)
+          const port = slidesPlatform().styleTemplates
+          if (!port) return { ok: false, error: 'style templates are not available here' }
+          return await port.saveStyleTemplate(name, data)
         } catch {
           return { ok: false, error: String('') }
         }

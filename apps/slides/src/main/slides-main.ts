@@ -36,7 +36,6 @@ import { getUiLang, normalizeLang, setUiLang } from '@genoffice/i18n'
 import { ProjectStore } from '@genoffice/project-store'
 import {
   addMedia,
-  addModel3d,
   addPicture,
   createBlankPptx,
   deleteSlide,
@@ -46,7 +45,6 @@ import {
   promoteSlideBackground,
   savePptx,
   commitSaved,
-  setElementImageFill,
   moveSlide,
   type SectionInfo,
   type ElementClipboardItem,
@@ -1127,12 +1125,12 @@ export function registerSlidesIpc(): void {
       if (r.canceled || !r.filePaths[0]) return null
       const bytes = await readFile(r.filePaths[0])
       const ext = r.filePaths[0].split('.').pop()!.toLowerCase()
-      pushHistory(session)
-      if (!setElementImageFill(session.opened, slide, op.sourceId, bytes, ext)) {
-        session.undoStack.pop()
-        return null
-      }
-      return rebuildSlide(session, op.slideIndex)
+      return ops.setImageFillBytes(session, {
+        slideIndex: op.slideIndex,
+        sourceId: op.sourceId,
+        bytes,
+        ext,
+      })
     },
   )
 
@@ -1576,29 +1574,14 @@ export function registerSlidesIpc(): void {
       /* Dark-gray fallback */
     }
 
-    const deckSize = session.opened.deck.size
-    const cy = Math.round(deckSize.cy * 0.5)
-    const cx = cy
-    pushHistory(session)
-    const added = addModel3d(session.opened, slideIndex, {
+    return ops.addModel3dBytes(session, {
+      slideIndex,
       bytes: new Uint8Array(bytes),
       ext,
       ...(poster ? { poster } : {}),
-      offset: {
-        x: Math.round((deckSize.cx - cx) / 2),
-        y: Math.round((deckSize.cy - cy) / 2),
-        cx,
-        cy,
-      },
       name: filePath.split('/').pop()!,
+      fitWidthPx,
     })
-    if (!added) {
-      session.undoStack.pop()
-      return null
-    }
-    session.fitWidthPx = fitWidthPx
-    const rebuilt = rebuildSlide(session, slideIndex)
-    return rebuilt ? { slide: rebuilt, sourceId: added.elementId } : null
   })
 
   ipcMain.handle('slides:set-link', (e, op: SetLinkOp) =>
