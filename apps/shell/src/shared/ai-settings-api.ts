@@ -27,6 +27,12 @@ export interface AiProviderDefinition {
   defaultBaseUrl?: string
   /** Text/chat models. */
   models: string[]
+  /**
+   * The chat model this provider opens on. Carried through rather than left to
+   * `models[0]`: the list is in display order and the default is named in
+   * @samugen/ai-provider, so the two are allowed to differ.
+   */
+  defaultModel?: string
   /** Image models shown on the Image tab. */
   imageModels?: string[]
 }
@@ -124,6 +130,9 @@ function requiresApiKey(provider: AiProviderMeta): boolean {
  * The runtime registry owns endpoints and model presets. The shell adds only
  * presentation metadata so model lists cannot drift between the UI and runtime.
  */
+/** The provider a screen opens on before anything is known; named in @samugen/ai-provider. */
+export { DEFAULT_AI_PROVIDER } from '@samugen/ai-provider'
+
 export const AI_PROVIDER_DEFINITIONS: readonly AiProviderDefinition[] = AI_PROVIDERS.map(
   (provider) => {
     const supportsText = provider.capabilities?.includes('chat') ?? true
@@ -142,6 +151,7 @@ export const AI_PROVIDER_DEFINITIONS: readonly AiProviderDefinition[] = AI_PROVI
       supportsImages,
       ...(provider.defaultBaseUrl ? { defaultBaseUrl: provider.defaultBaseUrl } : {}),
       models: supportsText ? [...provider.models] : [],
+      ...(supportsText && provider.defaultModel ? { defaultModel: provider.defaultModel } : {}),
       ...(provider.imageModels ? { imageModels: [...provider.imageModels] } : {}),
     }
   },

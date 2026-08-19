@@ -6,7 +6,7 @@ import type {
   AiProviderDefinition,
   AiSettingsSnapshot,
 } from '../../shared/ai-settings-api'
-import { AI_PROVIDER_DEFINITIONS } from '../../shared/ai-settings-api'
+import { AI_PROVIDER_DEFINITIONS, DEFAULT_AI_PROVIDER } from '../../shared/ai-settings-api'
 import { providerDescription } from './provider-descriptions'
 import { ProviderList, ProviderModeTabs } from './AiProviderNavigation'
 import { useI18n } from './locale'
@@ -15,15 +15,33 @@ import { ProviderIcon } from './ProviderIcon'
 
 const CUSTOM_MODEL_VALUE = '__samugen_custom_model__'
 
+/**
+ * What the screen shows before the settings route has answered.
+ *
+ * The default provider is named once, in @samugen/ai-provider, rather than taken from
+ * the head of the list: the list is in display order, and the two moving together was
+ * how this screen used to open on a provider nobody had configured. The image slot
+ * cannot follow the chat default, which has no image models — it opens on the first
+ * definition that does.
+ */
+const DEFAULT_DEFINITION = AI_PROVIDER_DEFINITIONS.find(
+  (definition) => definition.id === DEFAULT_AI_PROVIDER,
+)
+const DEFAULT_IMAGE_DEFINITION = AI_PROVIDER_DEFINITIONS.find(
+  (definition) => definition.imageModels && definition.imageModels.length > 0,
+)
+
 const FALLBACK_SNAPSHOT: AiSettingsSnapshot = {
-  activeProvider: AI_PROVIDER_DEFINITIONS[0]?.id ?? '',
-  activeModel: AI_PROVIDER_DEFINITIONS[0]?.models[0] ?? '',
-  imageProvider: AI_PROVIDER_DEFINITIONS[0]?.id ?? '',
+  activeProvider: DEFAULT_DEFINITION?.id ?? '',
+  activeModel: DEFAULT_DEFINITION?.defaultModel ?? DEFAULT_DEFINITION?.models[0] ?? '',
+  imageProvider: DEFAULT_IMAGE_DEFINITION?.id ?? DEFAULT_DEFINITION?.id ?? '',
   imageModel:
-    AI_PROVIDER_DEFINITIONS[0]?.imageModels?.[0] ?? AI_PROVIDER_DEFINITIONS[0]?.models[0] ?? '',
+    DEFAULT_IMAGE_DEFINITION?.imageModels?.[0] ?? DEFAULT_IMAGE_DEFINITION?.models[0] ?? '',
   providers: AI_PROVIDER_DEFINITIONS.map((definition) => ({
     providerId: definition.id,
-    model: definition.models[0] ?? definition.imageModels?.[0] ?? '',
+    // The provider's own default, then the head of its list: same order the real
+    // settings use, so the form shows what a save would actually store.
+    model: definition.defaultModel ?? definition.models[0] ?? definition.imageModels?.[0] ?? '',
     baseUrl: definition.defaultBaseUrl ?? '',
     credentialSet: false,
     enabled: true,
@@ -75,7 +93,7 @@ export function AiProvidersPage() {
   const { aiSettings, aiSettingsEditor: editor } = shellPlatform()
   const [snapshot, setSnapshot] = useState<AiSettingsSnapshot>(FALLBACK_SNAPSHOT)
   const [capability, setCapability] = useState<AiProviderCapability>('text')
-  const [selectedId, setSelectedId] = useState(AI_PROVIDER_DEFINITIONS[0]?.id ?? '')
+  const [selectedId, setSelectedId] = useState(DEFAULT_DEFINITION?.id ?? '')
   const [model, setModel] = useState('')
   const [customModelEnabled, setCustomModelEnabled] = useState(false)
   const [customModel, setCustomModel] = useState('')
@@ -125,7 +143,13 @@ export function AiProvidersPage() {
       return active || configFor(nextSnapshot, providerId).model || curated[0] || ''
     }
     const configured = configFor(nextSnapshot, providerId).model
-    return configured || curated[0] || ''
+    // The provider's own default before the head of its list, for the same reason the
+    // screen opens on the named default provider rather than the first one.
+    const preferred =
+      nextCapability === 'text' && nextDefinition?.defaultModel
+        ? nextDefinition.defaultModel
+        : undefined
+    return configured || preferred || curated[0] || ''
   }
 
   const syncForm = (providerId: string, nextSnapshot = snapshot, nextCapability = capability) => {
@@ -154,7 +178,12 @@ export function AiProvidersPage() {
         setLoaded(true)
       })
       .catch(() => {
-        if (active) setLoadError(t('aiSettingsLoadFailed'))
+        if (!active) return
+        setLoadError(t('aiSettingsLoadFailed'))
+        // Show the defaults the settings route would have reported rather than an empty
+        // form under an error: the provider list beside it is already the fallback's, so
+        // leaving the fields blank only made the two disagree.
+        syncForm(FALLBACK_SNAPSHOT.activeProvider, FALLBACK_SNAPSHOT, 'text')
       })
     return () => {
       active = false

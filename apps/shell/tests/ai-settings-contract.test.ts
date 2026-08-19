@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   AI_PROVIDER_DEFINITIONS,
   AI_SETTINGS_CHANNELS,
+  DEFAULT_AI_PROVIDER,
   type SaveAiProviderInput,
 } from '../src/shared/ai-settings-api'
 
@@ -56,5 +57,21 @@ describe('AI settings public contract', () => {
     const test: SaveAiProviderInput = { ...discover, operation: 'test', model: 'custom:1@1' }
     expect(discover.operation).toBe('discover')
     expect(test.operation).toBe('test')
+  })
+})
+
+describe('the default provider a screen opens on', () => {
+  it('is the one named in the provider package, not the head of the display list', () => {
+    // The list is display order; the default is a separate decision. They were the same
+    // value once, and a screen reading `[0]` then opened on a provider nobody configured.
+    expect(AI_PROVIDER_DEFINITIONS[0]?.id).not.toBe(DEFAULT_AI_PROVIDER)
+    expect(AI_PROVIDER_DEFINITIONS.some((d) => d.id === DEFAULT_AI_PROVIDER)).toBe(true)
+  })
+
+  it('carries that provider’s own default model, which is not its first', () => {
+    const definition = AI_PROVIDER_DEFINITIONS.find((d) => d.id === DEFAULT_AI_PROVIDER)
+    expect(definition?.defaultModel).toBeTruthy()
+    expect(definition?.models).toContain(definition?.defaultModel)
+    expect(definition?.defaultModel).not.toBe(definition?.models[0])
   })
 })
