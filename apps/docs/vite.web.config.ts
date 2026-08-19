@@ -39,7 +39,7 @@ export default defineConfig({
   // The host seam, plus the one alias the HWPX reader needs to bundle for a
   // browser — see @samugen/hwpx-convert/vite for why it cannot be imported
   // through its package entry point here.
-  resolve: { alias: { ...hostAlias('web'), ...hwpxBrowserAlias() } },
+  resolve: { alias: { ...hostAlias(), ...hwpxBrowserAlias() } },
   plugins: [react()],
   build: {
     // Deliberately outside `out/`: apps/shell/electron-builder.cjs ships

@@ -162,7 +162,7 @@ export type PdfPlatform = Platform<'language' | 'ai'> & {
  *
  * This is the build-time seam. `main.tsx` imports `createPdfPlatform` from the
  * bare specifier `@host`, which each Vite config aliases to exactly one of
- * `host-electron.ts` or `host-web.ts`, so the two bundles contain disjoint host
+ * `host-web.ts`, so the entry point names no host and carries no check for
  * code and neither carries a runtime check for which one it is. Async because a
  * browser host has to open IndexedDB before it can resolve a `DocumentRef`.
  */

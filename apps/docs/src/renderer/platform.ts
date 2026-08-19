@@ -2,7 +2,7 @@
  * docs' platform slot: the one place the renderer names the host capabilities it
  * needs, and the only thing renderer code is allowed to reach the host through.
  * After this phase the preload global is read in exactly one place —
- * host-electron.ts, the module `main.tsx` bootstraps from — and nowhere else in
+ * host-web.ts, the module `main.tsx` bootstraps from — and nowhere else in
  * the renderer. Same arrangement as apps/pdf.
  *
  * The composition is exactly what the renderer calls, no more:
@@ -35,7 +35,7 @@
  * application menu, and Save As is a better download than a download); and `hwpx`
  * is backed by both, kept nullable so a host that cannot convert has something
  * honest to report. See `DocsPlatform` for why each is nullable rather than
- * optional, and host-web.ts / platform-electron.ts for why each is null there.
+ * optional, and host-web.ts for why each is null.
  *
  * Ports deliberately left out, and why:
  *   - `aiSettings` (setAiSettings) — docs' preload forwards 'ai:set-settings'
@@ -618,10 +618,10 @@ export type DocsPlatform = Platform<'language' | 'ai' | 'attachments'> & {
  * What a host module must export as `createDocsPlatform`.
  *
  * This is the build-time seam. `main.tsx` imports `createDocsPlatform` from the
- * bare specifier `@host`, which each Vite config aliases to exactly one of
- * `host-electron.ts` or `host-web.ts`, so the two bundles contain disjoint host
- * code and neither carries a runtime check for which one it is. Async because a
- * browser host has to open IndexedDB before it can resolve a `DocumentRef`.
+ * bare specifier `@host`, which the Vite config and tsconfig both resolve to
+ * `host-web.ts`, so the entry point names no host and carries no runtime check for
+ * one. Async because the host has to open IndexedDB before it can resolve a
+ * `DocumentRef`.
  */
 export type CreateDocsPlatform = () => Promise<DocsPlatform>
 

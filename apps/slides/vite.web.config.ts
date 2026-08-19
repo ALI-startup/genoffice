@@ -48,7 +48,7 @@ export default defineConfig({
       ),
       '@samugen/pptx-engine': resolve(here, '../../packages/pptx-engine/src/index.ts'),
       '@samugen/pptx-render': resolve(here, '../../packages/pptx-render/src/index.ts'),
-      ...hostAlias('web'),
+      ...hostAlias(),
     },
   },
   plugins: [react()],

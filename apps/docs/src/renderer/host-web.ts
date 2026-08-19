@@ -1,6 +1,6 @@
 /**
  * The browser half of docs' build-time host seam — the counterpart of
- * host-electron.ts, and the only file in the web bundle that reads a global.
+ * the only file in the bundle that reads a browser global.
  *
  * `vite.web.config.ts` aliases `@host` here, so nothing in this file (nor
  * anything it imports) reaches the Electron bundle, and `window.desktop` is never

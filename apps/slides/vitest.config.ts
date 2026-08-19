@@ -24,8 +24,9 @@ export default defineConfig({
       ),
       '@samugen/pptx-engine': resolve(here, '../../packages/pptx-engine/src/index.ts'),
       '@samugen/pptx-render': resolve(here, '../../packages/pptx-render/src/index.ts'),
-      // Tests exercise the Electron host, the same one tsconfig maps `@host` to.
-      ...hostAlias('electron'),
+      // The same host tsconfig maps `@host` to; a test that wants a fake fills the
+      // platform slot instead (tests/helpers/platform.ts).
+      ...hostAlias(),
     },
   },
   test: {

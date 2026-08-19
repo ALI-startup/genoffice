@@ -1,34 +1,28 @@
 # SamuGen
 
-An AI-native office suite: word processor, spreadsheet, presentations, and PDF
-— five apps sharing one engine layer, built around AI editing as a first-class
-workflow rather than a bolted-on chat box.
+An AI-native office suite for the browser: word processor, spreadsheet,
+presentations, and PDF — five apps sharing one engine layer, built around AI
+editing as a first-class workflow rather than a bolted-on chat box.
 
-One codebase, two hosts. The same apps ship as a signed macOS/Windows desktop
-suite and run in a browser with no Electron and no server-side document
-processing — including the spreadsheet's Rust engine, compiled to WebAssembly.
-See [Run it in a browser](#run-it-in-a-browser).
+It runs entirely in the page. No Electron, no application server, and no
+server-side document processing — the spreadsheet's Rust engine is compiled to
+WebAssembly and the files never leave the machine. The one server piece is the AI
+backend-for-frontend, and all it holds is provider credentials. See
+[Running it](#running-it).
 
 [Demo video for GenOffice](https://www.youtube.com/watch?v=B2pLdMX95v4), the
 upstream project this is forked from — the editors it shows are the same ones
 here, under the branding that came before.
 
-## Download
-
-No SamuGen installer has been published yet. Build one from source with
-`npm run dist:mac` or `npm run dist:win` (see [Development](#development)), or
-run it in a browser with no build step — see
-[Run it in a browser](#run-it-in-a-browser).
-
 ## Apps
 
-| App           | Product            | What it is                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| ------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/docs`   | **SamuGen Docs**   | `.docx` word processor. Byte-preserving round trip: only dirty paragraphs are regenerated (paragraph patch), everything else in the original file is kept byte-for-byte, so opening and saving never breaks layout in Word. Paginated view whose line metrics reproduce the original document's layout, tracked changes, comments, styles, equations, ink.                                                                               |
-| `apps/sheets` | **SamuGen Sheets** | `.xlsx` spreadsheet. UI built on the open-source [Univer](https://github.com/dream-num/univer) core (Apache-2.0) with a large layer of in-house extensions; xlsx import/export runs through an in-house Rust engine (calamine + IronCalc) — a sidecar process on the desktop, the same crate as WebAssembly in a browser; charts are rendered in-house (Konva), plus pivot tables, slicers, conditional formatting, and formula tracing. |
-| `apps/slides` | **SamuGen Slides** | `.pptx` presentations. In-house pptx parse/render/edit engine with masters, charts, cropping, ink, and text shaping (HarfBuzz metrics on the desktop; the browser's own text engine on web).                                                                                                                                                                                                                                             |
-| `apps/pdf`    | **SamuGen PDF**    | PDF viewer/editor on pdf.js + pdf-lib: annotations, forms, outlines, stamps, signatures, page operations, print.                                                                                                                                                                                                                                                                                                                         |
-| `apps/shell`  | **SamuGen**        | The suite shell and landing page: home screen, tabbed hosting of the four editors, auto-update. On the desktop the tabs are `WebContentsView`s; in a browser they are same-origin iframes under `/app/docs/`, `/app/pdf/`, `/app/slides/` and `/app/sheets/`.                                                                                                                                                                            |
+| App           | Product            | What it is                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/docs`   | **SamuGen Docs**   | `.docx` word processor. Byte-preserving round trip: only dirty paragraphs are regenerated (paragraph patch), everything else in the original file is kept byte-for-byte, so opening and saving never breaks layout in Word. Paginated view whose line metrics reproduce the original document's layout, tracked changes, comments, styles, equations, ink.                                               |
+| `apps/sheets` | **SamuGen Sheets** | `.xlsx` spreadsheet. UI built on the open-source [Univer](https://github.com/dream-num/univer) core (Apache-2.0) with a large layer of in-house extensions; xlsx import/export runs through an in-house Rust engine (calamine + IronCalc) compiled to WebAssembly and driven in a Worker; charts are rendered in-house (Konva), plus pivot tables, slicers, conditional formatting, and formula tracing. |
+| `apps/slides` | **SamuGen Slides** | `.pptx` presentations. In-house pptx parse/render/edit engine with masters, charts, cropping, ink, and text shaping on the browser's own text engine.                                                                                                                                                                                                                                                    |
+| `apps/pdf`    | **SamuGen PDF**    | PDF viewer/editor on pdf.js + pdf-lib: annotations, forms, outlines, stamps, signatures, page operations, print.                                                                                                                                                                                                                                                                                         |
+| `apps/shell`  | **SamuGen**        | The suite shell and landing page: home screen and tabbed hosting of the four editors, which are same-origin iframes under `/app/docs/`, `/app/pdf/`, `/app/slides/` and `/app/sheets/`.                                                                                                                                                                                                                  |
 
 Every app embeds the same AI panel: block-granular AI editing with version
 snapshots and diffs in docs, a tool-calling agent over workbook/slide/PDF
@@ -38,19 +32,16 @@ state in the others.
 major hosted models (Claude, Gemini, OpenAI, DeepSeek, xAI…), OpenAI-compatible
 endpoints, image providers (Runware, Replicate, fal, Stability), and local
 runtimes (Ollama, LM Studio, vLLM, llama.cpp). There is no built-in account and
-no privileged provider — you bring your own endpoint or key. On the desktop that
-key is encrypted with the OS credential store (Electron `safeStorage`) and is
-never read back into the settings page. In a browser no key is held by the page
-at all: calls go through `services/ai-bff`, which keeps the credentials
-server-side.
+no privileged provider — you bring your own endpoint or key. No key is ever held
+by the page: calls go through `services/ai-bff`, which keeps the credentials
+server-side and returns only a masked summary to the settings screen.
 
 **Languages.** Nineteen, and every app's chrome carries an English ⇄ Korean
 toggle at the end of its ribbon tab row — the shell's is on the tab strip and in
-Settings ▸ General. Switching in any window applies everywhere: on the desktop
-over IPC, in a browser through a storage event to every open tab and frame. The
-full nineteen-language list is on the home page's account menu.
+Settings ▸ General. Switching anywhere applies everywhere: the choice is stored
+once and a storage event carries it to every open tab and frame.
 
-## Run it in a browser
+## Running it
 
 Two ways, and they publish different ports. In both the **shell is the landing
 page**: home, the tab strip, and every editor hosted as a same-origin frame of
@@ -81,36 +72,38 @@ System Access API rather than uploading them; there is no server that sees a
 document. The AI BFF is the one server piece, it holds only provider
 credentials, and in Docker it is deliberately unpublished.
 
-Some capabilities are deliberately absent in a browser rather than stubbed —
-PDF export from docs, and AI web search. `docs/web-migration.md`
-§8 lists them, and §2.1 explains why a missing capability is `null` at the seam
-instead of a stub that fails at the call site.
+A few capabilities are absent rather than stubbed — PDF export from docs, AI web
+search, and the projects/chat-history store, all of which needed a process
+outside the page. They are `null` at the platform seam, so a caller has to handle
+their absence instead of calling a stub that fails; `docs/web-migration.md` §2.1
+explains why, and §8 lists them.
 
 ## Engine packages
 
-All pure TypeScript, no Electron dependency, unit-tested (except the UI kit):
+All pure TypeScript, host-agnostic, unit-tested (except the UI kit):
 
 - `packages/docx-engine` — docx parsing → block tree (with `docxIndex`
   anchors and passthrough), OOXML fragment generation, byte-level paragraph
   patching.
 - `packages/pptx-engine` / `packages/pptx-render` — pptx model and rendering.
-- `packages/pdf-edit` — host-agnostic PDF editing (pdf-lib) with byte I/O
-  injected, so Electron and the browser share one implementation.
+- `packages/pdf-edit` — PDF editing (pdf-lib) with byte I/O injected, so the
+  editing logic never names where the bytes come from.
 - `packages/hwpx-convert` — HWPX import/export codecs.
 - `packages/file-parse` — text extraction for AI attachments (office formats,
   text formats).
-- `packages/platform` — the capability-scoped port interfaces both hosts
-  implement, with `packages/platform-electron` and `packages/platform-web` as
-  the two adapters. A build-time `@host` alias picks one, so a desktop bundle
-  carries no browser code and a web bundle no `window.desktopApi`.
+- `packages/platform` — the capability-scoped port interfaces the renderers are
+  written against, with `packages/platform-web` as the adapter that backs them.
+  A build-time `@host` alias resolves the one host module, and each app's
+  platform slot is the only thing renderer code reaches the browser through —
+  which is also what lets a test fill it with fakes.
 - `packages/agent-core` — the AI agent loop and skill composition shared by
   every app.
-- `packages/ai-provider` / `packages/ai-electron` — provider abstraction and
-  streaming, and the main-process settings + encrypted credential store.
+- `packages/ai-provider` — provider abstraction and streaming, shared by the
+  apps and by the BFF that holds the credentials.
 - `packages/ai-search` — web/image search tools (Serper, DuckDuckGo fallback).
-- `packages/i18n`, `packages/ui`, `packages/project-store`,
-  `packages/electron-utils` — shared i18n core, React UI kit, recent-files
-  store, and Electron main-process helpers.
+- `packages/i18n`, `packages/ui`, `packages/project-store` — shared i18n core,
+  React UI kit, and the projects/recent-files store's types (its implementation
+  needed a filesystem; the ports that would use it are `null` today).
 - `services/ai-bff` — the browser's backend-for-frontend: it holds the provider
   credentials and proxies streaming calls, so no key reaches the page.
 
@@ -119,28 +112,25 @@ All pure TypeScript, no Electron dependency, unit-tested (except the UI kit):
 ```bash
 npm install
 npm run fixtures     # generate test .docx fixtures
-npm test             # engine + app unit tests (docs/sheets/slides need no display)
+npm test             # engine + app unit tests, no display needed
 npm run typecheck    # tsc --noEmit across every workspace
 npm run lint         # eslint
 
-npm run dev          # desktop: all four editors + shell against Vite dev servers
-npm run dev:docs     # a single app (same pattern works per workspace)
-npm run dist:mac     # package macOS dmg (regenerates third-party notices)
-npm run dist:win     # package Windows nsis installer
+npm run dev          # everything: the four editors, the shell and the BFF
+npm run docs:web     # a single app (same pattern works per workspace)
 
-npm run shell:web        # browser: landing page + all four editors + the BFF
-npm run build:shell:web  # the composed web bundle the container image serves
+npm run build:shell:web  # the composed bundle the container image serves
+npm run test:e2e         # Chromium against that bundle (build it first)
 ```
 
-The sheets app needs a Rust toolchain for its xlsx engine (`cargo` on PATH).
-`npm run build -w @samugen/sheets` compiles the desktop sidecar; the browser
-build additionally needs the `wasm32-wasip1` target and a WASI sysroot, and
-`npm run wasm:build -w @samugen/sheets` produces the module (the web and
-Docker build scripts run it for you). Tests that need the module skip loudly
-when it has not been built.
-
-Local UI/e2e driver scripts (Playwright + Electron, for local acceptance, not
-committed by default) live in [`scripts/drivers/`](scripts/drivers/README.md).
+The sheets app needs a Rust toolchain for its xlsx engine (`cargo` on PATH), plus
+the `wasm32-wasip1` target and a WASI sysroot for the browser module —
+`apt-get install clang wasi-libc` is enough on Debian/Ubuntu, and
+`npm run wasm:build -w @samugen/sheets` produces it (the web and Docker build
+scripts run it for you). Tests that need the module skip loudly when it has not
+been built. The crate also builds as a native binary, which is what the engine's
+reference tests and benchmarks drive; `npm run native:build -w @samugen/sheets`
+compiles it and `npm test` in that workspace does so first.
 
 ## Architecture notes (docx round trip)
 
@@ -158,26 +148,25 @@ The same philosophy holds in sheets and slides: the original file is the
 source of truth, edits are applied as narrow patches, and everything the
 editor didn't touch survives the round trip untouched.
 
-None of that changes between hosts. What differs is where the bytes come from
-and where they go — `node:fs` on the desktop, File System Access in a browser —
-which is exactly what the platform ports abstract. Sheets is the sharpest case:
-the same Rust crate is a child process over stdio on the desktop and a
-WebAssembly module in a Worker in the page, answering the same JSON protocol, so
-a saved workbook is byte-identical either way. `docs/web-migration.md` is the
-long-form account.
+Where the bytes come from and where they go is the one thing the apps never name
+directly: it is behind the platform ports, and in a browser it is the File System
+Access API throughout. Sheets is the sharpest case — the Rust engine runs as a
+WebAssembly module in a Worker, over a JSON protocol, against a WASI filesystem,
+and a parity test holds its saves byte-identical to the same crate's native
+build. `docs/web-migration.md` is the long-form account of how the seam was
+built, and it is what to read before changing it.
 
 ## Security
 
-See [SECURITY.md](SECURITY.md) for the process security posture (renderer
-sandboxing, IPC validation, external-link gating) and the threat models for
+See [SECURITY.md](SECURITY.md) for the security posture (CSP, file access,
+external-link gating, where credentials live) and the threat models for
 AI-generated content.
 
 ## Third-party notices
 
-`npm run notices` regenerates the bundled third-party license summary
-(`tools/gen-third-party-notices.mjs`); all runtime dependencies are
-MIT/Apache-2.0/OFL, and the bundled fonts (Liberation, Carlito, Caladea, Noto
-CJK subsets) are OFL/Apache.
+`npm run licenses` checks every runtime dependency's license; all are
+MIT/Apache-2.0/OFL, as are the bundled fonts (Liberation, Carlito, Caladea, Noto
+CJK subsets).
 
 ## License
 

@@ -1,5 +1,5 @@
 /**
- * The browser half of slides' build-time host seam — the counterpart of host-electron.ts,
+ * slides' host module, filled into the platform slot at boot,
  * and the only file in the web bundle that reads a global.
  *
  * `vite.web.config.ts` aliases `@host` here, so nothing in this file (nor anything it

@@ -8,8 +8,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import type { ArchiveEntry } from '../src/gateway/xlsx-package-io'
 import { assertManifestPreserved, saveWorkbookViaSidecar } from '../src/gateway/xlsx-package-io'
-import { createNodeSaveFs } from '../src/main/save-fs-node'
-import { XlsxSidecarClient } from '../src/main/xlsx-sidecar-client'
+import { createNodeSaveFs } from '../src/engine-node/save-fs-node'
+import { XlsxSidecarClient } from '../src/engine-node/xlsx-sidecar-client'
 import { buildEditFixture } from './fixture-builder'
 
 describe('saveWorkbookViaSidecar', () => {

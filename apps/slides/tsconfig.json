@@ -14,8 +14,15 @@
         "../../packages/pptx-engine/src/background-promote.ts"
       ],
       "@samugen/pptx-render": ["../../packages/pptx-render/src/index.ts"],
-      "@host": ["./src/renderer/host-electron.ts"]
+      "@host": ["./src/renderer/host-web.ts"]
     }
   },
-  "include": ["src", "tests", "electron.vite.config.ts", "vitest.config.ts"]
+  "include": [
+    "src",
+    "tests",
+    "vite.web.config.ts",
+    "vite.shared.ts",
+    "vitest.config.ts",
+    "../../packages/pptx-render/src/bidi-js.d.ts"
+  ]
 }

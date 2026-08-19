@@ -32,7 +32,7 @@ export default defineConfig({
   // tab strip — so the shell's dev script and its composed build set the base to
   // that prefix. Nothing else about the build differs.
   base: process.env.PDF_WEB_BASE || './',
-  resolve: { alias: hostAlias('web') },
+  resolve: { alias: hostAlias() },
   plugins: [react(), viteStaticCopy({ targets: pdfjsCopyTargets() })],
   build: {
     // Deliberately outside `out/`: apps/shell/electron-builder.cjs ships

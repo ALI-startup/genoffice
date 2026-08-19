@@ -4,7 +4,7 @@
  * The shape of `AiPort` is the Electron IPC shape — fire `aiStream`, receive
  * chunks through a separate `onAiStream` subscription — and it maps onto HTTP
  * without distortion: the POST body is the request, and the SSE response body
- * is the chunk channel. `@samugen/agent-core`'s `createIpcTransport`
+ * is the chunk channel. `@samugen/agent-core`'s `createStreamTransport`
  * therefore drives this adapter unchanged, pings and silence watchdog included.
  *
  * No credential ever reaches this file. `getAiSettings` returns what the server
@@ -92,7 +92,7 @@ export function createWebAiPort(options: WebAiPortOptions = {}): AiPort {
     /**
      * Resolves when the stream ends, not when it starts.
      *
-     * `createIpcTransport` only uses the returned promise to catch a failure to
+     * `createStreamTransport` only uses the returned promise to catch a failure to
      * start, and treats the run as finished when a `done` or `error` chunk
      * arrives — so a late resolve is harmless, while a late *rejection* would
      * race the chunk that already settled the run. Everything is therefore

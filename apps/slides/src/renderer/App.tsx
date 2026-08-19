@@ -85,6 +85,7 @@ import { buildCtxItems } from './context-menu-items'
 import { slidesDoc, slidesFile, slidesWindow } from './platform'
 import type { SlidesDocumentPort, SlidesFilePort } from './platform'
 import { slidesPlatform } from './platform'
+import { openExternalUrl } from '@samugen/platform-web'
 
 const _IS_MAC = navigator.platform.toLowerCase().includes('mac')
 
@@ -1716,7 +1717,7 @@ export function App() {
         }
         return
       }
-      window.open(target.url, '_blank', 'noreferrer')
+      openExternalUrl(target.url)
     },
     [slides.length],
   )
@@ -2418,7 +2419,6 @@ export function App() {
                     setPath(p)
                     setDirty(false)
                   }}
-                  currentFilePath={path}
                 />
               ) : (
                 <button className="ai-rail" onClick={toggleAi} title={t('appAiRailExpand')}>

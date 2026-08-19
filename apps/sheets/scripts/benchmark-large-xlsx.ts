@@ -6,7 +6,7 @@ import { promisify } from 'node:util'
 
 import { z } from 'zod'
 
-import { XlsxSidecarClient } from '../src/main/xlsx-sidecar-client'
+import { XlsxSidecarClient } from '../src/engine-node/xlsx-sidecar-client'
 import { workbookRangeResultSchema } from '../src/shared/desktop-api'
 
 const execFileAsync = promisify(execFile)

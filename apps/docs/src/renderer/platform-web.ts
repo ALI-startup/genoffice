@@ -2,7 +2,7 @@
  * Builds docs' platform for a browser, from a `WebDocumentStore` and a few
  * injected browser surfaces.
  *
- * The mirror of platform-electron.ts, and it follows the same division: the
+ * The composition behind the slot, and it follows the seam's division: the
  * shared ports come from @samugen/platform-web, and docs' own surfaces — the
  * docx document operations and the window/close-guard channels — are adapted
  * here, next to the port declarations they satisfy. Nothing in this file touches

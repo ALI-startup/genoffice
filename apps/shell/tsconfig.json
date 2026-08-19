@@ -4,21 +4,20 @@
     "jsx": "react-jsx",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["node", "vite/client"],
-    // The build-time host seam. `tsc` has one view of the tree, so it checks
-    // main.tsx against the Electron host; host-web.ts is checked in its own
-    // right because it annotates its export as `CreateShellPlatform`, which is
-    // the contract main.tsx consumes. Neither host can drift from the other.
+    // The build-time host seam: there is one host now, and `@host` names it.
+    // Renderer code never reaches a browser API directly — it goes through the
+    // platform slot that host-web.ts fills — so this mapping is what `tsc` checks
+    // main.tsx against, and vite.web.config.ts resolves the same specifier for the
+    // bundle. Keeping the seam keeps the tests able to fill the slot with fakes.
     "paths": {
-      "@host": ["./src/renderer/src/host-electron.ts"]
+      "@host": ["./src/renderer/src/host-web.ts"]
     }
   },
   "include": [
-    "electron.vite.config.ts",
     "vite.web.config.ts",
     "vite.shared.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
-    "../slides/src/main/env.d.ts",
     "../../packages/pptx-render/src/bidi-js.d.ts"
   ]
 }

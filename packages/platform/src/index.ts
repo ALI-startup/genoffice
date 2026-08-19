@@ -30,14 +30,14 @@
  * `WindowPort` (the dirty-state and close-guard handshake) but none of the tab
  * channels, so it narrows that one too rather than claiming the whole port.
  */
-import type { AiChatPort, AiPort, AiSettingsPort } from './ports/ai.js'
+import type { AiPort } from './ports/ai.js'
 import type { AttachmentsPort } from './ports/attachments.js'
 import type { LanguagePort } from './ports/language.js'
 import type { ProjectPort } from './ports/project.js'
 import type { SearchPort } from './ports/search.js'
 import type { WindowPort } from './ports/window.js'
 
-export type { AiChatPort, AiPort, AiSettingsPort } from './ports/ai.js'
+export type { AiPort } from './ports/ai.js'
 export type {
   AttachmentAddResult,
   AttachmentImageResult,
@@ -71,19 +71,10 @@ export type {
 } from './ports/search.js'
 export type { TabInfo, WindowPort } from './ports/window.js'
 
-/**
- * The full catalogue of shared capability ports.
- *
- * The AI surface is four ports, not one: the ai:* ipcMain handlers come from a
- * single registration (docs-main's `registerAiIpc`) that some hosts never run,
- * and different preloads forward different subsets of it. See ports/ai.ts for
- * the availability table and the standalone-pdf finding behind the split.
- */
+/** The full catalogue of shared capability ports. */
 export interface PlatformPorts {
   language: LanguagePort
   ai: AiPort
-  aiSettings: AiSettingsPort
-  aiChat: AiChatPort
   search: SearchPort
   attachments: AttachmentsPort
   project: ProjectPort

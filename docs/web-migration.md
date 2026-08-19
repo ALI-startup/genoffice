@@ -1,12 +1,16 @@
 # Web migration — architecture and handoff
 
-Migrating this Electron monorepo so every app also runs as a pure web app, with
-Electron eventually optional. Phases 1–5 are done and committed. Phases 6
-(sheets) and 7 (slides) are not started; this document is the handoff for
-whoever picks them up.
+**The migration is finished, and the Electron host has since been removed: this
+suite is a browser app.** What follows is kept because the _seam_ it describes is
+the architecture the apps still have — the platform ports, why a missing
+capability is `null` rather than a stub, and how each app's host module is wired.
+Read §2 and §2.1 before touching the seam.
 
-Everything here was verified against the tree at commit `9be49a8`. Re-verify any
-number before relying on it — the point of citing file paths is that you can.
+Read the rest as history: it is written in the present tense of a tree that had
+two hosts, so anything it says about `src/main`, `src/preload`,
+`@samugen/platform-electron` or an Electron bundle describes what the web host
+replaced, not what is there now. The counts and file paths below were verified
+against commit `9be49a8`.
 
 ---
 

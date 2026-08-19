@@ -1,21 +1,20 @@
 /**
- * The host seam itself: what the slot promises, and what the Electron composition claims.
+ * The host seam itself: what the slot promises, and what the composition claims.
  *
  * Two things are worth a test rather than a comment. The slot must fail loudly when no host
  * has been installed — a renderer module reaching a half-built platform is exactly the bug
- * the slot exists to make impossible — and the Electron composition must claim *every*
- * capability, because it is the host that has them all. A `null` creeping into it would
- * silently disable a piece of the desktop app.
+ * the slot exists to make impossible — and the composition must be explicit about the
+ * capabilities it cannot back: `null`, never a stub that type-checks and then fails at the
+ * call site. A port quietly becoming a no-op object is the failure this file guards.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { ProjectApi } from '@samugen/project-store'
-import type { DesktopApi } from '../src/shared/desktop-api'
-import { createElectronSheetsPlatform } from '../src/renderer/platform-electron'
+import type { AiPort, AttachmentsPort, LanguagePort } from '@samugen/platform'
+import type { FilePickers } from '@samugen/platform-web'
+import type { XlsxWorkerClient } from '../src/renderer/wasm/client'
+import { createWebSheetsPlatform } from '../src/renderer/platform-web'
 import {
   setSheetsPlatform,
   sheetsAi,
-  sheetsAttachments,
-  sheetsFile,
   sheetsLanguage,
   sheetsWindow,
   sheetsWorkbook,
@@ -23,8 +22,8 @@ import {
 
 afterEach(() => vi.restoreAllMocks())
 
-/** A bridge that records calls; every member the seam uses, and nothing else. */
-function fakeBridge() {
+/** The dependencies the composition takes, each one a recorder and nothing more. */
+function fakeDeps() {
   const calls: { method: string; args: unknown[] }[] = []
   const record =
     (method: string) =>
@@ -32,44 +31,29 @@ function fakeBridge() {
       calls.push({ method, args })
       return undefined as never
     }
-  const attachment = { path: '/tmp/notes.md', name: 'notes.md', ext: 'md', sizeBytes: 12 }
-  const bridge = {
-    readWorkbookRange: record('readWorkbookRange'),
-    readWorkbookFormulas: record('readWorkbookFormulas'),
-    recalcWorkbook: record('recalcWorkbook'),
-    readWorkbookMedia: record('readWorkbookMedia'),
-    readPivotDefinition: record('readPivotDefinition'),
-    selectWorkbook: record('selectWorkbook'),
-    saveWorkbookEdits: record('saveWorkbookEdits'),
-    writeWorkbookRecovery: record('writeWorkbookRecovery'),
-    autoRenameWorkbook: record('autoRenameWorkbook'),
-    closeWorkbook: record('closeWorkbook'),
-    consumeNewBlankWorkbook: record('consumeNewBlankWorkbook'),
-    readLocalImage: record('readLocalImage'),
-    notifyPendingEdits: record('notifyPendingEdits'),
-    onCloseSaveRequest: record('onCloseSaveRequest'),
-    reportCloseSaveResult: record('reportCloseSaveResult'),
-    onWorkbookRenamed: record('onWorkbookRenamed'),
-    openExternal: record('openExternal'),
-    getLanguage: async () => 'ko' as const,
-    onLanguageChanged: record('onLanguageChanged'),
-    getAiSettings: record('getAiSettings'),
+  const client = { recalc: record('recalc'), close: record('close') } as unknown as XlsxWorkerClient
+  const language = {
+    getLanguage: () => Promise.resolve('ko'),
+    onLanguageChanged: () => () => {},
+    setLanguage: record('setLanguage'),
+  } as unknown as LanguagePort
+  const ai = {
     aiStream: record('aiStream'),
     aiStreamCancel: record('aiStreamCancel'),
-    onAiStream: record('onAiStream'),
-    onMenuAction: record('onMenuAction'),
-    exportPdf: record('exportPdf'),
-    aiGskStatus: record('aiGskStatus'),
-    aiGskLogin: record('aiGskLogin'),
-    webSearch: record('webSearch'),
-    pickAttachments: async () => ({ accepted: [attachment], rejected: [] }),
-    addAttachmentPaths: async () => ({ accepted: [attachment], rejected: ['too-big.bin'] }),
-    addPastedImage: async () => ({ accepted: [attachment], rejected: [] }),
-    readAttachment: record('readAttachment'),
-    readAttachmentImage: record('readAttachmentImage'),
-    getPathForFile: () => '/tmp/dropped.md',
+    onAiStream: () => () => {},
+  } as unknown as AiPort
+  return {
+    calls,
+    deps: {
+      client,
+      language,
+      ai,
+      pickers: {} as FilePickers,
+      attachments: {} as AttachmentsPort,
+      confirmOverwrite: () => true,
+      unloadPrompt: (() => () => {}) as never,
+    },
   }
-  return { calls, attachment, bridge: bridge as unknown as DesktopApi }
 }
 
 describe('the platform slot', () => {
@@ -82,66 +66,41 @@ describe('the platform slot', () => {
   })
 })
 
-describe('the Electron composition', () => {
-  it('claims every capability, including the five a browser cannot', () => {
-    const project = {} as ProjectApi
-    const platform = createElectronSheetsPlatform(fakeBridge().bridge, project)
-    for (const port of [
-      'workbook',
-      'file',
-      'window',
-      'language',
-      'ai',
-      'attachments',
-      'menu',
-      'pdfExport',
-      'search',
-    ] as const) {
+describe('the browser composition', () => {
+  it('backs the ports it can and answers null for the four it cannot', () => {
+    const platform = createWebSheetsPlatform(fakeDeps().deps)
+
+    for (const port of ['workbook', 'file', 'window', 'language', 'ai', 'attachments'] as const) {
       expect(platform[port], port).toBeTruthy()
     }
-    expect(platform.project).toBe(project)
+    // A native menu bar, a PDF writer, a search service with its own credential and a
+    // project database in a main process: none of them exist here, and each says so.
+    for (const port of ['menu', 'pdfExport', 'search', 'project'] as const) {
+      expect(platform[port], port).toBeNull()
+    }
   })
 
-  it('routes each accessor to the bridge member behind it', async () => {
-    const { calls, bridge } = fakeBridge()
-    setSheetsPlatform(createElectronSheetsPlatform(bridge, null))
+  it('routes each accessor to the dependency behind it', async () => {
+    const { calls, deps } = fakeDeps()
+    setSheetsPlatform(createWebSheetsPlatform(deps))
 
-    sheetsWorkbook().recalcWorkbook({} as never)
-    sheetsFile().closeWorkbook('s1')
-    sheetsWindow().notifyPendingEdits(3)
     sheetsAi().aiStreamCancel('r1')
     expect(await sheetsLanguage().getLanguage()).toBe('ko')
+    // The window port is real here even though there is no native window: unsaved work is
+    // guarded through `beforeunload` instead, which is why the prompt is injectable.
+    expect(sheetsWindow().notifyPendingEdits).toBeTypeOf('function')
 
-    expect(calls).toEqual([
-      { method: 'recalcWorkbook', args: [{}] },
-      { method: 'closeWorkbook', args: ['s1'] },
-      { method: 'notifyPendingEdits', args: [3] },
-      { method: 'aiStreamCancel', args: ['r1'] },
-    ])
+    expect(calls.map((call) => call.method)).toEqual(['aiStreamCancel'])
   })
 
-  it('maps the path-based attachment bridge onto refs', async () => {
-    const { bridge, attachment } = fakeBridge()
-    setSheetsPlatform(createElectronSheetsPlatform(bridge, null))
+  it('fails closed on a workbook it has no session for', async () => {
+    setSheetsPlatform(createWebSheetsPlatform(fakeDeps().deps))
 
-    // The last of the three apps to make this collapse (§6.3). A ref *is* the path on this
-    // host, and the path also stays as the chip's tooltip, so the desktop UI is unchanged.
-    await expect(sheetsAttachments().pickAttachments()).resolves.toEqual({
-      accepted: [
-        {
-          ref: attachment.path,
-          name: attachment.name,
-          ext: attachment.ext,
-          sizeBytes: attachment.sizeBytes,
-          location: attachment.path,
-        },
-      ],
-      rejected: [],
-    })
-    // A File the bridge cannot name became an explicit null instead of an empty string that
-    // type-checks as a path — the whole reason the port was reshaped.
-    await expect(sheetsAttachments().refForFile(new File([], 'x.png'))).resolves.toBe(
-      '/tmp/dropped.md',
-    )
+    // Unlike the desktop, where the main process owned the open workbook, the session lives
+    // in this page — so a request naming one it does not have is a bug to surface, not an
+    // empty recalculation to hand back.
+    await expect(
+      sheetsWorkbook().recalcWorkbook({ sessionId: 'gone', edits: [] } as never),
+    ).rejects.toThrow(/session/i)
   })
 })

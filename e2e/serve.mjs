@@ -1,0 +1,68 @@
+/**
+ * Static server for the composed web bundle, for the E2E run.
+ *
+ * The apps are plain files — there is no application server in this product, only
+ * the AI BFF, which these tests do not exercise. So this is deliberately the
+ * smallest thing that serves the bundle the way nginx does in docker/nginx: correct
+ * content types (a wrong one for .wasm breaks the sheets engine), a directory index,
+ * and nothing else. Playwright starts it via the config's `webServer`.
+ */
+import { createServer } from 'node:http'
+import { createReadStream } from 'node:fs'
+import { stat } from 'node:fs/promises'
+import { extname, join, normalize, resolve } from 'node:path'
+
+const ROOT = resolve(import.meta.dirname, '../apps/shell/dist/web')
+const PORT = Number(process.env.E2E_WEB_PORT) || 4180
+
+const TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.wasm': 'application/wasm',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.otf': 'font/otf',
+  '.map': 'application/json; charset=utf-8',
+}
+
+/** Resolve a URL path inside ROOT, or null when it escapes it. */
+function resolveInRoot(urlPath) {
+  const decoded = decodeURIComponent(urlPath.split('?')[0].split('#')[0])
+  const candidate = resolve(join(ROOT, normalize(decoded)))
+  return candidate === ROOT || candidate.startsWith(ROOT + '/') ? candidate : null
+}
+
+createServer(async (request, response) => {
+  const target = resolveInRoot(request.url ?? '/')
+  if (!target) {
+    response.writeHead(403).end('forbidden')
+    return
+  }
+  let file = target
+  try {
+    const info = await stat(file)
+    if (info.isDirectory()) file = join(file, 'index.html')
+    await stat(file)
+  } catch {
+    response.writeHead(404).end('not found')
+    return
+  }
+  response.writeHead(200, {
+    'content-type': TYPES[extname(file).toLowerCase()] ?? 'application/octet-stream',
+    'x-content-type-options': 'nosniff',
+  })
+  createReadStream(file).pipe(response)
+}).listen(PORT, () => {
+  process.stdout.write(`serving ${ROOT} on http://127.0.0.1:${PORT}\n`)
+})

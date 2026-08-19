@@ -1,7 +1,7 @@
 /**
  * Builds slides' platform for a browser.
  *
- * The mirror of platform-electron.ts, and the shape of the two says what phase 7a bought.
+ * The composition behind the slot: the ports this host can back, and `null` for the rest.
  * The Electron adapter forwards every port to a preload bridge, because the document lives
  * in the main process. Here there is no bridge and no other process: the document lives in
  * this page, and the `doc` port's 84 members are direct calls into src/domain/ops.ts — the

@@ -1359,7 +1359,7 @@ export async function sha256(input: Uint8Array | string): Promise<string> {
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
-/** CRC-checked JSZip load. Exported for src/main/xlsx-file-io.ts, which mutates a whole file. */
+/** CRC-checked JSZip load, for the callers that mutate a whole file rather than an entry. */
 export async function loadSafeZip(buffer: Buffer): Promise<JSZip> {
   const zip = await JSZip.loadAsync(buffer, { checkCRC32: true })
   const paths = Object.keys(zip.files)

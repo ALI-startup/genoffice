@@ -7,7 +7,7 @@
  * @samugen/pptx-engine and @samugen/pptx-render, both of which run in a browser
  * (see pptx-engine's tests/browser-safety.test.ts), so this module does too.
  *
- * It was extracted from src/main/session-state.ts, which keeps the parts that are
+ * It was extracted from the host's session module, which kept the parts that are
  * genuinely Electron's: the `webContents.id → Session` registry, the window
  * references dialogs are parented to, and the two host services this module needs
  * injected. That file re-exports everything here, so its importers did not change.
@@ -194,7 +194,7 @@ export function settleStaleHistoryBatch(session: Session): void {
 export interface SlideRenderEnv {
   /**
    * Text metrics for layout. Electron measures real system fonts through
-   * opentype.js (src/main/fonts.ts); a browser's equivalent is `queryLocalFonts()`,
+   * opentype.js over the installed fonts; a browser's equivalent is `queryLocalFonts()`,
    * with pptx-render's heuristic provider as the fallback.
    */
   metrics: FontMetricsProvider

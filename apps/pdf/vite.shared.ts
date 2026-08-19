@@ -1,16 +1,9 @@
 /**
- * Renderer build pieces shared by pdf's three Vite configs.
+ * Renderer build pieces for pdf's web build, including the pdfjs assets it copies.
  *
- * There are three because there are three ways this renderer is built:
- *   - electron.vite.config.ts — the packaged Electron app.
- *   - vite.renderer.config.ts — the renderer-only dev server the shell embeds
- *     via PDF_RENDERER_URL for HMR. Still an Electron host.
- *   - vite.web.config.ts      — the browser build, with no Electron at all.
- *
- * `hostAlias` is the build-time seam: it resolves the bare specifier `@host` to
- * one host module per config, so the choice of host is made by the bundler and
- * not by a runtime check. The Electron bundle therefore cannot contain the File
- * System Access code and the web bundle cannot contain `window.pdfApi`.
+ * `hostAlias` resolves the bare specifier `@host` to the host module, so the renderer
+ * imports its host by name and never by path — `main.tsx` bootstraps from `@host` and
+ * tsconfig maps the same specifier for `tsc`.
  */
 import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
@@ -30,12 +23,7 @@ export function pdfjsCopyTargets(): Array<{ src: string; dest: string }> {
   ]
 }
 
-/**
- * Resolve `@host` to one host module. tsconfig.json maps the same specifier to
- * host-electron.ts so `tsc` has something to check `main.tsx` against;
- * host-web.ts is checked separately because it annotates its export as
- * `CreatePdfPlatform`, so the two cannot drift.
- */
-export function hostAlias(host: 'electron' | 'web'): Record<string, string> {
-  return { '@host': resolve(import.meta.dirname, `src/renderer/host-${host}.ts`) }
+/** Resolve `@host` to the host module; tsconfig.json maps the same specifier for `tsc`. */
+export function hostAlias(): Record<string, string> {
+  return { '@host': resolve(import.meta.dirname, 'src/renderer/host-web.ts') }
 }

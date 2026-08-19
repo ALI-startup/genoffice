@@ -1,7 +1,7 @@
 /**
  * Browser implementations of the platform ports.
  *
- * The sibling of @samugen/platform-electron, and it obeys the same two rules:
+ * The adapter behind the ports, and it obeys two rules:
  * nothing here imports an app, and nothing here claims a capability it cannot
  * honestly back. What it adds over the Electron package is `WebDocumentStore` —
  * Electron gets its ref → file mapping for free (the ref is a path), while a
@@ -114,3 +114,4 @@ export type {
   PublicAiProviderSettings,
   PublicAiSettings,
 } from './ai-wire.js'
+export { openExternalUrl, safeExternalUrl, type SafeExternalUrlOptions } from './external-url'

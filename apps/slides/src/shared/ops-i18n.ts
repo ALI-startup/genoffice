@@ -5,14 +5,10 @@
  * operation reports ("Text Box", "Picture"), and the names of the chart colour schemes. The
  * other two are the warning a host must show before `editChart` rebuilds an imported chart —
  * not passed to the operation, but asked by the host on its behalf, which is why they belong
- * with it rather than with either host's own dialogs. The operations take the translator as
- * a parameter rather than reaching for one, because they run on both hosts and neither
- * host's dictionary is theirs.
- *
- * They live in `shared/` because both hosts use them: the Electron main process, whose own
- * dialogs and menus are in `src/main/i18n-main.ts`, and the browser host, which cannot
- * import anything under `src/main/`. Keeping one dictionary is what stops the two hosts
- * from labelling the same shape differently.
+ * with it rather than with the host's own dialogs. The operations take the translator as a
+ * parameter rather than reaching for one, because the label belongs to the operation and the
+ * dictionary belongs to whoever is rendering it — which is also what let the same operations
+ * serve a second host while there was one.
  */
 import { createI18n, type Lang } from '@samugen/i18n'
 

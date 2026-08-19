@@ -1,19 +1,13 @@
 /**
  * The shell's platform slot: the one place the renderer names the host
  * capabilities it needs, and the only thing renderer code is allowed to reach
- * the host through. After this phase the preload globals are read in exactly one
- * place — host-electron.ts, the module the two renderer entry points bootstrap
- * from — and nowhere else in the renderer. Same arrangement as apps/pdf and
- * apps/docs.
+ * the host through. The browser API is read in exactly one place — host-web.ts,
+ * the module the renderer entry point bootstraps from — and nowhere else in the
+ * renderer. Same arrangement as apps/pdf and apps/docs.
  *
- * Two slots, not one, because the shell ships two documents with two different
- * preloads: `index.html` (the tab strip + Home, backed by `window.aiOffice`,
- * `window.aiOfficeTabs`, `window.aiOfficeProject`, `window.aiOfficeAiSettings`)
- * and `update.html` (the auto-update dialog, backed by `window.aiOfficeUpdate`
- * and nothing else). Neither document can honour the other's ports, so folding
- * them into one composition would force a host to claim capabilities it has no
- * channel for — the exact failure this seam exists to prevent. See
- * `UpdateWindowPlatform` at the bottom.
+ * The slot survives having one host: it is what a test fills with a fake, and it
+ * is what keeps a capability the host cannot back (`X | null`) from being faked
+ * with a stub that fails at the call site.
  *
  * Almost nothing here comes from @samugen/platform's shared catalogue, and
  * that is the honest result rather than an oversight: the shell is the *host
@@ -61,7 +55,6 @@ import { createPlatformSlot, type LanguagePort } from '@samugen/platform'
 import type { AiSettingsApi } from '../../shared/ai-settings-api'
 import type { ProjectSummaryEntry, RecentQuery } from '../../shared/home-api'
 import type { TabsApi, TabSummary } from '../../shared/tabs-api'
-import type { UpdateWindowApi } from '../../shared/update-api'
 
 /**
  * Opaque handle to one file the host knows about, issued by the host.
@@ -452,48 +445,12 @@ export interface ShellPlatform {
 /**
  * What a host module must export as `createShellPlatform`.
  *
- * Async because a browser host will have to open its handle store before it can
- * resolve a `FileRef`, matching `CreatePdfPlatform` / `CreateDocsPlatform`.
- *
- * Unlike those two, `main.tsx` imports this from `./host-electron` directly
- * rather than through a `@host` build-time alias. The alias exists to keep two
- * hosts' code out of each other's bundles; with one host it would only be
- * machinery. Phase 5b introduces it (and a `vite.shared.ts` beside the other
- * apps') at the moment there is a second host to point it at — the contract
- * `main.tsx` consumes is this type either way, so nothing else has to move.
+ * Async because the host opens its handle store before it can resolve a `FileRef`,
+ * matching `CreatePdfPlatform` / `CreateDocsPlatform`. `main.tsx` imports it from
+ * the bare specifier `@host`, which the Vite config and tsconfig both resolve to
+ * `host-web.ts` — the contract `main.tsx` consumes is this type either way.
  */
 export type CreateShellPlatform = () => Promise<ShellPlatform>
 
 export const { set: setShellPlatform, get: shellPlatform } =
   createPlatformSlot<ShellPlatform>('shell')
-
-/**
- * The auto-update dialog's surface.
- *
- * An alias rather than a re-declaration: `UpdateWindowApi` is already
- * transport-agnostic (shared/update-api.ts imports nothing from Electron, and
- * the window's copy is localized in the main process and delivered as data), so
- * re-declaring it here would only create something to drift. Same reasoning as
- * `ProjectPort` aliasing `ProjectApi` in @samugen/platform.
- */
-export type UpdateWindowPort = UpdateWindowApi
-
-/**
- * The update window's composed platform (the `update.html` document).
- *
- * One member, and its own slot: this document's preload exposes
- * `window.aiOfficeUpdate` and nothing else, so a host built for it can honour
- * none of `ShellPlatform`. A single slot would have to hold one composition or
- * the other and could only be typed by making most of it nullable — which would
- * say "this capability may be missing" about capabilities that are simply in a
- * different window.
- */
-export interface UpdateWindowPlatform {
-  update: UpdateWindowPort
-}
-
-/** What a host module must export as `createUpdateWindowPlatform`. */
-export type CreateUpdateWindowPlatform = () => Promise<UpdateWindowPlatform>
-
-export const { set: setUpdateWindowPlatform, get: updateWindowPlatform } =
-  createPlatformSlot<UpdateWindowPlatform>('shell-update')

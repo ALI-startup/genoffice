@@ -4095,16 +4095,6 @@ body.docs-crop-active
   font-family: var(--gs-font-sans);
 }
 
-/* Boundary between the restored transcript and the live turn */
-.ai-history-sep {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 30px;
-  font-size: 14px;
-  color: #999;
-}
-
 .ai-chat-empty {
   margin-top: 36px;
   padding: 0 10px;

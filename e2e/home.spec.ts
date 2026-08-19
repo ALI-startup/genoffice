@@ -1,36 +1,49 @@
+/**
+ * The home screen and the language switch, in a real browser.
+ *
+ * The language assertions are here rather than in a unit test because the thing that
+ * can actually break is the boot path: the shell reads the stored language before its
+ * first render, and the switch writes through to storage so every other open page and
+ * frame follows. Neither half is visible to a component test.
+ */
 import { test, expect } from '@playwright/test'
-import { launchShell, closeAndSaveVideo, screenshotPath } from './helpers'
+import { LANGUAGE_KEY, openShell } from './helpers'
 
 test.describe('home screen', () => {
-  test('shows hero, quick-create cards and tab bar', async () => {
-    const launched = await launchShell({ onboardingSeen: true, videoDir: 'home-basics' })
-    const { page } = launched
-    try {
-      await expect(page.locator('.home-hero')).toBeVisible()
-      // three AI quick-create cards plus the "Open file" browse card
-      await expect(page.locator('.quick-card')).toHaveCount(4)
-      await expect(page.locator('.quick-card').first()).toContainText('AI Docs')
-      await expect(page.locator('.quick-card').nth(1)).toContainText('AI Sheets')
-      await expect(page.locator('.quick-card').nth(2)).toContainText('AI Slides')
-      await expect(page.locator('.tab-bar .tab-item.tab-home')).toBeVisible()
-      await page.screenshot({ path: screenshotPath('home-overview') })
-    } finally {
-      await closeAndSaveVideo(launched, 'home-basics')
+  test('shows the hero, the quick-create cards and the tab strip', async ({ page }) => {
+    await openShell(page, { onboardingSeen: true })
+
+    await expect(page.locator('.home-hero')).toBeVisible()
+    // One card per editor that can be created from empty.
+    for (const label of ['AI Docs', 'AI Sheets', 'AI Slides']) {
+      await expect(page.locator('.quick-card', { hasText: label })).toBeVisible()
     }
+    // The tab strip is the shell's own chrome, with home as the first tab.
+    await expect(page.locator('.tab-item.tab-home')).toBeVisible()
+    await expect(page.locator('.lang-toggle-tabbar')).toBeVisible()
   })
 
-  test('renders localized UI when SAMUGEN_LANG=zh-CN', async () => {
-    const launched = await launchShell({
-      onboardingSeen: true,
-      lang: 'zh-CN',
-      videoDir: 'home-zh-cn',
-    })
-    const { page } = launched
-    try {
-      await expect(page.locator('.nav-item .nav-label').first()).toHaveText('最近')
-      await page.screenshot({ path: screenshotPath('home-zh-cn') })
-    } finally {
-      await closeAndSaveVideo(launched, 'home-zh-cn')
-    }
+  test('the switch turns the chrome Korean and writes the choice through', async ({ page }) => {
+    await openShell(page, { onboardingSeen: true })
+    await expect(page.locator('.quick-card', { hasText: 'AI Docs' })).toBeVisible()
+
+    await page.locator('.lang-toggle-option', { hasText: '한국어' }).click()
+
+    // The editors keep their product names in every language; the chrome around them
+    // is what translates, so the sidebar is the honest assertion.
+    await expect(page.locator('.nav-label', { hasText: '최근 사용' }).first()).toBeVisible()
+    await expect(page.locator('.lang-toggle-option.active')).toHaveText('한국어')
+    await expect
+      .poll(() => page.evaluate((key) => localStorage.getItem(key), LANGUAGE_KEY))
+      .toBe('ko')
+  })
+
+  test('a stored language is honoured before the first render', async ({ page }) => {
+    await openShell(page, { onboardingSeen: true, lang: 'ko' })
+
+    // No toggling in this test: this is the boot path, which is what a returning
+    // visitor gets and what would regress silently.
+    await expect(page.locator('.nav-label', { hasText: '최근 사용' }).first()).toBeVisible()
+    await expect(page.locator('.lang-toggle-option.active')).toHaveText('한국어')
   })
 })

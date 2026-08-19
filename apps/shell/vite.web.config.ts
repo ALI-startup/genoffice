@@ -49,7 +49,7 @@ const sheetsTarget = process.env.SHEETS_WEB_URL || 'http://127.0.0.1:5184'
 export default defineConfig({
   root: 'src/renderer',
   base: './',
-  resolve: { alias: hostAlias('web') },
+  resolve: { alias: hostAlias() },
   plugins: [react()],
   define: {
     // The version the account menu shows. Electron reads it from

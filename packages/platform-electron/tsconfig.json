@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    // @samugen/platform is consumed as source, and AttachmentsPort mentions
-    // the DOM `File` type; without DOM here that import would not type-check.
-    "lib": ["ES2022", "DOM"]
-  },
-  "include": ["src", "tests", "vitest.config.ts"]
-}

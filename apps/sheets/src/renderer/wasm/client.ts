@@ -1,7 +1,7 @@
 /**
  * The page's handle on the engine: the same eleven commands, one Worker away.
  *
- * Method for method this is `XlsxSidecarClient` (src/main/xlsx-sidecar-client.ts) — which is
+ * Method for method this is `XlsxSidecarClient` (src/engine-node/xlsx-sidecar-client.ts) — which is
  * the point, since the ports above must not be able to tell which host answered. The
  * bookkeeping is the desktop's too, and for the same reason: requests are correlated by id,
  * because a Worker's replies arrive out of order relative to nothing in particular and the

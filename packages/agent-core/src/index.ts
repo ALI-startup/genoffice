@@ -21,10 +21,10 @@ export type {
   CompactionOptions,
   ToolExecutedEvent,
 } from './loop'
-export { createIpcTransport, IPC_STREAM_SILENCE_TIMEOUT_MS } from './electron-transport'
+export { createStreamTransport, IPC_STREAM_SILENCE_TIMEOUT_MS } from './stream-transport'
 export type {
   IpcStreamChunk,
   IpcStreamStart,
   IpcTask,
   IpcTransportOptions,
-} from './electron-transport'
+} from './stream-transport'

@@ -17,14 +17,8 @@
     "paths": {
       "@samugen/file-parse": ["./src/types/file-parse.d.ts"],
       "@samugen/file-parse/browser": ["./src/types/file-parse-browser.d.ts"],
-      "@host": ["./src/renderer/host-electron.ts"]
+      "@host": ["./src/renderer/host-web.ts"]
     }
   },
-  "include": [
-    "electron.vite.config.ts",
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "scripts/**/*.ts",
-    "tests/**/*.ts"
-  ]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "scripts/**/*.ts", "tests/**/*.ts"]
 }

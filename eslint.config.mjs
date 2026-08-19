@@ -15,8 +15,10 @@ export default tseslint.config(
       '**/release/**',
       '**/target/**',
       '**/coverage/**',
-      'scripts/drivers/**',
-      'apps/*/build/**',
+      // Playwright's own output from a local `npm run test:e2e`: a bundled report and
+      // per-run traces, neither of which is ours to lint.
+      'e2e/playwright-report/**',
+      'e2e/test-results/**',
     ],
   },
   js.configs.recommended,

@@ -1,7 +1,7 @@
 /**
  * The xlsx engine in a page: the wasm module, its filesystem, and the eleven commands.
  *
- * The method list is `XlsxSidecarClient`'s (src/main/xlsx-sidecar-client.ts), because the
+ * The method list is `XlsxSidecarClient`'s (src/engine-node/xlsx-sidecar-client.ts), because the
  * callers above it must not be able to tell which host answered. What differs is everything
  * below: no process, no pipe, no request ids to correlate — a call into linear memory returns
  * before the next one starts, so a `Map` of pending requests and a timeout would be

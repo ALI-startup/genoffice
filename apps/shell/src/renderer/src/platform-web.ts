@@ -1,7 +1,7 @@
 /**
  * Builds the shell's platform for a browser.
  *
- * The mirror of platform-electron.ts, and it keeps the same discipline: nothing
+ * The composition behind the slot, and it keeps the seam's discipline: nothing
  * here reads a browser global. The route, the frame link, the AI fetch and the
  * clocks are all injected, so every adapter — including the tab strip and the
  * close guard, which are the interesting ones — is exercisable without a DOM,

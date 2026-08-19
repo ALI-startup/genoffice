@@ -7,7 +7,7 @@ import { afterAll, describe, expect, it } from 'vitest'
 import JSZip from 'jszip'
 import { z } from 'zod'
 
-import { XlsxSidecarClient } from '../src/main/xlsx-sidecar-client'
+import { XlsxSidecarClient } from '../src/engine-node/xlsx-sidecar-client'
 
 const recalcResultSchema = z
   .object({

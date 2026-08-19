@@ -1332,16 +1332,6 @@ body.vib .slide-list {
   font-family: var(--gs-font-sans);
 }
 
-/* Boundary between the restored transcript and the live turn */
-.ai-history-sep {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 30px;
-  font-size: 14px;
-  color: #999;
-}
-
 /* Empty-state title/body: same specs as the docs AI panel (family/size/color); copy unchanged */
 .ai-chat-empty {
   margin-top: 36px;

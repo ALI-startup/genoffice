@@ -9,6 +9,7 @@
  * - →/space/enter/PgDn/click next step/page; ←/PgUp/right-click previous page; Home/End first/last page;
  *   Esc exits; advancing past the last page shows the "end of show" black screen
  */
+import { openExternalUrl } from '@samugen/platform-web'
 import { slidesDoc } from '../platform'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { RenderNode, RenderSlide, ShapeRenderNode } from '@samugen/pptx-render'
@@ -239,8 +240,8 @@ export function SlideShowView({
         }
         return
       }
-      // Electron routes window.open to the system browser (setWindowOpenHandler denies in-app windows)
-      window.open(target.kind === 'url' ? target.url : '', '_blank', 'noreferrer')
+      // A link out of the deck, so it goes through the protocol gate.
+      if (target.kind === 'url') openExternalUrl(target.url)
     },
     [order, goTo],
   )

@@ -1,7 +1,7 @@
 /**
  * Builds pdf's platform for a browser, from a `WebDocumentStore`.
  *
- * The mirror of platform-electron.ts, and it follows the same division: the
+ * The composition behind the slot, and it follows the seam's division: the
  * shared ports come from @samugen/platform-web, and the two app-specific
  * surfaces — the document operations and the Save As handshake — are adapted
  * here, next to the port declarations they satisfy. Nothing in this file touches

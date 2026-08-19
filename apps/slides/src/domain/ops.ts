@@ -221,7 +221,7 @@ import { applyEditParagraphs, collectParagraphFormatPatches, levelsChanged } fro
  *
  * Two operations here hand text to the user — animation targets are labelled by element
  * type, and the chart colour gallery names its schemes — and the translations live in the
- * host's dictionary (`src/main/i18n-main.ts` for Electron). Passing the translator in keeps
+ * host's dictionary (`shared/ops-i18n.ts`). Passing the translator in keeps
  * this module free of any i18n import and lets each host answer with its own strings.
  */
 export type OpsLabelKey =

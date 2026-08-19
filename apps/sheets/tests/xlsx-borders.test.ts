@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import JSZip from 'jszip'
 
 import { StylesheetEditor } from '../src/gateway/xlsx-styles'
-import { XlsxSidecarClient } from '../src/main/xlsx-sidecar-client'
+import { XlsxSidecarClient } from '../src/engine-node/xlsx-sidecar-client'
 import { workbookRangeResultSchema } from '../src/shared/desktop-api'
 import { fromNeutralStyle, toNeutralStyle } from '../src/renderer/edit-journal'
 

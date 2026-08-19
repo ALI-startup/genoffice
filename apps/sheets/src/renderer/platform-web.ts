@@ -1,7 +1,7 @@
 /**
  * Builds sheets' platform for a browser.
  *
- * The mirror of platform-electron.ts, and the shape of the two says what 6b and 6c bought.
+ * The composition behind the slot: the ports this host can back, and `null` for the rest.
  * The Electron adapter forwards every port to a preload bridge, because the workbook lives in
  * the main process and the engine in a child process. Here there is no bridge and no child:
  * the engine is a wasm module in a Worker, the workbook's bytes are in its filesystem, and
@@ -26,6 +26,7 @@ import {
   type FilePickers,
   type FrameChildLink,
   type WebFileHandle,
+  openExternalUrl,
 } from '@samugen/platform-web'
 import { parsePivotDefinition } from '../gateway/xlsx-pivot'
 import { readArchiveEntryText } from '../gateway/xlsx-package-io'
@@ -375,7 +376,7 @@ export function createWebSheetsWindowPort(
   unloadPrompt: typeof createWebUnloadPrompt = createWebUnloadPrompt,
   frame: FrameChildLink | null = null,
   openExternal: (url: string) => void = (url) => {
-    window.open(url, '_blank', 'noopener,noreferrer')
+    openExternalUrl(url)
   },
 ): SheetsWindowPort {
   let pendingEdits = 0

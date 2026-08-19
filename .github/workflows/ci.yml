@@ -1,9 +1,9 @@
 name: CI
 
 # Test gate for every PR and push: changed-file formatting, lint, typecheck across
-# all workspaces, and the full unit-test suite (engine packages and app tests; the
-# sheets suite also runs the Rust xlsx-sidecar tests). Packaging/signing is handled
-# by separate release automation — this workflow never builds installers.
+# all workspaces, the full unit-test suite (engine packages and app tests; the sheets
+# suite also runs the Rust engine's tests), and an end-to-end run in Chromium against
+# the composed web bundle — the same artifact the container image serves.
 
 on:
   push:
@@ -99,9 +99,7 @@ jobs:
           npm run compat -w @samugen/sheets
 
   e2e:
-    # 22.04, not -latest: 24.04's AppArmor hardening blocks Electron renderer
-    # spawn under xvfb even with --no-sandbox and the userns sysctl lifted
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - name: Checkout
@@ -118,8 +116,9 @@ jobs:
         uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable branch, 2026-07
         with:
           toolchain: stable
+          targets: wasm32-wasip1
 
-      - name: Cache cargo (xlsx-sidecar)
+      - name: Cache cargo (xlsx-engine)
         uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           workspaces: apps/sheets/native/xlsx-engine
@@ -127,32 +126,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build apps
-        run: npm run build:all
+      # The sheets engine is compiled to wasm32-wasip1 for the browser, and clang needs
+      # a WASI libc for the C dependencies underneath IronCalc. Same two packages the
+      # container build installs; scripts/build-wasm.ts assembles the sysroot from them.
+      - name: Install the WASI toolchain
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends clang wasi-libc
 
-      - name: Generate sheets fixtures
-        run: npm run fixtures -w @samugen/sheets
+      # The tests drive the deployed artifact, not a dev server: the composed bundle
+      # (shell plus the four editors under /app/*), served by e2e/serve.mjs the way
+      # docker/nginx serves it.
+      - name: Build the web bundle
+        run: npm run build:shell:web
 
-      # Newer Ubuntu kernels ship an AppArmor policy that blocks unprivileged
-      # user namespaces, which kills the Chromium zygote even with --no-sandbox
-      # (window opens, renderer never loads). The knob only exists on kernels
-      # that enforce the restriction, so skip it where it is absent instead of
-      # failing the job (22.04 runner images vary by kernel).
-      - name: Allow unprivileged user namespaces (Electron)
-        run: |
-          if sysctl kernel.apparmor_restrict_unprivileged_userns >/dev/null 2>&1; then
-            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-          else
-            echo "kernel.apparmor_restrict_unprivileged_userns not present — skipping"
-          fi
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
 
-      # Electron needs a display server on Linux runners. DEBUG=pw:browser
-      # forwards the Electron process stdout/stderr into the CI log so launch
-      # failures are diagnosable.
-      - name: E2E (Electron shell)
-        env:
-          DEBUG: 'pw:browser'
-        run: xvfb-run --auto-servernum -- npm run test:e2e
+      - name: E2E (Chromium)
+        run: npm run test:e2e
 
       - name: Upload E2E artifacts on failure
         if: failure()
@@ -160,6 +150,6 @@ jobs:
         with:
           name: e2e-artifacts
           path: |
-            e2e/artifacts
             e2e/test-results
+            e2e/playwright-report
           retention-days: 7

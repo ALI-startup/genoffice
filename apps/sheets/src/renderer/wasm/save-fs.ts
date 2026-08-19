@@ -1,7 +1,7 @@
 /**
  * The browser's scratch filesystem for a save: the engine's own, reached across the Worker.
  *
- * The counterpart of src/main/save-fs-node.ts, and the reason the save pipeline in
+ * The counterpart of src/engine-node/save-fs-node.ts, and the reason the save pipeline in
  * gateway/xlsx-package-io.ts takes a filesystem instead of importing one. Everything the
  * pipeline does with paths — planning parts into files, extracting entries to read them back,
  * promoting a finished archive over its target — happens here inside the engine's WASI

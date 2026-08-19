@@ -58,10 +58,7 @@ FROM node:${NODE_VERSION}-bookworm-slim AS deps
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates git openssh-client \
   && rm -rf /var/lib/apt/lists/*
-# Nothing here builds or runs Electron — only the browser bundles — so skip the
-# ~200 MB binary download electron's postinstall would otherwise do.
-ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1 \
-    HUSKY=0 \
+ENV HUSKY=0 \
     npm_config_fund=false \
     npm_config_audit=false
 WORKDIR /app
@@ -113,8 +110,7 @@ RUN mkdir -p /wasi-sysroot/lib \
 #      that same origin (their `base` set to match), which is what keeps the frames'
 #      AI calls same-origin and their document.title readable by the tab strip.
 #   2. each app standalone, base './', owning its own origin.
-# Each writes to dist/web, never under out/ — apps/shell/electron-builder.cjs
-# packages out/** into every desktop installer.
+# Each writes to dist/web.
 FROM deps AS build
 COPY . .
 # The engine, built in the stage above rather than here: `build:web` is a plain Vite build and

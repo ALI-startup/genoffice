@@ -27,7 +27,7 @@ export default defineConfig({
   // under a path of *its* origin instead (`/app/sheets/`), which is what keeps this app's AI
   // calls same-origin and its title readable from the tab strip.
   base: process.env.SHEETS_WEB_BASE || './',
-  resolve: { alias: hostAlias('web') },
+  resolve: { alias: hostAlias() },
   plugins: [react()],
   build: {
     // Deliberately outside `out/`: apps/shell/electron-builder.cjs ships `from:

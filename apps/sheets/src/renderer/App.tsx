@@ -120,7 +120,7 @@ import {
 import { InMemoryWorkbookAdapter } from '../domain/in-memory-workbook'
 import { iconSetSaveable } from '../gateway/xlsx-cf'
 import type { ApplyOutcome, ChangePlan } from '../domain/workbook.types'
-import { createElectronTransport } from './ai/transport'
+import { createAiTransport } from './ai/transport'
 import type { ActiveSheetInfo, SheetsSkillDeps } from './ai/tools'
 import type { AiChatMessage } from './ai/AiChatPanel'
 import { createWorkbookSkill } from './ai/workbook-skill'
@@ -770,7 +770,7 @@ export function App(): React.JSX.Element {
   const agentLoopRef = useRef<AgentLoop | null>(null)
   if (!agentLoopRef.current) {
     agentLoopRef.current = new AgentLoop({
-      transport: createElectronTransport(),
+      transport: createAiTransport(),
       systemSuffix: aiLangDirective,
       skill: composeSkills('sheets+files', '', [
         createWorkbookSkill(sheetsSkillDeps()),

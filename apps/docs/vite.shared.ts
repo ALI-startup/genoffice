@@ -1,27 +1,17 @@
 /**
- * Renderer build pieces shared by docs' three Vite configs.
+ * Renderer build pieces for docs' web build.
  *
- * There are three because there are three ways this renderer is built:
- *   - electron.vite.config.ts — the packaged Electron app.
- *   - vite.renderer.config.ts — the renderer-only dev server the shell embeds
- *     via DOCS_RENDERER_URL for HMR. Still an Electron host.
- *   - vite.web.config.ts      — the browser build, with no Electron at all.
- *
- * `hostAlias` is the build-time seam: it resolves the bare specifier `@host` to
- * one host module per config, so the choice of host is made by the bundler and
- * not by a runtime check. The Electron bundle therefore cannot contain the File
- * System Access code and the web bundle cannot contain `window.desktop`.
+ * `hostAlias` resolves the bare specifier `@host` to the host module, so the
+ * renderer imports its host by name and never by path: `main.tsx` bootstraps from
+ * `@host`, tsconfig maps the same specifier for `tsc`, and neither has to know
+ * where the module lives. It is what made a second host possible and what keeps
+ * host access in one file now that there is one.
  *
  * Same arrangement as apps/pdf/vite.shared.ts, minus the pdfjs data copying.
  */
 import { resolve } from 'node:path'
 
-/**
- * Resolve `@host` to one host module. tsconfig.json maps the same specifier to
- * host-electron.ts so `tsc` has something to check `main.tsx` against;
- * host-web.ts is checked separately because it annotates its export as
- * `CreateDocsPlatform`, so the two cannot drift.
- */
-export function hostAlias(host: 'electron' | 'web'): Record<string, string> {
-  return { '@host': resolve(import.meta.dirname, `src/renderer/host-${host}.ts`) }
+/** Resolve `@host` to the host module; tsconfig.json maps the same specifier for `tsc`. */
+export function hostAlias(): Record<string, string> {
+  return { '@host': resolve(import.meta.dirname, 'src/renderer/host-web.ts') }
 }

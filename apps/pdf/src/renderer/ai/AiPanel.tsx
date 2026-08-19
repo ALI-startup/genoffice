@@ -10,7 +10,7 @@ import sendEnterOff from '../assets/send-enter-off.png'
 import sendStop from '../assets/send-stop.png'
 import { pdfPlatform } from '../platform'
 import { createPdfSkill } from './pdf-skill'
-import { createElectronTransport } from './transport'
+import { createAiTransport } from './transport'
 import type { PdfAiDeps } from './tools'
 
 const PANEL_WIDTH_KEY = 'pdf-ai-panel-width'
@@ -105,7 +105,7 @@ export function AiPanel({
       deletePage: (idx) => apiRef.current.deletePage(idx),
     }
     loopRef.current = new AgentLoop({
-      transport: createElectronTransport(),
+      transport: createAiTransport(),
       skill: createPdfSkill(deps),
       systemSuffix: () => aiLangDirective(langRef.current),
       events: {

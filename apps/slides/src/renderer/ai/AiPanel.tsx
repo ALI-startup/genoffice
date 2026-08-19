@@ -1,3 +1,4 @@
+import { openExternalUrl } from '@samugen/platform-web'
 import { slidesAi, slidesAttachments, slidesDoc } from '../platform'
 import { slidesPlatform } from '../platform'
 import React, { useEffect, useRef, useState, useCallback } from 'react'
@@ -20,7 +21,7 @@ import {
 import { extractJsonObject, parseOutlineJson } from './outline-json'
 import { PAGE_LAYOUTS } from './deck-compose'
 import { createFilesSkill } from './files-skill'
-import { createElectronTransport } from './transport'
+import { createAiTransport } from './transport'
 import { renderSlidesToPngBase64 } from '../export-render'
 import { isQcEnabled, mergeQcPages, qcSlidePage, QC_MAX_PAGES } from './slide-qc'
 import { useI18n, t as tGlobal, aiLangDirective, type TFunc } from '../i18n/locale'
@@ -167,7 +168,6 @@ interface AiPanelProps {
   /** Generation progress callback (for the canvas top progress bar) */
   onDeckProgress?: (event: DeckProgressEvent | null) => void
   /** Absolute path of the currently open file (for chat history persistence) */
-  currentFilePath?: string | null
 }
 
 /** Some locales already end the label with an ellipsis — normalize to exactly one. */
@@ -243,7 +243,6 @@ export function AiPanel({
   onCollapse,
   onPathChange,
   onDeckProgress,
-  currentFilePath,
 }: AiPanelProps) {
   const { t } = useI18n()
   const [input, setInput] = useState('')
@@ -272,8 +271,6 @@ export function AiPanel({
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
-  /** Past conversation restored from JSONL (read-only transcript, not fed to the model) */
-  const [historicChat, setHistoricChat] = useState<ChatEntry[]>([])
   /* Answered clarify receipts (answered-state card): view-only record, not chat data */
   const [clarifyAnswers, setClarifyAnswers] = useState<
     Array<{ afterIdx: number; qa: Array<{ q: string; a: string }> }>
@@ -282,8 +279,6 @@ export function AiPanel({
   const inputRef = useRef<HTMLTextAreaElement>(null)
   /** Stop following once the user scrolls up; re-attach when near the bottom */
   const stickToBottomRef = useRef(true)
-  /** Current chat's projectId/chatId, set after resolve succeeds */
-  const chatRefIds = useRef<{ projectId: string; chatId: string } | null>(null)
 
   // The loop instance survives across renders; closures read refs for the latest state
   const slidesRef = useRef(slides)
@@ -321,101 +316,6 @@ export function AiPanel({
   const runToolsRef = useRef<
     Array<{ name: string; summary: string; isError?: boolean; input?: string; output?: string }>
   >([])
-
-  // ── Chat history persistence ──────────────────────────────────────────────
-  /** Resolve chatId and load history on first mount (AiPanel resets by key; no need to watch currentFilePath changes) */
-  useEffect(() => {
-    const api = (window as Window & { projectApi?: typeof window.projectApi }).projectApi
-    if (!api) return
-    const tempChatId = `unsaved-${Date.now()}`
-    void api
-      .resolveChat({ filePath: currentFilePath ?? null, tempChatId })
-      .then((ids) => {
-        chatRefIds.current = ids
-        return api.loadChat({ projectId: ids.projectId, chatId: ids.chatId, limit: 200 })
-      })
-      .then((msgs) => {
-        if (msgs.length === 0) return
-        setHistoricChat(
-          msgs.map((m) => ({
-            role: m.role,
-            text: m.text,
-            tools: m.tools?.map((t) => ({
-              name: t.name,
-              summary: t.summary,
-              isError: t.isError,
-              output: t.output ? t.output.slice(0, TOOL_OUTPUT_MAX_CHARS) : undefined,
-            })),
-          })),
-        )
-        // Restore model context: follow-ups after reopening a file continue the earlier conversation (only when the loop is idle with no history)
-        loopRef.current?.restore(msgs.map((m) => ({ role: m.role, text: m.text })))
-      })
-      .catch(() => {
-        /* History load failures are silent */
-      })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  /** After an unsaved draft lands and gets a real path, bind the unsaved-* history to that file (recoverable by path on reopen) */
-  useEffect(() => {
-    const ids = chatRefIds.current
-    const api = (window as Window & { projectApi?: typeof window.projectApi }).projectApi
-    if (!api || !ids || !currentFilePath || !ids.chatId.startsWith('unsaved-')) return
-    void api
-      .rebindChat({
-        projectId: ids.projectId,
-        tempChatId: ids.chatId,
-        newFilePath: currentFilePath,
-      })
-      .then((r) => {
-        if (r?.chatId) chatRefIds.current = r
-      })
-      .catch(() => {
-        /* Silent */
-      })
-  }, [currentFilePath])
-
-  /** Persist one message (fails silently). tools include args/output (truncated by the store layer); attachments store metadata only. */
-  const persistMessage = (
-    role: 'user' | 'assistant',
-    text: string,
-    tools?: Array<{
-      name: string
-      summary: string
-      isError?: boolean
-      input?: string
-      output?: string
-    }>,
-    attachments?: AttachmentMeta[],
-  ) => {
-    const ids = chatRefIds.current
-    const api = (window as Window & { projectApi?: typeof window.projectApi }).projectApi
-    if (!ids || !api) return
-    void api
-      .appendChat({
-        projectId: ids.projectId,
-        chatId: ids.chatId,
-        role,
-        text,
-        ...(tools && tools.length > 0 ? { tools } : {}),
-        ...(attachments && attachments.length > 0
-          ? {
-              // The project store records a local path (main-process bookkeeping, not
-              // migrated yet); `location` is what this host can offer for it.
-              attachments: attachments.map((a) => ({
-                name: a.name,
-                path: a.location,
-                ext: a.ext,
-                sizeBytes: a.sizeBytes,
-              })),
-            }
-          : {}),
-      })
-      .catch(() => {
-        /* Silent */
-      })
-  }
 
   // Resolved when the user submits/cancels; the AI takes the answer and continues.
   const [activeClarify, setActiveClarify] = useState<ClarifyQuestion[] | null>(null)
@@ -862,7 +762,7 @@ export function AiPanel({
     }
     accessRef.current = access
     loopRef.current = new AgentLoop({
-      transport: createElectronTransport(),
+      transport: createAiTransport(),
       systemSuffix: aiLangDirective,
       skill: composeSkills('slides+files', '', [
         createSlidesSkill(access),
@@ -933,11 +833,6 @@ export function AiPanel({
             if (cancelled) qcPagesRef.current = []
             else if (qcPagesRef.current.length > 0) void runQcPassRef.current()
           })
-          // Persist the assistant message (deckProgress not stored; tools store the whole run's full activity) —
-          // side effects outside the updater (StrictMode double-invokes updaters, duplicating history writes)
-          if (finalText && !cancelled) {
-            persistMessage('assistant', finalText, runToolsRef.current)
-          }
         },
         onError: (error) => {
           qcPagesRef.current = []
@@ -1084,7 +979,6 @@ export function AiPanel({
     runStartedAtRef.current = Date.now()
     setBusy(true)
     // Persist the user message (store display text + attachment metadata; loop.restore rebuilds model context on file reopen)
-    persistMessage('user', shown, undefined, attachmentsRef.current)
     void collectImageAttachments()
       .then(async (images) => {
         // AI Beautify sends the current slide's rendering along, so the model sees what it edits;
@@ -1123,7 +1017,7 @@ export function AiPanel({
     const controller = new AbortController()
     qcAbortRef.current = controller
     const capped = pages.slice(0, QC_MAX_PAGES)
-    const transport = createElectronTransport()
+    const transport = createAiTransport()
     const header = tGlobal('aiQcStart', { count: capped.length })
     const lines: string[] = []
     const renderEntry = () => [header, ...lines].join('\n')
@@ -1186,7 +1080,6 @@ export function AiPanel({
       qcAbortRef.current = null
       const finalText = renderEntry()
       patchLastAssistant({ streaming: false, text: finalText })
-      persistMessage('assistant', finalText)
       setBusy(false)
     }
   }
@@ -1366,19 +1259,7 @@ export function AiPanel({
       </div>
 
       <div ref={logRef} className="ai-chat" onScroll={onLogScroll}>
-        {/* Past conversation (read-only transcript, not fed to the model), displayed continuously with the current turn */}
-        {historicChat.length > 0 && (
-          <>
-            {historicChat.map((entry, i) => (
-              <div key={`h${i}`} className={`ai-msg ai-msg-${entry.role} ai-msg-historic`}>
-                {entry.tools && entry.tools.length > 0 && <ToolChipList tools={entry.tools} />}
-                {entry.text && <Markdown text={entry.text} />}
-              </div>
-            ))}
-            <div className="ai-history-sep">{t('aiHistorySep')}</div>
-          </>
-        )}
-        {chat.length === 0 && historicChat.length === 0 && (
+        {chat.length === 0 && (
           <div className="ai-chat-empty">
             <div className="ai-chat-empty-title">
               {t(deckEmpty ? 'aiEmptyGenTitle' : 'aiEmptyTitle')}
@@ -1654,9 +1535,9 @@ function extractImageUrls(text: string): string[] {
   return Array.from(new Set(Array.from(text.matchAll(IMAGE_URL_RE), (m) => m[0])))
 }
 
-/** Open external links (Electron renderer: window.open target=_blank, Electron routes external links to the system browser) */
+/** Open a link from model output: gated, because the model chose the URL. */
 function openExternal(url: string) {
-  window.open(url, '_blank', 'noreferrer')
+  openExternalUrl(url)
 }
 
 /** Split text into plain-text and link fragments by URL */

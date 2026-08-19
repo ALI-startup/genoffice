@@ -1,50 +1,30 @@
 /**
- * Window / tab lifecycle capability: opening and switching editor surfaces,
- * plus the close-guard handshake every editor takes part in.
+ * Window / tab lifecycle capability: opening and switching editor surfaces, plus the
+ * close-guard handshake every editor takes part in.
  *
- * Every member is required. The table records which preloads currently forward
- * each channel:
- *
- * | method                | pdf | docs | slides | sheets |
- * | --------------------- | --- | ---- | ------ | ------ |
- * | openNewTab            | no  | yes  | no     | no     |
- * | listTabs              | no  | yes  | no     | no     |
- * | focusTab              | no  | yes  | no     | no     |
- * | setDirty              | yes | no   | no     | via notifyPendingEdits(count) |
- * | onCloseSaveRequest    | yes | yes  | yes    | yes    |
- * | reportCloseSaveResult | yes (as sendCloseSaveResult) | yes | yes | yes |
- *
- * The tab channels ('win:new' / 'win:list' / 'win:focus') are registered by
- * docs-main and the shell's tab manager owns the actual tab strip for every
- * app, so a shell-hosted adapter for any app can forward them. Standalone
- * windows are the exception, and pdf is one: `startPdfStandalone()`
- * (apps/pdf/src/main/pdf-main.ts:549) registers only `registerPdfIpc()` and has
- * no tab strip, so pdf composes a `Pick` of this port (setDirty plus the close
- * guard) instead of claiming all of it. Same reasoning as the AI split — see
- * ports/ai.ts.
- *
- * Naming note: apps/pdf calls the close-guard reply `sendCloseSaveResult`;
- * docs, slides and sheets call it `reportCloseSaveResult`. Same signature, so
- * the port adopts the three-app majority name.
+ * Every member is required, and not every app claims the whole port. In a browser the
+ * tab strip belongs to the shell, and an editor only has one when it is hosted as a
+ * frame of it — so an app served standalone composes a `Pick` of this port (the dirty
+ * flag plus the close guard) rather than claiming tab channels nothing answers. pdf is
+ * the app that does so unconditionally.
  *
  * Dirty-state note: pdf mirrors a boolean (`setDirty`) while sheets mirrors a
- * pending-edit count (`notifyPendingEdits`). The port keeps the boolean as the
- * shared contract; a sheets adapter maps `count > 0` onto it and keeps its own
- * badge count locally.
+ * pending-edit count (`notifyPendingEdits`). The port keeps the boolean as the shared
+ * contract; a sheets adapter maps `count > 0` onto it and keeps its own badge count
+ * locally.
  *
- * Deliberately excluded (single-app, so not a shared capability yet): docs'
- * onCloseCheck / reportCloseCheck / onTeardown, and slides' setAutoSavePref /
- * isDirty.
+ * Deliberately excluded (single-app, so not a shared capability): docs'
+ * onCloseCheck / reportCloseCheck / onTeardown, and slides' setAutoSavePref / isDirty.
  *
- * The docs close-check pair is excluded for a stronger reason than "only one app
- * has it": it is a different protocol. `setDirty` is a push — the renderer tells
- * the host whenever the state changes, and the host remembers. docs' pair is a
- * pull — the host asks at close time and the renderer answers once, with a
- * three-field decision (`dirty`, `autoSave`, and the document handle) that
- * drives the host's silent-autosave-on-close path. Neither direction can be
- * derived from the other, so docs declares its own close-guard port
- * (apps/docs/src/renderer/platform.ts) and reuses only the save-request /
- * save-result half from here, which really is shared by all four apps.
+ * The docs close-check pair is excluded for a stronger reason than "only one app has
+ * it": it is a different protocol. `setDirty` is a push — the renderer tells the host
+ * whenever the state changes, and the host remembers. docs' pair is a pull — the host
+ * asks at close time and the renderer answers once, with a three-field decision
+ * (`dirty`, `autoSave`, and the document handle) that drives the silent
+ * autosave-on-close path. Neither direction can be derived from the other, so docs
+ * declares its own close-guard port (apps/docs/src/renderer/platform.ts) and reuses
+ * only the save-request / save-result half from here, which really is shared by all
+ * four apps.
  */
 
 /** One open editor tab, for the "switch tab" menu. */

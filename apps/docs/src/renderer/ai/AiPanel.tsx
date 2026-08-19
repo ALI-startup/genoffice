@@ -17,7 +17,7 @@ import { createDocsSkill } from './docs-skill'
 import { applyRevisionsBy } from '../editor/revisions'
 import { DOCS_AGENT_MAX_TURNS, DOCS_CONTINUE_INSTRUCTION } from './continuation'
 import { createFilesSkill } from './files-skill'
-import { createElectronTransport } from './transport'
+import { createAiTransport } from './transport'
 import { useI18n, t as tModule, aiLangDirective, type StringKey } from '../i18n/locale'
 import { Markdown } from '@samugen/ui'
 import { AiComposer, AiTypingIndicator } from '@samugen/ui'
@@ -140,7 +140,6 @@ interface AiPanelProps {
   /** collapse the panel to the sidebar rail */
   onCollapse?: () => void
   /** Absolute path of the currently open file (used for chat-history persistence) */
-  filePath?: string | null
 }
 
 export function AiPanel({
@@ -153,7 +152,6 @@ export function AiPanel({
   open = true,
   onExpand,
   onCollapse,
-  filePath,
 }: AiPanelProps) {
   const { t } = useI18n()
   const activeProviderMeta = AI_PROVIDERS.find((provider) => provider.id === settings.provider)
@@ -192,16 +190,12 @@ export function AiPanel({
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
-  /** Past conversation restored from JSONL (read-only transcript, not fed to the model) */
-  const [historicChat, setHistoricChat] = useState<ChatEntry[]>([])
   // bumped on selection/doc changes so the scope hint & quick actions stay fresh
   const [, setScopeTick] = useState(0)
   const logRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   /** false once the user scrolls up to read; re-arms near the bottom */
   const stickToBottomRef = useRef(true)
-  /** projectId/chatId of the current chat */
-  const chatRefIds = useRef<{ projectId: string; chatId: string } | null>(null)
 
   // latest props for the loop's closures (the loop instance outlives renders)
   const editorRef = useRef(editor)
@@ -245,95 +239,6 @@ export function AiPanel({
     Array<{ name: string; summary: string; isError?: boolean; input?: string; output?: string }>
   >([])
 
-  // ── Chat-history persistence ────────────────────────────────────────────
-  useEffect(() => {
-    const api = (window as Window & { projectApi?: typeof window.projectApi }).projectApi
-    if (!api) return
-    const tempChatId = `unsaved-${Date.now()}`
-    void api
-      .resolveChat({ filePath: filePath ?? null, tempChatId })
-      .then((ids) => {
-        chatRefIds.current = ids
-        return api.loadChat({ projectId: ids.projectId, chatId: ids.chatId, limit: 200 })
-      })
-      .then((msgs) => {
-        if (msgs.length === 0) return
-        setHistoricChat(
-          msgs.map((m) => ({
-            role: m.role,
-            text: m.text,
-            tools: m.tools?.map((t) => ({
-              name: t.name,
-              summary: t.summary,
-              isError: t.isError,
-              output: t.output ? t.output.slice(0, TOOL_OUTPUT_MAX_CHARS) : undefined,
-            })),
-          })),
-        )
-        // restore model context: follow-ups after reopening a file continue the previous conversation (only when the loop is idle with no history)
-        loopRef.current?.restore(msgs.map((m) => ({ role: m.role, text: m.text })))
-      })
-      .catch(() => {
-        /* history load failures are silent */
-      })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  /** After an unsaved document's first save yields a real path, bind the unsaved-* history to that file (recoverable by path on reopen) */
-  useEffect(() => {
-    const ids = chatRefIds.current
-    const api = (window as Window & { projectApi?: typeof window.projectApi }).projectApi
-    if (!api || !ids || !filePath || !ids.chatId.startsWith('unsaved-')) return
-    void api
-      .rebindChat({ projectId: ids.projectId, tempChatId: ids.chatId, newFilePath: filePath })
-      .then((r) => {
-        if (r?.chatId) chatRefIds.current = r
-      })
-      .catch(() => {
-        /* silent */
-      })
-  }, [filePath])
-
-  const persistMessage = (
-    role: 'user' | 'assistant',
-    text: string,
-    tools?: Array<{
-      name: string
-      summary: string
-      isError?: boolean
-      input?: string
-      output?: string
-    }>,
-    attachments?: AttachmentMeta[],
-  ) => {
-    const ids = chatRefIds.current
-    const api = (window as Window & { projectApi?: typeof window.projectApi }).projectApi
-    if (!ids || !api) return
-    void api
-      .appendChat({
-        projectId: ids.projectId,
-        chatId: ids.chatId,
-        role,
-        text,
-        ...(tools && tools.length > 0 ? { tools } : {}),
-        ...(attachments && attachments.length > 0
-          ? {
-              // The project store records a local path (main-process bookkeeping,
-              // not migrated yet); `location` is what this host can offer for it.
-              attachments: attachments.map((a) => ({
-                name: a.name,
-                path: a.location,
-                ext: a.ext,
-                sizeBytes: a.sizeBytes,
-              })),
-            }
-          : {}),
-      })
-      .catch(() => {
-        /* silent */
-      })
-  }
-
   const patchLastAssistant = (
     patch: Partial<ChatEntry> | ((last: ChatEntry) => Partial<ChatEntry>),
   ) => {
@@ -353,7 +258,7 @@ export function AiPanel({
       ordered: findNumId(blocksRef.current, 'ordered') ?? numIdFallbackRef.current?.ordered ?? null,
     })
     loopRef.current = new AgentLoop<PmNode>({
-      transport: createElectronTransport(),
+      transport: createAiTransport(),
       systemSuffix: aiLangDirective,
       maxTurns: DOCS_AGENT_MAX_TURNS,
       skill: composeSkills('docs+files', '', [
@@ -448,11 +353,6 @@ export function AiPanel({
           // App listens: a run that generated content into a never-saved document
           // triggers a silent first save with a content-derived file name
           window.dispatchEvent(new Event('ai-docs-run-done'))
-          // persist outside the updater (a double-invoked updater would write history twice); tools stores the whole run's full activity.
-          // Edits-only runs (tools ran, no text) persist too, or the whole turn vanishes from the restored transcript
-          if (!cancelled && (finalText || runToolsRef.current.length > 0)) {
-            persistMessage('assistant', finalText, runToolsRef.current)
-          }
         },
         onError: (error) => {
           setChat((prev) => {
@@ -558,7 +458,6 @@ export function AiPanel({
     ])
     runStartedAtRef.current = Date.now()
     setBusy(true)
-    persistMessage('user', instruction, undefined, attachmentsRef.current)
     // a rejected image read must not strand the run (busy would stay true forever): degrade to a no-image send
     void collectImageAttachments()
       .catch((): AgentImage[] => {
@@ -748,19 +647,7 @@ export function AiPanel({
       </div>
 
       <div ref={logRef} className="ai-chat" onScroll={onLogScroll}>
-        {/* past conversation (read-only transcript, not fed to the model), shown continuously with the current turn */}
-        {historicChat.length > 0 && (
-          <>
-            {historicChat.map((entry, i) => (
-              <div key={`h${i}`} className={`ai-msg ai-msg-${entry.role} ai-msg-historic`}>
-                {entry.tools && entry.tools.length > 0 && <ToolChipList tools={entry.tools} />}
-                {entry.text && <Markdown text={entry.text} />}
-              </div>
-            ))}
-            <div className="ai-history-sep">{t('aiHistorySep')}</div>
-          </>
-        )}
-        {chat.length === 0 && historicChat.length === 0 && (
+        {chat.length === 0 && (
           <div className="ai-chat-empty">
             <div className="ai-chat-empty-title">
               {t(docEmpty ? 'aiEmptyDraftTitle' : 'aiEmptyTitle')}

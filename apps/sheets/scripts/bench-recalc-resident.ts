@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 
 import JSZip from 'jszip'
 
-import { XlsxSidecarClient } from '../src/main/xlsx-sidecar-client'
+import { XlsxSidecarClient } from '../src/engine-node/xlsx-sidecar-client'
 
 const ROWS = Number(process.env.BENCH_ROWS ?? 50_000)
 
