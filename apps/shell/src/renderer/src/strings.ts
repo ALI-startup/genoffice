@@ -2625,13 +2625,16 @@ const baseStrings = {
 /** Settings copy is kept in one small overlay so adding a settings page does
  * not require duplicating the same keys in every locale table. Locales without
  * a translated settings string use the English wording until the translation
- * is added; the key set remains stable for the renderer. */
+ * is added; the key set remains stable for the renderer. zh, en and ko are
+ * translated — ko because the settings dialog is opened from the home page and
+ * was the last screen there still in English whatever the UI language said. */
 const aiSettingsZh = {
   settingsTitle: '设置',
   closeSettings: '关闭设置',
   settingsNavigationLabel: '设置类别',
   generalSettings: '常规',
   generalSettingsDescription: '管理应用的常规偏好设置。',
+  languageSettingHint: '对所有窗口和标签页生效。完整语言列表位于账户菜单中。',
   aiProvidersTitle: 'AI 提供商',
   aiProvidersDescription: '选择聊天和图像生成使用的模型提供商。密钥只会写入受保护的运行时存储。',
   aiProviderModeLabel: 'AI 模型类型',
@@ -2692,6 +2695,8 @@ const aiSettingsEn = {
   settingsNavigationLabel: 'Settings sections',
   generalSettings: 'General',
   generalSettingsDescription: 'Manage general application preferences.',
+  languageSettingHint:
+    'Applies to every window and tab. The full language list is in the account menu.',
   aiProvidersTitle: 'AI providers',
   aiProvidersDescription:
     'Choose the providers used for chat and image generation. Keys are write-only and handled by the protected runtime store.',
@@ -2750,11 +2755,77 @@ const aiSettingsEn = {
   aiSettingsLoadFailed: 'Could not load provider settings.',
 } as const
 
+const aiSettingsKo = {
+  settingsTitle: '설정',
+  closeSettings: '설정 닫기',
+  settingsNavigationLabel: '설정 범주',
+  generalSettings: '일반',
+  generalSettingsDescription: '앱의 일반 환경 설정을 관리합니다.',
+  languageSettingHint: '모든 창과 탭에 적용됩니다. 전체 언어 목록은 계정 메뉴에 있습니다.',
+  aiProvidersTitle: 'AI 공급자',
+  aiProvidersDescription:
+    '채팅과 이미지 생성에 사용할 공급자를 선택하세요. 키는 쓰기 전용이며 보호된 런타임 저장소에서 관리됩니다.',
+  aiProviderModeLabel: 'AI 모델 유형',
+  aiTextModelsTab: '텍스트 모델',
+  aiTextModelsTabHint: '채팅, 작성 및 편집',
+  aiImageModelsTab: '이미지 모델',
+  aiImageModelsTabHint: '프레젠테이션 이미지 생성',
+  aiImageProviderTitle: '이미지 생성',
+  aiImageProviderDescription:
+    '프레젠테이션을 비롯한 이미지 기능에 사용할 기본 공급자를 선택하세요.',
+  aiImageProviderLabel: '이미지 공급자',
+  aiProviderListLabel: '공급자',
+  aiSearchProviders: '공급자 검색',
+  aiProviderConfigured: '자격 증명 설정됨',
+  aiProviderActive: '사용 중',
+  aiProviderLocal: '로컬',
+  aiProviderOpenAiCompatible: 'OpenAI 호환',
+  aiProviderCloud: '클라우드',
+  aiModelLabel: '모델',
+  aiModelsAvailable: '{count}개 사용 가능',
+  aiModelPlaceholder: '모델 ID를 입력하세요',
+  aiCustomModelOption: '사용자 지정 모델…',
+  aiCustomModelLabel: '사용자 지정 모델 ID',
+  aiCustomModelPlaceholder: '공급자의 정확한 모델 ID를 입력하세요',
+  aiCustomModelHint: '공급자 문서에 표시된 정확한 모델 이름 또는 ID를 사용하세요.',
+  aiNoModelSelected: '선택된 모델 없음',
+  aiModelDiscoveryHint:
+    '저장된 키가 있으면 모델을 자동으로 불러옵니다. 직접 새로 고칠 수도 있습니다.',
+  aiRunwareDiscoveryHint:
+    'Runware는 모델 목록이 방대하여 [모델 새로 고침]을 클릭할 때만 불러옵니다. 사용자 지정 모델 테스트로는 목록이 갱신되지 않습니다.',
+  aiRefreshModels: '모델 새로 고침',
+  aiLoadingModels: '모델을 불러오는 중…',
+  aiTestingModel: '선택한 모델을 확인하는 중…',
+  aiCuratedModelsHint: '이 목록에는 해당 공급자가 지원하는 모델이 표시됩니다.',
+  aiEndpointLabel: '엔드포인트 URL',
+  aiEndpointHint: '공급자의 OpenAI 호환 API 루트 URL을 입력하세요.',
+  aiApiKeyLabel: 'API 키',
+  aiApiKeyPlaceholder: 'API 키를 입력하세요',
+  aiApiKeySavedPlaceholder: '키가 저장되어 있습니다. 유지하려면 비워 두세요',
+  aiApiKeyHint: '저장된 키는 설정 화면에 다시 표시되지 않습니다.',
+  aiApiKeySaved: '저장된 키:',
+  aiRemoveKey: '제거',
+  aiCredentialRemoved: 'API 키를 제거했습니다.',
+  aiLocalProviderHint:
+    '이 공급자는 사용자 컴퓨터에서 실행되므로 API 키가 필요하지 않습니다. 해당 서비스가 실행 중인지 확인하세요.',
+  aiCurrentSelection: '현재 선택',
+  aiTestConnection: '연결 테스트',
+  aiTesting: '테스트 중…',
+  aiCancelTest: '취소',
+  aiCancelTestFailed: '모델 확인을 취소하지 못했습니다.',
+  aiSaveProvider: '공급자 저장',
+  aiSaving: '저장 중…',
+  aiSettingsSaved: '공급자 설정을 저장했습니다.',
+  aiSettingsSaveFailed: '공급자 설정을 저장하지 못했습니다.',
+  aiSettingsTestFailed: '공급자 연결을 테스트하지 못했습니다.',
+  aiSettingsLoadFailed: '공급자 설정을 불러오지 못했습니다.',
+} as const
+
 const aiSettingsTables = {
   zh: aiSettingsZh,
   en: aiSettingsEn,
   ja: aiSettingsEn,
-  ko: aiSettingsEn,
+  ko: aiSettingsKo,
   fr: aiSettingsEn,
   de: aiSettingsEn,
   es: aiSettingsEn,

@@ -1,13 +1,16 @@
-# The web stack: the shell as the entry point, plus docs and pdf on their own
-# ports, plus the AI BFF that all three proxy to.
+# The web stack: the shell as the landing page, plus each of the four editors
+# standalone on its own port, plus the AI BFF that all five proxy to.
 #
-#   http://localhost:8080   shell — the entry point. Home, tab strip, and every
+#   http://localhost:8080   shell — the landing page. Home, tab strip, and every
 #                           editor hosted as a same-origin frame under /app/docs/,
 #                           /app/pdf/, /app/slides/ and /app/sheets/ of this origin.
 #   http://localhost:9081   docs, standalone on its own origin
 #   http://localhost:9082   pdf, standalone on its own origin
 #   http://localhost:9083   slides, standalone on its own origin
 #   http://localhost:9084   sheets, standalone on its own origin
+#
+# Each is overridable: GENOFFICE_SHELL_PORT, GENOFFICE_DOCS_PORT,
+# GENOFFICE_PDF_PORT, GENOFFICE_SLIDES_PORT, GENOFFICE_SHEETS_PORT.
 #
 # The BFF is reachable only on the compose network. It holds the provider
 # credentials and applies no authentication of its own, so publishing it would

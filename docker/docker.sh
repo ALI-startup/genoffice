@@ -126,7 +126,17 @@ GenOffice web stack.
   docker/docker.sh check                verify route prefix, git deps and .env
   docker/docker.sh clean                down, and drop the built images
 
-Services: shell (entry point, :8080), docs (:8081), pdf (:8082), ai-bff (internal).
+Services and the ports they publish:
+
+  shell  :8080   the landing page — home, tab strip, and every editor hosted
+                 as a same-origin frame under /app/docs/, /app/pdf/,
+                 /app/slides/ and /app/sheets/ of this origin
+  docs   :9081   standalone, on its own origin
+  pdf    :9082   standalone, on its own origin
+  slides :9083   standalone, on its own origin
+  sheets :9084   standalone, on its own origin
+  ai-bff         internal to the compose network; each app re-exposes it
+                 same-origin under /v1/ai
 EOF
 }
 

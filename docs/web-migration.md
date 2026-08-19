@@ -174,7 +174,47 @@ Decision: **AI keys live in a BFF, never in the browser.** This is the one place
 Test counts at `9be49a8`: docs 701, pdf 152, shell 144, platform-web 98,
 ai-bff 52, platform 11, platform-electron 13, pdf-edit 21.
 
-Run the web stack with `npm run shell:web` (shell + both editors + BFF).
+### 3.0 Running it, and the ports
+
+Two ways, and they publish different ports. In both, the **shell is the landing
+page**: home, the tab strip, and every editor hosted as a same-origin frame
+under `/app/docs/`, `/app/pdf/`, `/app/slides/` and `/app/sheets/` of its own
+origin. The standalone ports serve one app each, on its own origin, with no tab
+strip — the same bundle, a different entry.
+
+Dev (Vite, hot reload). `npm run shell:web` starts the landing page **and** all
+four editors plus the BFF; the four are served through the shell's origin, so
+their own ports are not what you open. Each `npm run <app>:web` starts that one
+app standalone plus the BFF.
+
+| What         | Command                | URL                                          |
+| ------------ | ---------------------- | -------------------------------------------- |
+| Landing page | `npm run shell:web`    | `http://localhost:5190`                      |
+| docs         | `npm run docs:web`     | `http://localhost:5183`                      |
+| sheets       | `npm run sheets:web`   | `http://localhost:5184`                      |
+| slides       | `npm run slides:web`   | `http://localhost:5185`                      |
+| pdf          | `npm run pdf:web`      | `http://localhost:5186`                      |
+| AI BFF       | (started by the above) | `http://localhost:8788`, proxied at `/v1/ai` |
+
+Each port is overridable — `SHELL_WEB_PORT`, `DOCS_WEB_PORT`, `SHEETS_WEB_PORT`,
+`SLIDES_WEB_PORT`, `PDF_WEB_PORT` — and `strictPort` is set, so a busy port
+fails loudly instead of silently moving.
+
+Containers (nginx, production bundles). `./docker/docker.sh up` starts all five
+at once; the BFF is deliberately unpublished, because it holds the provider
+credentials and applies no authentication of its own (§6.2).
+
+| What         | URL                     | Override                |
+| ------------ | ----------------------- | ----------------------- |
+| Landing page | `http://localhost:8080` | `GENOFFICE_SHELL_PORT`  |
+| docs         | `http://localhost:9081` | `GENOFFICE_DOCS_PORT`   |
+| pdf          | `http://localhost:9082` | `GENOFFICE_PDF_PORT`    |
+| slides       | `http://localhost:9083` | `GENOFFICE_SLIDES_PORT` |
+| sheets       | `http://localhost:9084` | `GENOFFICE_SHEETS_PORT` |
+
+`npm run build:shell:web` produces the composed bundle the shell image serves —
+the shell plus all four editors under `dist/web/app/` — and needs sheets' wasm
+engine built first, which that script does.
 
 ### 3.1 The web shell
 

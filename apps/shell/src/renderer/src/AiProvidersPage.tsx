@@ -7,6 +7,7 @@ import type {
   AiSettingsSnapshot,
 } from '../../shared/ai-settings-api'
 import { AI_PROVIDER_DEFINITIONS } from '../../shared/ai-settings-api'
+import { providerDescription } from './provider-descriptions'
 import { ProviderList, ProviderModeTabs } from './AiProviderNavigation'
 import { useI18n } from './locale'
 import { shellPlatform } from './platform'
@@ -66,7 +67,7 @@ function supportsCapability(
 }
 
 export function AiProvidersPage() {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   // Reading the configuration and editing it are separate capabilities: a host
   // can report which providers are configured without being able to store a
   // credential. `editor` is null on such a host, and every control that would
@@ -100,9 +101,13 @@ export function AiProvidersPage() {
         supportsCapability(provider, capability) &&
         (!query ||
           provider.label.toLowerCase().includes(query) ||
-          provider.description.toLowerCase().includes(query)),
+          // The description the reader can actually see, so searching in the UI
+          // language matches what is on screen rather than the English behind it.
+          providerDescription(lang, provider.id, provider.description)
+            .toLowerCase()
+            .includes(query)),
     )
-  }, [snapshot.definitions, capability, providerQuery])
+  }, [snapshot.definitions, capability, providerQuery, lang])
 
   const selectedModelFor = (
     providerId: string,
@@ -333,7 +338,7 @@ export function AiProvidersPage() {
                   <span className="active-provider-pill">{t('aiProviderActive')}</span>
                 )}
               </div>
-              <p>{definition.description}</p>
+              <p>{providerDescription(lang, definition.id, definition.description)}</p>
             </div>
           </div>
 
