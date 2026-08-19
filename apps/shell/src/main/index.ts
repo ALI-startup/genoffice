@@ -30,10 +30,13 @@ import menuPptxIcon2x from './assets/menu-pptx@2x.png?asset'
 import { createI18n, isLang, normalizeLang, setUiLang, type Lang } from '@genoffice/i18n'
 import {
   appMenuLabels,
+  applyLanguageChange,
   contextMenuLabels,
   editMenuTemplate,
   installContextMenu,
   installNavigationGuard,
+  registerLanguageIpc,
+  setLanguageApplier,
   windowMenuTemplate,
 } from '@genoffice/electron-utils'
 import { readAppSettings, writeAppSetting } from './app-settings'
@@ -218,6 +221,17 @@ function persistLang(lang: Lang): void {
   setUiLang(lang)
   writeAppSetting(APP_SETTINGS_PATH(), 'language', lang)
 }
+
+// What a language switch means in this process, wherever it was asked for: the
+// home page's menu, an editor's toggle, or a second window's. A standalone
+// editor has no settings file and no menus of the shell's to rebuild, so it
+// keeps @genoffice/electron-utils' plainer default.
+setLanguageApplier((lang) => {
+  persistLang(lang)
+  buildHomeMenu()
+  installDockMenu()
+  installBackToHomeItems()
+})
 
 // ---- first-run onboarding ----
 // The GenTeam community page opened from the onboarding's second slide.
@@ -1677,14 +1691,13 @@ function registerHomeIpc(): void {
 
   ipcMain.handle(HOME_CHANNELS.getLanguage, (): Lang => currentLang())
 
+  registerLanguageIpc(ipcMain, () => webContents.getAllWebContents())
+
+  // The home page's own switcher. It goes through the same applier as the
+  // editors' `app:set-language`, so one language switch means one thing however
+  // it was asked for.
   ipcMain.handle(HOME_CHANNELS.setLanguage, (_event, lang: unknown) => {
-    if (!isLang(lang) || lang === currentLang()) return
-    persistLang(lang)
-    // the switcher lives on the home page, so the home menu is the active one
-    buildHomeMenu()
-    installDockMenu()
-    installBackToHomeItems()
-    for (const wc of webContents.getAllWebContents()) wc.send('app:language-changed', lang)
+    applyLanguageChange(lang, webContents.getAllWebContents())
   })
 
   ipcMain.handle(

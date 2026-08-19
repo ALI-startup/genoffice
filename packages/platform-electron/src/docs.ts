@@ -41,6 +41,7 @@ import type {
 export interface DocsLanguageBridge {
   getLanguage(): Promise<Lang>
   onLanguageChanged(handler: (lang: Lang) => void): () => void
+  setLanguage(lang: Lang): Promise<void>
 }
 
 /** The AI streaming members of DesktopApi. Names and signatures already match AiPort exactly. */
@@ -95,6 +96,7 @@ export function createDocsLanguagePort(bridge: DocsLanguageBridge): LanguagePort
   return {
     getLanguage: () => bridge.getLanguage(),
     onLanguageChanged: (handler) => bridge.onLanguageChanged(handler),
+    setLanguage: (lang) => bridge.setLanguage(lang),
   }
 }
 

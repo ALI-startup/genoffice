@@ -64,3 +64,39 @@ describe('onLanguageChanged', () => {
     expect(seen).toEqual(['fr'])
   })
 })
+
+describe('setLanguage', () => {
+  it('stores the choice, which is what the other tabs observe', async () => {
+    const env = fakeEnv('en-US')
+    const port = createWebLanguagePort(env)
+
+    await port.setLanguage('ko')
+    // Read back through the port, because storage *is* the broadcast: a second
+    // document resolving the language now sees Korean.
+    await expect(createWebLanguagePort(env).getLanguage()).resolves.toBe('ko')
+  })
+
+  it('does not notify the document that made the switch', async () => {
+    const env = fakeEnv('en-US')
+    const port = createWebLanguagePort(env)
+    const seen: string[] = []
+    port.onLanguageChanged((lang) => seen.push(lang))
+
+    await port.setLanguage('ko')
+    // The `storage` event never fires in the writing document, and the port does
+    // not fake one: the caller applies its own switch (see LanguagePort). A
+    // synthetic echo here would arrive twice for a caller that already did.
+    expect(seen).toEqual([])
+  })
+
+  it('switches the session even when storage refuses the write', async () => {
+    const env = fakeEnv('en-US')
+    env.storage.setItem = () => {
+      throw new Error('storage blocked')
+    }
+
+    // A browser configured to refuse localStorage loses persistence and the
+    // cross-tab broadcast, not the click: this must not throw out of a handler.
+    await expect(createWebLanguagePort(env).setLanguage('ko')).resolves.toBeUndefined()
+  })
+})

@@ -194,8 +194,11 @@ export type SlidesWindowPort = Pick<
   | 'setAutoSavePref'
 >
 
-/** The UI language, and the shell telling every editor that the user changed it. */
-export type SlidesLanguagePort = Pick<SlidesApi, 'getLanguage' | 'onLanguageChanged'>
+/** The UI language: the current one, switching it, and every other editor hearing about it. */
+export type SlidesLanguagePort = Pick<
+  SlidesApi,
+  'getLanguage' | 'onLanguageChanged' | 'setLanguage'
+>
 
 /**
  * The AI surface: provider settings, the streaming channel and its chunks, snapshot

@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import type { Lang } from '@genoffice/i18n'
+
 import type {
   AiChatRequest,
   AiChatResponse,
@@ -1855,13 +1857,11 @@ export interface AttachmentImageResult {
 
 export interface DesktopApi {
   /** current UI language (persisted by the shell in app-settings.json) */
-  getLanguage(): Promise<'zh' | 'en' | 'ja' | 'ko' | 'fr' | 'de' | 'es' | 'th' | 'id' | 'ru' | 'ar'>
-  /** language switched from the shell home page */
-  onLanguageChanged(
-    handler: (
-      lang: 'zh' | 'en' | 'ja' | 'ko' | 'fr' | 'de' | 'es' | 'th' | 'id' | 'ru' | 'ar',
-    ) => void,
-  ): () => void
+  getLanguage(): Promise<Lang>
+  /** language switched anywhere in the app — the shell home page, or another window's switcher */
+  onLanguageChanged(handler: (lang: Lang) => void): () => void
+  /** switch the UI language for the whole app; every other window hears it as onLanguageChanged */
+  setLanguage(lang: Lang): Promise<void>
   selectWorkbook(): Promise<WorkbookFile | null>
   readWorkbookRange(request: WorkbookRangeRequest): Promise<WorkbookRangeResult>
   readWorkbookFormulas(request: WorkbookFormulaCellsRequest): Promise<WorkbookFormulaCellsResult>

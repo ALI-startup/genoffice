@@ -7,6 +7,7 @@
  * renderer sends edit intents (text/geometry changes) back to the main process, which applies
  * them to the model and rebuilds the RenderSlide.
  */
+import type { Lang } from '@genoffice/i18n'
 import type { RenderSlide } from '@genoffice/pptx-render'
 import type { SlideComment, SectionInfo } from '@genoffice/pptx-engine'
 import type {
@@ -997,15 +998,11 @@ export type MenuCommand =
 
 export interface SlidesApi {
   /** current UI language (persisted by the shell in app-settings.json) */
-  getLanguage: () => Promise<
-    'zh' | 'en' | 'ja' | 'ko' | 'fr' | 'de' | 'es' | 'th' | 'id' | 'ru' | 'ar'
-  >
-  /** language switched from the shell home page */
-  onLanguageChanged: (
-    handler: (
-      lang: 'zh' | 'en' | 'ja' | 'ko' | 'fr' | 'de' | 'es' | 'th' | 'id' | 'ru' | 'ar',
-    ) => void,
-  ) => () => void
+  getLanguage: () => Promise<Lang>
+  /** language switched anywhere in the app — the shell home page, or another window's switcher */
+  onLanguageChanged: (handler: (lang: Lang) => void) => () => void
+  /** switch the UI language for the whole app; every other window hears it as onLanguageChanged */
+  setLanguage: (lang: Lang) => Promise<void>
   openPptx: (fitWidthPx: number) => Promise<OpenResult | null>
   openPptxPath: (path: string, fitWidthPx: number) => Promise<OpenResult | null>
   consumePendingOpen: (fitWidthPx: number) => Promise<OpenResult | null>

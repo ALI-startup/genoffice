@@ -12,6 +12,13 @@ export {
   windowMenuTemplate,
   type AppMenuLabels,
 } from './app-menu'
+export {
+  applyLanguageChange,
+  LANGUAGE_CHANNELS,
+  registerLanguageIpc,
+  resetLanguageApplier,
+  setLanguageApplier,
+} from './language-ipc'
 export { installNavigationGuard } from './navigation-guard'
 export { safeExternalUrl, type SafeExternalUrlOptions } from './safe-external-url'
 export {

@@ -598,19 +598,15 @@ export function createWebSlidesWindowPort(
   }
 }
 
-/** The UI language, from the shared web language storage every app uses. */
+/**
+ * The UI language, from the shared web language storage every app uses.
+ *
+ * The shared port verbatim. It used to cast, because slides declared a stale eleven-value copy
+ * of @genoffice/i18n's nineteen-value `Lang` (§6.4 of the migration doc) that a shared `Lang`
+ * did not fit through. The bridge now says `Lang`, so the two agree.
+ */
 export function createWebSlidesLanguagePort(language: LanguagePort): SlidesLanguagePort {
-  return {
-    // The union slides declares is a stale eleven-value copy of @genoffice/i18n's nineteen
-    // (§6.4 of the migration doc, a live bug on both hosts). The cast is that gap, not a new
-    // one: the shared port answers with a real Lang and this port's type admits fewer.
-    getLanguage: async () =>
-      (await language.getLanguage()) as Awaited<ReturnType<SlidesLanguagePort['getLanguage']>>,
-    onLanguageChanged: (handler) =>
-      language.onLanguageChanged((lang) =>
-        handler(lang as Parameters<Parameters<SlidesLanguagePort['onLanguageChanged']>[0]>[0]),
-      ),
-  }
+  return language
 }
 
 /**

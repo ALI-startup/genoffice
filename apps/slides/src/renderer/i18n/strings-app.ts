@@ -3,6 +3,8 @@ import { defineStrings } from '@genoffice/i18n'
 /** Copy for App.tsx / canvas and edit overlays / renderer root-level modules */
 export const appStrings = defineStrings({
   zh: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: '语言',
     appPhPromptTitle: '单击此处添加标题',
     appPhPromptSubtitle: '单击此处添加副标题',
     appPhPromptBody: '单击此处添加文本',
@@ -200,6 +202,8 @@ export const appStrings = defineStrings({
     appCropHint: 'Enter 确认 · Esc 取消 · 点击外部确认',
   },
   en: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Language',
     appPhPromptTitle: 'Click to add title',
     appPhPromptSubtitle: 'Click to add subtitle',
     appPhPromptBody: 'Click to add text',
@@ -410,6 +414,8 @@ export const appStrings = defineStrings({
     appCropHint: 'Enter to confirm · Esc to cancel · Click outside to confirm',
   },
   ja: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: '言語',
     appPhPromptTitle: 'クリックしてタイトルを追加',
     appPhPromptSubtitle: 'クリックしてサブタイトルを追加',
     appPhPromptBody: 'クリックしてテキストを追加',
@@ -619,6 +625,8 @@ export const appStrings = defineStrings({
     appCropHint: 'Enter で確定 · Esc でキャンセル · 外側をクリックで確定',
   },
   ko: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: '언어',
     appPhPromptTitle: '제목을 추가하려면 클릭',
     appPhPromptSubtitle: '부제목을 추가하려면 클릭',
     appPhPromptBody: '텍스트를 추가하려면 클릭',
@@ -828,6 +836,8 @@ export const appStrings = defineStrings({
     appCropHint: 'Enter 확인 · Esc 취소 · 바깥쪽 클릭으로 확인',
   },
   fr: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Langue',
     appPhPromptTitle: 'Cliquez pour ajouter un titre',
     appPhPromptSubtitle: 'Cliquez pour ajouter un sous-titre',
     appPhPromptBody: 'Cliquez pour ajouter du texte',
@@ -1050,6 +1060,8 @@ export const appStrings = defineStrings({
       'Entrée pour confirmer · Échap pour annuler · Cliquez à l’extérieur pour confirmer',
   },
   de: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Sprache',
     appPhPromptTitle: 'Titel durch Klicken hinzufügen',
     appPhPromptSubtitle: 'Untertitel durch Klicken hinzufügen',
     appPhPromptBody: 'Text durch Klicken hinzufügen',
@@ -1274,6 +1286,8 @@ export const appStrings = defineStrings({
     appCropHint: 'Eingabetaste zum Bestätigen · Esc zum Abbrechen · Klick außerhalb zum Bestätigen',
   },
   es: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Idioma',
     appPhPromptTitle: 'Haga clic para agregar título',
     appPhPromptSubtitle: 'Haga clic para agregar subtítulo',
     appPhPromptBody: 'Haga clic para agregar texto',
@@ -1496,6 +1510,8 @@ export const appStrings = defineStrings({
     appCropHint: 'Entrar para confirmar · Esc para cancelar · Haga clic fuera para confirmar',
   },
   th: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'ภาษา',
     appPhPromptTitle: 'คลิกเพื่อเพิ่มชื่อเรื่อง',
     appPhPromptSubtitle: 'คลิกเพื่อเพิ่มชื่อเรื่องรอง',
     appPhPromptBody: 'คลิกเพื่อเพิ่มข้อความ',
@@ -1700,6 +1716,8 @@ export const appStrings = defineStrings({
     appCropHint: 'กด Enter เพื่อยืนยัน · Esc เพื่อยกเลิก · คลิกด้านนอกเพื่อยืนยัน',
   },
   id: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Bahasa',
     appPhPromptTitle: 'Klik untuk menambahkan judul',
     appPhPromptSubtitle: 'Klik untuk menambahkan subjudul',
     appPhPromptBody: 'Klik untuk menambahkan teks',
@@ -1916,6 +1934,8 @@ export const appStrings = defineStrings({
       'Enter untuk mengonfirmasi · Esc untuk membatalkan · Klik di luar untuk mengonfirmasi',
   },
   ru: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Язык',
     appPhPromptTitle: 'Щелкните, чтобы добавить заголовок',
     appPhPromptSubtitle: 'Щелкните, чтобы добавить подзаголовок',
     appPhPromptBody: 'Щелкните, чтобы добавить текст',
@@ -2131,6 +2151,8 @@ export const appStrings = defineStrings({
     appCropHint: 'Enter — подтвердить · Esc — отменить · Щелчок снаружи — подтвердить',
   },
   ar: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'اللغة',
     appPhPromptTitle: 'انقر لإضافة عنوان',
     appPhPromptSubtitle: 'انقر لإضافة عنوان فرعي',
     appPhPromptBody: 'انقر لإضافة نص',
@@ -2339,6 +2361,8 @@ export const appStrings = defineStrings({
     appCropHint: 'Enter للتأكيد · Esc للإلغاء · انقر بالخارج للتأكيد',
   },
   pt: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Idioma',
     appPhPromptTitle: 'Clique para adicionar um título',
     appPhPromptSubtitle: 'Clique para adicionar um subtítulo',
     appPhPromptBody: 'Clique para adicionar texto',
@@ -2560,6 +2584,8 @@ export const appStrings = defineStrings({
     appCropHint: 'Enter para confirmar · Esc para cancelar · Clique fora para confirmar',
   },
   it: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Lingua',
     appPhPromptTitle: 'Fai clic per aggiungere un titolo',
     appPhPromptSubtitle: 'Fai clic per aggiungere un sottotitolo',
     appPhPromptBody: 'Fai clic per aggiungere del testo',
@@ -2783,6 +2809,8 @@ export const appStrings = defineStrings({
     appCropHint: "Invio per confermare · Esc per annullare · Fai clic all'esterno per confermare",
   },
   pl: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Język',
     appPhPromptTitle: 'Kliknij, aby dodać tytuł',
     appPhPromptSubtitle: 'Kliknij, aby dodać podtytuł',
     appPhPromptBody: 'Kliknij, aby dodać tekst',
@@ -3003,6 +3031,8 @@ export const appStrings = defineStrings({
     appCropHint: 'Enter — potwierdź · Esc — anuluj · Kliknij poza obszarem, aby potwierdzić',
   },
   nl: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Taal',
     appPhPromptTitle: 'Klik om een titel toe te voegen',
     appPhPromptSubtitle: 'Klik om een ondertitel toe te voegen',
     appPhPromptBody: 'Klik om tekst toe te voegen',
@@ -3226,6 +3256,8 @@ export const appStrings = defineStrings({
     appCropHint: 'Enter om te bevestigen · Esc om te annuleren · Klik erbuiten om te bevestigen',
   },
   ms: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Bahasa',
     appPhPromptTitle: 'Klik untuk menambah tajuk',
     appPhPromptSubtitle: 'Klik untuk menambah subtajuk',
     appPhPromptBody: 'Klik untuk menambah teks',
@@ -3444,6 +3476,8 @@ export const appStrings = defineStrings({
     appCropHint: 'Enter untuk mengesahkan · Esc untuk membatalkan · Klik di luar untuk mengesahkan',
   },
   he: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'שפה',
     appPhPromptTitle: 'לחץ כדי להוסיף כותרת',
     appPhPromptSubtitle: 'לחץ כדי להוסיף כותרת משנה',
     appPhPromptBody: 'לחץ כדי להוסיף טקסט',
@@ -3646,6 +3680,8 @@ export const appStrings = defineStrings({
     appCropHint: 'Enter לאישור · Esc לביטול · לחץ בחוץ לאישור',
   },
   hi: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'भाषा',
     appPhPromptTitle: 'शीर्षक जोड़ने के लिए क्लिक करें',
     appPhPromptSubtitle: 'उपशीर्षक जोड़ने के लिए क्लिक करें',
     appPhPromptBody: 'टेक्स्ट जोड़ने के लिए क्लिक करें',
@@ -3865,6 +3901,8 @@ export const appStrings = defineStrings({
     appCropHint: 'पुष्टि के लिए Enter · रद्द करने के लिए Esc · पुष्टि के लिए बाहर क्लिक करें',
   },
   'zh-TW': {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: '語言',
     appPhPromptTitle: '按一下此處新增標題',
     appPhPromptSubtitle: '按一下此處新增副標題',
     appPhPromptBody: '按一下此處新增文字',

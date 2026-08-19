@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { createI18n, htmlLang, type Lang, type Params } from '@genoffice/i18n'
 import { shellPlatform } from './platform'
@@ -18,16 +18,27 @@ const LocaleContext = createContext<LocaleValue>({ lang: 'zh', setLang: () => {}
 
 export function LocaleProvider({ initial, children }: { initial: Lang; children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(initial)
+  // One place applies a language, whether it came from the shell's own switcher
+  // or from an editor's. The subscription is the half that is new: the shell
+  // used to be the only place the language could be changed, and every app's
+  // chrome now carries the same toggle.
+  const apply = useCallback((next: Lang) => {
+    document.documentElement.lang = htmlLang(next)
+    setLangState(next)
+  }, [])
+  useEffect(() => shellPlatform().language.onLanguageChanged(apply), [apply])
   const value = useMemo<LocaleValue>(
     () => ({
       lang,
       setLang: (next) => {
-        setLangState(next)
-        document.documentElement.lang = htmlLang(next)
+        if (next === lang) return
+        // Applied here rather than awaited back: no host echoes a switch to the
+        // window that asked for it (see LanguagePort).
+        apply(next)
         void shellPlatform().language.setLanguage(next)
       },
     }),
-    [lang],
+    [lang, apply],
   )
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>
 }

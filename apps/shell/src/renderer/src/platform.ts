@@ -20,11 +20,11 @@
  * surface* the editors are hosted in, so its capabilities are the ones the
  * shared ports are defined against, not instances of them. Port by port:
  *
- *   - `language` — the shared `LanguagePort` narrowed to `getLanguage`, plus a
- *     shell-only `setLanguage`. The shell is where the language is *chosen* and
- *     persisted; `onLanguageChanged` is the channel it broadcasts *to* the
- *     editors, so there is nothing for the shell itself to subscribe to and its
- *     preload exposes no such channel.
+ *   - `language` — the shared `LanguagePort` itself, the one port here that is.
+ *     The shell is still where the language is *persisted*, but no longer the
+ *     only place it is chosen: every editor's chrome carries the same toggle,
+ *     so the shell subscribes to `onLanguageChanged` on the same channel its
+ *     editors do.
  *   - `project` — deliberately not the shared `ProjectPort`. That port aliases
  *     @genoffice/project-store's `ProjectApi`; the shell's own surface is the
  *     flatter, positional-argument UI adapter that ports/project.ts already
@@ -58,7 +58,6 @@
  * host-supplied display fields, on the `DocumentRef` precedent from apps/pdf.
  */
 import { createPlatformSlot, type LanguagePort } from '@genoffice/platform'
-import type { Lang } from '@genoffice/i18n'
 import type { AiSettingsApi } from '../../shared/ai-settings-api'
 import type {
   AccountLoginEvent,
@@ -305,16 +304,14 @@ export interface ShellAccountPort {
 }
 
 /**
- * UI language.
+ * UI language: the shared `LanguagePort`, all three members.
  *
- * The shared `LanguagePort` narrowed to its readable half, plus the write the
- * shell alone performs. See the file header for why `onLanguageChanged` is
- * absent: the shell is the broadcaster, not a subscriber.
+ * It used to be the write half alone, because the shell's home page was the
+ * only place the language could be changed. Every app's chrome now carries the
+ * toggle, so the shell is a subscriber as much as a broadcaster — a switch made
+ * in an editor tab has to reach the tab strip and the home page too.
  */
-export type ShellLanguagePort = Pick<LanguagePort, 'getLanguage'> & {
-  /** Switch and persist the UI language; the host re-broadcasts it to every editor. */
-  setLanguage(lang: Lang): Promise<void>
-}
+export type ShellLanguagePort = LanguagePort
 
 /** The first-run tour's one piece of host state. */
 export interface ShellOnboardingPort {

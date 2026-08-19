@@ -92,8 +92,11 @@ export type SheetsWindowPort = Pick<
   | 'openExternal'
 >
 
-/** The UI language, and changes to it made elsewhere in the app. */
-export type SheetsLanguagePort = Pick<DesktopApi, 'getLanguage' | 'onLanguageChanged'>
+/** The UI language: the current one, switching it, and switches made elsewhere in the app. */
+export type SheetsLanguagePort = Pick<
+  DesktopApi,
+  'getLanguage' | 'onLanguageChanged' | 'setLanguage'
+>
 
 /**
  * The AI conversation: the settings the panel renders against, and the streaming calls.

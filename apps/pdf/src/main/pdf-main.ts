@@ -1,12 +1,13 @@
 import { existsSync } from 'node:fs'
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { BrowserWindow, WebContentsView, app, dialog, ipcMain, shell } from 'electron'
+import { BrowserWindow, WebContentsView, app, dialog, ipcMain, shell, webContents } from 'electron'
 import type { WebContents } from 'electron'
 import {
   contextMenuLabels,
   installContextMenu,
   installNavigationGuard,
+  registerLanguageIpc,
   safeExternalUrl,
 } from '@genoffice/electron-utils'
 import { createI18n, getUiLang } from '@genoffice/i18n'
@@ -501,9 +502,9 @@ function registerPdfIpc(): void {
     waiter?.(ok === true)
   })
 
-  // Language channel shared with other modules; removeHandler tolerates duplicate registration
-  ipcMain.removeHandler(PDF_CHANNELS.getLanguage)
-  ipcMain.handle(PDF_CHANNELS.getLanguage, () => getUiLang())
+  // registered by every editor module and by the shell; identical handlers, so
+  // whichever runs last is the one that stays (see @genoffice/electron-utils)
+  registerLanguageIpc(ipcMain, () => webContents.getAllWebContents())
 }
 
 function grantAndTrack(wc: WebContents, openPath?: string | null): void {

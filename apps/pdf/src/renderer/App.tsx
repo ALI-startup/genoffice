@@ -32,6 +32,7 @@ import type { HeaderFooterConfig, WatermarkConfig } from './stamps'
 import { buildSearchIndex, searchInIndex } from './search'
 import type { SearchIndex, SearchMatch } from './search'
 import { useI18n } from './i18n/locale'
+import { LangSwitch } from './LangSwitch'
 import { pdfPlatform } from './platform'
 import type { DocumentRef, PendingDocument } from './platform'
 import { useAutosave } from './useAutosave'
@@ -1641,6 +1642,10 @@ export default function App() {
   if (status === 'password') {
     return (
       <div className="app">
+        {/* This screen has no ribbon, and a reader who cannot read the password
+            prompt is exactly who needs the switch: it goes in the corner the
+            ribbon's copy occupies, so it is in the same place on every screen. */}
+        <LangSwitch className="lang-toggle-floating" />
         <div className="pdf-placeholder">
           <form
             className="pdf-password"
@@ -1673,6 +1678,7 @@ export default function App() {
   if (status !== 'ready' || !doc) {
     return (
       <div className="app">
+        <LangSwitch className="lang-toggle-floating" />
         <div className="pdf-placeholder">
           {status === 'loading' ? t('loading') : status === 'error' ? t('loadError') : t('noFile')}
           {/*
@@ -1749,6 +1755,9 @@ export default function App() {
             </span>
           )}
           {saveState === 'saved' && <span className="tb-save-ok">{t('savedOk')}</span>}
+          {/* The far end of the tab row: past every command, so it never competes
+              with them, and on screen whatever document is open. */}
+          <LangSwitch />
         </div>
         <div className="ribbon-body">
           <div className="ribbon-group">

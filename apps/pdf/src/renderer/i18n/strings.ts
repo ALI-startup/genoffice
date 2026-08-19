@@ -1,5 +1,7 @@
 export const strings = {
   zh: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: '语言',
     aiUndelivered: '未送达,本条不会生效',
     aiRetry: '重试',
     rotateLeft: '向左旋转',
@@ -138,6 +140,8 @@ export const strings = {
     propModified: '修改时间',
   },
   en: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Language',
     aiUndelivered: 'Not delivered — this message had no effect',
     aiRetry: 'Retry',
     rotateLeft: 'Rotate left',
@@ -278,6 +282,8 @@ export const strings = {
     propModified: 'Modified',
   },
   ja: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: '言語',
     aiUndelivered: '未送信 — このメッセージは反映されていません',
     aiRetry: '再試行',
     rotateLeft: '左に回転',
@@ -418,6 +424,8 @@ export const strings = {
     propModified: '更新日時',
   },
   ko: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: '언어',
     aiUndelivered: '전송되지 않음 — 이 메시지는 적용되지 않았습니다',
     aiRetry: '다시 시도',
     rotateLeft: '왼쪽으로 회전',
@@ -558,6 +566,8 @@ export const strings = {
     propModified: '수정한 날짜',
   },
   fr: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Langue',
     aiUndelivered: 'Non envoyé — ce message n’a pas été pris en compte',
     aiRetry: 'Réessayer',
     rotateLeft: 'Pivoter à gauche',
@@ -698,6 +708,8 @@ export const strings = {
     propModified: 'Modifié le',
   },
   de: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Sprache',
     aiUndelivered: 'Nicht zugestellt — diese Nachricht wurde nicht verarbeitet',
     aiRetry: 'Erneut versuchen',
     rotateLeft: 'Nach links drehen',
@@ -838,6 +850,8 @@ export const strings = {
     propModified: 'Geändert',
   },
   es: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Idioma',
     aiUndelivered: 'No entregado: este mensaje no tuvo efecto',
     aiRetry: 'Reintentar',
     rotateLeft: 'Girar a la izquierda',
@@ -978,6 +992,8 @@ export const strings = {
     propModified: 'Modificado',
   },
   th: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'ภาษา',
     aiUndelivered: 'ส่งไม่สำเร็จ — ข้อความนี้ไม่มีผล',
     aiRetry: 'ลองอีกครั้ง',
     rotateLeft: 'หมุนซ้าย',
@@ -1118,6 +1134,8 @@ export const strings = {
     propModified: 'แก้ไขเมื่อ',
   },
   id: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Bahasa',
     aiUndelivered: 'Tidak terkirim — pesan ini tidak diproses',
     aiRetry: 'Coba lagi',
     rotateLeft: 'Putar ke kiri',
@@ -1258,6 +1276,8 @@ export const strings = {
     propModified: 'Diubah',
   },
   ru: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Язык',
     aiUndelivered: 'Не доставлено — это сообщение не было обработано',
     aiRetry: 'Повторить',
     rotateLeft: 'Повернуть влево',
@@ -1398,6 +1418,8 @@ export const strings = {
     propModified: 'Изменён',
   },
   ar: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'اللغة',
     aiUndelivered: 'لم يتم الإرسال — لم يُعالَج هذا الطلب',
     aiRetry: 'إعادة المحاولة',
     rotateLeft: 'تدوير لليسار',
@@ -1538,6 +1560,8 @@ export const strings = {
     propModified: 'تاريخ التعديل',
   },
   pt: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Idioma',
     aiUndelivered: 'Não entregue — esta mensagem não teve efeito',
     aiRetry: 'Tentar novamente',
     rotateLeft: 'Girar para a esquerda',
@@ -1678,6 +1702,8 @@ export const strings = {
     propModified: 'Modificado',
   },
   it: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Lingua',
     aiUndelivered: 'Non recapitato — questo messaggio non ha avuto effetto',
     aiRetry: 'Riprova',
     rotateLeft: 'Ruota a sinistra',
@@ -1819,6 +1845,8 @@ export const strings = {
     propModified: 'Modificato',
   },
   pl: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Język',
     aiUndelivered: 'Niedostarczone — ta wiadomość nie została przetworzona',
     aiRetry: 'Ponów',
     rotateLeft: 'Obróć w lewo',
@@ -1959,6 +1987,8 @@ export const strings = {
     propModified: 'Zmodyfikowano',
   },
   nl: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Taal',
     aiUndelivered: 'Niet afgeleverd — dit bericht is niet verwerkt',
     aiRetry: 'Opnieuw proberen',
     rotateLeft: 'Linksom draaien',
@@ -2099,6 +2129,8 @@ export const strings = {
     propModified: 'Gewijzigd',
   },
   ms: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Bahasa',
     aiUndelivered: 'Tidak dihantar — mesej ini tidak diproses',
     aiRetry: 'Cuba lagi',
     rotateLeft: 'Putar ke kiri',
@@ -2239,6 +2271,8 @@ export const strings = {
     propModified: 'Diubah suai',
   },
   he: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'שפה',
     aiUndelivered: 'לא נמסר — הודעה זו לא עובדה',
     aiRetry: 'נסה שוב',
     rotateLeft: 'סיבוב שמאלה',
@@ -2377,6 +2411,8 @@ export const strings = {
     propModified: 'עודכן',
   },
   hi: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'भाषा',
     aiUndelivered: 'नहीं भेजा गया — इस संदेश का कोई प्रभाव नहीं पड़ा',
     aiRetry: 'फिर से कोशिश करें',
     rotateLeft: 'बाएँ घुमाएँ',
@@ -2517,6 +2553,8 @@ export const strings = {
     propModified: 'संशोधन समय',
   },
   'zh-TW': {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: '語言',
     aiUndelivered: '未送達,本則不會生效',
     aiRetry: '重試',
     rotateLeft: '向左旋轉',

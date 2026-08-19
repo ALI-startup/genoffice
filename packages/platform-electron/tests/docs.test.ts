@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { Lang } from '@genoffice/i18n'
 import type { AttachmentReadResult } from '@genoffice/platform'
 import {
   createDocsCloseSavePort,
@@ -48,6 +49,9 @@ function createFakeBridge(pathForFile = '/tmp/dropped.md') {
     bridge: {
       getLanguage: async () => 'ko' as const,
       onLanguageChanged: subscribe('language'),
+      setLanguage: async (lang: Lang) => {
+        record('setLanguage')(lang)
+      },
       pickAttachments: async () => {
         record('pickAttachments')()
         return { accepted: [accepted], rejected: [] }
@@ -90,10 +94,13 @@ function createFakeBridge(pathForFile = '/tmp/dropped.md') {
 }
 
 describe('createDocsLanguagePort', () => {
-  it('forwards getLanguage and delivers changes until unsubscribed', async () => {
-    const { bridge, listeners } = createFakeBridge()
+  it('forwards getLanguage and setLanguage, and delivers changes until unsubscribed', async () => {
+    const { bridge, listeners, calls } = createFakeBridge()
     const port = createDocsLanguagePort(bridge)
     expect(await port.getLanguage()).toBe('ko')
+
+    await port.setLanguage('ja')
+    expect(calls).toContainEqual({ method: 'setLanguage', args: ['ja'] })
 
     const seen: string[] = []
     const off = port.onLanguageChanged((lang) => seen.push(lang))

@@ -114,6 +114,13 @@ const homeApi: HomeApi = {
     if (!isUiLanguage(lang)) throw new Error('Invalid language.')
     await ipcRenderer.invoke(HOME_CHANNELS.setLanguage, lang)
   },
+  onLanguageChanged(handler) {
+    const listener = (_event: IpcRendererEvent, lang: unknown) => {
+      if (isUiLanguage(lang)) handler(lang)
+    }
+    ipcRenderer.on(HOME_CHANNELS.languageChanged, listener)
+    return () => ipcRenderer.removeListener(HOME_CHANNELS.languageChanged, listener)
+  },
   async accountStatus() {
     const result: unknown = await ipcRenderer.invoke(HOME_CHANNELS.accountStatus)
     return (result ?? { loggedIn: false }) as AccountStatus

@@ -37,6 +37,7 @@ export const PDF_CHANNELS = {
   saveAsResult: 'pdf:save-as-result',
   saveAsFlow: 'pdf:save-as-flow',
   getLanguage: 'app:get-language',
+  setLanguage: 'app:set-language',
   languageChanged: 'app:language-changed',
 } as const
 
@@ -123,6 +124,8 @@ export interface PdfApi {
   onSaveAsFlow(handler: (inFlight: boolean) => void): () => void
   getLanguage(): Promise<Lang>
   onLanguageChanged(handler: (lang: Lang) => void): () => void
+  /** switch the UI language for the whole app; every other window hears it as onLanguageChanged */
+  setLanguage(lang: Lang): Promise<void>
   getAiSettings(): Promise<AiSettings>
   aiStream(request: AiStreamRequest): Promise<void>
   aiStreamCancel(requestId: string): Promise<void>

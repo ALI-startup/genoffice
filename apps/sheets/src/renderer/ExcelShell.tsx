@@ -12,6 +12,7 @@ import {
 import { FormatCellsDialog } from './FormatCellsDialog'
 import { GoToDialog } from './GoToDialog'
 import { useI18n, type StringKey } from './i18n/locale'
+import { LangSwitch } from './LangSwitch'
 import { NameManagerDialog, type DefinedNameAction, type DefinedNameRow } from './NameManagerDialog'
 import { categoryOptionForPattern, NUMBER_FORMAT_CATEGORIES } from './number-format'
 import { type SelectionFormat } from './selection-format'
@@ -144,7 +145,17 @@ interface ExcelShellProps {
   readonly onUndo: () => void
   readonly onCommand: (command: string) => void
   /// Left side of the status bar (ready / streaming / AI progress messages).
-  readonly statusMessage: string
+  /**
+   * The status line, or null before anything has happened.
+   *
+   * Null rather than a resting string, because the resting text is a label and
+   * has to follow a language switch: App builds its messages in event handlers
+   * (a toast keeps the language it was raised in, which is right) and does not
+   * subscribe to the locale context, so a default resolved there would sit in
+   * the boot language until some other event replaced it. Resolved here, where
+   * `useI18n` re-renders it.
+   */
+  readonly statusMessage: string | null
   /// Zoom of the active sheet in percent, echoed by the status-bar slider.
   readonly zoomPercent: number
   /// True when the edit journal has unsaved changes (enables the QAT Save).
@@ -318,7 +329,7 @@ export function ExcelShell({
       <header className="excel-header">
         <nav
           className={`ribbon-tabs ${IN_TAB ? '' : IS_MAC ? 'ribbon-tabs-mac' : 'ribbon-tabs-win'}`}
-          aria-label="Workbook commands"
+          aria-label={t('appWorkbookCommands')}
         >
           <button
             type="button"
@@ -369,8 +380,11 @@ export function ExcelShell({
           ))}
           <span className="ribbon-tabs-spacer" />
           <span className="workbook-status" role="status" aria-live="polite">
-            {statusMessage}
+            {statusMessage ?? t('appReadyInitial')}
           </span>
+          {/* The far end of the tab row: past every command, so it never competes
+              with them, and on screen whatever tab or workbook is open. */}
+          <LangSwitch />
         </nav>
 
         <Ribbon
@@ -446,7 +460,7 @@ export function ExcelShell({
             <button
               className="name-box-goto"
               title={t('appGoToButtonTitle')}
-              aria-label="Go To"
+              aria-label={t('appGoTo')}
               onClick={() => setShowGoTo(true)}
             >
               ▾
@@ -461,7 +475,7 @@ export function ExcelShell({
       {/* Full-width status bar, unified with docs/slides (Univer's own zoom slider is disabled). */}
       <footer className="status-bar">
         <div className="status-left">
-          <span className="status-msg">{statusMessage}</span>
+          <span className="status-msg">{statusMessage ?? t('appReadyInitial')}</span>
         </div>
         <div className="status-right">
           <button className="zoom-btn" onClick={() => onCommand('zoom-out')}>
@@ -616,7 +630,7 @@ function NameBox({
   return (
     <input
       className={`name-box${error === null ? '' : ' invalid'}`}
-      aria-label="Name Box"
+      aria-label={t('appNameBox')}
       title={error ?? t('appNameBoxTitle')}
       placeholder="A1"
       spellCheck={false}
@@ -690,7 +704,7 @@ function SortDialog({
       <div
         className="format-cells-dialog sort-dialog"
         role="dialog"
-        aria-label="Custom sort"
+        aria-label={t('appSort')}
         onClick={(event) => event.stopPropagation()}
       >
         <header>{t('appSort')}</header>
@@ -758,7 +772,7 @@ function RemoveDuplicatesDialog({
       <div
         className="format-cells-dialog sort-dialog"
         role="dialog"
-        aria-label="Remove duplicates"
+        aria-label={t('appRemoveDuplicates')}
         onClick={(event) => event.stopPropagation()}
       >
         <header>{t('appRemoveDuplicates')}</header>
@@ -923,7 +937,7 @@ function LinkDialog({
       <div
         className="format-cells-dialog link-dialog"
         role="dialog"
-        aria-label="Insert link"
+        aria-label={t(currentTarget ? 'appEditLinkTitle' : 'appInsertLinkTitle')}
         onClick={(event) => event.stopPropagation()}
       >
         <header>{t(currentTarget ? 'appEditLinkTitle' : 'appInsertLinkTitle')}</header>
@@ -2224,7 +2238,7 @@ function Ribbon({
               </span>
               <input
                 type="color"
-                aria-label="Font color"
+                aria-label={t('appFontColor')}
                 value={fontColor}
                 onChange={(event) => {
                   setFontColor(event.target.value)
@@ -2239,7 +2253,7 @@ function Ribbon({
               </span>
               <input
                 type="color"
-                aria-label="Fill color"
+                aria-label={t('appFillColor')}
                 value={fillColor}
                 onChange={(event) => {
                   setFillColor(event.target.value)
@@ -2278,7 +2292,7 @@ function Ribbon({
               </span>
               <input
                 type="color"
-                aria-label="Border color"
+                aria-label={t('appBorderColor')}
                 value={borderColor}
                 onChange={(event) => setBorderColor(event.target.value)}
               />

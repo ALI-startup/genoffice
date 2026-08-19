@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { createI18n, htmlLang, type Lang, type Params } from '@genoffice/i18n'
 import { pdfPlatform } from '../platform'
@@ -36,7 +36,12 @@ export function aiLangDirective(lang: Lang): string {
   return AI_LANG_DIRECTIVES[lang]
 }
 
-const LocaleContext = createContext<Lang>('zh')
+interface LocaleValue {
+  lang: Lang
+  setLang: (lang: Lang) => void
+}
+
+const LocaleContext = createContext<LocaleValue>({ lang: 'zh', setLang: () => {} })
 
 /** Module-level current language: for code outliving render closures (AgentLoop events etc.), kept in sync with the Provider */
 let moduleLang: Lang = 'zh'
@@ -46,20 +51,39 @@ export function t(key: StringKey, params?: Params): string {
 }
 
 export function LocaleProvider({ initial, children }: { initial: Lang; children: ReactNode }) {
-  const [lang, setLang] = useState<Lang>(initial)
+  const [lang, setLangState] = useState<Lang>(initial)
   moduleLang = lang
-  useEffect(
-    () =>
-      pdfPlatform().language.onLanguageChanged((next) => {
-        document.documentElement.lang = htmlLang(next)
-        setLang(next)
-      }),
-    [],
+  // One place applies a language, whether it came from this window's switcher or
+  // from another one: the document's lang attribute (CSS :lang() and Chromium's
+  // per-language font fallback read it) and React state.
+  const apply = useCallback((next: Lang) => {
+    document.documentElement.lang = htmlLang(next)
+    setLangState(next)
+  }, [])
+  useEffect(() => pdfPlatform().language.onLanguageChanged(apply), [apply])
+  const value = useMemo<LocaleValue>(
+    () => ({
+      lang,
+      setLang: (next) => {
+        if (next === lang) return
+        // Applied here rather than awaited back: no host echoes a switch to the
+        // window that asked for it (see LanguagePort), and the UI must not wait
+        // on a round trip to repaint in the language just chosen.
+        apply(next)
+        void pdfPlatform().language.setLanguage(next)
+      },
+    }),
+    [lang, apply],
   )
-  return <LocaleContext.Provider value={lang}>{children}</LocaleContext.Provider>
+  return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>
 }
 
-export function useI18n(): { lang: Lang; t: TFunc } {
-  const lang = useContext(LocaleContext)
-  return { lang, t: (key, params) => translate(lang, key, params) }
+export function useI18n(): {
+  lang: Lang
+  /** Switch the whole app's UI language; a no-op when it is already current. */
+  setLang: (lang: Lang) => void
+  t: TFunc
+} {
+  const { lang, setLang } = useContext(LocaleContext)
+  return { lang, setLang, t: (key, params) => translate(lang, key, params) }
 }

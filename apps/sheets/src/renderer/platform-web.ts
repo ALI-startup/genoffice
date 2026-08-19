@@ -412,19 +412,16 @@ export function createWebSheetsWindowPort(
   }
 }
 
-/** The UI language, from the shared web language storage every app uses. */
+/**
+ * The UI language, from the shared web language storage every app uses.
+ *
+ * The shared port verbatim, as sheets' AI port is. It used to cast, because sheets declared an
+ * eleven-value copy of @genoffice/i18n's nineteen-value `Lang` (§6.4 of the migration doc) and
+ * a shared `Lang` did not fit through it. The bridge now says `Lang`, so the two agree and
+ * there is nothing left to adapt.
+ */
 export function createWebSheetsLanguagePort(language: LanguagePort): SheetsLanguagePort {
-  return {
-    // sheets declares an eleven-value copy of @genoffice/i18n's nineteen-value `Lang` (§6.4 of
-    // the migration doc, a live bug on both hosts). The cast is that existing gap, not a new
-    // one: the shared port answers with a real Lang and this port's type admits fewer.
-    getLanguage: async () =>
-      (await language.getLanguage()) as Awaited<ReturnType<SheetsLanguagePort['getLanguage']>>,
-    onLanguageChanged: (handler) =>
-      language.onLanguageChanged((lang) =>
-        handler(lang as Parameters<Parameters<SheetsLanguagePort['onLanguageChanged']>[0]>[0]),
-      ),
-  }
+  return language
 }
 
 /** The AI port is the shared one verbatim: sheets uses exactly `AiPort`'s four members. */

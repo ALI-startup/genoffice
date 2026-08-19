@@ -409,7 +409,11 @@ export function App(): React.JSX.Element {
     const id = window.setInterval(tick, 30_000)
     return () => window.clearInterval(id)
   }, [])
-  const [message, setMessage] = useState(t('appReadyInitial'))
+  // Null is "nothing has happened yet", not an empty status: the opening line is
+  // resolved at render instead of captured at mount, so a language switch
+  // repaints it like every other string. Captured, it would sit in the language
+  // the app booted in until some other event replaced it.
+  const [message, setMessage] = useState<string | null>(null)
   /// Zoom of the active sheet in percent, echoed by the status-bar slider.
   const [zoomPercent, setZoomPercent] = useState(100)
   const [selectionFormat, setSelectionFormat] = useState<SelectionFormat | null>(null)

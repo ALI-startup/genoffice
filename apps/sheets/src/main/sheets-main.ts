@@ -22,6 +22,7 @@ import {
   session as electronSession,
   shell,
   WebContentsView,
+  webContents,
 } from 'electron'
 import type {
   IpcMainInvokeEvent,
@@ -36,6 +37,7 @@ import {
   contextMenuLabels,
   installContextMenu,
   installNavigationGuard,
+  registerLanguageIpc,
   safeExternalUrl,
   viewMenuTemplate,
   windowMenuTemplate,
@@ -1633,9 +1635,9 @@ export function registerSheetsIpc(): void {
     waiter(ok === true)
   })
 
-  // shared with the other editor modules — last (identical) registration wins
-  ipcMain.removeHandler('app:get-language')
-  ipcMain.handle('app:get-language', () => getUiLang())
+  // registered by every editor module and by the shell; identical handlers, so
+  // whichever runs last is the one that stays (see @genoffice/electron-utils)
+  registerLanguageIpc(ipcMain, () => webContents.getAllWebContents())
 
   /** returns true once when shell opened this tab for a new blank workbook */
   ipcMain.handle('sheets:consume-new-blank', () => {
@@ -1845,12 +1847,12 @@ export function registerSheetsIpc(): void {
     }
 
     const mutation = await writeWorkbookTo({
-    client,
-    fs: saveFs,
-    session,
-    request,
-    targetPath,
-  })
+      client,
+      fs: saveFs,
+      session,
+      request,
+      targetPath,
+    })
 
     // The sidecar session still streams the pre-save bytes; swap it for a
     // fresh session over the saved file so future reads match the disk state.

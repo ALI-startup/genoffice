@@ -27,10 +27,9 @@ import {
   createShellFrameLink,
   createWebLanguagePort,
   fetchPublicAiSettings,
-  setWebLanguage,
   type LanguageHostEnv,
 } from '@genoffice/platform-web'
-import { createI18n, type Lang } from '@genoffice/i18n'
+import { createI18n } from '@genoffice/i18n'
 import type { TabKind } from '../../shared/tabs-api'
 import type { CreateShellPlatform, ShellAppPort, ShellOnboardingPort } from './platform'
 import {
@@ -132,14 +131,10 @@ function createWebAppPort(): ShellAppPort {
 
 export const createShellPlatform: CreateShellPlatform = async () => {
   const languageEnv: LanguageHostEnv = browserLanguageEnv()
-  // The read half is @genoffice/platform-web's shared language port — the same
-  // one every editor frame uses, so the shell and its frames resolve the stored
-  // choice identically. The shell adds the write, which is its alone.
-  const shared = createWebLanguagePort(languageEnv)
-  const language = createWebShellLanguagePort(
-    () => shared.getLanguage(),
-    (lang: Lang) => setWebLanguage(languageEnv, lang),
-  )
+  // @genoffice/platform-web's shared language port — the same one every editor
+  // frame uses, so the shell and its frames resolve the stored choice
+  // identically, and a switch made in either is seen by the other.
+  const language = createWebShellLanguagePort(createWebLanguagePort(languageEnv))
 
   // The tab strip's own copy has to be localised before React exists, because
   // the first tab (Home) is created here. Same dictionary the UI uses, resolved

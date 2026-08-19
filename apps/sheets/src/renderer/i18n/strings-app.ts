@@ -3,6 +3,11 @@ import { defineStrings } from '@genoffice/i18n'
 /** Copy for App.tsx / ExcelShell / chart panels / non-dialog components */
 export const appStrings = defineStrings({
   zh: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: '名称框',
+    appWorkbookCommands: '工作簿命令',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: '语言',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm: '工作簿在打开后被磁盘上的改动覆盖——请改用另存为。',
@@ -933,6 +938,11 @@ export const appStrings = defineStrings({
     appGoTo: '定位',
   },
   en: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: 'Name Box',
+    appWorkbookCommands: 'Workbook commands',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Language',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
@@ -1880,6 +1890,11 @@ export const appStrings = defineStrings({
     appGoTo: 'Go To',
   },
   ja: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: '名前ボックス',
+    appWorkbookCommands: 'ブックのコマンド',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: '言語',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
@@ -2894,6 +2909,11 @@ export const appStrings = defineStrings({
     appGoTo: 'ジャンプ',
   },
   ko: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: '이름 상자',
+    appWorkbookCommands: '통합 문서 명령',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: '언어',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
@@ -3879,6 +3899,11 @@ export const appStrings = defineStrings({
     appGoTo: '이동',
   },
   fr: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: 'Zone Nom',
+    appWorkbookCommands: 'Commandes du classeur',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Langue',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
@@ -4896,6 +4921,11 @@ export const appStrings = defineStrings({
     appGoTo: 'Atteindre',
   },
   de: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: 'Namenfeld',
+    appWorkbookCommands: 'Arbeitsmappenbefehle',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Sprache',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
@@ -5901,6 +5931,11 @@ export const appStrings = defineStrings({
     appGoTo: 'Gehe zu',
   },
   es: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: 'Cuadro de nombres',
+    appWorkbookCommands: 'Comandos del libro',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Idioma',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
@@ -6893,6 +6928,11 @@ export const appStrings = defineStrings({
     appGoTo: 'Ir a',
   },
   th: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: 'กล่องชื่อ',
+    appWorkbookCommands: 'คำสั่งของเวิร์กบุ๊ก',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'ภาษา',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm: 'เวิร์กบุ๊กถูกเปลี่ยนแปลงบนดิสก์หลังจากเปิด — โปรดใช้บันทึกเป็นแทน',
@@ -7828,6 +7868,11 @@ export const appStrings = defineStrings({
     appGoTo: 'ไปที่',
   },
   id: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: 'Kotak Nama',
+    appWorkbookCommands: 'Perintah buku kerja',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Bahasa',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm: 'Buku kerja berubah di disk setelah dibuka — gunakan Simpan Sebagai.',
@@ -8785,6 +8830,11 @@ export const appStrings = defineStrings({
     appGoTo: 'Buka',
   },
   ru: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: 'Поле имени',
+    appWorkbookCommands: 'Команды книги',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Язык',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
@@ -9764,6 +9814,11 @@ export const appStrings = defineStrings({
     appGoTo: 'Перейти',
   },
   ar: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: 'مربع الاسم',
+    appWorkbookCommands: 'أوامر المصنف',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'اللغة',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm: 'تم تغيير المصنف على القرص بعد فتحه — استخدم «حفظ باسم» بدلاً من ذلك.',
@@ -10702,6 +10757,11 @@ export const appStrings = defineStrings({
     appGoTo: 'الانتقال إلى',
   },
   pt: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: 'Caixa de nome',
+    appWorkbookCommands: 'Comandos da pasta de trabalho',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Idioma',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
@@ -11691,6 +11751,11 @@ export const appStrings = defineStrings({
     appGoTo: 'Ir para',
   },
   it: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: 'Casella Nome',
+    appWorkbookCommands: 'Comandi della cartella di lavoro',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Lingua',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
@@ -12680,6 +12745,11 @@ export const appStrings = defineStrings({
     appGoTo: 'Vai a',
   },
   pl: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: 'Pole nazwy',
+    appWorkbookCommands: 'Polecenia skoroszytu',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Język',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
@@ -13668,6 +13738,11 @@ export const appStrings = defineStrings({
     appGoTo: 'Przejdź do',
   },
   nl: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: 'Naamvak',
+    appWorkbookCommands: 'Werkmapopdrachten',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Taal',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
@@ -14664,6 +14739,11 @@ export const appStrings = defineStrings({
     appGoTo: 'Ga naar',
   },
   ms: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: 'Kotak Nama',
+    appWorkbookCommands: 'Perintah buku kerja',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Bahasa',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
@@ -15624,6 +15704,11 @@ export const appStrings = defineStrings({
     appGoTo: 'Pergi Ke',
   },
   he: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: 'תיבת השם',
+    appWorkbookCommands: 'פקודות חוברת העבודה',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'שפה',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm: 'חוברת העבודה השתנתה בדיסק לאחר פתיחתה — השתמש בשמירה בשם.',
@@ -16545,6 +16630,11 @@ export const appStrings = defineStrings({
     appGoTo: 'עבור אל',
   },
   hi: {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: 'नाम बॉक्स',
+    appWorkbookCommands: 'कार्यपुस्तिका कमांड',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'भाषा',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
@@ -17507,6 +17597,11 @@ export const appStrings = defineStrings({
     appGoTo: 'इस पर जाएँ',
   },
   'zh-TW': {
+    // Accessible names for two controls that carry no visible label of their own
+    appNameBox: '名稱方塊',
+    appWorkbookCommands: '活頁簿命令',
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: '語言',
     // Shown before overwriting a file another program changed since it was opened.
     // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm: '活頁簿在開啟後被磁碟上的變更覆蓋——請改用另存新檔。',

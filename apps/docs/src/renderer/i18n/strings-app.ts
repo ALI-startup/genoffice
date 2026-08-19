@@ -3,6 +3,8 @@ import { defineStrings } from '@genoffice/i18n'
 /** Strings for App.tsx / SettingsModal / non-Ribbon components (keys use the app prefix to mark the area) */
 export const appStrings = defineStrings({
   zh: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: '语言',
     // Common
     appClose: '关闭',
     appCancel: '取消',
@@ -311,6 +313,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: '样式名称',
   },
   en: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Language',
     appClose: 'Close',
     appCancel: 'Cancel',
     appOk: 'OK',
@@ -603,6 +607,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: 'Style name',
   },
   ja: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: '言語',
     // Common
     appClose: '閉じる',
     appCancel: 'キャンセル',
@@ -928,6 +934,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: 'スタイル名',
   },
   ko: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: '언어',
     // Common
     appClose: '닫기',
     appCancel: '취소',
@@ -1251,6 +1259,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: '스타일 이름',
   },
   fr: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Langue',
     appClose: 'Fermer',
     appCancel: 'Annuler',
     appOk: 'OK',
@@ -1555,6 +1565,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: 'Nom du style',
   },
   de: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Sprache',
     appClose: 'Schließen',
     appCancel: 'Abbrechen',
     appOk: 'OK',
@@ -1860,6 +1872,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: 'Name der Formatvorlage',
   },
   es: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Idioma',
     appClose: 'Cerrar',
     appCancel: 'Cancelar',
     appOk: 'Aceptar',
@@ -2162,6 +2176,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: 'Nombre del estilo',
   },
   th: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'ภาษา',
     appClose: 'ปิด',
     appCancel: 'ยกเลิก',
     appOk: 'ตกลง',
@@ -2456,6 +2472,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: 'ชื่อสไตล์',
   },
   id: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Bahasa',
     appClose: 'Tutup',
     appCancel: 'Batal',
     appOk: 'OK',
@@ -2754,6 +2772,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: 'Nama gaya',
   },
   ru: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Язык',
     appClose: 'Закрыть',
     appCancel: 'Отмена',
     appOk: 'ОК',
@@ -3054,6 +3074,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: 'Имя стиля',
   },
   ar: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'اللغة',
     appClose: 'إغلاق',
     appCancel: 'إلغاء',
     appOk: 'موافق',
@@ -3346,6 +3368,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: 'اسم النمط',
   },
   pt: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Idioma',
     appClose: 'Fechar',
     appCancel: 'Cancelar',
     appOk: 'OK',
@@ -3644,6 +3668,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: 'Nome do estilo',
   },
   it: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Lingua',
     appClose: 'Chiudi',
     appCancel: 'Annulla',
     appOk: 'OK',
@@ -3942,6 +3968,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: 'Nome dello stile',
   },
   pl: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Język',
     appClose: 'Zamknij',
     appCancel: 'Anuluj',
     appOk: 'OK',
@@ -4242,6 +4270,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: 'Nazwa stylu',
   },
   nl: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Taal',
     appClose: 'Sluiten',
     appCancel: 'Annuleren',
     appOk: 'OK',
@@ -4546,6 +4576,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: 'Stijlnaam',
   },
   ms: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'Bahasa',
     appClose: 'Tutup',
     appCancel: 'Batal',
     appOk: 'OK',
@@ -4844,6 +4876,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: 'Nama gaya',
   },
   he: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'שפה',
     appClose: 'סגירה',
     appCancel: 'ביטול',
     appOk: 'אישור',
@@ -5132,6 +5166,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: 'שם הסגנון',
   },
   hi: {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: 'भाषा',
     appClose: 'बंद करें',
     appCancel: 'रद्द करें',
     appOk: 'ठीक है',
@@ -5427,6 +5463,8 @@ export const appStrings = defineStrings({
     appStyleNamePlaceholder: 'शैली का नाम',
   },
   'zh-TW': {
+    // Language switch (the EN/한국어 toggle in the app's chrome)
+    appLanguage: '語言',
     appClose: '關閉',
     appCancel: '取消',
     appOk: '確定',

@@ -37,7 +37,7 @@
  * each editor keeps its own, in the IndexedDB handle store that survives a
  * reload, and shows it inside its own frame.
  */
-import type { Lang } from '@genoffice/i18n'
+import type { LanguagePort } from '@genoffice/platform'
 import type { PublicAiSettings, ShellFrameLink } from '@genoffice/platform-web'
 import { FRAME_ID_PARAM } from '@genoffice/platform-web'
 import type { AiProviderConfigView, AiSettingsSnapshot } from '../../shared/ai-settings-api'
@@ -549,19 +549,18 @@ export function createWebShellAiSettingsPort(
   }
 }
 
-/** UI language: read from the browser or the stored choice, written to storage. */
-export function createWebShellLanguagePort(
-  read: () => Promise<Lang>,
-  write: (lang: Lang) => void,
-): ShellLanguagePort {
-  return {
-    getLanguage: read,
-    // The write is what reaches the frames: it lands in localStorage, and a
-    // storage event carries it to every other same-origin document, which is
-    // what @genoffice/platform-web's language port subscribes to. Same effect as
-    // the shell broadcasting to each WebContentsView over IPC.
-    setLanguage: async (lang) => write(lang),
-  }
+/**
+ * UI language: the shared browser port, unchanged.
+ *
+ * It reads the stored choice (or the browser's own locale), and its write is
+ * what reaches the frames — the value lands in localStorage and a storage event
+ * carries it to every other same-origin document. Same effect as the shell
+ * broadcasting to each WebContentsView over IPC, and the subscription is the
+ * same event seen from the other side: an editor frame that switches the
+ * language is heard here.
+ */
+export function createWebShellLanguagePort(language: LanguagePort): ShellLanguagePort {
+  return language
 }
 
 export function createWebShellPlatform(deps: WebShellPlatformDeps): ShellPlatform {

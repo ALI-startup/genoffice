@@ -1,3 +1,5 @@
+import type { Lang } from '@genoffice/i18n'
+
 export interface OpenFileResult {
   path: string
   name: string
@@ -33,8 +35,7 @@ export interface ImportFileResult {
  * document with a path behind it.
  */
 export type OpenResult =
-  | ({ kind: 'document' } & OpenFileResult)
-  | ({ kind: 'import' } & ImportFileResult)
+  ({ kind: 'document' } & OpenFileResult) | ({ kind: 'import' } & ImportFileResult)
 
 export interface PickImageResult {
   /** raw image bytes, base64 encoded */
@@ -163,13 +164,11 @@ export type MenuCommand =
 
 export interface DesktopApi {
   /** current UI language (persisted by the shell in app-settings.json) */
-  getLanguage(): Promise<'zh' | 'en' | 'ja' | 'ko' | 'fr' | 'de' | 'es' | 'th' | 'id' | 'ru' | 'ar'>
-  /** language switched from the shell home page */
-  onLanguageChanged(
-    handler: (
-      lang: 'zh' | 'en' | 'ja' | 'ko' | 'fr' | 'de' | 'es' | 'th' | 'id' | 'ru' | 'ar',
-    ) => void,
-  ): () => void
+  getLanguage(): Promise<Lang>
+  /** language switched anywhere in the app — the shell home page, or another window's switcher */
+  onLanguageChanged(handler: (lang: Lang) => void): () => void
+  /** switch the UI language for the whole app; every other window hears it as onLanguageChanged */
+  setLanguage(lang: Lang): Promise<void>
   /** open dialog covering every format docs loads (.docx opened, .hwpx imported) */
   openDocx(): Promise<OpenResult | null>
   openDocxPath(path: string): Promise<OpenResult | null>

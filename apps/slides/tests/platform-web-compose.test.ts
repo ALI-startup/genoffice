@@ -36,7 +36,11 @@ function build(overrides: Partial<WebSlidesPlatformDeps> = {}) {
     session: new WebSlidesSession(),
     store: {} as unknown as WebDocumentStore,
     pickers: { openFile: vi.fn(), saveFile: vi.fn(), directory: vi.fn() },
-    language: { getLanguage: async () => 'en', onLanguageChanged: () => () => {} } as LanguagePort,
+    language: {
+      getLanguage: async () => 'en',
+      setLanguage: async () => {},
+      onLanguageChanged: () => () => {},
+    } as LanguagePort,
     ai: {
       getAiSettings: vi.fn(),
       aiStream: vi.fn(),

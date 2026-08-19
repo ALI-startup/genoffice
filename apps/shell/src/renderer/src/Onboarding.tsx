@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import appIcon from './assets/app-icon.png'
+import { LangSwitch } from './LangSwitch'
 import { useI18n } from './locale'
 import type { StringKey } from './locale'
 import { shellPlatform } from './platform'
@@ -162,6 +163,11 @@ export function Onboarding({ onDone }: OnboardingProps) {
   return (
     <div className="onb-overlay" role="dialog" aria-modal="true" aria-label={t(slide.titleKey)}>
       <div className="onb-card" ref={cardRef} tabIndex={-1}>
+        {/* The tour is modal and it is the first thing anyone sees, so the tab
+            strip's switch is unreachable underneath it. Someone who cannot read
+            this card is exactly who needs to switch, and they should not have to
+            finish a tour in a language they do not read to get the chance. */}
+        <LangSwitch className="lang-toggle-onboarding" />
         {/* all slides stay mounted, stacked in one grid cell: the card locks to
             the tallest slide's height for the language, so the footer and its
             buttons never move between steps. Inactive slides are inert. */}

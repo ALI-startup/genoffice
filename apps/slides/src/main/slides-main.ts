@@ -16,6 +16,7 @@ import {
   session as electronSession,
   shell,
   WebContentsView,
+  webContents,
 } from 'electron'
 import type { WebContents } from 'electron'
 import { execFile } from 'node:child_process'
@@ -30,6 +31,7 @@ import {
   contextMenuLabels,
   installContextMenu,
   installNavigationGuard,
+  registerLanguageIpc,
   safeExternalUrl,
 } from '@genoffice/electron-utils'
 import { getUiLang, normalizeLang, setUiLang } from '@genoffice/i18n'
@@ -687,9 +689,9 @@ export function registerSlidesIpc(): void {
   // and a TIFF decoder. Before any deck can be opened, and once per process.
   installSlidesRenderEnv()
 
-  // shared with the other editor modules — last (identical) registration wins
-  ipcMain.removeHandler('app:get-language')
-  ipcMain.handle('app:get-language', () => getUiLang())
+  // registered by every editor module and by the shell; identical handlers, so
+  // whichever runs last is the one that stays (see @genoffice/electron-utils)
+  registerLanguageIpc(ipcMain, () => webContents.getAllWebContents())
 
   // Screen recording: source dispatch for the renderer's navigator.mediaDevices.getDisplayMedia.
   // macOS prefers the system picker (with its permission flow), falling back to the first screen.

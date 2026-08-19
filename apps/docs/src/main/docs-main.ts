@@ -10,13 +10,23 @@ import {
 } from 'node:fs'
 import { copyFile, mkdir, readFile, readdir, stat, unlink } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { BrowserWindow, Menu, WebContentsView, app, dialog, ipcMain, shell } from 'electron'
+import {
+  BrowserWindow,
+  Menu,
+  WebContentsView,
+  app,
+  dialog,
+  ipcMain,
+  shell,
+  webContents,
+} from 'electron'
 import {
   appMenuLabels,
   contextMenuLabels,
   fetchWithSsrfGuard,
   installContextMenu,
   installNavigationGuard,
+  registerLanguageIpc,
   safeExternalUrl,
   windowMenuTemplate,
 } from '@genoffice/electron-utils'
@@ -2973,9 +2983,9 @@ export function registerProjectIpc(): void {
 
 /** document/attachment/window IPC (everything except the AI proxy above) */
 export function registerDocsIpc(): void {
-  // shared with the other editor modules — last (identical) registration wins
-  ipcMain.removeHandler('app:get-language')
-  ipcMain.handle('app:get-language', () => getUiLang())
+  // registered by every editor module and by the shell; identical handlers, so
+  // whichever runs last is the one that stays (see @genoffice/electron-utils)
+  registerLanguageIpc(ipcMain, () => webContents.getAllWebContents())
 
   ipcMain.handle('docs:open', async (event) => {
     const result = await openDialog(event, {

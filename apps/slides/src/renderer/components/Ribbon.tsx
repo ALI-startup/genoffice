@@ -12,6 +12,7 @@ import { restoreEditSelection } from '../TextEditOverlay'
 import { armColorInput, toPickerHex } from '../color-input'
 import { TABLE_SHADING_COLORS } from './table-shading-colors'
 import { useI18n, type StringKey } from '../i18n/locale'
+import { LangSwitch } from './LangSwitch'
 import {
   IconSlideMaster,
   IconBullets,
@@ -1378,6 +1379,9 @@ export function Ribbon({
           </button>
         )}
         <span className="ribbon-tabs-spacer" />
+        {/* The far end of the tab row: past every command, so it never competes
+            with them, and on screen whatever tab or deck is open. */}
+        <LangSwitch />
       </div>
 
       <div className="ribbon-body" ref={bodyRef}>

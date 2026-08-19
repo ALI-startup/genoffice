@@ -168,6 +168,7 @@ export function createShellLanguagePort(bridge: HomeApi): ShellLanguagePort {
     // widening rename rather than a conversion.
     getLanguage: () => bridge.getLanguage(),
     setLanguage: (lang: Lang) => bridge.setLanguage(lang),
+    onLanguageChanged: (handler) => bridge.onLanguageChanged(handler),
   }
 }
 

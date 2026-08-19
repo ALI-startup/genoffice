@@ -26,6 +26,7 @@ export interface PdfAiBridge {
 export interface PdfLanguageBridge {
   getLanguage(): Promise<Lang>
   onLanguageChanged(handler: (lang: Lang) => void): () => void
+  setLanguage(lang: Lang): Promise<void>
 }
 
 /** The window-integration members of PdfApi. Note `sendCloseSaveResult`, which the port calls `reportCloseSaveResult`. */
@@ -69,6 +70,7 @@ export function createPdfLanguagePort(bridge: PdfLanguageBridge): LanguagePort {
   return {
     getLanguage: () => bridge.getLanguage(),
     onLanguageChanged: (handler) => bridge.onLanguageChanged(handler),
+    setLanguage: (lang) => bridge.setLanguage(lang),
   }
 }
 

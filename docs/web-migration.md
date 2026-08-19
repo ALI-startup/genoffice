@@ -655,13 +655,21 @@ read a ref as a path. **sheets is still to do** and is the last copy; the same
 adapter already fits its bridge unchanged, so that collapse is renderer-side work
 only (`App.tsx`, `ExcelShell.tsx`, `ai/AiChatPanel.tsx`, `ai/files-skill.ts`).
 
-### 6.4 Stale `Lang` unions
+### 6.4 Stale `Lang` unions — **fixed**
 
-`Lang` in `@genoffice/i18n` has **19** values. `apps/docs/src/shared/ipc.ts:136`,
-`apps/sheets/src/shared/desktop-api.ts:1858` and
-`apps/slides/src/shared/ipc.ts:982` each inline a stale **11**-value copy,
-missing `pt`, `it`, `pl`, `nl`, `ms`, `he`, `hi`, `zh-TW`. The shell can persist
-those values. This is a live bug independent of the migration.
+`Lang` in `@genoffice/i18n` has **19** values. `apps/docs/src/shared/ipc.ts`,
+`apps/sheets/src/shared/desktop-api.ts` and `apps/slides/src/shared/ipc.ts` each
+inlined a stale **11**-value copy, missing `pt`, `it`, `pl`, `nl`, `ms`, `he`,
+`hi`, `zh-TW` — all values the shell can persist, so this was a live bug
+independent of the migration.
+
+All three now say `Lang`. The visible payoff is in the web composers:
+`createWebSheetsLanguagePort` and `createWebSlidesLanguagePort` used to cast a
+real `Lang` down to the narrower union in both directions, and are now the shared
+port returned verbatim. The bridges also gained `setLanguage`, because the
+language is no longer switched only from the shell's home page — every app's
+chrome carries an English ⇄ Korean toggle, and the shell subscribes to
+`onLanguageChanged` like any other window.
 
 ### 6.5 Standalone pdf has no AI
 

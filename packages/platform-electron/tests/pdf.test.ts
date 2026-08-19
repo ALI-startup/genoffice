@@ -54,6 +54,9 @@ function createFakeBridge() {
         return 'ko'
       },
       onLanguageChanged: subscribe('language'),
+      setLanguage: async (lang: Lang): Promise<void> => {
+        record('setLanguage')(lang)
+      },
       setDirty: record('setDirty'),
       onCloseSaveRequest: subscribe('closeSave'),
       sendCloseSaveResult: record('sendCloseSaveResult'),
@@ -97,10 +100,15 @@ describe('createPdfAiPort', () => {
 })
 
 describe('createPdfLanguagePort', () => {
-  it('forwards getLanguage', async () => {
+  it('forwards getLanguage and setLanguage', async () => {
     const { bridge, calls } = createFakeBridge()
-    expect(await createPdfLanguagePort(bridge).getLanguage()).toBe('ko')
-    expect(calls).toEqual([{ method: 'getLanguage', args: [] }])
+    const port = createPdfLanguagePort(bridge)
+    expect(await port.getLanguage()).toBe('ko')
+    await port.setLanguage('ja')
+    expect(calls).toEqual([
+      { method: 'getLanguage', args: [] },
+      { method: 'setLanguage', args: ['ja'] },
+    ])
   })
 
   it('delivers language changes and unsubscribes', () => {

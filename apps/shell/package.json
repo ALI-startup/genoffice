@@ -47,6 +47,7 @@
   },
   "author": "GenOffice",
   "dependencies": {
+    "@genoffice/ui": "*",
     "simple-icons": "^16.28.0"
   }
 }

@@ -87,6 +87,8 @@ export interface HomeApi {
   getLanguage(): Promise<UiLanguage>
   /** switch + persist the UI language; main rebuilds its menus to match */
   setLanguage(lang: UiLanguage): Promise<void>
+  /** the language switched somewhere else — an editor tab's own toggle; returns an unsubscribe */
+  onLanguageChanged(handler: (lang: UiLanguage) => void): () => void
   /** Genspark account status (gsk login state; to be upgraded to a signup/account system later) */
   accountStatus(): Promise<AccountStatus>
   /** start Genspark login (opens the browser; accountStatus flips to logged-in on completion); returns whether the launch succeeded */
@@ -186,6 +188,10 @@ export const HOME_CHANNELS = {
   openTrash: 'home:open-trash',
   getLanguage: 'home:get-language',
   setLanguage: 'home:set-language',
+  // The editors' broadcast channel, not a home one: the shell listens on the
+  // same channel every editor does, because a switch made in a tab has to
+  // reach the tab strip and the home page too.
+  languageChanged: 'app:language-changed',
   accountStatus: 'home:account-status',
   accountLogin: 'home:account-login',
   accountLoginEvent: 'home:account-login-event',

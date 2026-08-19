@@ -320,3 +320,49 @@
   outline: 2px solid var(--onb-brand);
   outline-offset: 2px;
 }
+
+/* The tour's copy of the language switch: the card's own corner, since the tab
+   strip's copy is behind the modal. Tinted to the card rather than to the tab
+   strip, because that is the surface it sits on. */
+.lang-toggle-onboarding {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 1px;
+  border: 1px solid var(--onb-border-default);
+  border-radius: 999px;
+  font-family: var(--onb-font-sans);
+}
+
+.lang-toggle-onboarding .lang-toggle-option {
+  padding: 3px 9px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+  color: var(--onb-text-secondary);
+  cursor: pointer;
+}
+
+.lang-toggle-onboarding .lang-toggle-option:hover:not(.active) {
+  background: var(--onb-bg-subtle);
+  color: var(--onb-text-primary);
+}
+
+.lang-toggle-onboarding .lang-toggle-option.active {
+  background: var(--onb-bg-subtle);
+  color: var(--onb-text-primary);
+}
+
+.lang-toggle-onboarding .lang-toggle-option:focus-visible {
+  outline: 2px solid var(--onb-brand);
+  outline-offset: 1px;
+}
