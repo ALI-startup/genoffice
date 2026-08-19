@@ -29,6 +29,7 @@ import {
   collectNoteStates,
 } from './univer-sync'
 import type { LazyWorkbookState, UniverRuntime } from './univer-state'
+import { sheetsFile } from './platform'
 
 /** The App refs/state the save flow needs; built fresh per call. */
 export interface SaveContext {
@@ -185,12 +186,14 @@ export async function handleSave(
   }
   if (mode === 'recovery') {
     // Best-effort; a failure only means this tick's copy is skipped
-    await window.desktopApi.writeWorkbookRecovery(payload).catch(() => ({ ok: false }))
+    await sheetsFile()
+      .writeWorkbookRecovery(payload)
+      .catch(() => ({ ok: false }))
     return
   }
   try {
     ctx.setMessage(t('appSavingEdits', { count: total }))
-    const result = await window.desktopApi.saveWorkbookEdits({
+    const result = await sheetsFile().saveWorkbookEdits({
       sessionId: state.file.sessionId,
       mode,
       edits,
@@ -232,7 +235,7 @@ export async function handleSave(
       return
     }
     try {
-      const second = await window.desktopApi.saveWorkbookEdits({
+      const second = await sheetsFile().saveWorkbookEdits({
         sessionId: result.file.sessionId,
         mode: 'save',
         edits: [],

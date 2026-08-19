@@ -14,6 +14,7 @@ import {
 import { parseAddress } from '../domain/cell-address'
 import { t } from './i18n/locale'
 import type { WorkbookChartEdit, WorkbookFile, WorkbookVisualObject } from '../shared/desktop-api'
+import { sheetsWorkbook } from './platform'
 
 type UniverRuntime = ReturnType<typeof createUniver>
 type ActiveWorkbook = NonNullable<ReturnType<UniverRuntime['univerAPI']['getActiveWorkbook']>>
@@ -1025,7 +1026,7 @@ function ImageVisual({
     // Session-added images carry their bytes inline; nothing to fetch.
     if (visual.mediaDataUrl) return
     let isCurrent = true
-    void window.desktopApi
+    void sheetsWorkbook()
       .readWorkbookMedia({
         sessionId: file.sessionId,
         visualId: visual.id,

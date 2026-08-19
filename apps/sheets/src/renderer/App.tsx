@@ -97,6 +97,14 @@ import UniverPresetSheetsTableEnUS from '@univerjs/preset-sheets-table/locales/e
 import '@univerjs/preset-sheets-table/lib/index.css'
 import { greenTheme } from '@univerjs/themes'
 import { createUniver } from './create-univer'
+import {
+  sheetsAi,
+  sheetsAttachments,
+  sheetsFile,
+  sheetsPlatform,
+  sheetsWindow,
+  sheetsWorkbook,
+} from './platform'
 
 import { AgentLoop, composeSkills, type AgentImage } from '@genoffice/agent-core'
 import type { AiSettings } from '@genoffice/ai-provider'
@@ -118,14 +126,13 @@ import type { AiChatMessage } from './ai/AiChatPanel'
 import { createWorkbookSkill } from './ai/workbook-skill'
 import { createFilesSkill } from './ai/files-skill'
 import { createSearchSkill } from './ai/search-skill'
-import { ATTACHMENT_IMAGE_EXTS } from '../shared/desktop-api'
-import type {
-  AttachmentAddResult,
-  AttachmentMeta,
-  MenuAction,
-  WorkbookFile,
-  WorkbookVisualObject,
-} from '../shared/desktop-api'
+import {
+  ATTACHMENT_IMAGE_EXTS,
+  type AttachmentAddResult,
+  type AttachmentMeta,
+  type AttachmentRef,
+} from '@genoffice/platform'
+import type { MenuAction, WorkbookFile, WorkbookVisualObject } from '../shared/desktop-api'
 import type { PageSetupJournalState } from './edit-journal'
 import {
   AUTO_FILL_COMMAND,
@@ -345,7 +352,7 @@ export function App(): React.JSX.Element {
   }, [workbookFile, recomputeSheetContent])
   // The close guard lives in the main process; keep it fed with the badge count.
   useEffect(() => {
-    window.desktopApi?.notifyPendingEdits?.(pendingEdits)
+    sheetsWindow().notifyPendingEdits(pendingEdits)
   }, [pendingEdits])
   const [autoSave, setAutoSave] = useState(
     () => localStorage.getItem('ai-sheets-auto-save') === '1',
@@ -566,9 +573,9 @@ export function App(): React.JSX.Element {
   // name (the save path is synced by the main process)
   useEffect(
     () =>
-      window.desktopApi?.onWorkbookRenamed?.((newName) => {
+      sheetsWindow().onWorkbookRenamed((newName) => {
         setWorkbookFile((prev) => (prev ? { ...prev, name: newName } : prev))
-      }) ?? (() => undefined),
+      }),
     [],
   )
 
@@ -592,7 +599,9 @@ export function App(): React.JSX.Element {
 
   // ── One-time migration: import legacy localStorage history into project-store ──
   useEffect(() => {
-    const api = (window as Window & { projectApi?: typeof window.projectApi }).projectApi
+    // Null on a host with no project store behind it (§6.1): the migration, the history
+    // load and the transcript write below all simply do not happen there.
+    const api = sheetsPlatform().project
     if (!api) return
     const raw = localStorage.getItem(CHAT_STORAGE_KEY)
     if (!raw) return
@@ -653,7 +662,9 @@ export function App(): React.JSX.Element {
 
   // ── project-store: resolve chatId and load history when a workbook opens ──
   useEffect(() => {
-    const api = (window as Window & { projectApi?: typeof window.projectApi }).projectApi
+    // Null on a host with no project store behind it (§6.1): the migration, the history
+    // load and the transcript write below all simply do not happen there.
+    const api = sheetsPlatform().project
     if (!api) return
     // Reset (new workbook or new session)
     chatRefIdsRef.current = null
@@ -706,7 +717,7 @@ export function App(): React.JSX.Element {
     }>,
   ) => {
     const ids = chatRefIdsRef.current
-    const api = (window as Window & { projectApi?: typeof window.projectApi }).projectApi
+    const api = sheetsPlatform().project
     if (!ids || !api) return
     void api
       .appendChat({
@@ -869,10 +880,11 @@ export function App(): React.JSX.Element {
             }
             return next
           })
-          // Signed-out failures get an inline sign-in button; detected via
-          // gsk status rather than matching the localized error text
-          void window.desktopApi
-            .aiGskStatus()
+          // Signed-out failures get an inline sign-in button; detected via gsk status rather
+          // than matching the localized error text. Null on a host with no Genspark sign-in
+          // to offer, and then there is no button to earn: the error stands on its own.
+          void sheetsPlatform()
+            .genspark?.aiGskStatus()
             .then((status) => {
               if (status.loggedIn) return
               setChat((previous) => {
@@ -910,7 +922,7 @@ export function App(): React.JSX.Element {
     const images: AgentImage[] = []
     const failures: string[] = []
     for (const att of imageAtts.slice(0, MAX_IMAGES_PER_MESSAGE)) {
-      const result = await window.desktopApi.readAttachmentImage(att.path)
+      const result = await sheetsAttachments().readAttachmentImage(att.ref)
       if (result.ok && result.base64 && result.mime) {
         images.push({ base64: result.base64, mime: result.mime })
       } else {
@@ -952,8 +964,8 @@ export function App(): React.JSX.Element {
     if (!result) return
     if (result.accepted.length > 0) {
       setAttachments((prev) => {
-        const seen = new Set(prev.map((a) => a.path))
-        return [...prev, ...result.accepted.filter((a) => !seen.has(a.path))]
+        const seen = new Set(prev.map((a) => a.ref))
+        return [...prev, ...result.accepted.filter((a) => !seen.has(a.ref))]
       })
     }
     if (result.rejected.length > 0) {
@@ -963,20 +975,20 @@ export function App(): React.JSX.Element {
   }
 
   async function handlePickAttachments(): Promise<void> {
-    mergeAttachments(await window.desktopApi.pickAttachments())
+    mergeAttachments(await sheetsAttachments().pickAttachments())
   }
 
-  async function handleAddAttachmentPaths(paths: readonly string[]): Promise<void> {
-    if (paths.length === 0) return
-    mergeAttachments(await window.desktopApi.addAttachmentPaths([...paths]))
+  async function handleAddAttachments(refs: readonly AttachmentRef[]): Promise<void> {
+    if (refs.length === 0) return
+    mergeAttachments(await sheetsAttachments().addAttachments([...refs]))
   }
 
   async function handleAddPastedImage(data: ArrayBuffer, ext: string): Promise<void> {
-    mergeAttachments(await window.desktopApi.addPastedImage(data, ext))
+    mergeAttachments(await sheetsAttachments().addPastedImage(data, ext))
   }
 
-  function handleRemoveAttachment(path: string): void {
-    setAttachments((prev) => prev.filter((a) => a.path !== path))
+  function handleRemoveAttachment(ref: AttachmentRef): void {
+    setAttachments((prev) => prev.filter((a) => a.ref !== ref))
   }
 
   function handleStopAgent(): void {
@@ -1023,7 +1035,14 @@ export function App(): React.JSX.Element {
   }
 
   useEffect(() => {
-    void window.desktopApi.getAiSettings().then(setAiSettingsState)
+    // A host that cannot answer leaves the panel on its defaults rather than failing the
+    // page: on the desktop this is an IPC call that always resolves, but in a browser it is
+    // a request to the BFF, and an unreachable one must not be an unhandled rejection.
+    void sheetsAi()
+      .getAiSettings()
+      .then(setAiSettingsState, (error: unknown) => {
+        console.warn('AI settings unavailable; keeping the defaults', error)
+      })
   }, [])
 
   useEffect(() => {
@@ -1100,7 +1119,7 @@ export function App(): React.JSX.Element {
     univerRef.current = runtime
     // The window always starts blank now; still consume the one-shot
     // new-blank flag so it doesn't leak into the next workbook open.
-    void window.desktopApi?.consumeNewBlankWorkbook?.()
+    void sheetsFile().consumeNewBlankWorkbook()
     // Univer 0.25.1 also badges text parseable as date/time, phone numbers, and
     // other long numeric identifiers with "Number stored as text". Those values
     // should remain text, so clear the view type before the built-in marker
@@ -1839,13 +1858,15 @@ export function App(): React.JSX.Element {
       },
     )
     // File-menu accelerators (⌘O/⌘S/⇧⌘S) arrive from the main process.
+    // Null on a host with no application menu to command from; the same actions are on
+    // this app's own toolbar, so there is nothing to substitute here.
     const unsubscribeMenu =
-      window.desktopApi?.onMenuAction((action) => menuActionRef.current(action)) ??
+      sheetsPlatform().menu?.onMenuAction((action) => menuActionRef.current(action)) ??
       (() => undefined)
     // Close guard chose Save: run the journal save and report the outcome.
-    const unsubscribeCloseSave =
-      window.desktopApi?.onCloseSaveRequest?.(() => void closeSaveRef.current()) ??
-      (() => undefined)
+    const unsubscribeCloseSave = sheetsWindow().onCloseSaveRequest(
+      () => void closeSaveRef.current(),
+    )
     const selectionDisposable = runtime.univerAPI.addEvent(
       runtime.univerAPI.Event.SelectionChanged,
       () => {
@@ -1881,7 +1902,7 @@ export function App(): React.JSX.Element {
             ? journaled
             : state.hyperlinkTargets.get(worksheet.getSheetId())?.get(`${row}:${column}`)
         if (target?.startsWith('http')) {
-          void window.desktopApi.openExternal(target)
+          void sheetsWindow().openExternal(target)
         } else if (target?.startsWith('#')) {
           navigateToAnchor(runtime, target.slice(1), setMessage)
         }
@@ -1936,7 +1957,7 @@ export function App(): React.JSX.Element {
       lazyWorkbookRef.current = null
       clearLazyState(lazyState)
       if (lazyState) {
-        void window.desktopApi.closeWorkbook(lazyState.file.sessionId)
+        void sheetsFile().closeWorkbook(lazyState.file.sessionId)
       }
       runtime.univer.dispose()
       univerRef.current = null
@@ -2077,7 +2098,7 @@ export function App(): React.JSX.Element {
         .find((name) => name.length > 0 && !DEFAULT_SHEET_NAME_RE.test(name))
       if (candidate) {
         try {
-          await window.desktopApi.autoRenameWorkbook(after.file.sessionId, candidate)
+          await sheetsFile().autoRenameWorkbook(after.file.sessionId, candidate)
         } catch {
           // naming is best-effort; the save itself already succeeded
         }
@@ -2186,7 +2207,7 @@ export function App(): React.JSX.Element {
     try {
       for (const structural of stored.plan.structuralChanges) {
         if (structural.op.op !== 'add_image' || imageData.has(structural.op.path)) continue
-        const image = await window.desktopApi.readLocalImage({ path: structural.op.path })
+        const image = await sheetsFile().readLocalImage({ path: structural.op.path })
         const dataUrl = `data:${image.mediaType};base64,${image.base64}`
         const size = await measureImage(dataUrl)
         imageData.set(structural.op.path, { dataUrl, mediaType: image.mediaType, ...size })
@@ -2590,7 +2611,9 @@ export function App(): React.JSX.Element {
     const previous = lazyWorkbookRef.current
     if (previous) {
       clearLazyState(previous)
-      void window.desktopApi.closeWorkbook(previous.file.sessionId).catch(() => undefined)
+      void sheetsFile()
+        .closeWorkbook(previous.file.sessionId)
+        .catch(() => undefined)
     }
     if (demoVisualInstallTimerRef.current) {
       clearTimeout(demoVisualInstallTimerRef.current)
@@ -2654,7 +2677,7 @@ export function App(): React.JSX.Element {
     for (const sheet of selected.sheets) {
       for (const pivot of sheet.pivotTables) {
         if (pivot.cachePath === null) continue
-        void window.desktopApi
+        void sheetsWorkbook()
           .readPivotDefinition({
             sessionId: selected.sessionId,
             path: pivot.path,
@@ -2749,10 +2772,7 @@ export function App(): React.JSX.Element {
     if (workbookOpeningRef.current) return
     workbookOpeningRef.current = true
     try {
-      if (!window.desktopApi) {
-        throw new Error(t('appBridgeUnavailable'))
-      }
-      const selected = await window.desktopApi.selectWorkbook()
+      const selected = await sheetsFile().selectWorkbook()
       if (!selected) {
         setMessage(t('appOpenCanceled'))
         return
@@ -2772,16 +2792,14 @@ export function App(): React.JSX.Element {
   closeSaveRef.current = async () => {
     const state = lazyWorkbookRef.current
     if (!state || journalSize(state.editJournal) === 0) {
-      window.desktopApi?.reportCloseSaveResult?.(true)
+      sheetsWindow().reportCloseSaveResult(true)
       return
     }
     await handleSave('save')
     // handleSave swallows errors into the status bar; a drained journal
     // (fresh state after openLazyWorkbook) is the success signal.
     const after = lazyWorkbookRef.current
-    window.desktopApi?.reportCloseSaveResult?.(
-      after === null || journalSize(after.editJournal) === 0,
-    )
+    sheetsWindow().reportCloseSaveResult(after === null || journalSize(after.editJournal) === 0)
   }
   function sortColumnOptions(): { label: string; colIndex: number }[] {
     const range = univerRef.current?.univerAPI.getActiveWorkbook()?.getActiveRange()
@@ -2965,7 +2983,7 @@ export function App(): React.JSX.Element {
         attachments={attachments}
         attachNotice={attachNotice}
         onPickAttachments={() => void handlePickAttachments()}
-        onAddAttachmentPaths={(paths) => void handleAddAttachmentPaths(paths)}
+        onAddAttachments={(refs) => void handleAddAttachments(refs)}
         onAddPastedImage={(data, ext) => void handleAddPastedImage(data, ext)}
         onRemoveAttachment={handleRemoveAttachment}
         onPromptChange={setPrompt}

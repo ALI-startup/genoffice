@@ -1,12 +1,13 @@
 import { createIpcTransport, type AgentTransport } from '@genoffice/agent-core'
 import { t } from '../i18n/locale'
+import { sheetsAi } from '../platform'
 
-/** The shared IPC transport wired to the sheets preload bridge (window.desktopApi). */
+/** The shared streaming transport, wired to whichever host is installed (see ../platform). */
 export function createElectronTransport(): AgentTransport {
   return createIpcTransport({
-    onStream: (listener) => window.desktopApi.onAiStream(listener),
-    start: (request) => window.desktopApi.aiStream(request),
-    cancel: (requestId) => void window.desktopApi.aiStreamCancel(requestId),
+    onStream: (listener) => sheetsAi().onAiStream(listener),
+    start: (request) => sheetsAi().aiStream(request),
+    cancel: (requestId) => void sheetsAi().aiStreamCancel(requestId),
     task: 'chat',
     unknownErrorText: () => t('aiUnknownError'),
     timeoutErrorText: () => t('aiTimeoutError'),

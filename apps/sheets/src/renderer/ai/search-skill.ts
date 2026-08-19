@@ -1,5 +1,6 @@
 import type { AgentSkill } from '@genoffice/agent-core'
 import { t } from '../i18n/locale'
+import { sheetsPlatform } from '../platform'
 
 /**
  * Web-search AgentSkill (same source as docs/slides web_search):
@@ -38,7 +39,19 @@ export function createSearchSkill(): AgentSkill {
       if (!query) {
         return { output: 'query must not be empty', isError: true, summary: t('aiToolWebSearch') }
       }
-      const r = await window.desktopApi.webSearch(query, Number(call.input.maxResults) || 6)
+      // The search port is null on a host with no search service of its own to call — a
+      // browser, today, since the BFF has no route for it. The tool then reports that it
+      // cannot run rather than returning an empty result set the model would read as
+      // "nothing on the web matches".
+      const search = sheetsPlatform().search
+      if (!search) {
+        return {
+          output: 'web search is not available on this host',
+          isError: true,
+          summary: t('aiToolWebSearch'),
+        }
+      }
+      const r = await search.webSearch(query, Number(call.input.maxResults) || 6)
       const lines: string[] = []
       if (r.answer) lines.push(`Direct answer: ${r.answer}\n`)
       r.results.forEach((it, i) =>

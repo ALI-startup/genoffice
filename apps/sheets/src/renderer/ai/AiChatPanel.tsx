@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react'
 import { AiComposer, AiTypingIndicator } from '@genoffice/ui'
 import { GensparkMark } from '../ribbon-icons'
 import type { ChangePlan } from '../../domain/workbook.types'
-import type { AttachmentMeta } from '../../shared/desktop-api'
+import { type AttachmentMeta, type AttachmentRef } from '@genoffice/platform'
+import { sheetsAttachments, sheetsPlatform } from '../platform'
 import { useI18n, type TFunc } from '../i18n/locale'
 import { Markdown } from '@genoffice/ui'
 import sendEnterOn from '../assets/send-enter-on.png'
@@ -65,7 +66,7 @@ export function AiChatPanel({
   attachments,
   attachNotice,
   onPickAttachments,
-  onAddAttachmentPaths,
+  onAddAttachments,
   onAddPastedImage,
   onRemoveAttachment,
   prompt,
@@ -89,11 +90,11 @@ export function AiChatPanel({
   readonly attachments: readonly AttachmentMeta[]
   readonly attachNotice: string | null
   readonly onPickAttachments: () => void
-  readonly onAddAttachmentPaths: (paths: readonly string[]) => void
+  readonly onAddAttachments: (refs: readonly AttachmentRef[]) => void
   /// Clipboard-pasted bitmaps (screenshots etc. without a local path): bytes +
   /// extension
   readonly onAddPastedImage: (data: ArrayBuffer, ext: string) => void
-  readonly onRemoveAttachment: (path: string) => void
+  readonly onRemoveAttachment: (ref: AttachmentRef) => void
   readonly prompt: string
   readonly preview: ChangePlan | null
   readonly aiBusy: boolean
@@ -208,6 +209,10 @@ export function AiChatPanel({
 
   const canSend = prompt.trim().length > 0 && !aiBusy
 
+  // Null on a host with no Genspark sign-in to offer (it shells out to the `gsk` CLI), and
+  // the sign-in button is then absent rather than inert.
+  const genspark = sheetsPlatform().genspark
+
   const send = (): void => {
     if (!canSend) return
     stickToBottomRef.current = true
@@ -218,26 +223,35 @@ export function AiChatPanel({
     e.preventDefault()
     e.stopPropagation()
     setDragOver(false)
-    const paths = Array.from(e.dataTransfer.files)
-      .map((f) => window.desktopApi.getPathForFile(f))
-      .filter(Boolean)
-    if (paths.length > 0) onAddAttachmentPaths(paths)
+    void (async () => {
+      const port = sheetsAttachments()
+      const resolved = await Promise.all(
+        Array.from(e.dataTransfer.files).map((f) => port.refForFile(f)),
+      )
+      const refs = resolved.filter((ref): ref is AttachmentRef => ref !== null)
+      if (refs.length > 0) onAddAttachments(refs)
+    })()
   }
 
-  /** Files pasted into the input: ones with a local path go the regular
-   * attachment route; pure bitmaps like screenshots are persisted by the host */
+  /** Files pasted into the input: ones the host can address go the regular attachment
+   * route; pure bitmaps like screenshots hand their bytes over instead */
   const onPasteFiles = (files: File[]): void => {
-    const paths: string[] = []
-    for (const f of files) {
-      const p = window.desktopApi.getPathForFile(f)
-      if (p) {
-        paths.push(p)
-        continue
+    void (async () => {
+      const port = sheetsAttachments()
+      const refs: AttachmentRef[] = []
+      for (const f of files) {
+        // null is a real answer, not a failure: a clipboard bitmap has no backing file for
+        // any host to name, which is exactly what addPastedImage is for.
+        const ref = await port.refForFile(f)
+        if (ref !== null) {
+          refs.push(ref)
+          continue
+        }
+        const ext = PASTE_MIME_EXT[f.type] ?? f.name.split('.').pop()?.toLowerCase() ?? 'bin'
+        onAddPastedImage(await f.arrayBuffer(), ext)
       }
-      const ext = PASTE_MIME_EXT[f.type] ?? f.name.split('.').pop()?.toLowerCase() ?? 'bin'
-      void f.arrayBuffer().then((buf) => onAddPastedImage(buf, ext))
-    }
-    if (paths.length > 0) onAddAttachmentPaths(paths)
+      if (refs.length > 0) onAddAttachments(refs)
+    })()
   }
 
   return (
@@ -346,11 +360,8 @@ export function AiChatPanel({
                     </button>
                   </div>
                 )}
-                {entry.loginRequired && (
-                  <button
-                    className="ai-login-btn"
-                    onClick={() => void window.desktopApi.aiGskLogin()}
-                  >
+                {entry.loginRequired && genspark && (
+                  <button className="ai-login-btn" onClick={() => void genspark.aiGskLogin()}>
                     {t('aiGskLoginBtn')}
                   </button>
                 )}
@@ -412,12 +423,12 @@ export function AiChatPanel({
         {attachments.length > 0 && (
           <div className="ai-attachments">
             {attachments.map((attachment) => (
-              <span key={attachment.path} className="ai-attachment-chip" title={attachment.path}>
+              <span key={attachment.ref} className="ai-attachment-chip" title={attachment.location}>
                 <IconPaperclip size={11} />
                 {attachment.name}
                 <button
                   className="ai-attachment-remove"
-                  onClick={() => onRemoveAttachment(attachment.path)}
+                  onClick={() => onRemoveAttachment(attachment.ref)}
                   title={t('aiRemoveAttachment')}
                 >
                   ×

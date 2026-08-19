@@ -81,6 +81,7 @@ import {
   type AdvancedFilterColumn,
   type AdvancedFilterCondition,
 } from './AdvancedFilterDialog'
+import { sheetsWorkbook } from './platform'
 import {
   installSparklines,
   installWorkbookVisuals,
@@ -754,7 +755,7 @@ export async function activateFormulaClosure(
       if (lazyWorkbookRef.current !== state) return
       let result
       try {
-        result = await window.desktopApi.readWorkbookFormulas({
+        result = await sheetsWorkbook().readWorkbookFormulas({
           sessionId: state.file.sessionId,
           sheetId: sheet.id,
         })
@@ -796,7 +797,7 @@ export async function activateFormulaClosure(
     for (const range of closureFetchRanges(cells)) {
       let result
       try {
-        result = await window.desktopApi.readWorkbookRange({
+        result = await sheetsWorkbook().readWorkbookRange({
           sessionId: state.file.sessionId,
           sheetId,
           range,
@@ -854,7 +855,7 @@ async function readSheetRangeMapped(
 ): Promise<MappedRangeRead | null> {
   const ops = state.editJournal.structuralOps.get(sheetId) ?? []
   if (ops.length === 0) {
-    const raw = await window.desktopApi.readWorkbookRange({
+    const raw = await sheetsWorkbook().readWorkbookRange({
       sessionId: state.file.sessionId,
       sheetId,
       range: screenRange,
@@ -889,7 +890,7 @@ async function readSheetRangeMapped(
   let raw: WorkbookRangeResult | null = null
   for (let startRow = fileRange.startRow; startRow <= fileRange.endRow; startRow += batchRows) {
     const endRow = Math.min(startRow + batchRows - 1, fileRange.endRow)
-    const batch = await window.desktopApi.readWorkbookRange({
+    const batch = await sheetsWorkbook().readWorkbookRange({
       sessionId: state.file.sessionId,
       sheetId,
       range: { ...fileRange, startRow, endRow },
@@ -1234,7 +1235,7 @@ async function recalcFormulaCellKeys(
 ): Promise<ReadonlySet<number> | null> {
   const cached = state.recalc.formulaCells.get(sheetId)
   if (cached) return cached
-  const result = await window.desktopApi.readWorkbookFormulas({
+  const result = await sheetsWorkbook().readWorkbookFormulas({
     sessionId: state.file.sessionId,
     sheetId,
   })
@@ -1302,7 +1303,7 @@ async function runFormulaRecalc(
     const viewportStartRow = state.loadedRanges.get(sheetId)?.startRow ?? 0
     const reads = recalcReadRanges(keys, viewportStartRow, RECALC_READ_BUDGET)
     if (reads.length === 0) return
-    const result = await window.desktopApi.recalcWorkbook({
+    const result = await sheetsWorkbook().recalcWorkbook({
       sessionId: state.file.sessionId,
       edits,
       reads: reads.map((range) => ({ sheetId, range })),
@@ -2068,7 +2069,7 @@ export async function preloadEntireWorkbook(
       }
       let result
       try {
-        result = await window.desktopApi.readWorkbookRange({
+        result = await sheetsWorkbook().readWorkbookRange({
           sessionId: state.file.sessionId,
           sheetId,
           range,
@@ -2081,7 +2082,7 @@ export async function preloadEntireWorkbook(
         ) {
           await new Promise((resolve) => setTimeout(resolve, 150))
           guard += 1
-          result = await window.desktopApi.readWorkbookRange({
+          result = await sheetsWorkbook().readWorkbookRange({
             sessionId: state.file.sessionId,
             sheetId,
             range,

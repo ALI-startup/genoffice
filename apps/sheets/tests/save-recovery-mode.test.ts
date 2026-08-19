@@ -6,6 +6,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { handleSave, type SaveContext } from '../src/renderer/save-actions'
 import { createEditJournal, recordSetRangeValues } from '../src/renderer/edit-journal'
+import { installTestPlatform } from './helpers/platform'
 
 const saveWorkbookEdits = vi.fn()
 const writeWorkbookRecovery = vi.fn()
@@ -13,9 +14,7 @@ const writeWorkbookRecovery = vi.fn()
 beforeEach(() => {
   saveWorkbookEdits.mockReset().mockResolvedValue({ canceled: true })
   writeWorkbookRecovery.mockReset().mockResolvedValue({ ok: true })
-  ;(globalThis as unknown as { window: unknown }).window = {
-    desktopApi: { saveWorkbookEdits, writeWorkbookRecovery },
-  }
+  installTestPlatform({ saveWorkbookEdits, writeWorkbookRecovery })
 })
 
 function ctxWith(opts: { dirty: boolean; needsSaveAs?: boolean }): {

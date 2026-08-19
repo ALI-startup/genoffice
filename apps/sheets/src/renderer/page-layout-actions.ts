@@ -6,11 +6,17 @@
  * page-layout view), everything lands in the saved file.
  */
 import { columnLabel } from '../domain/cell-address'
-import { isSheetRemoved, journalSize, recordPageSetup, type PageSetupJournalState } from './edit-journal'
+import {
+  isSheetRemoved,
+  journalSize,
+  recordPageSetup,
+  type PageSetupJournalState,
+} from './edit-journal'
 import type { HeaderFooterResult } from './HeaderFooterDialog'
 import { t } from './i18n/locale'
 import { buildSheetPrintPayload, type PrintWorksheet } from './print-html'
 import type { LazyWorkbookState, UniverRuntime } from './univer-state'
+import { sheetsPlatform } from './platform'
 
 const PAPER_NAMES: Record<string, string> = {
   1: 'Letter',
@@ -208,8 +214,15 @@ export async function handleExportPdf(ctx: PageLayoutContext): Promise<void> {
       `${baseName}.pdf`,
       worksheet.getSheetName(),
     )
+    // Null on a host that cannot write a PDF file. The command that reaches this line is
+    // hidden there, so this is the belt to that UI's braces rather than the only guard.
+    const pdfExport = sheetsPlatform().pdfExport
+    if (!pdfExport) {
+      ctx.setMessage(t('appPdfExportFailed'))
+      return
+    }
     ctx.setMessage(t('appPdfRendering'))
-    const result = await window.desktopApi.exportPdf(payload)
+    const result = await pdfExport.exportPdf(payload)
     ctx.setMessage(
       result.canceled ? t('appPdfCanceled') : t('appPdfExported', { path: result.path }),
     )

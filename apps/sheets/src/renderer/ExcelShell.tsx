@@ -18,7 +18,7 @@ import { type SelectionFormat } from './selection-format'
 
 import type { ChartSeriesVisualState } from '../domain/chart-visual'
 import type { ChangePlan } from '../domain/workbook.types'
-import type { AttachmentMeta } from '../shared/desktop-api'
+import type { AttachmentMeta, AttachmentRef } from '@genoffice/platform'
 import { AiChatPanel, type AiChatMessage } from './ai/AiChatPanel'
 import {
   PivotDialog,
@@ -133,9 +133,9 @@ interface ExcelShellProps {
   readonly attachments: readonly AttachmentMeta[]
   readonly attachNotice: string | null
   readonly onPickAttachments: () => void
-  readonly onAddAttachmentPaths: (paths: readonly string[]) => void
+  readonly onAddAttachments: (refs: readonly AttachmentRef[]) => void
   readonly onAddPastedImage: (data: ArrayBuffer, ext: string) => void
-  readonly onRemoveAttachment: (path: string) => void
+  readonly onRemoveAttachment: (ref: AttachmentRef) => void
   readonly onPromptChange: (prompt: string) => void
   /** Send the composer text, or the given instruction when provided */
   readonly onSend: (instruction?: string) => void
@@ -226,7 +226,7 @@ export function ExcelShell({
   attachments,
   attachNotice,
   onPickAttachments,
-  onAddAttachmentPaths,
+  onAddAttachments,
   onAddPastedImage,
   onRemoveAttachment,
   onGetSortColumns,
@@ -425,7 +425,7 @@ export function ExcelShell({
           attachments={attachments}
           attachNotice={attachNotice}
           onPickAttachments={onPickAttachments}
-          onAddAttachmentPaths={onAddAttachmentPaths}
+          onAddAttachments={onAddAttachments}
           onAddPastedImage={onAddPastedImage}
           onRemoveAttachment={onRemoveAttachment}
           prompt={prompt}

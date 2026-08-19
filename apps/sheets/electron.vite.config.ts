@@ -1,5 +1,6 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
+import { hostAlias } from './vite.shared'
 
 export default defineConfig({
   main: {
@@ -25,6 +26,8 @@ export default defineConfig({
     plugins: [],
   },
   renderer: {
+    // The build-time host seam; see vite.shared.ts.
+    resolve: { alias: hostAlias('electron') },
     plugins: [react()],
   },
 })
