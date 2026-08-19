@@ -214,7 +214,7 @@ export const AI_PROVIDERS: AiProviderMeta[] = [
     id: 'vllm',
     label: 'vLLM',
     models: ['qwen38-27b', 'qwen36-35b'],
-    defaultModel: 'qwen38-27b',
+    defaultModel: 'qwen36-35b',
     keyPlaceholder: 'Not required',
     protocol: 'openai-compatible',
     defaultBaseUrl: 'http://localhost:8000/v1',
