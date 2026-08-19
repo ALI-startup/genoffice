@@ -18,10 +18,11 @@ import {
   type PageProgressItem,
 } from './slides-skill'
 import { extractJsonObject, parseOutlineJson } from './outline-json'
+import { PAGE_LAYOUTS } from './deck-compose'
 import { createFilesSkill } from './files-skill'
 import { createElectronTransport } from './transport'
 import { renderSlidesToPngBase64 } from '../export-render'
-import { isQcEnabled, qcSlidePage, QC_MAX_PAGES } from './slide-qc'
+import { isQcEnabled, mergeQcPages, qcSlidePage, QC_MAX_PAGES } from './slide-qc'
 import { useI18n, t as tGlobal, aiLangDirective, type TFunc } from '../i18n/locale'
 import { Markdown } from '@samugen/ui'
 import { SamuGenMark } from '../components/icons'
@@ -610,8 +611,54 @@ export function AiPanel({
           setActiveClarify(questions)
         })
       },
-      // Cloud single-page generation (gsk slide_generate): the cloud service owns HTML writing +
-      // pptx conversion; the deck-level style/outline stay local.
+      // ── In-tool page writing: one LLM call turns a page's brief into a PageSpec — content and
+      // a layout name, never geometry — which is what lets generation run on any configured provider.
+      writePageSpec: async (a) => {
+        // Content only: no coordinates, no CSS, no pptx. That is what lets this
+        // run on whatever provider is configured — a small local model can
+        // answer this prompt, and `composePage` does the design either way.
+        const sys =
+          'You write one presentation page as JSON. Output only one JSON object — no explanation, no markdown fences.\n' +
+          'Format: {"layout":"<layout name>","blocks":[ ... ]}\n' +
+          'Block kinds, use only what the page needs:\n' +
+          '  {"kind":"title","text":"..."}                      the page heading (almost always include one)\n' +
+          '  {"kind":"subtitle","text":"..."}                   one supporting line\n' +
+          '  {"kind":"bullets","items":["...","..."]}           2-6 short points, one line each\n' +
+          '  {"kind":"paragraph","text":"..."}                  prose, when bullets would fragment the thought\n' +
+          '  {"kind":"stats","items":[{"value":"42%","label":"..."}]}   big figures with captions (1-4)\n' +
+          '  {"kind":"columns","items":[{"heading":"...","body":"..."}]} 2-3 titled columns\n' +
+          '  {"kind":"image","query":"english image search keywords"}   where a picture belongs\n' +
+          '  {"kind":"note","text":"..."}                       a source or caveat line\n' +
+          'Rules:\n' +
+          '- Keep the given layout unless the content plainly does not fit it; then pick another from the list.\n' +
+          '- Write the real content from the brief. Never write placeholders like "Lorem ipsum", "TBD" or "[insert figure]".\n' +
+          '- Do not invent precise figures. Use only numbers present in the brief or the reference material; if none, write qualitatively.\n' +
+          '- Titles under 60 characters, bullets under 120. Fewer, sharper points beat more.\n' +
+          '- Include an image block only for a layout that shows one.'
+        const layouts = `Available layouts: ${PAGE_LAYOUTS.join(', ')}. Use: ${a.layout}`
+        const parts = [
+          layouts,
+          a.styleSkill
+            ? `Deck style (for tone; you do not set colours):\n${a.styleSkill.slice(0, 1200)}`
+            : '',
+          a.context
+            ? `Reference material — all real names, figures and facts come from here:\n${a.context.slice(0, 4000)}`
+            : '',
+          a.imageUrls.length
+            ? `An image is already available for this page, so an image block will be filled.`
+            : '',
+          `Page type: ${a.pageType}`,
+          a.title ? `Page title: ${a.title}` : '',
+          `Brief: ${a.brief}`,
+          'Output the JSON object.',
+        ].filter(Boolean)
+        const r = await runLlmOnce(sys, parts.join('\n\n'), 90000, true, a.signal, 2000)
+        if (!r.ok || !r.text) return { ok: false, error: r.error ?? tGlobal('aiErrEmptyOutput') }
+        const parsed = parseOutlineJson(r.text)
+        return parsed
+          ? { ok: true, spec: parsed }
+          : { ok: false, error: tGlobal('aiErrEmptyOutput') }
+      },
       // ── In-tool planning: given topic+page count, the LLM produces a structured outline (batched recursion scheduled by the skill).
       // Fixes "missing pages at the input side" at the root: the main agent doesn't hand-write dozens of pages of pages JSON.
       // In-tool independent Style Skill generation: one focused LLM call thinking only about the design system.
@@ -703,6 +750,11 @@ export function AiPanel({
         return { ok: false, error: lastErr }
       },
       fitWidthPx,
+      // Pages a generation tool just landed queue up for the layout QC pass, which runs
+      // once the whole conversation turn is done (onDone) rather than mid-run.
+      onPagesGenerated: (indexes: number[]) => {
+        qcPagesRef.current = mergeQcPages(qcPagesRef.current, indexes)
+      },
       onProgress: (event: DeckProgressEvent) => {
         // Notify the App layer to update the canvas top progress bar
         onDeckProgressRef.current?.(event)

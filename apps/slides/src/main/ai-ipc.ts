@@ -180,7 +180,8 @@ export function registerAiIpc(): void {
 // never called; docs does not have these channels, so putting them in the wrong place raises
 // "No handler registered".
 export function registerSlidesOnlyAiIpc(): void {
-  // gsk (SamuGen CLI) capabilities: AI image generation / media analysis. Returns an error prompt when not logged in.
+  // AI image generation on the configured image provider; an unconfigured provider is
+  // reported to the caller rather than thrown.
   ipcMain.handle(
     'ai:generate-image',
     async (

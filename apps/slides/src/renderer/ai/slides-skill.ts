@@ -8,6 +8,16 @@ import type {
 } from '@samugen/pptx-render'
 import type { AddSmartArtOp, AgentToolCall, AgentToolDef, EditParagraph } from '../../shared/ipc'
 import { auditSlideLayout, formatAudit } from './layout-audit'
+import {
+  composePage,
+  layoutForPlan,
+  PAGE_LAYOUTS,
+  parseDeckStyle,
+  parsePageSpec,
+  type ComposedElement,
+  type PageLayout,
+  type PageSpec,
+} from './deck-compose'
 import { runLayoutScript, type LayoutScriptElement, type SlideStylePatch } from './layout-script'
 import { t } from '../i18n/locale'
 import { slidesDoc, slidesFile } from '../platform'
@@ -77,6 +87,12 @@ export interface DeckAccess {
    * memory, never persisted or journaled.
    */
   onProgress?(event: DeckProgressEvent): void
+  /**
+   * Page indexes (0-based) a generation tool just landed. The host queues them for the
+   * post-generation layout QC pass; the skill cannot run that itself, because QC needs its
+   * own agent loop with a screenshot of the finished page.
+   */
+  onPagesGenerated?(slideIndexes: number[]): void
   /** Survey: shows a card with options and waits for the user's choices, returning an answer summary. */
   askClarification?(questions: ClarifyQuestion[]): Promise<{ answers: string; cancelled?: boolean }>
   /**
@@ -118,6 +134,22 @@ export interface DeckAccess {
     outline?: { core_hook?: unknown; pages?: unknown }
     error?: string
   }>
+  /**
+   * In-tool page writing: one LLM call turns a page's brief into a `PageSpec` —
+   * what goes on the page, not where. Placement is `composePage`'s job, which is
+   * what lets this run on any configured provider: the model is never asked for
+   * coordinates, CSS or pptx, only for content and a layout name.
+   */
+  writePageSpec?(args: {
+    title: string
+    brief: string
+    layout: string
+    pageType: string
+    styleSkill?: string
+    context?: string
+    imageUrls: string[]
+    signal?: AbortSignal
+  }): Promise<{ ok: boolean; spec?: unknown; error?: string }>
   /**
    * Persist the current draft's Style Skill as a sidecar file (same directory and name as the draft, .styleskill.json).
    * fail-open: failure doesn't block the main path.
@@ -165,9 +197,10 @@ export interface ClarifyQuestion {
 const AGENT_SYSTEM_PROMPT = `You are the AI assistant inside SamuGen Slides (a slide editor), helping users improve and generate presentations.
 
 ## Most important tool-selection principles (judge the scenario before acting)
-- **Creating a whole new deck (from scratch)** → first gather material (web_search) and images (image_search), then build it page by page with add_blank_slide + the add_* element tools, driving the layout with execute_slide_script. Establish one style up front (background, accent colour, title/body fonts and sizes) and apply it to every page you add, so the deck reads as one design rather than a pile of pages.
-- **Adding 1 page or a few pages to an existing deck** → read the neighbouring pages first (read_slide / get_deck_context) to pick up their style, then add the page and match it.
-- **Redoing / redesigning an existing page** → read_slide for the current copy, then rewrite the page's elements in place with execute_slide_script, keeping the real text and figures verbatim.
+- **Creating a whole new deck (from scratch)** → gather material first (web_search for facts, and pass what you found as the context argument), then call **generate_deck** with topic + approx_pages. It designs one visual style, plans the pages, writes each one, fetches the images it asked for, and lands the pages as they finish. Don't hand-assemble a deck page by page with the element tools — that is slower and looks worse.
+- **Adding 1 page or a few pages to an existing deck** → generate_deck with pages (a brief per new page) and insert_mode:"append". Read the existing pages first (get_deck_context / read_slide) and describe their look in the style argument so the new pages match.
+- **Redoing / redesigning an existing page** (user says "redo this page / try another layout / make it prettier") → **regenerate_slide**: read_slide first, then write a brief that copies the text and figures to keep verbatim and says what should change. Other pages are untouched and the user can undo.
+- **After generation, tweak — don't regenerate.** Every generated page is made of real editable elements, so a specific change is a set_element_* / execute_slide_script edit. Only redo a whole page when the user asks for that.
 - **Deleting a page** → delete_slide(slideIndex).
 - **Modifying / fine-tuning existing elements** (position/size/alignment/distribution/relative nudges/text/style/fill/stroke, one or many elements) → always prefer **execute_slide_script** and do it in one script (see "Editing existing elements" below; read-write combined, no read_slide first). Don't blind-fire individual set_element_* calls. Add/delete elements with add_* / delete_element.
 - **Elements inside a group**: direct children of a top-level group (marked "in group <id>" / els groupId) are edited exactly like normal elements — same script primitives and set_element_* tools, absolute coordinates. Only elements nested in a sub-group are read-only: call ungroup_element on the outer group first (ids on the page change afterwards; the result returns the fresh list). To delete a single group member, ungroup first too.
@@ -195,17 +228,17 @@ Forbidden: running read_slide "just to get coordinates" and then stopping, blind
 - Omit fontFamily by default (inherits the theme, keeps the deck consistent — recommended); only specify it when the user names a font.
 - Keep slide copy concise: punchy titles, bulleted body. Don't rewrite bullets into long sentences unless asked.
 
-Generating a whole deck / adding pages (HTML pipeline first):
+Generating a whole deck / adding pages (generate_deck first):
 
-[Plan before generating a whole deck — you are a professional deck planner; plan first, then write HTML (this decides the output quality)]
+[Plan before generating a whole deck — you are a professional deck planner; the plan decides the output quality. You never write HTML, CSS or coordinates: generate_deck writes each page's content with the model and the layout engine places it as real editable elements.]
 
 Step 0 Questionnaire (mandatory when creating a whole new deck): first call ask_clarification to show a questionnaire card with 2–4 key trade-off questions for this topic (audience, usage scenario, tone/style, content focus), each with genuinely different options. **The user's choices directly determine the deck's Core Hook and style**; do the planning below only after getting the answers. (Ask only for a whole new deck; adding a few pages or editing needs no questionnaire. The card shows automatically — don't repeat the questions in your reply text.)
 
 Step A Research: when the topic involves facts/attractions/data, run web_search 1–2 times first for real content. **Use real data and facts in the design; no "XX%" or placeholder names**.
 Step B Image strategy: with generate_deck you **don't need image_search in advance** — the system auto-searches internally per page from the planned image_queries keywords and fills real URLs back (each keyword searched once, deduped across pages). **Travel/product/people/brand decks get images by default without the user asking; never fake images with CSS placeholders — slots needing images must be filled with real ones**. Only when redoing a page via regenerate_slide or adding images to existing pages via insert_web_image do you image_search yourself first (English keywords describing a concrete scene like "summer palace kunming lake", not generic words like "park").
-Step C Unified style: first define one design system for the whole deck — primary/secondary colors, title and body font-size scale, content margins, card/corner style (e.g. "teal primary + cream background + sans-serif fresh look"). **Every page's HTML strictly follows the same system; style must be consistent across pages**.
-Step D Generate (call generate_deck): with many pages pass topic + approx_pages + context (feed in the real material from Step A) and let the system plan internally; with few pages you may pass core_hook+style+pages directly (image_queries takes English image-search keywords; **the system auto-searches internally and fills real URLs back**, no image_search needed in advance). The system writes HTML page by page and lands pages as they generate; you don't hand-write HTML.
-Step E Vary layouts per page (avoid sameness): 3 parallel points→three-column cards; a key number→big-number hero; comparison→two columns; sequence→timeline; image+text→left-text-right-image / full-image with text overlay. **Content pages of one deck must not all use the same layout**.
+Step C Unified style: describe the design system you want in a few words in the style argument — primary color, background, and mood (e.g. "teal primary on cream, sans-serif, editorial"). generate_deck turns it into one style guide and applies it to every page, so the deck reads as a set; text contrast is enforced for you, so a dark background never gets dark text.
+Step D Generate (call generate_deck): normally pass topic + approx_pages + style + context (the real material from Step A) and let it plan the pages itself. Pass pages yourself only when you already know every page: one entry per page with title + brief (the real text and figures that page must carry) + type + layout + image_queries (English image-search keywords; **images are searched internally and filled in for you**, no image_search needed in advance). Pages land one at a time as they finish, and the result names any page that failed so you can redo just that page.
+Step E Vary layouts per page (avoid sameness) by naming one per page in layout: cover_typography_hero / cover_split_image / cover_dark_minimal for the opener; title_bullets for a list; text_left_image_right / image_left_text_right for picture pages; three_column_cards for 3 parallel points; hero_stat for one key number; kpi_cards_row for 2-4 figures; two_column_comparison for a comparison; closing_cta to close. **Content pages of one deck must not all use the same layout**, and a page whose brief has no real figures must not be given a number layout.
 
 Native tools:
 - add_slide clones a layout into a new page (layout-preserving blank page); add_text_box lays out text; add_shape makes color blocks/accent bars (kind supports any OOXML preset geometry rect/roundRect/ellipse/star5…).
@@ -528,6 +561,111 @@ const TOOLS: AgentToolDef[] = [
         },
       },
       required: ['questions'],
+    },
+  },
+  {
+    name: 'generate_deck',
+    description:
+      '[First choice for building a whole new deck, or appending several pages to one] Give it a topic and roughly how many pages;' +
+      ' it designs one visual style, plans the pages, writes each page, searches the images it asked for, and lands the pages one by one as they finish.' +
+      ' Pages are built from real, editable elements — text boxes, shapes, cards — so anything can be adjusted afterwards with the native tools.' +
+      ' Prefer topic + approx_pages + context (the material you gathered with web_search) and let it plan; pass `pages` yourself only when you already know each page.' +
+      ' Use insert_mode:"append" to add pages to an existing deck instead of replacing it.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        topic: {
+          type: 'string',
+          description: 'What the deck is about. Required unless pages is given.',
+        },
+        approx_pages: {
+          type: 'number',
+          description: 'Roughly how many pages to plan (1-30, default 8).',
+        },
+        style: {
+          type: 'string',
+          description: "Style preference in words, e.g. 'dark, technical' or 'warm editorial'.",
+        },
+        style_template: {
+          type: 'string',
+          description: 'Name of a saved style template from list_style_templates.',
+        },
+        context: {
+          type: 'string',
+          description: 'Real material the pages must be written from (facts, figures, quotes).',
+        },
+        insert_mode: {
+          type: 'string',
+          enum: ['replace', 'append'],
+          description: "'replace' rebuilds the deck (default), 'append' adds pages at the end.",
+        },
+        dataSource: {
+          type: 'string',
+          enum: ['user', 'document', 'search', 'sample'],
+          description:
+            "Required when the topic, context or briefs carry specific figures: where those numbers came from — 'user' (supplied by the user or attachments), 'document' (read from this deck), 'search' (from web_search results in this conversation — run it first), 'sample' (illustrative placeholders you must disclose to the user)",
+        },
+        pages: {
+          type: 'array',
+          description: 'Optional explicit page list; skips planning.',
+          items: {
+            type: 'object',
+            properties: {
+              title: { type: 'string' },
+              brief: {
+                type: 'string',
+                description: 'What goes on the page: the real text, figures and intent.',
+              },
+              type: { type: 'string', enum: ['cover', 'content', 'data', 'closing'] },
+              layout: {
+                type: 'string',
+                enum: [...PAGE_LAYOUTS],
+                description: 'How the page is laid out; vary it across the deck.',
+              },
+              image_queries: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'English image-search keywords.',
+              },
+            },
+            required: ['brief'],
+          },
+        },
+      },
+    },
+  },
+  {
+    name: 'regenerate_slide',
+    description:
+      '[Redo one page from a brief] Rewrites page slideIndex in place from your brief, keeping the deck style, and leaves every other page untouched (undoable).' +
+      ' Use it when the user says "redo this page / try another layout / make it look better". Read the page first (read_slide) and copy the text and figures to keep into the brief verbatim.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        slideIndex: { type: 'number' },
+        brief: {
+          type: 'string',
+          description: 'What the page should contain and how it should be laid out.',
+        },
+        title: { type: 'string' },
+        layout: {
+          type: 'string',
+          enum: [...PAGE_LAYOUTS],
+          description: 'Optional layout for the rewritten page.',
+        },
+        image_urls: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Real http(s) image URLs to use.',
+        },
+        dataSource: {
+          type: 'string',
+          enum: ['user', 'document', 'search', 'sample'],
+          description:
+            "Required when the topic, context or briefs carry specific figures: where those numbers came from — 'user' (supplied by the user or attachments), 'document' (read from this deck), 'search' (from web_search results in this conversation — run it first), 'sample' (illustrative placeholders you must disclose to the user)",
+        },
+      },
+      required: ['slideIndex', 'brief'],
     },
   },
   {
@@ -1210,9 +1348,7 @@ export function formatSlideDump(slide: RenderSlide): string {
 }
 
 export function createSlidesSkill(access: DeckAccess): AgentSkill {
-  // The HTML pipeline was already used in this conversation → later calls without an explicit mode default to append.
-  // Safety net for when the AI ignores the "pass all pages at once" constraint: separate calls no longer overwrite each other (P0-1).
-  const state: SkillState = { htmlGenerated: false }
+  const state: SkillState = {}
   return {
     id: 'slides',
     systemPrompt: AGENT_SYSTEM_PROMPT,
@@ -1227,7 +1363,6 @@ export function createSlidesSkill(access: DeckAccess): AgentSkill {
 }
 
 interface SkillState {
-  htmlGenerated: boolean
   /** A web_search ran in this conversation — unlocks dataSource:'search' in the figure gate */
   webSearched?: boolean
   /** Number of pages most recently planned by plan_deck, used by the progress checklist to remind the AI to finish */
@@ -1240,6 +1375,207 @@ interface SkillState {
   lastStyleSkill?: string
   /** Topic of the most recent generate_deck (used by save_style_template) */
   lastTopic?: string
+}
+
+/**
+ * Create one composed page's elements on `slideIndex`, back to front.
+ *
+ * The composer decided *what* and *where*; this only issues the ops, and it does
+ * so one element at a time because each returns the updated slide the next call
+ * has to be based on. Failures are collected rather than thrown: a page missing
+ * its photo is still a page, and losing the whole run to one dead image URL was
+ * the old pipeline's worst failure mode.
+ */
+async function landComposedPage(
+  access: DeckAccess,
+  slideIndex: number,
+  page: { background: string; elements: ComposedElement[] },
+): Promise<{ created: number; failures: string[] }> {
+  const failures: string[] = []
+  let created = 0
+
+  const bg = await slidesDoc().editBackground({
+    slideIndex,
+    color: page.background,
+    fitWidthPx: access.fitWidthPx,
+  })
+  if (bg) access.applyDeck(bg)
+  else failures.push('background')
+
+  for (const el of page.elements) {
+    try {
+      if (el.kind === 'image') {
+        if (!el.url) continue
+        const r = await slidesFile().insertImageUrl({
+          slideIndex,
+          url: el.url,
+          xPx: el.x,
+          yPx: el.y,
+          wPx: el.w,
+          hPx: el.h,
+          fitWidthPx: access.fitWidthPx,
+        })
+        if (!r) {
+          failures.push('image')
+          continue
+        }
+        access.applySlide(slideIndex, r.slide)
+        created += 1
+        continue
+      }
+      const paragraphs: EditParagraph[] | undefined = el.paragraphs?.map((para) => ({
+        runs: [
+          {
+            text: para.text,
+            fontSize: para.size,
+            color: para.color,
+            fontFamily: para.font,
+            ...(para.bold ? { bold: true } : {}),
+          },
+        ],
+        ...(para.align ? { align: para.align } : {}),
+        ...(para.bullet ? { bullet: 'char' as const } : {}),
+      }))
+      const r = await slidesDoc().addElement({
+        slideIndex,
+        kind: el.kind === 'shape' ? (el.geometry ?? 'rect') : 'textbox',
+        xPx: el.x,
+        yPx: el.y,
+        wPx: el.w,
+        hPx: el.h,
+        fitWidthPx: access.fitWidthPx,
+        ...(paragraphs ? { paragraphs } : {}),
+        ...(el.fill ? { fillColor: el.fill } : {}),
+      })
+      if (!r) {
+        failures.push(el.kind)
+        continue
+      }
+      access.applySlide(slideIndex, r.slide)
+      created += 1
+    } catch (error) {
+      failures.push(error instanceof Error ? error.message : String(error))
+    }
+  }
+  return { created, failures }
+}
+
+/** Template placeholder strings that must never survive into a delivered page */
+const PLACEHOLDER_PATTERNS: RegExp[] = [
+  /copy paste fonts\. choose the only option to retain text/i,
+  /click to edit master title style/i,
+  /\btext here\b/i,
+  /supporting text here/i,
+  /lorem ipsum/i,
+]
+
+/**
+ * Cheap audit of the text the model wrote for one page: flags leftover template
+ * placeholders and a page with no words on it, so filler is redone rather than
+ * delivered as success. Returns a short reason, or null when the page looks fine.
+ */
+export function auditPageText(text: string): string | null {
+  const flat = text.replace(/\s+/g, ' ').trim()
+  for (const re of PLACEHOLDER_PATTERNS) {
+    const m = re.exec(flat)
+    if (m) return `contains template placeholder text "${m[0]}"`
+  }
+  if (flat.length < 5) return 'has almost no text content'
+  return null
+}
+
+/** Every word a page spec puts on the page, for the audit above. */
+function specText(spec: PageSpec): string {
+  return spec.blocks
+    .map((b) => {
+      switch (b.kind) {
+        case 'bullets':
+          return b.items.join(' ')
+        case 'stats':
+          return b.items.map((it) => `${it.value} ${it.label}`).join(' ')
+        case 'columns':
+          return b.items.map((it) => `${it.heading} ${it.body}`).join(' ')
+        case 'image':
+          return ''
+        default:
+          return b.text
+      }
+    })
+    .join(' ')
+}
+
+/**
+ * Write one page with the model, then lay it out and land it.
+ *
+ * The single place the two generation tools share, and the seam that makes them
+ * provider-independent: `writePageSpec` asks only for content, `composePage`
+ * decides geometry, `landComposedPage` issues the ops.
+ */
+async function generateOnePage(
+  access: DeckAccess,
+  args: {
+    slideIndex: number
+    title: string
+    brief: string
+    layout: PageLayout
+    pageType: string
+    styleSkill?: string
+    context?: string
+    imageUrls: string[]
+    canvas: { w: number; h: number }
+    signal?: AbortSignal
+  },
+): Promise<{ ok: boolean; error?: string; failures?: string[] }> {
+  if (!access.writePageSpec) return { ok: false, error: 'page writing is unavailable on this host' }
+  const written = await access.writePageSpec({
+    title: args.title,
+    brief: args.brief,
+    layout: args.layout,
+    pageType: args.pageType,
+    ...(args.styleSkill ? { styleSkill: args.styleSkill } : {}),
+    ...(args.context ? { context: args.context } : {}),
+    imageUrls: args.imageUrls,
+    ...(args.signal ? { signal: args.signal } : {}),
+  })
+  if (!written.ok) return { ok: false, error: written.error ?? 'the model returned nothing' }
+  const spec = parsePageSpec(written.spec, args.layout)
+  if (!spec) return { ok: false, error: 'the model returned no usable page content' }
+  const flaw = auditPageText(specText(spec))
+  if (flaw) return { ok: false, error: `the page the model wrote ${flaw}` }
+  // A layout that wants a picture but got no URL: fill the slot from what the
+  // caller found, rather than laying out a hole.
+  const withImages = {
+    ...spec,
+    blocks: spec.blocks.map((b) =>
+      b.kind === 'image' && !b.url && args.imageUrls[0] ? { ...b, url: args.imageUrls[0] } : b,
+    ),
+  }
+  const composed = composePage(withImages, parseDeckStyle(args.styleSkill), args.canvas)
+  const landed = await landComposedPage(access, args.slideIndex, composed)
+  if (!landed.created) return { ok: false, error: 'nothing could be placed on the page' }
+  return landed.failures.length ? { ok: true, failures: landed.failures } : { ok: true }
+}
+
+/**
+ * `generateOnePage` with one retry.
+ *
+ * A provider that rate-limits, overloads or drops a stream mostly does so
+ * transiently, and an immediate second attempt would hit the same limit, so the
+ * retry waits first. Retrying is safe because every failure path leaves the page
+ * with nothing on it: a page that landed only some of its elements returns ok.
+ */
+async function generatePageWithRetry(
+  access: DeckAccess,
+  args: Parameters<typeof generateOnePage>[1],
+): Promise<{ ok: boolean; error?: string; failures?: string[] }> {
+  const first = await generateOnePage(access, args)
+  if (first.ok || !access.writePageSpec || args.signal?.aborted) return first
+  const backoff = access.retryBackoffMs ?? 2000
+  if (backoff > 0) await new Promise((resolve) => setTimeout(resolve, backoff))
+  if (args.signal?.aborted) return first
+  const second = await generateOnePage(access, args)
+  if (second.ok) return second
+  return { ok: false, error: `${first.error ?? 'failed'} (retry: ${second.error ?? 'failed'})` }
 }
 
 /**
@@ -1283,6 +1619,14 @@ const fail = (summary: string, output: string) => ({
 // data-dense briefs must declare a dataSource, 'search' is only accepted after a
 // real web_search in this conversation, and 'sample' figures must be disclosed.
 
+/** Specific figures: percentages, money, magnitude units, decimals — not bare years/counts */
+const SPECIFIC_FIGURE_RE =
+  /\d[\d,.]*\s*(?:%|％|억|만|조|亿|萬|万|兆|billion|million|\bbn\b|\bmn\b)|[¥￥$€£₩]\s*\d|\d+\.\d+/g
+
+function countSpecificFigures(text: string): number {
+  return text.match(SPECIFIC_FIGURE_RE)?.length ?? 0
+}
+
 /**
  * Returns an error message when the declared dataSource does not justify the figures
  * this call carries, null when the call may proceed.
@@ -1310,40 +1654,12 @@ function dataSourceGateError(call: AgentToolCall, state: SkillState | undefined)
 const SAMPLE_DATA_NOTE =
   '\nNOTE: dataSource is "sample" — you MUST tell the user these figures are illustrative placeholders, not real data, and offer to research real numbers with web_search.'
 
-/** Template placeholder strings that must never survive into a delivered page */
-const PLACEHOLDER_PATTERNS: RegExp[] = [
-  /copy paste fonts\. choose the only option to retain text/i,
-  /click to edit master title style/i,
-  /\btext here\b/i,
-  /supporting text here/i,
-  /lorem ipsum/i,
-]
-
-/**
- * Cheap post-generation audit of one page's HTML: flags leftover template
- * placeholders and near-empty pages so the model is forced to redo them instead of
- * delivering filler as success. Returns a short reason, or null when the page looks fine.
- */
-export function auditPageHtml(html: string): string | null {
-  const text = html
-    .replace(/<(style|script)\b[\s\S]*?<\/\1>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-  for (const re of PLACEHOLDER_PATTERNS) {
-    const m = re.exec(text)
-    if (m) return `contains template placeholder text "${m[0]}"`
-  }
-  if (text.length < 10) return 'has almost no text content'
-  return null
-}
-
 async function executeTool(
   access: DeckAccess,
   call: AgentToolCall,
   state?: SkillState,
-  // Kept in the signature because `createSlidesSkill` passes the loop's signal
-  // through; the tools that watched it were the cloud batch generators.
+  // The loop's stop signal: generate_deck checks it between pages, and passes it to
+  // the per-page model call so a stop lands promptly rather than after the whole run.
   _signal?: AbortSignal,
 ) {
   const slides = access.getSlides()
@@ -1867,6 +2183,332 @@ async function executeTool(
         output: `User questionnaire answers:\n${r.answers}\nDecide the Core Hook and style accordingly, then generate with generate_deck.`,
         mutated: false,
         summary: t('aiSumClarifyDone'),
+      }
+    }
+
+    case 'generate_deck': {
+      // Hard gate: with unread text attachments present, refuse to generate. The prompt
+      // already demands reading them first, but a prompt rule is not enforcement — this is,
+      // and it is fully computable from the tool-call history.
+      const unread = access.unreadTextAttachments?.() ?? []
+      if (unread.length > 0) {
+        return fail(
+          t('aiFailGenDeck'),
+          `text attachment(s) not read yet: ${unread.join(', ')}. Read each one with read_attachment first (paginate long files), then call generate_deck again with the key facts you read in the context argument — deck content must come from the attachments, not generic filler.`,
+        )
+      }
+      const canvas = slides[0]
+        ? { w: slides[0].widthPx, h: slides[0].heightPx }
+        : { w: 960, h: 540 }
+      const topic = String(call.input.topic ?? '').trim()
+      const givenPages = Array.isArray(call.input.pages) ? call.input.pages : null
+      if (!topic && !givenPages) return fail(t('aiFailGenDeck'), 'pass topic or pages')
+      const append = call.input.insert_mode === 'append'
+      const context = String(call.input.context ?? '').trim()
+
+      // Figure-provenance gate: a request carrying specific numbers must say where they
+      // came from before a whole deck is written around them.
+      const briefText = [
+        topic,
+        context,
+        ...(givenPages ?? []).map(
+          (p: Record<string, unknown>) => `${String(p.title ?? '')} ${String(p.brief ?? '')}`,
+        ),
+      ].join('\n')
+      if (countSpecificFigures(briefText) >= 2) {
+        const gateErr = dataSourceGateError(call, state)
+        if (gateErr) return fail(t('aiFailGenDeck'), gateErr)
+      }
+
+      // Step 0 — one visual language for the whole deck, so the pages look like a
+      // set rather than eleven separate slides.
+      let styleSkill: string | undefined = state?.lastStyleSkill
+      const templateName = String(call.input.style_template ?? '').trim()
+      if (templateName && access.loadStyleTemplate) {
+        const loaded = await access.loadStyleTemplate(templateName)
+        if (loaded?.styleSkill) styleSkill = loaded.styleSkill
+      }
+      if (!styleSkill && access.generateStyleSkill) {
+        access.onProgress?.({
+          stage: 'style',
+          label: t('aiProgStyle'),
+          status: 'running',
+          summary: '',
+        })
+        const made = await access.generateStyleSkill({
+          topic: topic || 'presentation',
+          ...(call.input.style ? { styleHint: String(call.input.style) } : {}),
+          ...(_signal ? { signal: _signal } : {}),
+        })
+        if (made.ok && made.styleSkill) styleSkill = made.styleSkill
+        access.onProgress?.({
+          stage: 'style',
+          label: t('aiProgStyle'),
+          status: styleSkill ? 'done' : 'error',
+          summary: styleSkill ? '' : (made.error ?? ''),
+        })
+      }
+
+      // Step 1 — the page plan. Explicit pages skip it entirely.
+      type Planned = {
+        title: string
+        brief: string
+        type: string
+        layout: PageLayout
+        queries: string[]
+      }
+      const planned: Planned[] = []
+      const readPlanned = (raw: unknown): Planned | null => {
+        if (typeof raw !== 'object' || raw === null) return null
+        const r = raw as Record<string, unknown>
+        const brief = String(r.brief ?? '').trim()
+        if (!brief) return null
+        return {
+          title: String(r.title ?? '').trim(),
+          brief,
+          type: String(r.type ?? 'content'),
+          layout: layoutForPlan(r.layout, r.type),
+          queries: Array.isArray(r.image_queries)
+            ? r.image_queries
+                .map((q) => String(q))
+                .filter(Boolean)
+                .slice(0, 2)
+            : [],
+        }
+      }
+      let coreHook = ''
+      if (givenPages) {
+        for (const raw of givenPages) {
+          const one = readPlanned(raw)
+          if (one) planned.push(one)
+        }
+        if (!planned.length) return fail(t('aiFailGenDeck'), 'every page needs a brief')
+      } else {
+        if (!access.planDeckOutline)
+          return fail(t('aiFailGenDeck'), 'deck planning is unavailable on this host')
+        const wanted = Math.min(Math.max(Number(call.input.approx_pages) || 8, 1), 30)
+        access.onProgress?.({
+          stage: 'plan',
+          label: t('aiProgPlan'),
+          done: 0,
+          total: wanted,
+          status: 'running',
+          summary: '',
+        })
+        const outline = await access.planDeckOutline({
+          topic,
+          count: wanted,
+          startPage: 1,
+          ...(context ? { context } : {}),
+          ...(styleSkill ? { styleSkill } : {}),
+          ...(_signal ? { signal: _signal } : {}),
+        })
+        if (!outline.ok || !outline.outline)
+          return fail(t('aiFailGenDeck'), outline.error ?? 'planning returned nothing')
+        coreHook = String(outline.outline.core_hook ?? '').trim()
+        for (const raw of Array.isArray(outline.outline.pages) ? outline.outline.pages : []) {
+          const one = readPlanned(raw)
+          if (one) planned.push(one)
+        }
+        if (!planned.length) return fail(t('aiFailGenDeck'), 'the plan contained no pages')
+        access.onProgress?.({
+          stage: 'plan',
+          label: t('aiProgPlan'),
+          done: planned.length,
+          total: planned.length,
+          status: 'done',
+          summary: coreHook,
+        })
+      }
+
+      if (state) {
+        state.plannedPages = planned.length
+        state.plannedTitles = planned.map((pg) => pg.title)
+        state.pageDone = planned.map(() => false)
+        if (styleSkill) state.lastStyleSkill = styleSkill
+        if (topic) state.lastTopic = topic
+      }
+      // The page checklist the card renders; each entry flips as its page lands.
+      const items: PageProgressItem[] = planned.map((pg) => ({
+        title: pg.title || t('aiProgUntitledPage'),
+        status: 'pending',
+      }))
+      const reportPages = (status: 'running' | 'done' | 'error') =>
+        access.onProgress?.({
+          stage: 'pages',
+          label: t('aiProgPages'),
+          done: items.filter((it) => it.status === 'done').length,
+          total: items.length,
+          status,
+          summary: '',
+          pages: items.map((it) => ({ ...it })),
+        })
+      reportPages('running')
+
+      // Step 2 — page by page. Each lands as it finishes, so the user watches the
+      // deck fill in instead of waiting for the whole run.
+      const startFrom = append ? slides.length : 0
+      const failedPages: number[] = []
+      const softFailures: string[] = []
+      let made = 0
+      let stoppedAfter = 0
+      const landedIndexes: number[] = []
+      for (let i = 0; i < planned.length; i += 1) {
+        if (_signal?.aborted) {
+          stoppedAfter = i
+          break
+        }
+        const page = planned[i]!
+        const deck = access.getSlides()
+        let slideIndex: number
+        if (!append && i === 0) {
+          // Reuse the deck's first page rather than appending to it: a "replace"
+          // that left the original page 1 in front would not be a replace.
+          slideIndex = 0
+          for (let extra = deck.length - 1; extra >= 1; extra -= 1) {
+            const trimmed = await slidesDoc().deleteSlide(extra)
+            if (trimmed) access.applyDeck(trimmed)
+          }
+          const cleared = access.getSlides()[0]
+          if (cleared) {
+            for (const info of collectNodeInfos(cleared.nodes)) {
+              if (info.locked) continue
+              const r = await slidesDoc().deleteElement({ slideIndex: 0, sourceId: info.id })
+              if (r) access.applySlide(0, r)
+            }
+          }
+        } else {
+          const added = await slidesDoc().addBlankSlide({
+            sourceIndex: Math.max(access.getSlides().length - 1, 0),
+            fitWidthPx: access.fitWidthPx,
+          })
+          if (!added) {
+            failedPages.push(i + 1)
+            items[i]!.status = 'error'
+            items[i]!.error = 'the page could not be created'
+            continue
+          }
+          access.applyDeck(added.slides, added.index)
+          slideIndex = added.index
+        }
+
+        const urls: string[] = []
+        if (page.queries.length && access.searchImages) {
+          for (const q of page.queries) {
+            const found = await access.searchImages(q, 1).catch(() => [])
+            if (found[0]) urls.push(found[0])
+          }
+        }
+        items[i]!.status = 'running'
+        reportPages('running')
+        const one = await generatePageWithRetry(access, {
+          slideIndex,
+          title: page.title,
+          brief: coreHook ? `${page.brief}\n\nDeck narrative anchor: ${coreHook}` : page.brief,
+          layout: page.layout,
+          pageType: page.type,
+          ...(styleSkill ? { styleSkill } : {}),
+          ...(context ? { context } : {}),
+          imageUrls: urls,
+          canvas,
+          ...(_signal ? { signal: _signal } : {}),
+        })
+        if (one.ok) {
+          made += 1
+          landedIndexes.push(slideIndex)
+          if (state?.pageDone) state.pageDone[i] = true
+          items[i]!.status = 'done'
+          delete items[i]!.error
+          if (one.failures) softFailures.push(`page ${i + 1}: ${one.failures.join(', ')}`)
+        } else {
+          failedPages.push(i + 1)
+          items[i]!.status = 'error'
+          items[i]!.error = one.error ?? ''
+        }
+        reportPages('running')
+      }
+      reportPages(failedPages.length ? 'error' : 'done')
+      access.onProgress?.({ stage: 'done', total: made, summary: '' })
+      if (landedIndexes.length) access.onPagesGenerated?.(landedIndexes)
+
+      // The deck's style guide is worth keeping next to the draft: reopening the file and
+      // asking for another page then matches instead of inventing a second look. Fail-open —
+      // a sidecar that cannot be written must not turn a finished deck into an error.
+      if (landedIndexes.length && styleSkill && access.saveSidecar) {
+        try {
+          await access.saveSidecar({
+            topic: topic || coreHook,
+            styleSkill,
+            createdAt: new Date().toISOString(),
+          })
+        } catch {
+          // ignored on purpose: the pages are already on screen
+        }
+      }
+
+      if (!made) return fail(t('aiFailGenDeck'), 'no page could be generated')
+      const notes = [
+        `Generated ${made} of ${planned.length} pages${append ? ` (appended after page ${startFrom})` : ''}.`,
+        // Distinguish "stopped" from "failed": the pages after a stop were never
+        // attempted, so telling the AI they failed would send it off to retry them.
+        stoppedAfter
+          ? `Stopped by the user after page ${stoppedAfter}; pages ${stoppedAfter + 1}-${planned.length} were never started.`
+          : '',
+        failedPages.length
+          ? `Pages that failed and are still empty: ${failedPages.join(', ')}.`
+          : '',
+        softFailures.length ? `Partial: ${softFailures.join('; ')}.` : '',
+        'The pages are real editable elements — adjust any of them with execute_slide_script / set_element_* rather than regenerating the deck.',
+      ].filter(Boolean)
+      return {
+        output: notes.join(' ') + (call.input.dataSource === 'sample' ? SAMPLE_DATA_NOTE : ''),
+        mutated: true,
+        summary: t('aiSumGenDeck', { n: made }),
+      }
+    }
+
+    case 'regenerate_slide': {
+      const idx = Number(call.input.slideIndex)
+      const slide = slides[idx]
+      if (!slide) return fail(t('aiFailRegen'), `slideIndex out of range (0-${slides.length - 1})`)
+      const brief = String(call.input.brief ?? '').trim()
+      if (!brief) return fail(t('aiFailRegen'), 'brief must not be empty')
+      if (countSpecificFigures(`${String(call.input.title ?? '')}\n${brief}`) >= 2) {
+        const gateErr = dataSourceGateError(call, state)
+        if (gateErr) return fail(t('aiFailRegen'), gateErr)
+      }
+
+      // Clear the page in place. Everything else about the deck — page order,
+      // the other pages, undo — is untouched, which is what "redo this page" means.
+      for (const info of collectNodeInfos(slide.nodes)) {
+        if (info.locked) continue
+        const r = await slidesDoc().deleteElement({ slideIndex: idx, sourceId: info.id })
+        if (r) access.applySlide(idx, r)
+      }
+      const urls = Array.isArray(call.input.image_urls)
+        ? call.input.image_urls.map((u) => String(u)).filter((u) => /^https?:\/\//.test(u))
+        : []
+      const one = await generatePageWithRetry(access, {
+        slideIndex: idx,
+        title: String(call.input.title ?? '').trim(),
+        brief,
+        layout: layoutForPlan(call.input.layout),
+        pageType: 'content',
+        ...(state?.lastStyleSkill ? { styleSkill: state.lastStyleSkill } : {}),
+        imageUrls: urls,
+        canvas: { w: slide.widthPx, h: slide.heightPx },
+        ...(_signal ? { signal: _signal } : {}),
+      })
+      if (!one.ok) return fail(t('aiFailRegen'), one.error ?? 'the page could not be rewritten')
+      access.onPagesGenerated?.([idx])
+      return {
+        output:
+          `Rewrote page ${idx + 1} from the brief (other pages untouched; the user can undo).` +
+          (one.failures ? ` Some parts could not be placed: ${one.failures.join(', ')}.` : '') +
+          ' Fine-tune it with execute_slide_script / set_element_* rather than redoing it again.' +
+          (call.input.dataSource === 'sample' ? SAMPLE_DATA_NOTE : ''),
+        mutated: true,
+        summary: t('aiSumRegen', { n: idx + 1 }),
       }
     }
 

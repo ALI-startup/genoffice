@@ -3,6 +3,14 @@ import { defineStrings } from '@samugen/i18n'
 /** User-visible copy for the ai/ panel and tool feedback (LLM prompts are not included here) */
 export const aiStrings = defineStrings({
   zh: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: '生成演示文稿失败',
+    aiSumGenDeck: '生成了 {n} 页幻灯片',
+    aiFailRegen: '重做页面失败',
+    aiProgStyle: '设计视觉风格',
+    aiProgPlan: '规划页面',
+    aiProgPages: '生成页面',
+    aiProgUntitledPage: '未命名页面',
     aiInputPlaceholderGen: '描述要生成的演示文稿,或直接提问',
     aiEmptyGenTitle: '让 AI 为你生成演示文稿',
     aiEmptyGenBody1: '描述主题、场合和大致页数,',
@@ -186,6 +194,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: '列出 {count} 个风格模板',
   },
   en: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: 'Could not generate the deck',
+    aiSumGenDeck: 'Generated {n} slides',
+    aiFailRegen: 'Could not redo the page',
+    aiProgStyle: 'Designing the visual style',
+    aiProgPlan: 'Planning the pages',
+    aiProgPages: 'Writing the pages',
+    aiProgUntitledPage: 'Untitled page',
     aiInputPlaceholderGen: 'Describe the deck to generate, or ask anything',
     aiEmptyGenTitle: 'Let AI generate your presentation',
     aiEmptyGenBody1: 'Describe the topic, audience, and rough page count;',
@@ -375,6 +391,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: 'Listed {count} style templates',
   },
   ja: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: 'プレゼンテーションの生成に失敗しました',
+    aiSumGenDeck: 'スライド {n} 枚を生成',
+    aiFailRegen: 'ページの再生成に失敗しました',
+    aiProgStyle: 'ビジュアルスタイルを設計中',
+    aiProgPlan: 'ページを構成中',
+    aiProgPages: 'ページを作成中',
+    aiProgUntitledPage: '無題のページ',
     aiInputPlaceholderGen: '作りたいプレゼンを説明するか、質問を入力',
     aiEmptyGenTitle: 'AI にプレゼンの作成を任せる',
     aiEmptyGenBody1: 'テーマ・用途・ページ数の目安を伝えると',
@@ -563,6 +587,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: '{count} 個のスタイル テンプレートを一覧表示',
   },
   ko: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: '프레젠테이션 생성에 실패했습니다',
+    aiSumGenDeck: '슬라이드 {n}장 생성',
+    aiFailRegen: '페이지 다시 생성에 실패했습니다',
+    aiProgStyle: '시각 스타일 디자인 중',
+    aiProgPlan: '페이지 구성 중',
+    aiProgPages: '페이지 작성 중',
+    aiProgUntitledPage: '제목 없는 페이지',
     aiInputPlaceholderGen: '만들 프레젠테이션을 설명하거나 질문하세요',
     aiEmptyGenTitle: 'AI에게 프레젠테이션 생성을 맡기세요',
     aiEmptyGenBody1: '주제, 용도, 대략의 페이지 수를 알려주면',
@@ -752,6 +784,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: '스타일 템플릿 {count}개 나열',
   },
   fr: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: 'Impossible de générer la présentation',
+    aiSumGenDeck: '{n} diapositives générées',
+    aiFailRegen: 'Impossible de refaire la page',
+    aiProgStyle: 'Conception du style visuel',
+    aiProgPlan: 'Planification des pages',
+    aiProgPages: 'Rédaction des pages',
+    aiProgUntitledPage: 'Page sans titre',
     aiInputPlaceholderGen: 'Décrivez la présentation à générer, ou posez une question',
     aiEmptyGenTitle: "Laissez l'IA générer votre présentation",
     aiEmptyGenBody1: 'Décrivez le sujet, le contexte et le nombre de pages ;',
@@ -943,6 +983,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: '{count} modèles de style listés',
   },
   de: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: 'Präsentation konnte nicht erzeugt werden',
+    aiSumGenDeck: '{n} Folien erzeugt',
+    aiFailRegen: 'Seite konnte nicht neu erstellt werden',
+    aiProgStyle: 'Visuellen Stil entwerfen',
+    aiProgPlan: 'Seiten planen',
+    aiProgPages: 'Seiten schreiben',
+    aiProgUntitledPage: 'Unbenannte Seite',
     aiInputPlaceholderGen: 'Beschreibe die zu erstellende Präsentation oder frag etwas',
     aiEmptyGenTitle: 'Lass die KI deine Präsentation erstellen',
     aiEmptyGenBody1: 'Beschreibe Thema, Anlass und ungefähre Seitenzahl;',
@@ -1134,6 +1182,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: '{count} Stilvorlagen aufgelistet',
   },
   es: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: 'No se pudo generar la presentación',
+    aiSumGenDeck: '{n} diapositivas generadas',
+    aiFailRegen: 'No se pudo rehacer la página',
+    aiProgStyle: 'Diseñando el estilo visual',
+    aiProgPlan: 'Planificando las páginas',
+    aiProgPages: 'Escribiendo las páginas',
+    aiProgUntitledPage: 'Página sin título',
     aiInputPlaceholderGen: 'Describe la presentación a generar, o pregunta lo que quieras',
     aiEmptyGenTitle: 'Deja que la IA genere tu presentación',
     aiEmptyGenBody1: 'Describe el tema, la ocasión y el número aproximado de páginas;',
@@ -1325,6 +1381,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: 'Se enumeraron {count} plantillas de estilo',
   },
   th: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: 'สร้างงานนำเสนอไม่สำเร็จ',
+    aiSumGenDeck: 'สร้างสไลด์ {n} หน้า',
+    aiFailRegen: 'ทำหน้านี้ใหม่ไม่สำเร็จ',
+    aiProgStyle: 'กำลังออกแบบสไตล์ภาพ',
+    aiProgPlan: 'กำลังวางแผนหน้า',
+    aiProgPages: 'กำลังเขียนหน้า',
+    aiProgUntitledPage: 'หน้าที่ไม่มีชื่อ',
     aiInputPlaceholderGen: 'อธิบายงานนำเสนอที่จะสร้าง หรือถามได้เลย',
     aiEmptyGenTitle: 'ให้ AI สร้างงานนำเสนอให้คุณ',
     aiEmptyGenBody1: 'อธิบายหัวข้อ โอกาส และจำนวนหน้าโดยประมาณ',
@@ -1512,6 +1576,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: 'แสดงเทมเพลตสไตล์ {count} รายการ',
   },
   id: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: 'Gagal membuat presentasi',
+    aiSumGenDeck: '{n} slide dibuat',
+    aiFailRegen: 'Gagal membuat ulang halaman',
+    aiProgStyle: 'Merancang gaya visual',
+    aiProgPlan: 'Merencanakan halaman',
+    aiProgPages: 'Menulis halaman',
+    aiProgUntitledPage: 'Halaman tanpa judul',
     aiInputPlaceholderGen: 'Jelaskan presentasi yang akan dibuat, atau tanyakan apa saja',
     aiEmptyGenTitle: 'Biarkan AI membuat presentasi Anda',
     aiEmptyGenBody1: 'Jelaskan topik, acara, dan perkiraan jumlah halaman;',
@@ -1702,6 +1774,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: 'Menampilkan {count} templat gaya',
   },
   ru: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: 'Не удалось создать презентацию',
+    aiSumGenDeck: 'Создано слайдов: {n}',
+    aiFailRegen: 'Не удалось переделать страницу',
+    aiProgStyle: 'Разработка визуального стиля',
+    aiProgPlan: 'Планирование страниц',
+    aiProgPages: 'Создание страниц',
+    aiProgUntitledPage: 'Страница без названия',
     aiInputPlaceholderGen: 'Опишите презентацию для создания или задайте вопрос',
     aiEmptyGenTitle: 'Пусть ИИ создаст вашу презентацию',
     aiEmptyGenBody1: 'Опишите тему, аудиторию и примерное число страниц;',
@@ -1892,6 +1972,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: 'Показано шаблонов стиля: {count}',
   },
   ar: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: 'تعذّر إنشاء العرض التقديمي',
+    aiSumGenDeck: 'تم إنشاء {n} شريحة',
+    aiFailRegen: 'تعذّر إعادة إنشاء الصفحة',
+    aiProgStyle: 'تصميم النمط البصري',
+    aiProgPlan: 'تخطيط الصفحات',
+    aiProgPages: 'كتابة الصفحات',
+    aiProgUntitledPage: 'صفحة بلا عنوان',
     aiInputPlaceholderGen: 'صف العرض المطلوب إنشاؤه أو اطرح أي سؤال',
     aiEmptyGenTitle: 'دع الذكاء الاصطناعي ينشئ عرضك التقديمي',
     aiEmptyGenBody1: 'صف الموضوع والمناسبة وعدد الصفحات التقريبي؛',
@@ -2079,6 +2167,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: 'سرد {count} من قوالب الأنماط',
   },
   pt: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: 'Não foi possível gerar a apresentação',
+    aiSumGenDeck: '{n} slides gerados',
+    aiFailRegen: 'Não foi possível refazer a página',
+    aiProgStyle: 'Definindo o estilo visual',
+    aiProgPlan: 'Planejando as páginas',
+    aiProgPages: 'Escrevendo as páginas',
+    aiProgUntitledPage: 'Página sem título',
     aiInputPlaceholderGen: 'Descreva o deck a gerar, ou pergunte algo',
     aiEmptyGenTitle: 'Deixe a IA gerar sua apresentação',
     aiEmptyGenBody1: 'Descreva o tema, a ocasião e o número aproximado de páginas;',
@@ -2269,6 +2365,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: '{count} modelos de estilo listados',
   },
   it: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: 'Impossibile generare la presentazione',
+    aiSumGenDeck: '{n} diapositive generate',
+    aiFailRegen: 'Impossibile rifare la pagina',
+    aiProgStyle: 'Progettazione dello stile visivo',
+    aiProgPlan: 'Pianificazione delle pagine',
+    aiProgPages: 'Scrittura delle pagine',
+    aiProgUntitledPage: 'Pagina senza titolo',
     aiInputPlaceholderGen: 'Descrivi la presentazione da generare, o chiedi qualsiasi cosa',
     aiEmptyGenTitle: "Lascia che l'IA generi la tua presentazione",
     aiEmptyGenBody1: "Descrivi l'argomento, l'occasione e il numero indicativo di pagine;",
@@ -2459,6 +2563,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: '{count} modelli di stile elencati',
   },
   pl: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: 'Nie udało się wygenerować prezentacji',
+    aiSumGenDeck: 'Wygenerowano {n} slajdów',
+    aiFailRegen: 'Nie udało się przerobić strony',
+    aiProgStyle: 'Projektowanie stylu wizualnego',
+    aiProgPlan: 'Planowanie stron',
+    aiProgPages: 'Tworzenie stron',
+    aiProgUntitledPage: 'Strona bez tytułu',
     aiInputPlaceholderGen: 'Opisz prezentację do wygenerowania albo zadaj pytanie',
     aiEmptyGenTitle: 'Pozwól AI wygenerować twoją prezentację',
     aiEmptyGenBody1: 'Opisz temat, okazję i przybliżoną liczbę stron;',
@@ -2649,6 +2761,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: 'Wyświetlono szablony stylu: {count}',
   },
   nl: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: 'Presentatie kon niet worden gegenereerd',
+    aiSumGenDeck: '{n} dia’s gegenereerd',
+    aiFailRegen: 'Pagina kon niet opnieuw worden gemaakt',
+    aiProgStyle: 'Visuele stijl ontwerpen',
+    aiProgPlan: 'Pagina’s plannen',
+    aiProgPages: 'Pagina’s schrijven',
+    aiProgUntitledPage: 'Pagina zonder titel',
     aiInputPlaceholderGen: 'Beschrijf de presentatie om te genereren, of stel een vraag',
     aiEmptyGenTitle: 'Laat AI je presentatie genereren',
     aiEmptyGenBody1: 'Beschrijf het onderwerp, de gelegenheid en het aantal pagina’s;',
@@ -2840,6 +2960,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: '{count} stijlsjablonen weergegeven',
   },
   ms: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: 'Gagal menjana pembentangan',
+    aiSumGenDeck: '{n} slaid dijana',
+    aiFailRegen: 'Gagal membuat semula halaman',
+    aiProgStyle: 'Mereka bentuk gaya visual',
+    aiProgPlan: 'Merancang halaman',
+    aiProgPages: 'Menulis halaman',
+    aiProgUntitledPage: 'Halaman tanpa tajuk',
     aiInputPlaceholderGen: 'Terangkan pembentangan untuk dijana, atau tanya apa sahaja',
     aiEmptyGenTitle: 'Biarkan AI menjana pembentangan anda',
     aiEmptyGenBody1: 'Terangkan topik, majlis dan anggaran bilangan halaman;',
@@ -3030,6 +3158,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: 'Menyenaraikan {count} templat gaya',
   },
   he: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: 'יצירת המצגת נכשלה',
+    aiSumGenDeck: 'נוצרו {n} שקופיות',
+    aiFailRegen: 'יצירת העמוד מחדש נכשלה',
+    aiProgStyle: 'עיצוב הסגנון החזותי',
+    aiProgPlan: 'תכנון העמודים',
+    aiProgPages: 'כתיבת העמודים',
+    aiProgUntitledPage: 'עמוד ללא שם',
     aiInputPlaceholderGen: 'תארו את המצגת ליצירה, או שאלו כל דבר',
     aiEmptyGenTitle: 'תנו ל-AI ליצור את המצגת שלכם',
     aiEmptyGenBody1: 'תארו את הנושא, הקהל ומספר העמודים המשוער;',
@@ -3217,6 +3353,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: 'הוצגו {count} תבניות סגנון',
   },
   hi: {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: 'प्रस्तुति बनाने में विफल',
+    aiSumGenDeck: '{n} स्लाइड बनाई गईं',
+    aiFailRegen: 'पृष्ठ दोबारा बनाने में विफल',
+    aiProgStyle: 'विज़ुअल स्टाइल डिज़ाइन कर रहे हैं',
+    aiProgPlan: 'पृष्ठों की योजना बना रहे हैं',
+    aiProgPages: 'पृष्ठ लिख रहे हैं',
+    aiProgUntitledPage: 'शीर्षकहीन पृष्ठ',
     aiInputPlaceholderGen: 'बनाने के लिए प्रस्तुति बताएँ, या कुछ भी पूछें',
     aiEmptyGenTitle: 'AI से अपनी प्रस्तुति बनवाएँ',
     aiEmptyGenBody1: 'विषय, अवसर और अनुमानित पेज संख्या बताएँ;',
@@ -3406,6 +3550,14 @@ export const aiStrings = defineStrings({
     aiSumListTemplates: '{count} स्टाइल टेम्पलेट सूचीबद्ध किए गए',
   },
   'zh-TW': {
+    // Deck generation (generate_deck / regenerate_slide) and its progress card
+    aiFailGenDeck: '產生簡報失敗',
+    aiSumGenDeck: '產生了 {n} 頁投影片',
+    aiFailRegen: '重做頁面失敗',
+    aiProgStyle: '設計視覺風格',
+    aiProgPlan: '規劃頁面',
+    aiProgPages: '產生頁面',
+    aiProgUntitledPage: '未命名頁面',
     aiInputPlaceholderGen: '描述要生成的簡報,或直接提問',
     aiEmptyGenTitle: '讓 AI 為你生成簡報',
     aiEmptyGenBody1: '描述主題、場合和大致頁數,',

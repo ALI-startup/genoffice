@@ -1313,7 +1313,7 @@ export interface SlidesApi {
     hPx: number
     fitWidthPx: number
   }) => Promise<{ slide: RenderSlide; sourceId: string } | null>
-  /** gsk (SamuGen) AI image generation/editing, returns the image URL (error prompts login when logged out) */
+  /** AI image generation/editing on the configured image provider; returns the image URL. */
   generateImage: (op: {
     prompt: string
     model?: string

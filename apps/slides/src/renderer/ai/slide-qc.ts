@@ -1,5 +1,5 @@
 /**
- * Post-generation layout QC: each cloud-generated page gets one focused vision pass —
+ * Post-generation layout QC: each generated page gets one focused vision pass —
  * screenshot + element inventory → a restricted agent fixes objective layout defects
  * with execute_slide_script. Runs in its own AgentLoop per page (fresh context, so the
  * QC cost doesn't ride on the main conversation), orchestrated by AiPanel.
@@ -22,51 +22,15 @@ export function isQcEnabled(): boolean {
 export const QC_MAX_PAGES = 20
 
 /**
- * Pages produced by a generateFromHtml/regenerateSlide call, as 0-based indexes.
- * replace lands a whole new deck; append starts at appendedFrom; insert_at/replace_at touch one page.
+ * Fold the pages a generation tool just landed into the run's pending-QC set.
+ *
+ * The generation tools report the exact page indexes they wrote, so this is a plain
+ * union: sorted, deduped, and negative indexes dropped. It is a set rather than a
+ * count because one run can land pages in several passes (a deck, then pages appended
+ * to it, then one page redone) and each page is worth QC-ing exactly once.
  */
-export function generatedPageRange(
-  mode: 'replace' | 'append' | 'insert_at' | 'replace_at',
-  r: { pages?: number; appendedFrom?: number; insertedIndex?: number },
-): number[] {
-  const total = r.pages ?? 0
-  switch (mode) {
-    case 'replace':
-      return Array.from({ length: total }, (_, i) => i)
-    case 'append': {
-      const from = r.appendedFrom ?? 0
-      return Array.from({ length: Math.max(0, total - from) }, (_, i) => from + i)
-    }
-    case 'insert_at':
-    case 'replace_at':
-      return typeof r.insertedIndex === 'number' ? [r.insertedIndex] : []
-  }
-}
-
-/**
- * Fold one landing's pages into the run's pending-QC set.
- * replace discards earlier pendings (whole new deck); insert_at shifts pendings at/after
- * the insertion point before adding it, keeping indexes valid.
- */
-export function mergeQcPages(
-  prev: number[],
-  mode: 'replace' | 'append' | 'insert_at' | 'replace_at',
-  r: { pages?: number; appendedFrom?: number; insertedIndex?: number },
-): number[] {
-  const range = generatedPageRange(mode, r)
-  const sortDedupe = (pages: number[]) => [...new Set(pages)].sort((a, b) => a - b)
-  switch (mode) {
-    case 'replace':
-      return range
-    case 'append':
-    case 'replace_at':
-      return sortDedupe([...prev, ...range])
-    case 'insert_at': {
-      const at = r.insertedIndex
-      if (typeof at !== 'number') return prev
-      return sortDedupe([...prev.map((p) => (p >= at ? p + 1 : p)), at])
-    }
-  }
+export function mergeQcPages(prev: number[], added: number[]): number[] {
+  return [...new Set([...prev, ...added])].filter((p) => p >= 0).sort((a, b) => a - b)
 }
 
 /** Only the two tools the QC pass needs: fresh geometry reads + atomic layout scripts */

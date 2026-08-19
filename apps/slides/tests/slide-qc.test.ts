@@ -1,15 +1,10 @@
 /**
  * Post-generation layout QC helpers:
- *  - generatedPageRange / mergeQcPages: which pages a landing marks for QC (incl. insert_at shifting)
+ *  - mergeQcPages: which pages a generation run marks for QC
  *  - createSlideFixSkill: tool allowlist wraps the full slides skill without losing the executor
  */
 import { describe, it, expect } from 'vitest'
-import {
-  generatedPageRange,
-  mergeQcPages,
-  createSlideFixSkill,
-  isQcEnabled,
-} from '../src/renderer/ai/slide-qc'
+import { mergeQcPages, createSlideFixSkill, isQcEnabled } from '../src/renderer/ai/slide-qc'
 import type { DeckAccess } from '../src/renderer/ai/slides-skill'
 
 const access: DeckAccess = {
@@ -21,40 +16,17 @@ const access: DeckAccess = {
   fitWidthPx: 1280,
 }
 
-describe('generatedPageRange', () => {
-  it('replace covers the whole deck', () => {
-    expect(generatedPageRange('replace', { pages: 3 })).toEqual([0, 1, 2])
-  })
-
-  it('append covers only the new tail', () => {
-    expect(generatedPageRange('append', { pages: 5, appendedFrom: 3 })).toEqual([3, 4])
-  })
-
-  it('replace_at / insert_at cover the single touched page', () => {
-    expect(generatedPageRange('replace_at', { pages: 5, insertedIndex: 2 })).toEqual([2])
-    expect(generatedPageRange('insert_at', { pages: 5, insertedIndex: 0 })).toEqual([0])
-  })
-
-  it('missing insertedIndex yields nothing', () => {
-    expect(generatedPageRange('insert_at', { pages: 5 })).toEqual([])
-  })
-})
-
 describe('mergeQcPages', () => {
-  it('replace discards earlier pendings', () => {
-    expect(mergeQcPages([7, 8], 'replace', { pages: 2 })).toEqual([0, 1])
+  it('unions, dedupes and sorts the pages a run landed', () => {
+    expect(mergeQcPages([3, 1], [2, 3])).toEqual([1, 2, 3])
   })
 
-  it('append unions and dedupes', () => {
-    expect(mergeQcPages([1, 3], 'append', { pages: 5, appendedFrom: 3 })).toEqual([1, 3, 4])
+  it('an empty run leaves the pending set alone', () => {
+    expect(mergeQcPages([1, 2], [])).toEqual([1, 2])
   })
 
-  it('insert_at shifts pendings at/after the insertion point', () => {
-    expect(mergeQcPages([1, 3], 'insert_at', { pages: 5, insertedIndex: 2 })).toEqual([1, 2, 4])
-  })
-
-  it('replace_at adds the page without shifting', () => {
-    expect(mergeQcPages([1], 'replace_at', { pages: 5, insertedIndex: 3 })).toEqual([1, 3])
+  it('drops indexes that cannot name a page', () => {
+    expect(mergeQcPages([], [-1, 0])).toEqual([0])
   })
 })
 
