@@ -195,17 +195,17 @@ describe('VersionedAiSettingsStore', () => {
         version: 1,
         active: {
           chat: { providerId: 'openai', model: 'gpt-current' },
-          image: { providerId: 'genspark', model: 'claude-opus-4-7' },
+          image: { providerId: 'samugen', model: 'claude-opus-4-7' },
         },
         providers: {
           openai: { providerId: 'openai', model: 'gpt-current', enabled: true },
-          genspark: { providerId: 'genspark', model: 'claude-opus-4-7', enabled: true },
+          samugen: { providerId: 'samugen', model: 'claude-opus-4-7', enabled: true },
         },
       }),
     )
 
     // `resolve()` throws on a selection it cannot find, so a settings file left
-    // over from a build that still had Genspark would break every AI call
+    // over from a build that still had SamuGen would break every AI call
     // rather than fall back. The default takes the slot instead.
     const loaded = store.load()
     expect(loaded.active.image).toEqual(defaults().active.image)

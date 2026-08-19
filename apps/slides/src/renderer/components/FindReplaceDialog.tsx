@@ -14,7 +14,7 @@ import type {
   RenderTextLayout,
   ShapeRenderNode,
   TableRenderNode,
-} from '@genoffice/pptx-render'
+} from '@samugen/pptx-render'
 
 export interface FindMatch {
   slideIndex: number

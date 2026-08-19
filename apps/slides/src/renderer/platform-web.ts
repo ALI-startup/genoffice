@@ -23,8 +23,8 @@ import {
   savePptx,
   bytesToBase64,
   type OpenedPptx,
-} from '@genoffice/pptx-engine'
-import type { AiPort, AttachmentsPort, LanguagePort } from '@genoffice/platform'
+} from '@samugen/pptx-engine'
+import type { AiPort, AttachmentsPort, LanguagePort } from '@samugen/platform'
 import {
   createWebUnloadPrompt,
   ensurePermission,
@@ -33,7 +33,7 @@ import {
   type FilePickers,
   type FrameChildLink,
   type WebDocumentStore,
-} from '@genoffice/platform-web'
+} from '@samugen/platform-web'
 import { buildAllRenderSlides, type Session } from '../domain/session'
 import {
   deckDefaultFont,
@@ -464,7 +464,7 @@ export function createWebSlidesFilePort(
     getRecentFiles: async () => [],
 
     insertImage: async (slideIndex, fitWidthPx) => {
-      const picked = await pickBytes(pickers, IMAGE_TYPES, 'genoffice-slides-image')
+      const picked = await pickBytes(pickers, IMAGE_TYPES, 'samugen-slides-image')
       if (!picked) return null
       const natural = (await services.imageSize(picked.bytes, picked.ext)) ?? {
         width: 4,
@@ -480,7 +480,7 @@ export function createWebSlidesFilePort(
     },
 
     editImageFill: async (op) => {
-      const picked = await pickBytes(pickers, IMAGE_TYPES, 'genoffice-slides-image')
+      const picked = await pickBytes(pickers, IMAGE_TYPES, 'samugen-slides-image')
       if (!picked) return null
       return slideOps.setImageFillBytes(session(), {
         slideIndex: op.slideIndex,
@@ -491,7 +491,7 @@ export function createWebSlidesFilePort(
     },
 
     insertMedia: async (slideIndex, kind, fitWidthPx) => {
-      const picked = await pickBytes(pickers, AV_TYPES[kind], `genoffice-slides-${kind}`)
+      const picked = await pickBytes(pickers, AV_TYPES[kind], `samugen-slides-${kind}`)
       if (!picked) return null
       return slideOps.addMediaBytes(session(), {
         slideIndex,
@@ -504,7 +504,7 @@ export function createWebSlidesFilePort(
     },
 
     insertModel3d: async (slideIndex, fitWidthPx) => {
-      const picked = await pickBytes(pickers, MODEL_TYPES, 'genoffice-slides-model')
+      const picked = await pickBytes(pickers, MODEL_TYPES, 'samugen-slides-model')
       if (!picked) return null
       // No poster: the desktop asks the OS for a thumbnail and a page has no equivalent, so
       // the engine writes its own placeholder — which is also the desktop's fallback.
@@ -602,7 +602,7 @@ export function createWebSlidesWindowPort(
  * The UI language, from the shared web language storage every app uses.
  *
  * The shared port verbatim. It used to cast, because slides declared a stale eleven-value copy
- * of @genoffice/i18n's nineteen-value `Lang` (§6.4 of the migration doc) that a shared `Lang`
+ * of @samugen/i18n's nineteen-value `Lang` (§6.4 of the migration doc) that a shared `Lang`
  * did not fit through. The bridge now says `Lang`, so the two agree.
  */
 export function createWebSlidesLanguagePort(language: LanguagePort): SlidesLanguagePort {
@@ -640,7 +640,7 @@ export function createWebSlidesPrintPort(
  * The AI port, over the BFF.
  *
  * Four of the five members are the shared `AiPort` verbatim — `getAiSettings`, `aiStream`,
- * `aiStreamCancel`, `onAiStream` — so `createWebAiPort` from @genoffice/platform-web backs them
+ * `aiStreamCancel`, `onAiStream` — so `createWebAiPort` from @samugen/platform-web backs them
  * with no adapter at all, and slides streams through the same server route docs and pdf do. The
  * credential lives in the BFF and never reaches this page, which is the whole reason the route
  * exists.

@@ -14,7 +14,7 @@
  * same-origin is also what stops any credential from being needed here.
  *
  * Which attachment parsers the web bundle carries is also chosen here — by picking
- * @genoffice/platform-web's default extractor, which is where the honest limits of
+ * @samugen/platform-web's default extractor, which is where the honest limits of
  * client-side extraction are recorded. It moved there when slides needed the same
  * set; passing it in is still the app's decision.
  */
@@ -33,7 +33,7 @@ import {
   createWebLanguagePort,
   DOCUMENT_FILE_TYPES,
   WebDocumentStore,
-} from '@genoffice/platform-web'
+} from '@samugen/platform-web'
 import { t } from './i18n/locale'
 import type { CreateDocsPlatform } from './platform'
 import { createWebDocsPlatform } from './platform-web'
@@ -69,7 +69,7 @@ export const createDocsPlatform: CreateDocsPlatform = async () => {
     // an unsaved .docx, so the store never saves back to one — see the import
     // branch in platform-web.ts.
     fileTypes: DOCUMENT_FILE_TYPES,
-    pickerId: 'genoffice-docx',
+    pickerId: 'samugen-docx',
   })
   return createWebDocsPlatform({
     store,
@@ -90,7 +90,7 @@ export const createDocsPlatform: CreateDocsPlatform = async () => {
     // The browser's downloads, which is where a document with no file handle goes
     // when the user asks for it — a new document, or one imported from `.hwpx`.
     // Passed as a function so platform-web.ts keeps its promise of touching no
-    // globals; the DOM work is in @genoffice/platform-web's download.ts.
+    // globals; the DOM work is in @samugen/platform-web's download.ts.
     deliverDownload: (fileName, data, mimeType) =>
       downloadBytes(browserDownloadEnv(), fileName, data, mimeType),
     // Non-null only when the web shell hosts this page in its tab strip, which

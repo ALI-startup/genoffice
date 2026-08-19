@@ -28,8 +28,8 @@ import {
   createWebLanguagePort,
   fetchPublicAiSettings,
   type LanguageHostEnv,
-} from '@genoffice/platform-web'
-import { createI18n } from '@genoffice/i18n'
+} from '@samugen/platform-web'
+import { createI18n } from '@samugen/i18n'
 import type { TabKind } from '../../shared/tabs-api'
 import type { CreateShellPlatform, ShellAppPort, ShellOnboardingPort } from './platform'
 import {
@@ -46,7 +46,7 @@ import { strings } from './strings'
 declare const __SHELL_VERSION__: string
 
 /** Where the first-run tour's "seen" flag lives, in place of app-settings.json. */
-const ONBOARDING_STORAGE_KEY = 'genoffice.shell.onboardingSeen'
+const ONBOARDING_STORAGE_KEY = 'samugen.shell.onboardingSeen'
 
 /**
  * Routing over the History API.
@@ -116,7 +116,7 @@ function createWebAppPort(): ShellAppPort {
 
 export const createShellPlatform: CreateShellPlatform = async () => {
   const languageEnv: LanguageHostEnv = browserLanguageEnv()
-  // @genoffice/platform-web's shared language port — the same one every editor
+  // @samugen/platform-web's shared language port — the same one every editor
   // frame uses, so the shell and its frames resolve the stored choice
   // identically, and a switch made in either is seen by the other.
   const language = createWebShellLanguagePort(createWebLanguagePort(languageEnv))
@@ -137,7 +137,7 @@ export const createShellPlatform: CreateShellPlatform = async () => {
     route: browserRouteEnv(),
     frames: createShellFrameLink(),
     titleFor,
-    homeTitle: 'GenOffice',
+    homeTitle: 'SamuGen',
     schedule: browserScheduler,
   })
 

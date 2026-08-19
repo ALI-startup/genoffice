@@ -1,5 +1,5 @@
-import type { AgentSkill } from '@genoffice/agent-core'
-import { ATTACHMENT_IMAGE_EXTS, type AttachmentMeta } from '@genoffice/platform'
+import type { AgentSkill } from '@samugen/agent-core'
+import { ATTACHMENT_IMAGE_EXTS, type AttachmentMeta } from '@samugen/platform'
 import { sheetsAttachments } from '../platform'
 import { t } from '../i18n/locale'
 

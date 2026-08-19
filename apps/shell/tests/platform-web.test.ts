@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { PublicAiSettings, ShellFrameLink } from '@genoffice/platform-web'
+import type { PublicAiSettings, ShellFrameLink } from '@samugen/platform-web'
 import {
   createWebShellAiSettingsPort,
   createWebShellFilesPort,
@@ -120,7 +120,7 @@ function setup(initialHash = '#/') {
           : kind === 'sheets'
             ? 'AI Sheets'
             : 'AI Docs',
-    homeTitle: 'GenOffice',
+    homeTitle: 'SamuGen',
     schedule: scheduler.schedule,
   })
   return { route, frames, scheduler, shell }
@@ -150,7 +150,7 @@ describe('web shell tabs', () => {
     const { shell } = setup()
     const tabs = await shell.tabs.list()
     expect(tabs).toEqual([
-      { id: 'home', kind: 'home', title: 'GenOffice', closable: false, active: true },
+      { id: 'home', kind: 'home', title: 'SamuGen', closable: false, active: true },
     ])
   })
 

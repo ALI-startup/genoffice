@@ -1,6 +1,6 @@
 # Keeping a provider-enabled fork current
 
-GenOffice source updates and user AI configuration are separate concerns. The
+SamuGen source updates and user AI configuration are separate concerns. The
 provider-enabled fork should rebase its source branch from the upstream
 repository, while each installed copy keeps its own `ai-settings.json` and
 `ai-credentials.json` in Electron `userData`. The credentials file contains
@@ -13,7 +13,7 @@ Keep the fork as `origin` and add the official repository as `upstream`:
 
 ```sh
 git remote rename origin fork
-git remote add origin https://github.com/YOUR_ACCOUNT/genoffice.git
+git remote add origin https://github.com/YOUR_ACCOUNT/samugen.git
 git remote add upstream https://github.com/genspark-ai/genoffice.git
 git fetch --all --prune
 ```
@@ -37,11 +37,11 @@ Apply the rebase and protect the installed user's two files:
 
 ```sh
 npm run sync:upstream -- --apply \
-  --settings-path "$GENOFFICE_USER_DATA/ai-settings.json" \
-  --credentials-path "$GENOFFICE_USER_DATA/ai-credentials.json"
+  --settings-path "$SAMUGEN_USER_DATA/ai-settings.json" \
+  --credentials-path "$SAMUGEN_USER_DATA/ai-credentials.json"
 ```
 
-`GENOFFICE_USER_DATA` is the test/dev user-data directory when set. For a
+`SAMUGEN_USER_DATA` is the test/dev user-data directory when set. For a
 packaged macOS app, resolve the actual Electron user-data directory from the
 app before running the command. The helper copies the files as bytes into a
 mode-0700 temporary directory, rebases the source branch, and restores the
@@ -84,7 +84,7 @@ Keep provider work in focused commits so upstream conflicts are small:
 5. Push the fork branch and open a pull request against the fork's `main`.
 6. Build and publish fork installers from the fork's own signed release feed.
 
-The official GenOffice update feed must not be used for a modified fork. An
+The official SamuGen update feed must not be used for a modified fork. An
 official installer can overwrite a fork binary and remove the fork's provider
 runtime, even though Electron userData remains. Keep the fork's app ID and
 update endpoint stable across releases; if the app ID changes, provide a
@@ -117,7 +117,7 @@ should force-push `main`.
 Run the migration and workflow safety tests directly when changing this area:
 
 ```sh
-npm run typecheck -w @genoffice/ai-electron
-npm test -w @genoffice/ai-electron
+npm run typecheck -w @samugen/ai-electron
+npm test -w @samugen/ai-electron
 npm run test:upstream-sync
 ```

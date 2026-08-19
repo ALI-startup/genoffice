@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { AttachmentMeta, AttachmentReadResult } from '@genoffice/platform'
+import type { AttachmentMeta, AttachmentReadResult } from '@samugen/platform'
 import { createFilesSkill } from '../src/renderer/ai/files-skill'
 import { installTestPlatform } from './helpers/platform'
 

@@ -18,7 +18,7 @@
  *      and /usr/lib rather than gathered under one root; a sysroot directory of symlinks is
  *      assembled for clang in that case.
  *
- * Usage: `npm run wasm:build -w @genoffice/sheets`
+ * Usage: `npm run wasm:build -w @samugen/sheets`
  */
 import { execFileSync } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, statSync, symlinkSync, rmSync } from 'node:fs'

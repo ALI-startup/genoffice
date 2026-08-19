@@ -3,7 +3,7 @@
  * export, and printing. Each function takes the ActionCtx built fresh per call.
  */
 import { slidesPrint } from './platform'
-import type { RenderSlide } from '@genoffice/pptx-render'
+import type { RenderSlide } from '@samugen/pptx-render'
 import type { ActionCtx } from './action-context'
 import { renderSlidesToPngBase64 } from './export-render'
 import { t } from './i18n/locale'

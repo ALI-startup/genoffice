@@ -1,10 +1,10 @@
 {
-  "name": "@genoffice/platform-electron",
+  "name": "@samugen/platform-electron",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "private": true,
   "type": "module",
-  "description": "Renderer-side Electron adapters: build @genoffice/platform ports from the preload bridges (window.pdfApi / window.desktop / window.projectApi); never imports electron",
+  "description": "Renderer-side Electron adapters: build @samugen/platform ports from the preload bridges (window.pdfApi / window.desktop / window.projectApi); never imports electron",
   "exports": {
     ".": "./src/index.ts"
   },
@@ -14,9 +14,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@genoffice/ai-provider": "*",
-    "@genoffice/i18n": "*",
-    "@genoffice/platform": "*"
+    "@samugen/ai-provider": "*",
+    "@samugen/i18n": "*",
+    "@samugen/platform": "*"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

@@ -73,7 +73,7 @@ export const strings = {
     aiTurnLimit: '已达到单次任务的步数上限，回复"继续"让我接着做。',
     aiUnknownError: '未知错误',
     aiTimeoutError: 'AI 请求超时：网络长时间无响应，已停止。请检查网络后重试',
-    aiCreditsExhausted: 'Genspark 积分已用完，请前往 genspark.ai/pricing 充值后重试',
+    aiCreditsExhausted: 'AI 服务商报告额度已用完，请在服务商处充值后重试',
     aiToolReadPages: '读取第 {start}-{end} 页',
     aiToolSearch: '搜索"{query}"（{count} 处）',
     aiToolGoto: '跳转到第 {page} 页',
@@ -125,7 +125,7 @@ export const strings = {
     removeStamp: '点击选中此水印/页眉页脚',
     props: '属性',
     propsTitle: '文档属性',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: '打开 AI 助手',
     propTitle: '标题',
     propAuthor: '作者',
@@ -215,7 +215,7 @@ export const strings = {
     aiTimeoutError:
       'AI request timed out: no response from the network, so the run was stopped. Check your connection and try again',
     aiCreditsExhausted:
-      'Your Genspark credits have run out. Visit genspark.ai/pricing to top up, then try again',
+      'Your AI provider reports no credit left. Top up with the provider, then try again',
     aiToolReadPages: 'Read pages {start}-{end}',
     aiToolSearch: 'Search "{query}" ({count} hits)',
     aiToolGoto: 'Go to page {page}',
@@ -267,7 +267,7 @@ export const strings = {
     removeStamp: 'Click to select this watermark / header / footer',
     props: 'Properties',
     propsTitle: 'Document properties',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: 'Open the AI assistant',
     propTitle: 'Title',
     propAuthor: 'Author',
@@ -357,7 +357,7 @@ export const strings = {
     aiTimeoutError:
       'AIリクエストがタイムアウトしました：ネットワークからの応答がないため中断しました。接続を確認して再試行してください',
     aiCreditsExhausted:
-      'Gensparkクレジットを使い切りました。genspark.ai/pricing でチャージしてから再試行してください',
+      'AI プロバイダーが残高不足を報告しました。プロバイダー側でチャージしてから再試行してください',
     aiToolReadPages: 'ページ {start}-{end} を読む',
     aiToolSearch: '「{query}」を検索（{count} 件）',
     aiToolGoto: 'ページ {page} へ移動',
@@ -409,7 +409,7 @@ export const strings = {
     removeStamp: 'クリックでこの透かし/ヘッダーを選択',
     props: 'プロパティ',
     propsTitle: '文書のプロパティ',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: 'AI アシスタントを開く',
     propTitle: 'タイトル',
     propAuthor: '作成者',
@@ -499,7 +499,7 @@ export const strings = {
     aiTimeoutError:
       'AI 요청 시간 초과: 네트워크 응답이 없어 중단되었습니다. 연결을 확인한 후 다시 시도해 주세요',
     aiCreditsExhausted:
-      'Genspark 크레딧을 모두 사용했습니다. genspark.ai/pricing에서 충전한 후 다시 시도해 주세요',
+      'AI 공급자에 남은 크레딧이 없습니다. 공급자에서 충전한 후 다시 시도해 주세요',
     aiToolReadPages: '{start}-{end}쪽 읽기',
     aiToolSearch: '"{query}" 검색 ({count}건)',
     aiToolGoto: '{page}쪽으로 이동',
@@ -551,7 +551,7 @@ export const strings = {
     removeStamp: '클릭하여 이 워터마크/머리글 선택',
     props: '속성',
     propsTitle: '문서 속성',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: 'AI 도우미 열기',
     propTitle: '제목',
     propAuthor: '작성자',
@@ -641,7 +641,7 @@ export const strings = {
     aiTimeoutError:
       "Délai de la requête IA dépassé : aucune réponse du réseau, l'exécution a été interrompue. Vérifiez votre connexion et réessayez",
     aiCreditsExhausted:
-      'Vos crédits Genspark sont épuisés. Rechargez sur genspark.ai/pricing puis réessayez',
+      "Votre fournisseur d'IA signale un crédit épuisé. Rechargez chez le fournisseur, puis réessayez",
     aiToolReadPages: 'Lire les pages {start}-{end}',
     aiToolSearch: 'Rechercher « {query} » ({count} occurrences)',
     aiToolGoto: 'Aller à la page {page}',
@@ -693,7 +693,7 @@ export const strings = {
     removeStamp: 'Cliquer pour sélectionner ce filigrane / en-tête',
     props: 'Propriétés',
     propsTitle: 'Propriétés du document',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: "Ouvrir l'assistant IA",
     propTitle: 'Titre',
     propAuthor: 'Auteur',
@@ -783,7 +783,7 @@ export const strings = {
     aiTimeoutError:
       'Zeitüberschreitung der KI-Anfrage: keine Antwort vom Netzwerk, der Vorgang wurde abgebrochen. Prüfe deine Verbindung und versuche es erneut',
     aiCreditsExhausted:
-      'Deine Genspark-Credits sind aufgebraucht. Lade unter genspark.ai/pricing auf und versuche es erneut',
+      'Dein KI-Anbieter meldet kein Guthaben mehr. Lade beim Anbieter auf und versuche es erneut',
     aiToolReadPages: 'Seiten {start}-{end} lesen',
     aiToolSearch: '„{query}" suchen ({count} Treffer)',
     aiToolGoto: 'Zu Seite {page} springen',
@@ -835,7 +835,7 @@ export const strings = {
     removeStamp: 'Klicken, um dieses Wasserzeichen / diese Kopfzeile auszuwählen',
     props: 'Eigenschaften',
     propsTitle: 'Dokumenteigenschaften',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: 'KI-Assistenten öffnen',
     propTitle: 'Titel',
     propAuthor: 'Autor',
@@ -925,7 +925,7 @@ export const strings = {
     aiTimeoutError:
       'La solicitud de IA agotó el tiempo de espera: no hubo respuesta de la red y se detuvo. Comprueba tu conexión e inténtalo de nuevo',
     aiCreditsExhausted:
-      'Tus créditos de Genspark se han agotado. Recarga en genspark.ai/pricing e inténtalo de nuevo',
+      'Tu proveedor de IA informa que no queda crédito. Recarga con el proveedor e inténtalo de nuevo',
     aiToolReadPages: 'Leer páginas {start}-{end}',
     aiToolSearch: 'Buscar «{query}» ({count} resultados)',
     aiToolGoto: 'Ir a la página {page}',
@@ -977,7 +977,7 @@ export const strings = {
     removeStamp: 'Haz clic para seleccionar esta marca de agua / encabezado',
     props: 'Propiedades',
     propsTitle: 'Propiedades del documento',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: 'Abrir el asistente de IA',
     propTitle: 'Título',
     propAuthor: 'Autor',
@@ -1067,7 +1067,7 @@ export const strings = {
     aiTimeoutError:
       'คำขอ AI หมดเวลา: เครือข่ายไม่ตอบสนอง จึงหยุดการทำงาน โปรดตรวจสอบการเชื่อมต่อแล้วลองใหม่',
     aiCreditsExhausted:
-      'เครดิต Genspark ของคุณหมดแล้ว โปรดเติมเครดิตที่ genspark.ai/pricing แล้วลองใหม่',
+      'ผู้ให้บริการ AI แจ้งว่าเครดิตหมดแล้ว โปรดเติมเครดิตกับผู้ให้บริการ แล้วลองใหม่',
     aiToolReadPages: 'อ่านหน้า {start}-{end}',
     aiToolSearch: 'ค้นหา "{query}" ({count} แห่ง)',
     aiToolGoto: 'ไปที่หน้า {page}',
@@ -1119,7 +1119,7 @@ export const strings = {
     removeStamp: 'คลิกเพื่อเลือกลายน้ำ/หัวท้ายนี้',
     props: 'คุณสมบัติ',
     propsTitle: 'คุณสมบัติเอกสาร',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: 'เปิดผู้ช่วย AI',
     propTitle: 'ชื่อเรื่อง',
     propAuthor: 'ผู้เขียน',
@@ -1209,7 +1209,7 @@ export const strings = {
     aiTimeoutError:
       'Permintaan AI habis waktu: jaringan tidak merespons sehingga proses dihentikan. Periksa koneksi Anda lalu coba lagi',
     aiCreditsExhausted:
-      'Kredit Genspark Anda telah habis. Isi ulang di genspark.ai/pricing lalu coba lagi',
+      'Penyedia AI Anda melaporkan kredit habis. Isi ulang di penyedia lalu coba lagi',
     aiToolReadPages: 'Baca halaman {start}-{end}',
     aiToolSearch: 'Cari "{query}" ({count} temuan)',
     aiToolGoto: 'Ke halaman {page}',
@@ -1261,7 +1261,7 @@ export const strings = {
     removeStamp: 'Klik untuk memilih tanda air / header ini',
     props: 'Properti',
     propsTitle: 'Properti dokumen',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: 'Buka asisten AI',
     propTitle: 'Judul',
     propAuthor: 'Penulis',
@@ -1351,7 +1351,7 @@ export const strings = {
     aiTimeoutError:
       'Тайм-аут запроса ИИ: сеть не отвечает, выполнение остановлено. Проверьте подключение и повторите попытку',
     aiCreditsExhausted:
-      'Кредиты Genspark исчерпаны. Пополните баланс на genspark.ai/pricing и повторите попытку',
+      'Поставщик ИИ сообщает, что кредиты исчерпаны. Пополните баланс у поставщика и повторите попытку',
     aiToolReadPages: 'Чтение страниц {start}-{end}',
     aiToolSearch: 'Поиск «{query}» ({count} совпадений)',
     aiToolGoto: 'Перейти на страницу {page}',
@@ -1403,7 +1403,7 @@ export const strings = {
     removeStamp: 'Нажмите, чтобы выбрать этот знак / колонтитул',
     props: 'Свойства',
     propsTitle: 'Свойства документа',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: 'Открыть помощника ИИ',
     propTitle: 'Заголовок',
     propAuthor: 'Автор',
@@ -1493,7 +1493,7 @@ export const strings = {
     aiTimeoutError:
       'انتهت مهلة طلب الذكاء الاصطناعي: لا توجد استجابة من الشبكة وتم الإيقاف. تحقق من الاتصال وحاول مجددًا',
     aiCreditsExhausted:
-      'نفدت أرصدة Genspark لديك. يرجى إعادة الشحن عبر genspark.ai/pricing ثم المحاولة مجددًا',
+      'أبلغ مزوّد الذكاء الاصطناعي بنفاد الرصيد. يرجى إعادة الشحن عند المزوّد ثم المحاولة مجددًا',
     aiToolReadPages: 'قراءة الصفحات {start}-{end}',
     aiToolSearch: 'بحث عن "{query}" ({count} نتيجة)',
     aiToolGoto: 'الانتقال إلى الصفحة {page}',
@@ -1545,7 +1545,7 @@ export const strings = {
     removeStamp: 'انقر لتحديد هذه العلامة/الرأس',
     props: 'الخصائص',
     propsTitle: 'خصائص المستند',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: 'فتح مساعد الذكاء الاصطناعي',
     propTitle: 'العنوان',
     propAuthor: 'المؤلف',
@@ -1635,7 +1635,7 @@ export const strings = {
     aiTimeoutError:
       'A solicitação de IA expirou: sem resposta da rede, a execução foi interrompida. Verifique sua conexão e tente novamente',
     aiCreditsExhausted:
-      'Seus créditos Genspark acabaram. Recarregue em genspark.ai/pricing e tente novamente',
+      'Seu provedor de IA informa que não há mais crédito. Recarregue com o provedor e tente novamente',
     aiToolReadPages: 'Ler páginas {start}-{end}',
     aiToolSearch: 'Pesquisar "{query}" ({count} ocorrências)',
     aiToolGoto: 'Ir para a página {page}',
@@ -1687,7 +1687,7 @@ export const strings = {
     removeStamp: "Clique para selecionar esta marca d'água / cabeçalho",
     props: 'Propriedades',
     propsTitle: 'Propriedades do documento',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: 'Abrir o assistente de IA',
     propTitle: 'Título',
     propAuthor: 'Autor',
@@ -1777,7 +1777,7 @@ export const strings = {
     aiTimeoutError:
       'Richiesta IA scaduta: nessuna risposta dalla rete, esecuzione interrotta. Controlla la connessione e riprova',
     aiCreditsExhausted:
-      'I tuoi crediti Genspark sono esauriti. Ricarica su genspark.ai/pricing e riprova',
+      'Il tuo provider di IA segnala credito esaurito. Ricarica presso il provider e riprova',
     aiToolReadPages: 'Leggi le pagine {start}-{end}',
     aiToolSearch: 'Cerca "{query}" ({count} risultati)',
     aiToolGoto: 'Vai alla pagina {page}',
@@ -1830,7 +1830,7 @@ export const strings = {
     removeStamp: 'Fai clic per selezionare questa filigrana / intestazione',
     props: 'Proprietà',
     propsTitle: 'Proprietà del documento',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: "Apri l'assistente IA",
     propTitle: 'Titolo',
     propAuthor: 'Autore',
@@ -1920,7 +1920,7 @@ export const strings = {
     aiTimeoutError:
       'Przekroczono limit czasu żądania AI: brak odpowiedzi sieci, przerwano. Sprawdź połączenie i spróbuj ponownie',
     aiCreditsExhausted:
-      'Twoje kredyty Genspark wyczerpały się. Doładuj konto na genspark.ai/pricing i spróbuj ponownie',
+      'Dostawca AI zgłasza brak środków. Doładuj konto u dostawcy i spróbuj ponownie',
     aiToolReadPages: 'Czytaj strony {start}-{end}',
     aiToolSearch: 'Szukaj „{query}" ({count} wyników)',
     aiToolGoto: 'Przejdź do strony {page}',
@@ -1972,7 +1972,7 @@ export const strings = {
     removeStamp: 'Kliknij, aby zaznaczyć ten znak wodny / nagłówek',
     props: 'Właściwości',
     propsTitle: 'Właściwości dokumentu',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: 'Otwórz asystenta AI',
     propTitle: 'Tytuł',
     propAuthor: 'Autor',
@@ -2062,7 +2062,7 @@ export const strings = {
     aiTimeoutError:
       'AI-verzoek verlopen: geen reactie van het netwerk, uitvoering gestopt. Controleer je verbinding en probeer het opnieuw',
     aiCreditsExhausted:
-      'Je Genspark-credits zijn op. Waardeer op via genspark.ai/pricing en probeer het opnieuw',
+      'Je AI-provider meldt dat het krediet op is. Waardeer op bij de provider en probeer het opnieuw',
     aiToolReadPages: "Pagina's {start}-{end} lezen",
     aiToolSearch: 'Zoeken naar "{query}" ({count} resultaten)',
     aiToolGoto: 'Ga naar pagina {page}',
@@ -2114,7 +2114,7 @@ export const strings = {
     removeStamp: 'Klik om dit watermerk / deze koptekst te selecteren',
     props: 'Eigenschappen',
     propsTitle: 'Documenteigenschappen',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: 'De AI-assistent openen',
     propTitle: 'Titel',
     propAuthor: 'Auteur',
@@ -2204,7 +2204,7 @@ export const strings = {
     aiTimeoutError:
       'Permintaan AI tamat masa: rangkaian tidak memberi respons, proses dihentikan. Semak sambungan anda dan cuba lagi',
     aiCreditsExhausted:
-      'Kredit Genspark anda telah habis. Tambah nilai di genspark.ai/pricing dan cuba lagi',
+      'Penyedia AI anda melaporkan kredit telah habis. Tambah nilai dengan penyedia dan cuba lagi',
     aiToolReadPages: 'Baca halaman {start}-{end}',
     aiToolSearch: 'Cari "{query}" ({count} padanan)',
     aiToolGoto: 'Pergi ke halaman {page}',
@@ -2256,7 +2256,7 @@ export const strings = {
     removeStamp: 'Klik untuk memilih tera air / pengepala ini',
     props: 'Sifat',
     propsTitle: 'Sifat dokumen',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: 'Buka pembantu AI',
     propTitle: 'Tajuk',
     propAuthor: 'Pengarang',
@@ -2344,7 +2344,7 @@ export const strings = {
     aiTurnLimit: 'הגעת למגבלת הצעדים של המשימה — כתבו "המשך" כדי שאמשיך.',
     aiUnknownError: 'שגיאה לא ידועה',
     aiTimeoutError: 'תם הזמן לבקשת ה-AI: אין תגובה מהרשת וההרצה הופסקה. בדוק את החיבור ונסה שוב',
-    aiCreditsExhausted: 'קרדיטי Genspark שלך אזלו. טען מחדש ב-genspark.ai/pricing ונסה שוב',
+    aiCreditsExhausted: 'ספק ה-AI מדווח שנגמר הקרדיט. טען מחדש אצל הספק ונסה שוב',
     aiToolReadPages: 'קריאת עמודים {start}-{end}',
     aiToolSearch: 'חיפוש "{query}" ({count} תוצאות)',
     aiToolGoto: 'מעבר לעמוד {page}',
@@ -2396,7 +2396,7 @@ export const strings = {
     removeStamp: 'לחצו לבחירת סימן המים/הכותרת הזו',
     props: 'מאפיינים',
     propsTitle: 'מאפייני המסמך',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: 'פתח את עוזר ה-AI',
     propTitle: 'כותרת',
     propAuthor: 'מחבר',
@@ -2486,7 +2486,7 @@ export const strings = {
     aiTimeoutError:
       'AI अनुरोध का समय समाप्त: नेटवर्क से कोई प्रतिक्रिया नहीं मिली, इसलिए रोक दिया गया। कनेक्शन जांचें और फिर से प्रयास करें',
     aiCreditsExhausted:
-      'आपके Genspark क्रेडिट समाप्त हो गए हैं। genspark.ai/pricing पर रिचार्ज करें और फिर से प्रयास करें',
+      'आपका AI प्रदाता बताता है कि क्रेडिट समाप्त हो गया है। प्रदाता के पास रिचार्ज करें और फिर से प्रयास करें',
     aiToolReadPages: 'पृष्ठ {start}-{end} पढ़ें',
     aiToolSearch: '"{query}" खोजें ({count} परिणाम)',
     aiToolGoto: 'पृष्ठ {page} पर जाएँ',
@@ -2538,7 +2538,7 @@ export const strings = {
     removeStamp: 'इस वॉटरमार्क/शीर्षलेख-पादलेख को चुनने के लिए क्लिक करें',
     props: 'गुण',
     propsTitle: 'दस्तावेज़ गुण',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: 'AI सहायक खोलें',
     propTitle: 'शीर्षक',
     propAuthor: 'लेखक',
@@ -2626,7 +2626,7 @@ export const strings = {
     aiTurnLimit: '已達到單次任務的步數上限，回覆「繼續」讓我接著做。',
     aiUnknownError: '未知錯誤',
     aiTimeoutError: 'AI 請求逾時：網路長時間無回應，已停止。請檢查網路後重試',
-    aiCreditsExhausted: 'Genspark 點數已用完，請前往 genspark.ai/pricing 儲值後重試',
+    aiCreditsExhausted: 'AI 服務商回報額度已用完，請在服務商處儲值後重試',
     aiToolReadPages: '讀取第 {start}-{end} 頁',
     aiToolSearch: '搜尋「{query}」（{count} 處）',
     aiToolGoto: '跳至第 {page} 頁',
@@ -2678,7 +2678,7 @@ export const strings = {
     removeStamp: '點一下選取此浮水印/頁首頁尾',
     props: '屬性',
     propsTitle: '文件屬性',
-    ribbonAiAssistant: 'Genspark',
+    ribbonAiAssistant: 'SamuGen',
     ribbonAiAssistantTip: '開啟 AI 助理',
     propTitle: '標題',
     propAuthor: '作者',

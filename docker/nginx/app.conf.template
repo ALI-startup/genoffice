@@ -1,16 +1,16 @@
-# One server block, three uses. Which bundle it serves is GENOFFICE_WEB_ROOT:
+# One server block, three uses. Which bundle it serves is SAMUGEN_WEB_ROOT:
 # /srv/shell (the composed shell, with docs and pdf under /app/docs/ and
 # /app/pdf/), /srv/docs, or /srv/pdf. The nginx entrypoint substitutes the
-# GENOFFICE_* variables from the environment; every other $variable here is
+# SAMUGEN_* variables from the environment; every other $variable here is
 # nginx's own and is left untouched, because envsubst only replaces names that
 # are actually exported.
 
 server {
-    listen      ${GENOFFICE_WEB_PORT};
-    listen      [::]:${GENOFFICE_WEB_PORT};
+    listen      ${SAMUGEN_WEB_PORT};
+    listen      [::]:${SAMUGEN_WEB_PORT};
     server_name _;
 
-    root  ${GENOFFICE_WEB_ROOT};
+    root  ${SAMUGEN_WEB_ROOT};
     index index.html;
 
     # nginx appends the trailing slash on /app/docs -> /app/docs/ by rebuilding
@@ -52,13 +52,13 @@ server {
     # Load-bearing, not a convenience: every app sets `connect-src 'self'`, so
     # the browser blocks a cross-origin AI request before it is sent. The route
     # prefix is the contract and is declared once, as AI_BFF_BASE_PATH in
-    # packages/platform-web/src/ai-wire.ts — GENOFFICE_AI_BFF_PATH must match it.
+    # packages/platform-web/src/ai-wire.ts — SAMUGEN_AI_BFF_PATH must match it.
     #
     # /v1/ai/stream is Server-Sent Events. Buffering has to be off in both
     # directions or tokens arrive in blocks, or not until the turn ends.
     # `^~` so the static-asset regex below can never win this prefix back.
-    location ^~ ${GENOFFICE_AI_BFF_PATH} {
-        proxy_pass ${GENOFFICE_AI_BFF_UPSTREAM};
+    location ^~ ${SAMUGEN_AI_BFF_PATH} {
+        proxy_pass ${SAMUGEN_AI_BFF_UPSTREAM};
         proxy_http_version 1.1;
 
         proxy_set_header Host              $host;

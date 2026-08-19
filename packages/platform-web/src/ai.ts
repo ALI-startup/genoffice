@@ -4,7 +4,7 @@
  * The shape of `AiPort` is the Electron IPC shape — fire `aiStream`, receive
  * chunks through a separate `onAiStream` subscription — and it maps onto HTTP
  * without distortion: the POST body is the request, and the SSE response body
- * is the chunk channel. `@genoffice/agent-core`'s `createIpcTransport`
+ * is the chunk channel. `@samugen/agent-core`'s `createIpcTransport`
  * therefore drives this adapter unchanged, pings and silence watchdog included.
  *
  * No credential ever reaches this file. `getAiSettings` returns what the server
@@ -12,9 +12,9 @@
  * the provider and holds the key. That is the whole point of the BFF, and it is
  * why the returned `AiSettings.apiKey` is the empty string — see below.
  */
-import type { AiSettings, AiStreamChunk, AiStreamRequest } from '@genoffice/ai-provider'
-import { AI_PROVIDERS, sseLines } from '@genoffice/ai-provider'
-import type { AiPort } from '@genoffice/platform'
+import type { AiSettings, AiStreamChunk, AiStreamRequest } from '@samugen/ai-provider'
+import { AI_PROVIDERS, sseLines } from '@samugen/ai-provider'
+import type { AiPort } from '@samugen/platform'
 import { AI_BFF_ROUTES, type AiStreamBody, type PublicAiSettings } from './ai-wire.js'
 
 export interface WebAiPortOptions {

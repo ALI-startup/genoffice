@@ -1,7 +1,7 @@
 /**
  * Builds docs' platform from the Electron preload bridge (`window.desktop`).
  *
- * The shared ports come from @genoffice/platform-electron; docs' own surfaces —
+ * The shared ports come from @samugen/platform-electron; docs' own surfaces —
  * the docx document operations, the close-check handshake, the native-menu and
  * teardown channels, and PDF export — are adapted here, next to the port
  * declarations they satisfy. Nothing in this file talks to Electron directly: the
@@ -19,7 +19,7 @@ import {
   createDocsSearchPort,
   createDocsTabsPort,
   createElectronAttachmentsPort,
-} from '@genoffice/platform-electron'
+} from '@samugen/platform-electron'
 import type { DesktopApi, OpenResult } from '../shared/ipc'
 import type {
   DocsFilePort,
@@ -166,7 +166,7 @@ export function createDocsPdfExportPort(bridge: DesktopApi): DocsPdfExportPort {
  * HWPX export over the Electron bridge.
  *
  * The conversion happens in the main process, where the file dialog and the disk
- * write already live — not because it has to: @genoffice/hwpx-convert needs no
+ * write already live — not because it has to: @samugen/hwpx-convert needs no
  * filesystem, and the web adapter runs the same converter in the page.
  */
 export function createDocsHwpxPort(bridge: DesktopApi): DocsHwpxPort {

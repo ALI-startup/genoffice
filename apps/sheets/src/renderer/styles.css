@@ -233,7 +233,7 @@ textarea:disabled {
    A segmented pill at the far end of the tab row. Small and quiet, because it
    is not a command: it sits past everything the row offers, in the same corner
    on every screen, so switching is one click from wherever the user is.
-   The markup is @genoffice/ui's LanguageToggle; only the paint is here. */
+   The markup is @samugen/ui's LanguageToggle; only the paint is here. */
 .lang-toggle {
   /* the tab row is the frameless window's drag region */
   -webkit-app-region: no-drag;
@@ -453,14 +453,14 @@ textarea:disabled {
   background: var(--border);
 }
 
-/* The Genspark entry brings its own separator — drop the preceding group's
+/* The SamuGen entry brings its own separator — drop the preceding group's
  * hairline so the two don't render as a double line */
-.ribbon-group:has(+ .ribbon-genspark-sep)::after {
+.ribbon-group:has(+ .ribbon-samugen-sep)::after {
   display: none;
 }
 
 /* The AI group leads the band in every app: 4px side padding like the
-   docs/slides .ribbon-group, so the Genspark mark sits at the same x. */
+   docs/slides .ribbon-group, so the SamuGen mark sits at the same x. */
 .ribbon-group:has(.ai-entry) {
   padding: 2px 4px;
 }
@@ -722,7 +722,7 @@ textarea:disabled {
   .ribbon {
     gap: 1px;
     /* keep the 6px 12px band padding: docs/slides never compact it, and a
-       narrower inset shifts the shared Genspark entry 2px when switching apps */
+       narrower inset shifts the shared SamuGen entry 2px when switching apps */
   }
 
   .ribbon-group {
@@ -1489,15 +1489,15 @@ select.select-like {
   box-shadow: 0 2px 6px rgb(74 92 255 / 25%);
 }
 
-/* Genspark brand logo (shared by the collapse button and the AI panel title) */
-.genspark-badge {
+/* SamuGen brand logo (shared by the collapse button and the AI panel title) */
+.samugen-badge {
   display: block;
   width: 22px;
   height: 22px;
   border-radius: 50%;
 }
 
-.ai-panel-title .genspark-badge {
+.ai-panel-title .samugen-badge {
   width: 18px;
   height: 18px;
 }
@@ -3614,7 +3614,7 @@ textarea:focus {
 }
 
 /* textarea: 15px / 21px fixed line-height, auto-grow band
- * (resting height 25% taller than default, matching the Genspark for PowerPoint prompt box) */
+ * (resting height 25% taller than default, matching the SamuGen for PowerPoint prompt box) */
 .ai-input-box textarea {
   display: block;
   width: 100%;
@@ -3936,9 +3936,9 @@ textarea:focus {
   --univer-primary-600: currentColor;
 }
 
-/* Genspark entry at the Home ribbon's right end: vertical hairline + icon-over-label
+/* SamuGen entry at the Home ribbon's right end: vertical hairline + icon-over-label
  * button, same spec as the docs/slides ribbon AI button (28px mark, 11px/500 black label) */
-.ribbon-genspark-sep {
+.ribbon-samugen-sep {
   width: 1px;
   align-self: stretch;
   margin: 8px 6px;
@@ -3946,7 +3946,7 @@ textarea:focus {
   flex-shrink: 0;
 }
 
-.ribbon-genspark-btn {
+.ribbon-samugen-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3963,7 +3963,7 @@ textarea:focus {
   flex-shrink: 0;
 }
 
-.ribbon-genspark-btn:hover {
+.ribbon-samugen-btn:hover {
   background: #f3f2f1;
 }
 

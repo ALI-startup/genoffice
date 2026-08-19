@@ -10,8 +10,8 @@
  * BFF, a printer — is what is being asserted here.
  */
 import { describe, expect, it, vi } from 'vitest'
-import type { AiPort, AttachmentsPort, LanguagePort } from '@genoffice/platform'
-import type { WebDocumentStore } from '@genoffice/platform-web'
+import type { AiPort, AttachmentsPort, LanguagePort } from '@samugen/platform'
+import type { WebDocumentStore } from '@samugen/platform-web'
 import { setSlideRenderEnv } from '../src/domain/session'
 import {
   createWebSlidesPlatform,

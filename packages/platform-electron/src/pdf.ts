@@ -10,9 +10,9 @@
  * imported because packages must not depend on apps; `PdfApi` satisfies each
  * of them structurally, so `createPdfAiPort(window.pdfApi)` type-checks.
  */
-import type { AiSettings, AiStreamChunk, AiStreamRequest } from '@genoffice/ai-provider'
-import type { Lang } from '@genoffice/i18n'
-import type { AiPort, LanguagePort, WindowPort } from '@genoffice/platform'
+import type { AiSettings, AiStreamChunk, AiStreamRequest } from '@samugen/ai-provider'
+import type { Lang } from '@samugen/i18n'
+import type { AiPort, LanguagePort, WindowPort } from '@samugen/platform'
 
 /** The AI members of PdfApi. Names and signatures already match AiPort exactly. */
 export interface PdfAiBridge {
@@ -41,7 +41,7 @@ export interface PdfWindowBridge {
  *
  * pdf's preload forwards no tab channel ('win:new' / 'win:list' / 'win:focus'),
  * and standalone pdf has no shell tab strip at all, so it must not claim the
- * whole port — see the availability table in @genoffice/platform's window port.
+ * whole port — see the availability table in @samugen/platform's window port.
  */
 export type PdfWindowSlice = Pick<
   WindowPort,

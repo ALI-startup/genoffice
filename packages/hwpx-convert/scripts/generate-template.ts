@@ -10,7 +10,7 @@
  *
  * Regenerate after bumping `html2hwpx`:
  *
- *     npm run generate:template -w @genoffice/hwpx-convert
+ *     npm run generate:template -w @samugen/hwpx-convert
  *
  * The output is committed so a plain `npm ci` needs no generation step.
  */

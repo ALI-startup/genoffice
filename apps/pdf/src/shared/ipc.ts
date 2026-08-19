@@ -5,13 +5,13 @@
  * (renderer/platform.ts) speaks in opaque `DocumentRef`s instead, and the
  * Electron adapter is what maps one to the other.
  *
- * The edit payload itself is host-agnostic and lives in @genoffice/pdf-edit;
+ * The edit payload itself is host-agnostic and lives in @samugen/pdf-edit;
  * it is re-exported here so renderer modules keep importing their input types
  * from one place.
  */
-import type { Lang } from '@genoffice/i18n'
-import type { AiSettings, AiStreamChunk, AiStreamRequest } from '@genoffice/ai-provider'
-import type { PdfEditRequest } from '@genoffice/pdf-edit'
+import type { Lang } from '@samugen/i18n'
+import type { AiSettings, AiStreamChunk, AiStreamRequest } from '@samugen/ai-provider'
+import type { PdfEditRequest } from '@samugen/pdf-edit'
 
 export type {
   DrawingInput,
@@ -21,7 +21,7 @@ export type {
   MetadataInput,
   PdfEditRequest,
   StampInput,
-} from '@genoffice/pdf-edit'
+} from '@samugen/pdf-edit'
 
 export const PDF_CHANNELS = {
   consumePending: 'pdf:consume-pending',

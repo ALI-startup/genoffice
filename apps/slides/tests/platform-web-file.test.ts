@@ -7,12 +7,12 @@
  *
  * The store and the pickers are fakes, so what is under test is this adapter's choices —
  * which store call each member makes, what it reports where the capability is absent, and
- * whether an automatic save can reach a permission prompt. `@genoffice/platform-web`'s own
+ * whether an automatic save can reach a permission prompt. `@samugen/platform-web`'s own
  * tests cover the store itself.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createBlankPptx, openPptx, savePptx } from '@genoffice/pptx-engine'
-import type { FrameChildLink, WebDocumentStore } from '@genoffice/platform-web'
+import { createBlankPptx, openPptx, savePptx } from '@samugen/pptx-engine'
+import type { FrameChildLink, WebDocumentStore } from '@samugen/platform-web'
 import { setSlideRenderEnv } from '../src/domain/session'
 import {
   createWebSlidesDocPort,

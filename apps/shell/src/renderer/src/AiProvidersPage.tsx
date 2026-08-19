@@ -13,7 +13,7 @@ import { useI18n } from './locale'
 import { shellPlatform } from './platform'
 import { ProviderIcon } from './ProviderIcon'
 
-const CUSTOM_MODEL_VALUE = '__genoffice_custom_model__'
+const CUSTOM_MODEL_VALUE = '__samugen_custom_model__'
 
 const FALLBACK_SNAPSHOT: AiSettingsSnapshot = {
   activeProvider: AI_PROVIDER_DEFINITIONS[0]?.id ?? '',

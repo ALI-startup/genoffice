@@ -1,10 +1,10 @@
 {
-  "name": "@genoffice/platform",
+  "name": "@samugen/platform",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "private": true,
   "type": "module",
-  "description": "Capability-scoped platform port interfaces (language / ai + aiSettings + aiChat + genspark / search / attachments / project / window) with a runtime-agnostic resolver; no Electron dependency",
+  "description": "Capability-scoped platform port interfaces (language / ai + aiSettings + aiChat + samugen / search / attachments / project / window) with a runtime-agnostic resolver; no Electron dependency",
   "exports": {
     ".": "./src/index.ts"
   },
@@ -14,9 +14,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@genoffice/ai-provider": "*",
-    "@genoffice/i18n": "*",
-    "@genoffice/project-store": "*"
+    "@samugen/ai-provider": "*",
+    "@samugen/i18n": "*",
+    "@samugen/project-store": "*"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

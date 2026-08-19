@@ -56,14 +56,14 @@ call site. Each app fixes `P` once, where its slot is declared.
 Never a stub, never an optional method. Use one of:
 
 1. **Split the port finer** when hosts differ structurally. `AiPort` /
-   `AiSettingsPort` / `AiChatPort` / `GensparkPort` split this way because
+   `AiSettingsPort` / `AiChatPort` / `SamuGenPort` split this way because
    standalone pdf backs none of the AI channels
    (`apps/pdf/src/main/pdf-main.ts` `startPdfStandalone` registers only
    `registerPdfIpc()`).
 2. **A required key typed `X | null`.** Not optional — required, and explicitly
    null. The caller must branch. See `openDocument` in
    `apps/pdf/src/renderer/platform.ts`, and `pdfExport` / `print` / `tabs` /
-   `search` / `genspark` in `apps/docs/src/renderer/platform.ts`.
+   `search` / `samugen` in `apps/docs/src/renderer/platform.ts`.
 
 Optional _data fields_ on DTOs are fine and different — `PendingDocument.location`
 is optional because a browser genuinely has no path to report. That distinction
@@ -117,13 +117,13 @@ grepping built output at the end of every phase.
 
 ### 2.5 Shared packages introduced
 
-| Package                           | Purpose                                                                                           |
-| --------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `@genoffice/platform`             | port interfaces, slot factory, and `file-state.ts` (`isExternallyModified`, shared by both hosts) |
-| `@genoffice/platform-electron`    | renderer-side adapters over preload bridges                                                       |
-| `@genoffice/platform-web`         | File System Access, IndexedDB handle store, BFF AI port, language, frame protocol                 |
-| `@genoffice/pdf-edit`             | pdf-lib editing with byte I/O injected via `PdfBytesIo`                                           |
-| `@genoffice/ai-bff` (`services/`) | holds provider credentials server-side; the browser never receives a key                          |
+| Package                         | Purpose                                                                                           |
+| ------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `@samugen/platform`             | port interfaces, slot factory, and `file-state.ts` (`isExternallyModified`, shared by both hosts) |
+| `@samugen/platform-electron`    | renderer-side adapters over preload bridges                                                       |
+| `@samugen/platform-web`         | File System Access, IndexedDB handle store, BFF AI port, language, frame protocol                 |
+| `@samugen/pdf-edit`             | pdf-lib editing with byte I/O injected via `PdfBytesIo`                                           |
+| `@samugen/ai-bff` (`services/`) | holds provider credentials server-side; the browser never receives a key                          |
 
 **The injected-I/O pattern** (`packages/pdf-edit/src/io.ts`) is worth reusing:
 
@@ -146,7 +146,7 @@ Decision: **AI keys live in a BFF, never in the browser.** This is the one place
 
 - Routes: `GET /v1/ai/settings`, `POST /v1/ai/stream` (SSE), `.../stream/cancel`,
   `POST /v1/ai/chat`, `GET /health`.
-- Reuses `@genoffice/ai-provider` (`streamForProvider`, `chatForProvider`).
+- Reuses `@samugen/ai-provider` (`streamForProvider`, `chatForProvider`).
 - Wire contract lives in `packages/platform-web/src/ai-wire.ts`, imported by both
   sides via the `./wire` subpath so they cannot drift.
 - It drops even the `••••1234` hint that `toPublicAiSettings` normally keeps, so
@@ -204,13 +204,13 @@ Containers (nginx, production bundles). `./docker/docker.sh up` starts all five
 at once; the BFF is deliberately unpublished, because it holds the provider
 credentials and applies no authentication of its own (§6.2).
 
-| What         | URL                     | Override                |
-| ------------ | ----------------------- | ----------------------- |
-| Landing page | `http://localhost:8080` | `GENOFFICE_SHELL_PORT`  |
-| docs         | `http://localhost:9081` | `GENOFFICE_DOCS_PORT`   |
-| pdf          | `http://localhost:9082` | `GENOFFICE_PDF_PORT`    |
-| slides       | `http://localhost:9083` | `GENOFFICE_SLIDES_PORT` |
-| sheets       | `http://localhost:9084` | `GENOFFICE_SHEETS_PORT` |
+| What         | URL                     | Override              |
+| ------------ | ----------------------- | --------------------- |
+| Landing page | `http://localhost:8080` | `SAMUGEN_SHELL_PORT`  |
+| docs         | `http://localhost:9081` | `SAMUGEN_DOCS_PORT`   |
+| pdf          | `http://localhost:9082` | `SAMUGEN_PDF_PORT`    |
+| slides       | `http://localhost:9083` | `SAMUGEN_SLIDES_PORT` |
+| sheets       | `http://localhost:9084` | `SAMUGEN_SHEETS_PORT` |
 
 `npm run build:shell:web` produces the composed bundle the shell image serves —
 the shell plus all four editors under `dist/web/app/` — and needs sheets' wasm
@@ -297,7 +297,7 @@ web build depend on a server for core spreadsheet operations, and ships user
 documents to it. Not recommended.
 
 **Resolved: (a), but WASI rather than wasm-bindgen.** `npm run wasm:build -w
-@genoffice/sheets` produces a 4.5MB `wasm32-wasip1` reactor module from the same
+@samugen/sheets` produces a 4.5MB `wasm32-wasip1` reactor module from the same
 crate the desktop sidecar is built from — no `[lib]` surgery beyond adding
 `crate-type`, no wasm-bindgen, and no rewrite of the eleven commands.
 
@@ -337,7 +337,7 @@ binary's for the same requests.
    Note `notifyPendingEdits(count)` is sheets' dirty signal, where pdf uses
    `setDirty(boolean)` — model it honestly rather than coercing to a boolean.
    **Done.** Six required ports (`workbook`, `file`, `window`, `language`, `ai`,
-   `attachments`) and five nullable (`menu`, `pdfExport`, `genspark`, `search`,
+   `attachments`) and five nullable (`menu`, `pdfExport`, `samugen`, `search`,
    `project`). The count stayed a count. This also completed §6.3: sheets was the
    last app with its own path-based attachment surface.
 2. **6b — WASM build** of the Rust crate, with `XlsxSidecarClient`'s interface
@@ -423,7 +423,7 @@ the type system:
   (`randomUUID`), and `node:zlib` (`deflateSync`) for the poster PNG.
 - `node:fs` / `node:stream` in `savePptxToFile`, behind `await import()` — which
   reads as lazy but is not, because a bundler still resolves the specifier while
-  building. It now lives at the `@genoffice/pptx-engine/node` subpath, the only
+  building. It now lives at the `@samugen/pptx-engine/node` subpath, the only
   module in the package allowed to name a Node builtin.
 
 Replaced with `TextEncoder` / `TextDecoder` / `crypto.subtle` / `atob` — one
@@ -519,7 +519,7 @@ the precedent to copy rather than inventing a new arrangement.
 2. **7b — the seam. Done.** `src/renderer/platform.ts`, thirteen ports, every one a
    `Pick<SlidesApi, …>` so nothing is retyped. 241 call sites moved off
    `window.slidesApi`; `host-electron.ts` is the only module that reads a global. Seven
-   ports are `X | null` (presenter, pdfExport, clipboard, genspark, search, cloud, menu)
+   ports are `X | null` (presenter, pdfExport, clipboard, samugen, search, cloud, menu)
    and their thirty call sites branch. `@host` is wired as in docs and pdf.
 3. **7c — fonts.** Done, via `CanvasMetrics` rather than `queryLocalFonts()` — see §5.3
    for why that is the accurate choice in a page rather than a second-best one. The
@@ -535,9 +535,14 @@ be: all 84 of its members now map one-to-one onto an operation in `src/domain/op
 name, 6 by a spelling difference the adapters absorb), and the ~20 host-coupled members that
 the name heuristic had put there moved to the ports they belong to — the paste bookkeeping to
 a new required `deckClipboard`, printing to a new required `print`, AI settings and streaming
-to `ai`, `gskStatus` to `genspark`, the presenter callbacks to `presenter`, `htmlToPptx` to
+to `ai`, `gskStatus` to `samugen`, the presenter callbacks to `presenter`, `htmlToPptx` to
 `cloud`, and the style templates to a new nullable `styleTemplates`. Fifteen ports: eight
 required, seven `X | null`.
+
+Two of those ports no longer exist. `samugen` and `cloud` were the sign-in surface and the
+server-side deck generator, both backed by the Genspark account and its `gsk` CLI, and both
+went when that provider was removed — see the "remove the Genspark provider" commit. Thirteen
+ports remain; the split above is still how the rest got there.
 
 Nine more operations were relocated to make that honest: `setTextAnchor` (pure, missed by the
 first inventory, whose regex needed the channel on the same line as `ipcMain.handle(`); the
@@ -614,8 +619,9 @@ remaining ~20 are host-coupled and belong in other ports before a web host can c
   page-local, which is simpler, not harder.
 - **dialog-backed** — `editChart` (a confirmation box), `insertMedia`, `getRecentFiles`.
 - **AI settings and streaming** — `getAiSettings`, `setAiSettings`, `onAiStream`,
-  `generateImage`, `analyzeMedia`, `gskStatus`. These belong to the `ai` and `genspark`
-  ports; `aiSettings` in particular is read-only in a browser (§6.2).
+  `generateImage`, and (at the time) `analyzeMedia` and `gskStatus`. These belonged to the
+  `ai` and `samugen` ports; `aiSettings` in particular is read-only in a browser (§6.2). The
+  last two went with the Genspark removal, `samugen` port included.
 - **presenter callbacks** — `onShowSync`, `onShowInk`, which belong to `presenter`.
 - **still to place** — `htmlToPptx` and `printSlides` (the browser prints, as docs does),
   `listStyleTemplates`/`loadStyleTemplate`, `editImageFill`, `setTextAnchor`.
@@ -628,7 +634,7 @@ arrangement exists to prevent.
 
 ## 6. Cross-cutting decisions still open
 
-### 6.1 `@genoffice/project-store`
+### 6.1 `@samugen/project-store`
 
 716 sync lines, ~30 filesystem call sites across 15 methods, and it _constructs
 its own paths_. It does **not** fit the `PdfBytesIo` pattern — that worked
@@ -697,7 +703,7 @@ only (`App.tsx`, `ExcelShell.tsx`, `ai/AiChatPanel.tsx`, `ai/files-skill.ts`).
 
 ### 6.4 Stale `Lang` unions — **fixed**
 
-`Lang` in `@genoffice/i18n` has **19** values. `apps/docs/src/shared/ipc.ts`,
+`Lang` in `@samugen/i18n` has **19** values. `apps/docs/src/shared/ipc.ts`,
 `apps/sheets/src/shared/desktop-api.ts` and `apps/slides/src/shared/ipc.ts` each
 inlined a stale **11**-value copy, missing `pt`, `it`, `pl`, `nl`, `ms`, `he`,
 `hi`, `zh-TW` — all values the shell can persist, so this was a live bug
@@ -714,7 +720,7 @@ chrome carries an English ⇄ Korean toggle, and the shell subscribes to
 ### 6.5 Standalone pdf has no AI
 
 `startPdfStandalone()` (`apps/pdf/src/main/pdf-main.ts`) calls only
-`registerPdfIpc()`, never `registerAiIpc`. So `npm run dev -w @genoffice/pdf`
+`registerPdfIpc()`, never `registerAiIpc`. So `npm run dev -w @samugen/pdf`
 has a non-functional AI panel — every action rejects with an unhandled-channel
 error. It works only as a shell tab. Pre-existing; fix by registering the AI IPC
 there or hiding the panel in standalone mode.
@@ -753,7 +759,7 @@ Learned the hard way; each item cost real time.
 Not bugs — capabilities deliberately represented as absent rather than stubbed.
 
 **docs:** PDF export (print via `window.print()` only, by decision); AI web and
-image search (needs BFF routes); Genspark sign-in; crash-recovery copies
+image search (needs BFF routes); crash-recovery copies
 (`DocsFilePort.crashRecovery` is false, so the renderer's 30s tick does not run);
 silent first save of a never-saved document; `.pdf` / `.ppt` / `.xls` attachments
 (rejected at add time with a reason); attachment refs do not survive a reload;
@@ -784,10 +790,10 @@ persisted.
 
 **shell:** Home is launcher-only — recents and starred always empty (§6.1);
 "Open Local File" from Home absent (user-activation constraint, §3.1); projects;
-updates; account sign-in (shells out to the `gsk` CLI); native tab menus; the
-sheets card (apps/sheets is the last editor with no web build — the slides card
-is present since Phase 7d). A reload reopens an empty tab of the right kind, not
-the document.
+updates; native tab menus. A reload reopens an empty tab of the right kind, not
+the document. (Account sign-in used to be on this list; there is no account
+system on either host now — the Genspark removal took it, and the sheets card
+arrived with sheets' web build in 6c.)
 
 **sheets on the web:** no crash-recovery copy, no rename-in-place, no `.xls`/`.csv`
 import, and the AI's `add_image` op (which names a file on the user's machine)

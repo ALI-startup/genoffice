@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { createI18n, htmlLang, type Lang, type Params } from '@genoffice/i18n'
+import { createI18n, htmlLang, type Lang, type Params } from '@samugen/i18n'
 import { strings } from './strings'
 import { sheetsLanguage } from '../platform'
 

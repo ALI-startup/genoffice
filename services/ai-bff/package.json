@@ -1,5 +1,5 @@
 {
-  "name": "@genoffice/ai-bff",
+  "name": "@samugen/ai-bff",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "private": true,
@@ -15,9 +15,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@genoffice/agent-core": "*",
-    "@genoffice/ai-provider": "*",
-    "@genoffice/platform-web": "*"
+    "@samugen/agent-core": "*",
+    "@samugen/ai-provider": "*",
+    "@samugen/platform-web": "*"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

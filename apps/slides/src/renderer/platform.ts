@@ -30,8 +30,8 @@
  * phase 7a bought. Before it, `doc` was a main-process surface and a browser could only
  * have faked it.
  */
-import { createPlatformSlot, type AttachmentsPort } from '@genoffice/platform'
-import type { ProjectApi } from '@genoffice/project-store'
+import { createPlatformSlot, type AttachmentsPort } from '@samugen/platform'
+import type { ProjectApi } from '@samugen/project-store'
 import type { SlidesApi } from '../shared/ipc'
 
 /**

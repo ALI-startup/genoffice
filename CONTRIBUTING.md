@@ -1,4 +1,4 @@
-# Contributing to GenOffice
+# Contributing to SamuGen
 
 Thanks for your interest in contributing. This document covers the local
 setup, the checks a change must pass, and the conventions used in this
@@ -99,17 +99,16 @@ testing and local overrides:
 
 | Variable                                                 | Effect                                                                 |
 | -------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `GENOFFICE_USER_DATA`                                    | Override the Electron userData directory (test isolation)              |
-| `GENOFFICE_LANG`                                         | Force the UI language instead of following the OS locale               |
-| `GENOFFICE_FAKE_UPDATE`                                  | Exercise the updater UI without a real release feed                    |
-| `GENOFFICE_CLOUD_SLIDE`, `GENOFFICE_CLOUD_SLIDE_TIER`    | Route slide generation through the cloud endpoint                      |
-| `GSK_API_KEY`, `GSK_CLI_PATH`                            | Genspark credentials / CLI location for the built-in AI provider       |
-| `AI_SEARCH_DISABLE_GSK`, `SERPER_API_KEY`                | Disable the gsk search backend / supply a Serper key instead           |
+| `SAMUGEN_USER_DATA`                                      | Override the Electron userData directory (test isolation)              |
+| `SAMUGEN_LANG`                                           | Force the UI language instead of following the OS locale               |
+| `SAMUGEN_FAKE_UPDATE`                                    | Exercise the updater UI without a real release feed                    |
+| `SERPER_API_KEY`                                         | Serper key for web/image search (DuckDuckGo is the keyless fallback)   |
 | `XLSX_SIDECAR_PATH`, `XLSX_OPEN_PATH`, `XLSX_DEBUG_PORT` | Point at a locally built xlsx sidecar and its debug port               |
 | `*_DEV_PORT`, `*_RENDERER_URL`                           | Per-app Vite dev server ports and renderer URLs (set by `npm run dev`) |
 
-AI features degrade rather than break without credentials: requests surface an
-inline sign-in prompt, and web search falls back to a keyless backend.
+AI features degrade rather than break without credentials: a request with no
+configured provider reports that plainly, and web search falls back to a keyless
+backend.
 
 ## Coding conventions
 

@@ -8,7 +8,7 @@
  * silently disable a piece of the desktop app.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { ProjectApi } from '@genoffice/project-store'
+import type { ProjectApi } from '@samugen/project-store'
 import type { DesktopApi } from '../src/shared/desktop-api'
 import { createElectronSheetsPlatform } from '../src/renderer/platform-electron'
 import {

@@ -1,13 +1,13 @@
 # syntax=docker/dockerfile:1.7
 #
-# Serving GenOffice on the web.
+# Serving SamuGen on the web.
 #
 # Every app has a browser build now — docs, pdf, slides, sheets, and the shell
 # that hosts them. This file builds all five and produces two runtime images:
 #
 #   target `web`  — nginx over the static bundles. One image carrying every
 #                   bundle; which one a container serves is chosen at run time
-#                   by GENOFFICE_WEB_ROOT, so the shell and each standalone app
+#                   by SAMUGEN_WEB_ROOT, so the shell and each standalone app
 #                   are containers of the same image on different ports.
 #   target `bff`  — the AI backend-for-frontend. It is the only process that
 #                   ever holds a provider credential, and it is not published to
@@ -28,7 +28,7 @@
 
 # Node 22, not the 20 in .nvmrc, and this is load-bearing rather than a
 # preference. Every app's vite.web.config.ts imports AI_BFF_BASE_PATH from
-# `@genoffice/platform-web/wire`, and that subpath export points at raw
+# `@samugen/platform-web/wire`, and that subpath export points at raw
 # TypeScript (packages/platform-web/package.json: "./wire": "./src/ai-wire.ts").
 # Vite `require()`s the bundled config, so Node itself has to read that file.
 # Node 22 strips types natively; Node 20 does not, and dies on the file's first
@@ -122,15 +122,15 @@ COPY . .
 # it (`npm run wasm:build` writes exactly this path).
 COPY --from=engine /engine/target/wasm32-wasip1/wasm-release/xlsx_sidecar.wasm \
   /app/apps/sheets/src/renderer/wasm/xlsx-sidecar.wasm
-RUN npm run build:web -w @genoffice/shell \
-  && DOCS_WEB_BASE=/app/docs/ DOCS_WEB_OUT_DIR=../../../shell/dist/web/app/docs npm run build:web -w @genoffice/docs \
-  && PDF_WEB_BASE=/app/pdf/ PDF_WEB_OUT_DIR=../../../shell/dist/web/app/pdf npm run build:web -w @genoffice/pdf \
-  && SLIDES_WEB_BASE=/app/slides/ SLIDES_WEB_OUT_DIR=../../../shell/dist/web/app/slides npm run build:web -w @genoffice/slides \
-  && SHEETS_WEB_BASE=/app/sheets/ SHEETS_WEB_OUT_DIR=../../../shell/dist/web/app/sheets npm run build:web -w @genoffice/sheets \
-  && npm run build:web -w @genoffice/docs \
-  && npm run build:web -w @genoffice/pdf \
-  && npm run build:web -w @genoffice/slides \
-  && npm run build:web -w @genoffice/sheets
+RUN npm run build:web -w @samugen/shell \
+  && DOCS_WEB_BASE=/app/docs/ DOCS_WEB_OUT_DIR=../../../shell/dist/web/app/docs npm run build:web -w @samugen/docs \
+  && PDF_WEB_BASE=/app/pdf/ PDF_WEB_OUT_DIR=../../../shell/dist/web/app/pdf npm run build:web -w @samugen/pdf \
+  && SLIDES_WEB_BASE=/app/slides/ SLIDES_WEB_OUT_DIR=../../../shell/dist/web/app/slides npm run build:web -w @samugen/slides \
+  && SHEETS_WEB_BASE=/app/sheets/ SHEETS_WEB_OUT_DIR=../../../shell/dist/web/app/sheets npm run build:web -w @samugen/sheets \
+  && npm run build:web -w @samugen/docs \
+  && npm run build:web -w @samugen/pdf \
+  && npm run build:web -w @samugen/slides \
+  && npm run build:web -w @samugen/sheets
 
 
 # --- web ---------------------------------------------------------------------
@@ -169,18 +169,18 @@ COPY --from=build /app/apps/sheets/dist/web /srv/sheets
 # variables below are prefixed so they cannot collide with nginx's own $uri,
 # $host and friends, which envsubst leaves alone because they are not exported.
 COPY docker/nginx/app.conf.template /etc/nginx/templates/app.conf.template
-ENV GENOFFICE_WEB_ROOT=/srv/shell \
-    GENOFFICE_WEB_PORT=8080 \
-    GENOFFICE_AI_BFF_UPSTREAM=http://ai-bff:8788 \
-    GENOFFICE_AI_BFF_PATH=/v1/ai
+ENV SAMUGEN_WEB_ROOT=/srv/shell \
+    SAMUGEN_WEB_PORT=8080 \
+    SAMUGEN_AI_BFF_UPSTREAM=http://ai-bff:8788 \
+    SAMUGEN_AI_BFF_PATH=/v1/ai
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget -qO- "http://127.0.0.1:${GENOFFICE_WEB_PORT}/healthz" >/dev/null || exit 1
+  CMD wget -qO- "http://127.0.0.1:${SAMUGEN_WEB_PORT}/healthz" >/dev/null || exit 1
 
 
 # --- bff ---------------------------------------------------------------------
 # Runs from TypeScript sources via tsx, exactly as `npm run start -w
-# @genoffice/ai-bff` does locally, so there is no separate build step to keep in
+# @samugen/ai-bff` does locally, so there is no separate build step to keep in
 # sync. It carries the full workspace node_modules (tsx is a devDependency, so
 # --omit=dev would remove the runtime); this image is larger than the nginx one
 # by design.
@@ -189,7 +189,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json package-lock.json ./
-# Workspace symlinks under node_modules/@genoffice point back at these trees.
+# Workspace symlinks under node_modules/@samugen point back at these trees.
 COPY packages packages
 COPY services services
 USER node
@@ -198,9 +198,9 @@ USER node
 # containers. It stays unpublished at the compose level instead — it holds the
 # credentials and applies no authentication of its own (docs/web-migration.md
 # §6.2), so it must not be routable from outside the compose network.
-ENV GENOFFICE_AI_BFF_HOST=0.0.0.0 \
-    GENOFFICE_AI_BFF_PORT=8788
+ENV SAMUGEN_AI_BFF_HOST=0.0.0.0 \
+    SAMUGEN_AI_BFF_PORT=8788
 EXPOSE 8788
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:'+process.env.GENOFFICE_AI_BFF_PORT+'/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
-CMD ["npm", "run", "start", "-w", "@genoffice/ai-bff"]
+  CMD node -e "fetch('http://127.0.0.1:'+process.env.SAMUGEN_AI_BFF_PORT+'/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
+CMD ["npm", "run", "start", "-w", "@samugen/ai-bff"]

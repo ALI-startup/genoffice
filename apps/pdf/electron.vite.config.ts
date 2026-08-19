@@ -4,16 +4,16 @@ import { viteStaticCopy } from 'vite-plugin-static-copy'
 import { hostAlias, pdfjsCopyTargets } from './vite.shared'
 
 export default defineConfig({
-  // @genoffice/i18n ships as TS source; pdf-lib's package only includes out/** — both must be bundled
+  // @samugen/i18n ships as TS source; pdf-lib's package only includes out/** — both must be bundled
   main: {
     plugins: [
       externalizeDepsPlugin({
-        exclude: ['@genoffice/i18n', 'pdf-lib', '@genoffice/electron-utils', '@genoffice/pdf-edit'],
+        exclude: ['@samugen/i18n', 'pdf-lib', '@samugen/electron-utils', '@samugen/pdf-edit'],
       }),
     ],
   },
   preload: {
-    plugins: [externalizeDepsPlugin({ exclude: ['@genoffice/i18n'] })],
+    plugins: [externalizeDepsPlugin({ exclude: ['@samugen/i18n'] })],
   },
   renderer: {
     // The Electron half of the host seam; the browser modules are never resolved here.

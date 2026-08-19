@@ -1,11 +1,11 @@
-import type { AgentSkill, ToolDisplay } from '@genoffice/agent-core'
+import type { AgentSkill, ToolDisplay } from '@samugen/agent-core'
 import type {
   GroupRenderNode,
   PictureRenderNode,
   RenderNode,
   RenderSlide,
   ShapeRenderNode,
-} from '@genoffice/pptx-render'
+} from '@samugen/pptx-render'
 import type { AddSmartArtOp, AgentToolCall, AgentToolDef, EditParagraph } from '../../shared/ipc'
 import { auditSlideLayout, formatAudit } from './layout-audit'
 import { runLayoutScript, type LayoutScriptElement, type SlideStylePatch } from './layout-script'
@@ -162,7 +162,7 @@ export interface ClarifyQuestion {
   multi?: boolean
 }
 
-const AGENT_SYSTEM_PROMPT = `You are the AI assistant inside GenOffice Slides (a slide editor), helping users improve and generate presentations.
+const AGENT_SYSTEM_PROMPT = `You are the AI assistant inside SamuGen Slides (a slide editor), helping users improve and generate presentations.
 
 ## Most important tool-selection principles (judge the scenario before acting)
 - **Creating a whole new deck (from scratch)** → first gather material (web_search) and images (image_search), then build it page by page with add_blank_slide + the add_* element tools, driving the layout with execute_slide_script. Establish one style up front (background, accent colour, title/body fonts and sizes) and apply it to every page you add, so the deck reads as one design rather than a pile of pages.
@@ -455,7 +455,7 @@ const TOOLS: AgentToolDef[] = [
   {
     name: 'generate_image',
     description:
-      'AI image generation/editing (Genspark). Text-to-image, or pass referenceImageUrls for image editing; returns an image URL, then insert with insert_web_image. Use for custom illustrations/icons/backgrounds, style-consistent imagery, and edits like background removal/upscaling/outpainting; for real photos/screenshots still use image_search.',
+      'AI image generation/editing (SamuGen). Text-to-image, or pass referenceImageUrls for image editing; returns an image URL, then insert with insert_web_image. Use for custom illustrations/icons/backgrounds, style-consistent imagery, and edits like background removal/upscaling/outpainting; for real photos/screenshots still use image_search.',
     inputSchema: {
       type: 'object',
       properties: {

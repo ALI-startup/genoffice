@@ -16,7 +16,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { openPptx } from '@genoffice/pptx-engine'
+import { openPptx } from '@samugen/pptx-engine'
 
 vi.mock('electron', () => ({
   BrowserWindow: { getFocusedWindow: () => null },

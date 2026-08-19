@@ -13,13 +13,13 @@
  * moved here verbatim from Home.tsx for exactly that reason.
  *
  * Unlike apps/pdf and apps/docs, none of these adapters live in
- * @genoffice/platform-electron. That package holds the *shared* ports, and the
+ * @samugen/platform-electron. That package holds the *shared* ports, and the
  * shell shares none: every bridge here is exposed by the shell's preload alone
  * and has no counterpart in any editor app (see the header of platform.ts for
  * the port-by-port reasoning). Putting them there would make the package depend
  * on one app's contract while pretending to be shared.
  */
-import type { Lang } from '@genoffice/i18n'
+import type { Lang } from '@samugen/i18n'
 import type { AiSettingsApi } from '../../shared/ai-settings-api'
 import type { HomeApi, ProjectHomeApi, RecentEntry, RecentPage } from '../../shared/home-api'
 import type { TabsApi } from '../../shared/tabs-api'
@@ -208,7 +208,7 @@ export function createShellAiSettingsPort(bridge: AiSettingsApi): ShellAiSetting
  * Editing the AI provider configuration over the Electron bridge.
  *
  * Non-null because this host owns a credential store: the writes land in
- * @genoffice/ai-electron behind Electron's `safeStorage`.
+ * @samugen/ai-electron behind Electron's `safeStorage`.
  */
 export function createShellAiSettingsEditorPort(bridge: AiSettingsApi): ShellAiSettingsEditorPort {
   return {

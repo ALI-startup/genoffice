@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { AiComposer, AiTypingIndicator } from '@genoffice/ui'
-import { GensparkMark } from '../ribbon-icons'
+import { AiComposer, AiTypingIndicator } from '@samugen/ui'
+import { SamuGenMark } from '../ribbon-icons'
 import type { ChangePlan } from '../../domain/workbook.types'
-import { type AttachmentMeta, type AttachmentRef } from '@genoffice/platform'
+import { type AttachmentMeta, type AttachmentRef } from '@samugen/platform'
 import { sheetsAttachments } from '../platform'
 import { useI18n, type TFunc } from '../i18n/locale'
-import { Markdown } from '@genoffice/ui'
+import { Markdown } from '@samugen/ui'
 import sendEnterOn from '../assets/send-enter-on.png'
 import sendEnterOff from '../assets/send-enter-off.png'
 import sendStop from '../assets/send-stop.png'
@@ -52,7 +52,7 @@ export interface AiChatMessage {
   readonly isError?: boolean | undefined
   /** the run failed and this user message was rolled back out of the model context */
   readonly undelivered?: boolean | undefined
-  /** the run failed because Genspark is signed out — render an inline sign-in button */
+  /** the run failed because SamuGen is signed out — render an inline sign-in button */
   /** Set when this message reflects an auto-applied plan; renders an inline [Undo] button. */
   readonly autoApplied?: { readonly opCount: number } | undefined
 }
@@ -200,7 +200,7 @@ export function AiChatPanel({
     return (
       <aside className="copilot collapsed">
         <button className="expand-copilot" onClick={onExpand} title={t('aiOpenAssistant')}>
-          <GensparkMark size={22} />
+          <SamuGenMark size={22} />
         </button>
       </aside>
     )
@@ -270,12 +270,12 @@ export function AiChatPanel({
         onPointerDown={startResize}
         role="separator"
         aria-orientation="vertical"
-        aria-label="Genspark"
+        aria-label="SamuGen"
       />
       <header className="ai-panel-header">
         <span className="ai-panel-title">
-          <GensparkMark size={22} />
-          Genspark
+          <SamuGenMark size={22} />
+          SamuGen
         </span>
         <div className="ai-panel-header-actions">
           {(chat.length > 0 || historicChat.length > 0) && (

@@ -1,5 +1,5 @@
 {
-  "name": "@genoffice/platform-web",
+  "name": "@samugen/platform-web",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "private": true,
@@ -16,11 +16,11 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@genoffice/ai-provider": "*",
-    "@genoffice/file-parse": "*",
-    "@genoffice/i18n": "*",
-    "@genoffice/pdf-edit": "*",
-    "@genoffice/platform": "*"
+    "@samugen/ai-provider": "*",
+    "@samugen/file-parse": "*",
+    "@samugen/i18n": "*",
+    "@samugen/pdf-edit": "*",
+    "@samugen/platform": "*"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

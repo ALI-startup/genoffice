@@ -102,7 +102,7 @@ import {
   setTableRowHeight,
   ungroupElement,
   updateConnectorsForMoved,
-} from '@genoffice/pptx-engine'
+} from '@samugen/pptx-engine'
 import {
   addModel3d,
   base64Bytes,
@@ -116,7 +116,7 @@ import {
   patchSlideXml,
   setElementTextAnchor,
   utf8Bytes,
-} from '@genoffice/pptx-engine'
+} from '@samugen/pptx-engine'
 import type {
   ElementClipboardItem,
   SlideBundle,
@@ -128,9 +128,9 @@ import type {
   TableStructureOp,
   TableStyleEdit,
   TextElement,
-} from '@genoffice/pptx-engine'
-import { EMU_PER_PX_96, buildRenderSlide } from '@genoffice/pptx-render'
-import type { RenderSlide } from '@genoffice/pptx-render'
+} from '@samugen/pptx-engine'
+import { EMU_PER_PX_96, buildRenderSlide } from '@samugen/pptx-render'
+import type { RenderSlide } from '@samugen/pptx-render'
 import type {
   AddBlankSlideOp,
   AddChartOp,
@@ -543,7 +543,7 @@ function performSlidePaste(
  * Every slides document operation, as methods on one object.
  *
  * Methods rather than exported functions for a concrete reason: 20-odd of these names
- * are also `@genoffice/pptx-engine` function names (`addChart`, `addElement`,
+ * are also `@samugen/pptx-engine` function names (`addChart`, `addElement`,
  * `deleteSlide`, `setSlideSize`, …). A module-scope `export function addChart` would
  * shadow the import, and every body that calls the engine's `addChart` would silently
  * recurse into the op. A property in an object literal is not a binding, so a bare

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import {
   CaretIcon,
-  GensparkMark,
+  SamuGenMark,
   RIBBON_GLYPH_ICONS,
   RedoIcon,
   SaveIcon,
@@ -19,7 +19,7 @@ import { type SelectionFormat } from './selection-format'
 
 import type { ChartSeriesVisualState } from '../domain/chart-visual'
 import type { ChangePlan } from '../domain/workbook.types'
-import type { AttachmentMeta, AttachmentRef } from '@genoffice/platform'
+import type { AttachmentMeta, AttachmentRef } from '@samugen/platform'
 import { AiChatPanel, type AiChatMessage } from './ai/AiChatPanel'
 import {
   PivotDialog,
@@ -2073,10 +2073,10 @@ function Ribbon({
           onClick={onAiToggle}
         >
           <span className="tool-icon-row">
-            <GensparkMark size={26} />
+            <SamuGenMark size={26} />
           </span>
           <span>
-            <strong>Genspark AI</strong>
+            <strong>SamuGen AI</strong>
           </span>
         </button>
         <button
@@ -2534,14 +2534,14 @@ function Ribbon({
           </div>
         </div>
       </RibbonGroup>
-      <div className="ribbon-genspark-sep" aria-hidden />
+      <div className="ribbon-samugen-sep" aria-hidden />
       <button
-        className="ribbon-genspark-btn"
+        className="ribbon-samugen-btn"
         title={t('aiOpenAssistant')}
         onClick={() => onCommand('ai-toggle-panel')}
       >
-        <GensparkMark size={28} />
-        <span>Genspark</span>
+        <SamuGenMark size={28} />
+        <span>SamuGen</span>
       </button>
     </div>
   )

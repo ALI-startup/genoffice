@@ -1,7 +1,7 @@
 /**
  * The browser host adapter (src/renderer/platform-web.ts).
  *
- * @genoffice/platform-web covers the document store, the attachments port and the
+ * @samugen/platform-web covers the document store, the attachments port and the
  * unload guard, so what is left to check here is the glue that turns those into
  * docs' own ports: which store call each channel makes, how a dismissed dialog
  * becomes a cancel rather than a failure, the gesture rule that makes `saveNew`
@@ -13,8 +13,8 @@
  * assertions are about the adapter's choices and not about a call graph.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { WebDocumentStore } from '@genoffice/platform-web'
-import type { FilePickers, WebFileHandle } from '@genoffice/platform-web'
+import type { WebDocumentStore } from '@samugen/platform-web'
+import type { FilePickers, WebFileHandle } from '@samugen/platform-web'
 import {
   createWebDocsDownloadPort,
   createWebDocsFilePort,

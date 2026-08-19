@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import type { Lang } from '@genoffice/i18n'
+import type { Lang } from '@samugen/i18n'
 
 import type {
   AiChatRequest,
@@ -8,7 +8,7 @@ import type {
   AiSettings,
   AiStreamChunk,
   AiStreamRequest,
-} from '@genoffice/ai-provider'
+} from '@samugen/ai-provider'
 
 const MAX_RANGE_CELLS = 20_000
 const cellScalarSchema = z.union([z.string(), z.number().finite(), z.boolean(), z.null()])
@@ -1675,7 +1675,7 @@ export type WorkbookCellStyle = z.infer<typeof cellStyleSchema>
 export type WorkbookRichRun = z.infer<typeof richRunSchema>
 export type WorkbookConditionalRule = z.infer<typeof conditionalRuleSchema>
 
-// ---- AI settings + chat/stream: canonical types live in @genoffice/ai-provider,
+// ---- AI settings + chat/stream: canonical types live in @samugen/ai-provider,
 // shared with apps/docs. Validated here like every other renderer→main request in
 // this file; the validated shape is cast to AiSettings at the main-process call
 // site, which always has exactly the 5 known provider keys once merged through

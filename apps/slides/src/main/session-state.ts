@@ -16,7 +16,7 @@
 import { BrowserWindow } from 'electron'
 import type { WebContents } from 'electron'
 import { join } from 'node:path'
-import type { FontMetricsProvider } from '@genoffice/pptx-render'
+import type { FontMetricsProvider } from '@samugen/pptx-render'
 import { createSystemFontMetrics } from './fonts'
 import { tiffToPng } from './tiff-decode'
 import { setSlideRenderEnv, type Session } from '../domain/session'

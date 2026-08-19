@@ -83,7 +83,7 @@ beforeAll(() => {
   // filled in; the rest are the "this host cannot" nulls a browser host uses.
   setDocsPlatform({
     search: null,
-    genspark: null,
+    samugen: null,
     tabs: null,
     pdfExport: null,
   } as unknown as DocsPlatform)

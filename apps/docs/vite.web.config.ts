@@ -13,7 +13,7 @@
  *      needs to know the BFF's address. A deployment replaces this proxy with
  *      the equivalent rule in whatever fronts the static files — the route
  *      prefix is the contract, and it is declared once, in
- *      @genoffice/platform-web's wire module.
+ *      @samugen/platform-web's wire module.
  *
  * This replaces the `/ai-proxy` rule the pre-migration web shim used, which
  * proxied straight to the AI provider and needed the provider key in the page.
@@ -21,11 +21,11 @@
  */
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
-import { AI_BFF_BASE_PATH } from '@genoffice/platform-web/wire'
-import { hwpxBrowserAlias } from '@genoffice/hwpx-convert/vite'
+import { AI_BFF_BASE_PATH } from '@samugen/platform-web/wire'
+import { hwpxBrowserAlias } from '@samugen/hwpx-convert/vite'
 import { hostAlias } from './vite.shared'
 
-/** Where `npm run start -w @genoffice/ai-bff` listens by default. */
+/** Where `npm run start -w @samugen/ai-bff` listens by default. */
 const bffTarget = process.env.AI_BFF_URL || 'http://127.0.0.1:8788'
 
 export default defineConfig({
@@ -37,7 +37,7 @@ export default defineConfig({
   // base to that prefix. Nothing else about the build differs.
   base: process.env.DOCS_WEB_BASE || './',
   // The host seam, plus the one alias the HWPX reader needs to bundle for a
-  // browser — see @genoffice/hwpx-convert/vite for why it cannot be imported
+  // browser — see @samugen/hwpx-convert/vite for why it cannot be imported
   // through its package entry point here.
   resolve: { alias: { ...hostAlias('web'), ...hwpxBrowserAlias() } },
   plugins: [react()],

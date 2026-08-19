@@ -6,7 +6,7 @@
  * three members map onto what a browser genuinely has:
  *
  *   - `getLanguage` — the stored choice if there is one, else the browser's own
- *     `navigator.language`, normalised through @genoffice/i18n so the same
+ *     `navigator.language`, normalised through @samugen/i18n so the same
  *     19-language `Lang` union comes out.
  *   - `setLanguage` — a write to the same storage key. That write *is* the
  *     broadcast: it is what the other documents observe.
@@ -19,13 +19,13 @@
  * wrote the value, and the same is true of Electron's broadcast for the window
  * that asked. Rather than paper over that with a synthetic self-notification —
  * which would make a caller's own `setLanguage` arrive twice on hosts that do
- * echo — the port leaves it as the contract in @genoffice/platform states: the
+ * echo — the port leaves it as the contract in @samugen/platform states: the
  * caller applies the language itself and subscribes for everyone else's.
  */
-import { normalizeLang, type Lang } from '@genoffice/i18n'
-import type { LanguagePort } from '@genoffice/platform'
+import { normalizeLang, type Lang } from '@samugen/i18n'
+import type { LanguagePort } from '@samugen/platform'
 
-export const LANGUAGE_STORAGE_KEY = 'genoffice.language'
+export const LANGUAGE_STORAGE_KEY = 'samugen.language'
 
 /** The bits of `Storage` and `window` this port needs; injected so it is testable. */
 export interface LanguageHostEnv {

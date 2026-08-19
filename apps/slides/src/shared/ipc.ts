@@ -7,14 +7,14 @@
  * renderer sends edit intents (text/geometry changes) back to the main process, which applies
  * them to the model and rebuilds the RenderSlide.
  */
-import type { Lang } from '@genoffice/i18n'
-import type { RenderSlide } from '@genoffice/pptx-render'
-import type { SlideComment, SectionInfo } from '@genoffice/pptx-engine'
-import type { AiSettings, AiStreamChunk, AiStreamRequest } from '@genoffice/ai-provider'
+import type { Lang } from '@samugen/i18n'
+import type { RenderSlide } from '@samugen/pptx-render'
+import type { SlideComment, SectionInfo } from '@samugen/pptx-engine'
+import type { AiSettings, AiStreamChunk, AiStreamRequest } from '@samugen/ai-provider'
 
-export type { SlideComment, SectionInfo } from '@genoffice/pptx-engine'
+export type { SlideComment, SectionInfo } from '@samugen/pptx-engine'
 
-// Canonical definitions of AI-related types live in @genoffice/ai-provider / @genoffice/agent-core (shared with docs)
+// Canonical definitions of AI-related types live in @samugen/ai-provider / @samugen/agent-core (shared with docs)
 export type {
   AiProviderConfig,
   AiProviderId,
@@ -22,9 +22,9 @@ export type {
   AiSettings,
   AiStreamChunk,
   AiStreamRequest,
-} from '@genoffice/ai-provider'
-export { AI_PROVIDERS } from '@genoffice/ai-provider'
-export type { AgentToolCall, AgentToolDef } from '@genoffice/agent-core'
+} from '@samugen/ai-provider'
+export { AI_PROVIDERS } from '@samugen/ai-provider'
+export type { AgentToolCall, AgentToolDef } from '@samugen/agent-core'
 
 export interface OpenResult {
   /**
@@ -49,11 +49,11 @@ export interface OpenResult {
 //
 // These declare the *preload bridge* (`window.desktop`) and are path-based on purpose: the
 // main process addresses attachments by path and always will. The renderer no longer speaks
-// this shape — it holds the ref-based `AttachmentsPort` from @genoffice/platform, and the
+// this shape — it holds the ref-based `AttachmentsPort` from @samugen/platform, and the
 // ref↔path mapping happens in the Electron adapter (§6.3). Same split apps/docs has.
 //
 // The image-extension set below is the main process's copy and must stay identical to
-// `ATTACHMENT_IMAGE_EXTS` in @genoffice/platform, which is the one the renderer reads: the
+// `ATTACHMENT_IMAGE_EXTS` in @samugen/platform, which is the one the renderer reads: the
 // two sides decide the same image/text split, one on a path and one on a ref.
 
 /** Image attachment extensions: no text extraction; read as base64 on send and passed to the model as multimodal images with the user message */
@@ -1313,7 +1313,7 @@ export interface SlidesApi {
     hPx: number
     fitWidthPx: number
   }) => Promise<{ slide: RenderSlide; sourceId: string } | null>
-  /** gsk (Genspark) AI image generation/editing, returns the image URL (error prompts login when logged out) */
+  /** gsk (SamuGen) AI image generation/editing, returns the image URL (error prompts login when logged out) */
   generateImage: (op: {
     prompt: string
     model?: string

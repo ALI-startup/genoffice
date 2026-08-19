@@ -6,7 +6,7 @@
  * far, so it lives here instead of being copied into each host — docs wrote it first and
  * slides needs exactly the same set.
  *
- * The office formats go through @genoffice/file-parse's browser entry point — the same
+ * The office formats go through @samugen/file-parse's browser entry point — the same
  * extractors the Electron main process runs, byte-for-byte, because they only ever needed
  * bytes and jszip / fast-xml-parser run in a browser unchanged. They are imported on first
  * use, so a session that attaches nothing never loads them.
@@ -28,7 +28,7 @@ const OFFICE_EXTS = new Set(['docx', 'pptx', 'xlsx'])
  * something the user can act on, instead of accepting the file and failing later when the
  * model asks to read it.
  *
- *   - `pdf` — @genoffice/file-parse's PDF extractor is Node-only: it locates pdfjs's
+ *   - `pdf` — @samugen/file-parse's PDF extractor is Node-only: it locates pdfjs's
  *     standard-fonts directory with `createRequire` and imports pdfjs's Node legacy build,
  *     which a browser bundle cannot even build against. PDF text extraction *is* possible in
  *     a browser (pdfjs ships a web build), but it is a rewrite of that module rather than a
@@ -57,7 +57,7 @@ export function createBrowserAttachmentExtractor(): WebAttachmentExtractor {
       try {
         const bytes = await file.bytes()
         if (ATTACHMENT_TEXT_EXTS.has(file.ext)) return { ok: true, text: decodeUtf8(bytes) }
-        const { docxToText, pptxToText, xlsxToText } = await import('@genoffice/file-parse/browser')
+        const { docxToText, pptxToText, xlsxToText } = await import('@samugen/file-parse/browser')
         switch (file.ext) {
           case 'docx':
             return { ok: true, text: await docxToText(bytes) }

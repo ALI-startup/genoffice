@@ -31,7 +31,7 @@
  *     and it warns rather than silently returning, so a broken invariant is
  *     visible. With a link it relays the outcome to the shell instead.
  */
-import type { WindowPort } from '@genoffice/platform'
+import type { WindowPort } from '@samugen/platform'
 import type { FrameChildLink } from './frame-child.js'
 
 export type WebWindowSlice = Pick<

@@ -45,7 +45,7 @@ import type {
   AiSettings,
   AiStreamChunk,
   AiStreamRequest,
-} from '@genoffice/ai-provider'
+} from '@samugen/ai-provider'
 
 /** Reading AI settings plus the streaming call — every AI-capable host backs all four. */
 export interface AiPort {

@@ -21,7 +21,7 @@ import type {
   AttachmentMeta,
   AttachmentReadResult,
   AttachmentsPort,
-} from '@genoffice/platform'
+} from '@samugen/platform'
 
 /** Attachment metadata as a preload bridge reports it: keyed by absolute path. */
 export interface ElectronAttachmentMetaBridge {

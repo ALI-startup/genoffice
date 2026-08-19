@@ -1,4 +1,4 @@
-import { LanguageToggle } from '@genoffice/ui'
+import { LanguageToggle } from '@samugen/ui'
 import { useI18n } from '../i18n/locale'
 
 /**

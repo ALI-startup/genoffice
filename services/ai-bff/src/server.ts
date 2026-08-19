@@ -4,7 +4,7 @@
  * One job: be the only process that knows the provider credentials, and expose
  * exactly enough over HTTP for a browser renderer to run the same AI surface it
  * runs under Electron. The provider logic itself is not reimplemented — the
- * handlers below call @genoffice/ai-provider's `streamForProvider` and
+ * handlers below call @samugen/ai-provider's `streamForProvider` and
  * `chatForProvider`, the same functions the Electron main process calls, so
  * provider quirks are fixed in one place for both hosts.
  *
@@ -36,9 +36,9 @@ import {
   type AiChatResponse,
   type AiSettings,
   type AiStreamChunk,
-} from '@genoffice/ai-provider'
-import type { AgentMessage, AgentToolDef } from '@genoffice/agent-core'
-import { AI_BFF_ROUTES } from '@genoffice/platform-web/wire'
+} from '@samugen/ai-provider'
+import type { AgentMessage, AgentToolDef } from '@samugen/agent-core'
+import { AI_BFF_ROUTES } from '@samugen/platform-web/wire'
 import { resolveProvider, toPublicSettings } from './credentials.js'
 
 /** Streaming request bodies are prompts and tool schemas, not uploads. */
@@ -49,7 +49,7 @@ const PING_INTERVAL_MS = 5_000
 
 export interface AiBffOptions {
   settings: AiSettings
-  /** Injected in tests; production uses @genoffice/ai-provider. */
+  /** Injected in tests; production uses @samugen/ai-provider. */
   stream?: typeof streamForProvider
   chat?: typeof chatForProvider
   maxBodyBytes?: number
@@ -234,7 +234,7 @@ export function createAiBffHandler(
  * Belt and braces on top of never putting a key in a response: a provider's own
  * error body can echo the credential it rejected (some gateways include the
  * offending Authorization header), and that body is forwarded verbatim by
- * @genoffice/ai-provider's `HTTP <status>: <detail>` messages. Filtering at the
+ * @samugen/ai-provider's `HTTP <status>: <detail>` messages. Filtering at the
  * single point where text becomes a response body means no future handler can
  * reintroduce the leak.
  */

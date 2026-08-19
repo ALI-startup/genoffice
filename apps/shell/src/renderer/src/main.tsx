@@ -1,6 +1,6 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
-import { htmlLang } from '@genoffice/i18n'
+import { htmlLang } from '@samugen/i18n'
 import { AppFrame } from './AppFrame'
 // The build-time host seam: `@host` is aliased to host-electron.ts or
 // host-web.ts by whichever Vite config is building, so the two hosts' code

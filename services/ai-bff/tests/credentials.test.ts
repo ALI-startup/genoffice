@@ -3,7 +3,7 @@
  * outward-facing projection of it is allowed to contain.
  */
 import { describe, expect, it } from 'vitest'
-import { AI_PROVIDERS, defaultAiSettings } from '@genoffice/ai-provider'
+import { AI_PROVIDERS, defaultAiSettings } from '@samugen/ai-provider'
 import {
   isProviderId,
   loadAiSettings,
@@ -17,9 +17,9 @@ import { SECRET_KEY, settingsWithSecret } from './fakes.js'
 describe('loadAiSettings', () => {
   it('reads a credential, a model and a base URL per provider', () => {
     const env: Env = {
-      GENOFFICE_AI_PROVIDER: 'anthropic',
-      GENOFFICE_AI_KEY_ANTHROPIC: SECRET_KEY,
-      GENOFFICE_AI_MODEL_ANTHROPIC: 'claude-test-1',
+      SAMUGEN_AI_PROVIDER: 'anthropic',
+      SAMUGEN_AI_KEY_ANTHROPIC: SECRET_KEY,
+      SAMUGEN_AI_MODEL_ANTHROPIC: 'claude-test-1',
     }
     const settings = loadAiSettings(env)
     expect(settings.provider).toBe('anthropic')
@@ -35,39 +35,39 @@ describe('loadAiSettings', () => {
     // its id must still be configurable without touching this service.
     for (const meta of AI_PROVIDERS) {
       const suffix = meta.id.toUpperCase().replace(/-/g, '_')
-      const settings = loadAiSettings({ [`GENOFFICE_AI_KEY_${suffix}`]: SECRET_KEY })
+      const settings = loadAiSettings({ [`SAMUGEN_AI_KEY_${suffix}`]: SECRET_KEY })
       expect(settings.providers[meta.id].apiKey, `no env var maps to ${meta.id}`).toBe(SECRET_KEY)
     }
   })
 
   it('trims surrounding whitespace, which shell exports pick up easily', () => {
     const settings = loadAiSettings({
-      GENOFFICE_AI_PROVIDER: '  anthropic  ',
-      GENOFFICE_AI_KEY_ANTHROPIC: `  ${SECRET_KEY}\n`,
+      SAMUGEN_AI_PROVIDER: '  anthropic  ',
+      SAMUGEN_AI_KEY_ANTHROPIC: `  ${SECRET_KEY}\n`,
     })
     expect(settings.provider).toBe('anthropic')
     expect(settings.providers.anthropic?.apiKey).toBe(SECRET_KEY)
   })
 
   it('ignores an unknown provider id rather than producing an unusable config', () => {
-    const settings = loadAiSettings({ GENOFFICE_AI_PROVIDER: 'not-a-provider' })
+    const settings = loadAiSettings({ SAMUGEN_AI_PROVIDER: 'not-a-provider' })
     expect(settings.provider).toBe(defaultAiSettings().provider)
   })
 
   it('honours the active provider even when nothing else is configured for it', () => {
-    expect(loadAiSettings({ GENOFFICE_AI_PROVIDER: 'anthropic' }).provider).toBe('anthropic')
+    expect(loadAiSettings({ SAMUGEN_AI_PROVIDER: 'anthropic' }).provider).toBe('anthropic')
   })
 
   it('falls back to the provider default model when only a key is given', () => {
-    const settings = loadAiSettings({ GENOFFICE_AI_KEY_ANTHROPIC: SECRET_KEY })
+    const settings = loadAiSettings({ SAMUGEN_AI_KEY_ANTHROPIC: SECRET_KEY })
     expect(settings.providers.anthropic?.model).toBe(defaultAiSettings().providers.anthropic.model)
   })
 
   it('keeps a base URL override for a configurable endpoint', () => {
     const settings = loadAiSettings({
-      GENOFFICE_AI_KEY_CUSTOM: SECRET_KEY,
-      GENOFFICE_AI_BASE_URL_CUSTOM: 'http://localhost:11434/v1',
-      GENOFFICE_AI_MODEL_CUSTOM: 'local-model',
+      SAMUGEN_AI_KEY_CUSTOM: SECRET_KEY,
+      SAMUGEN_AI_BASE_URL_CUSTOM: 'http://localhost:11434/v1',
+      SAMUGEN_AI_MODEL_CUSTOM: 'local-model',
     })
     expect(settings.providers.custom).toMatchObject({
       apiKey: SECRET_KEY,
@@ -78,8 +78,8 @@ describe('loadAiSettings', () => {
 
   it('reads extra request headers for a provider', () => {
     const settings = loadAiSettings({
-      GENOFFICE_AI_KEY_VLLM: SECRET_KEY,
-      GENOFFICE_AI_HEADERS_VLLM: '{"X-Caller":"my-service"}',
+      SAMUGEN_AI_KEY_VLLM: SECRET_KEY,
+      SAMUGEN_AI_HEADERS_VLLM: '{"X-Caller":"my-service"}',
     })
     expect(settings.providers.vllm?.headers).toEqual({ 'X-Caller': 'my-service' })
   })
@@ -87,16 +87,17 @@ describe('loadAiSettings', () => {
   it('configures a provider given headers alone', () => {
     // Headers are a configuration signal like a key or a base URL: a provider
     // carrying only an attribution header must not be dropped from the merge.
-    const settings = loadAiSettings({ GENOFFICE_AI_HEADERS_OPENROUTER: '{"X-Caller":"svc"}' })
+    const settings = loadAiSettings({ SAMUGEN_AI_HEADERS_OPENROUTER: '{"X-Caller":"svc"}' })
     expect(settings.providers.openrouter?.headers).toEqual({ 'X-Caller': 'svc' })
   })
 
   it('leaves headers absent when the variable is unset or blank', () => {
-    expect(loadAiSettings({ GENOFFICE_AI_KEY_VLLM: SECRET_KEY }).providers.vllm?.headers)
-      .toBeUndefined()
     expect(
-      loadAiSettings({ GENOFFICE_AI_KEY_VLLM: SECRET_KEY, GENOFFICE_AI_HEADERS_VLLM: '  ' })
-        .providers.vllm?.headers,
+      loadAiSettings({ SAMUGEN_AI_KEY_VLLM: SECRET_KEY }).providers.vllm?.headers,
+    ).toBeUndefined()
+    expect(
+      loadAiSettings({ SAMUGEN_AI_KEY_VLLM: SECRET_KEY, SAMUGEN_AI_HEADERS_VLLM: '  ' }).providers
+        .vllm?.headers,
     ).toBeUndefined()
   })
 
@@ -110,8 +111,8 @@ describe('loadAiSettings', () => {
       ['{"X Caller":"v"}', 'is not a valid header name'],
     ]
     for (const [value, expected] of cases) {
-      expect(() => loadAiSettings({ GENOFFICE_AI_HEADERS_VLLM: value }), value).toThrowError(
-        new RegExp(`GENOFFICE_AI_HEADERS_VLLM.*${expected}|${expected}`),
+      expect(() => loadAiSettings({ SAMUGEN_AI_HEADERS_VLLM: value }), value).toThrowError(
+        new RegExp(`SAMUGEN_AI_HEADERS_VLLM.*${expected}|${expected}`),
       )
     }
   })
@@ -140,13 +141,13 @@ describe('toPublicSettings', () => {
       credentialConfigured: true,
     })
     expect(JSON.stringify(view)).not.toContain(SECRET_KEY)
-    // Not even the last four characters — the hint @genoffice/ai-electron keeps
+    // Not even the last four characters — the hint @samugen/ai-electron keeps
     // is deliberately absent here, which is what makes the guarantee absolute.
     expect(JSON.stringify(view)).not.toContain(SECRET_KEY.slice(-4))
   })
 
   it('marks a provider with a model but no key as unconfigured', () => {
-    const view = toPublicSettings(loadAiSettings({ GENOFFICE_AI_MODEL_ANTHROPIC: 'm' }))
+    const view = toPublicSettings(loadAiSettings({ SAMUGEN_AI_MODEL_ANTHROPIC: 'm' }))
     expect(view.providers.anthropic?.credentialConfigured).toBe(false)
   })
 })
@@ -162,12 +163,12 @@ describe('resolveProvider', () => {
   })
 
   it('names the env var to set when no credential is configured', () => {
-    // Regression guard: GENOFFICE_AI_PROVIDER on its own used to be dropped
-    // (see the comment in loadAiSettings), so this reported GENSPARK — telling
+    // Regression guard: SAMUGEN_AI_PROVIDER on its own used to be dropped
+    // (see the comment in loadAiSettings), so this reported SAMUGEN — telling
     // the operator to set an env var for a provider they had not selected.
-    const result = resolveProvider(loadAiSettings({ GENOFFICE_AI_PROVIDER: 'anthropic' }))
+    const result = resolveProvider(loadAiSettings({ SAMUGEN_AI_PROVIDER: 'anthropic' }))
     expect(result.ok).toBe(false)
-    if (!result.ok) expect(result.error).toContain('GENOFFICE_AI_KEY_ANTHROPIC')
+    if (!result.ok) expect(result.error).toContain('SAMUGEN_AI_KEY_ANTHROPIC')
   })
 
   it('refuses a provider with a key but no model', () => {

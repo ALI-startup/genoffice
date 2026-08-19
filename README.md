@@ -1,4 +1,4 @@
-# GenOffice
+# SamuGen
 
 An AI-native office suite: word processor, spreadsheet, presentations, and PDF
 — five apps sharing one engine layer, built around AI editing as a first-class
@@ -9,45 +9,40 @@ suite and run in a browser with no Electron and no server-side document
 processing — including the spreadsheet's Rust engine, compiled to WebAssembly.
 See [Run it in a browser](#run-it-in-a-browser).
 
-[![Meet GenOffice — the world's first full-featured open-source AI Office (video)](https://img.youtube.com/vi/B2pLdMX95v4/maxresdefault.jpg)](https://www.youtube.com/watch?v=B2pLdMX95v4)
-
-[Watch the demo video on YouTube](https://www.youtube.com/watch?v=B2pLdMX95v4)
+[Demo video for GenOffice](https://www.youtube.com/watch?v=B2pLdMX95v4), the
+upstream project this is forked from — the editors it shows are the same ones
+here, under the branding that came before.
 
 ## Download
 
-Signed installers built from `main`:
-
-- **macOS** (Apple Silicon): [GenOffice-0.5.1-arm64.dmg](https://github.com/genspark-ai/genoffice/releases/download/v0.5.1/GenOffice-0.5.1-arm64.dmg)
-- **Windows** (x64): [GenOfficeSetup-v0.5.1.exe](https://github.com/genspark-ai/genoffice/releases/download/v0.5.1/GenOfficeSetup-v0.5.1.exe)
-
-Previous version:
-
-- **macOS** (Apple Silicon): [GenOffice-0.4.110-arm64.dmg](https://github.com/genspark-ai/genoffice/releases/download/v0.4.110/GenOffice-0.4.110-arm64.dmg)
-- **Windows** (x64): [GenOfficeSetup-v0.4.110.exe](https://github.com/genspark-ai/genoffice/releases/download/v0.4.110/GenOfficeSetup-v0.4.110.exe)
-
-Other versions are on the [Releases](https://github.com/genspark-ai/genoffice/releases) page.
+No SamuGen installer has been published yet. Build one from source with
+`npm run dist:mac` or `npm run dist:win` (see [Development](#development)), or
+run it in a browser with no build step — see
+[Run it in a browser](#run-it-in-a-browser).
 
 ## Apps
 
-| App           | Product              | What it is                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| ------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/docs`   | **GenOffice Docs**   | `.docx` word processor. Byte-preserving round trip: only dirty paragraphs are regenerated (paragraph patch), everything else in the original file is kept byte-for-byte, so opening and saving never breaks layout in Word. Paginated view whose line metrics reproduce the original document's layout, tracked changes, comments, styles, equations, ink.                                                                               |
-| `apps/sheets` | **GenOffice Sheets** | `.xlsx` spreadsheet. UI built on the open-source [Univer](https://github.com/dream-num/univer) core (Apache-2.0) with a large layer of in-house extensions; xlsx import/export runs through an in-house Rust engine (calamine + IronCalc) — a sidecar process on the desktop, the same crate as WebAssembly in a browser; charts are rendered in-house (Konva), plus pivot tables, slicers, conditional formatting, and formula tracing. |
-| `apps/slides` | **GenOffice Slides** | `.pptx` presentations. In-house pptx parse/render/edit engine with masters, charts, cropping, ink, and text shaping (HarfBuzz metrics on the desktop; the browser's own text engine on web).                                                                                                                                                                                                                                             |
-| `apps/pdf`    | **GenOffice PDF**    | PDF viewer/editor on pdf.js + pdf-lib: annotations, forms, outlines, stamps, signatures, page operations, print.                                                                                                                                                                                                                                                                                                                         |
-| `apps/shell`  | **GenOffice**        | The suite shell and landing page: home screen, tabbed hosting of the four editors, auto-update. On the desktop the tabs are `WebContentsView`s; in a browser they are same-origin iframes under `/app/docs/`, `/app/pdf/`, `/app/slides/` and `/app/sheets/`.                                                                                                                                                                            |
+| App           | Product            | What it is                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/docs`   | **SamuGen Docs**   | `.docx` word processor. Byte-preserving round trip: only dirty paragraphs are regenerated (paragraph patch), everything else in the original file is kept byte-for-byte, so opening and saving never breaks layout in Word. Paginated view whose line metrics reproduce the original document's layout, tracked changes, comments, styles, equations, ink.                                                                               |
+| `apps/sheets` | **SamuGen Sheets** | `.xlsx` spreadsheet. UI built on the open-source [Univer](https://github.com/dream-num/univer) core (Apache-2.0) with a large layer of in-house extensions; xlsx import/export runs through an in-house Rust engine (calamine + IronCalc) — a sidecar process on the desktop, the same crate as WebAssembly in a browser; charts are rendered in-house (Konva), plus pivot tables, slicers, conditional formatting, and formula tracing. |
+| `apps/slides` | **SamuGen Slides** | `.pptx` presentations. In-house pptx parse/render/edit engine with masters, charts, cropping, ink, and text shaping (HarfBuzz metrics on the desktop; the browser's own text engine on web).                                                                                                                                                                                                                                             |
+| `apps/pdf`    | **SamuGen PDF**    | PDF viewer/editor on pdf.js + pdf-lib: annotations, forms, outlines, stamps, signatures, page operations, print.                                                                                                                                                                                                                                                                                                                         |
+| `apps/shell`  | **SamuGen**        | The suite shell and landing page: home screen, tabbed hosting of the four editors, auto-update. On the desktop the tabs are `WebContentsView`s; in a browser they are same-origin iframes under `/app/docs/`, `/app/pdf/`, `/app/slides/` and `/app/sheets/`.                                                                                                                                                                            |
 
 Every app embeds the same AI panel: block-granular AI editing with version
 snapshots and diffs in docs, a tool-calling agent over workbook/slide/PDF
 state in the others.
 
-**AI providers.** Twenty-two of them, chosen in Settings ▸ AI providers:
-Genspark (the default, signed in with a Genspark account), the major hosted
-models, OpenAI-compatible endpoints, and local runtimes (Ollama, LM Studio,
-vLLM, llama.cpp). On the desktop an API key is encrypted with the OS credential
-store (Electron `safeStorage`) and is never read back into the settings page. In
-a browser no key is held by the page at all: calls go through
-`services/ai-bff`, which keeps the credentials server-side.
+**AI providers.** Twenty-one of them, chosen in Settings ▸ AI providers: the
+major hosted models (Claude, Gemini, OpenAI, DeepSeek, xAI…), OpenAI-compatible
+endpoints, image providers (Runware, Replicate, fal, Stability), and local
+runtimes (Ollama, LM Studio, vLLM, llama.cpp). There is no built-in account and
+no privileged provider — you bring your own endpoint or key. On the desktop that
+key is encrypted with the OS credential store (Electron `safeStorage`) and is
+never read back into the settings page. In a browser no key is held by the page
+at all: calls go through `services/ai-bff`, which keeps the credentials
+server-side.
 
 **Languages.** Nineteen, and every app's chrome carries an English ⇄ Korean
 toggle at the end of its ribbon tab row — the shell's is on the tab strip and in
@@ -78,7 +73,7 @@ npm run docs:web     # one app standalone (same pattern per app)
 
 Under `shell:web` the four editors are reached through the landing page's own
 origin, so 5190 is the one to open. Every port is overridable (`SHELL_WEB_PORT`
-… / `GENOFFICE_SHELL_PORT` …), and `strictPort` is set so a busy port fails
+… / `SAMUGEN_SHELL_PORT` …), and `strictPort` is set so a busy port fails
 loudly instead of moving.
 
 **Chromium 86+**, because the apps open and save real files through the File
@@ -87,7 +82,7 @@ document. The AI BFF is the one server piece, it holds only provider
 credentials, and in Docker it is deliberately unpublished.
 
 Some capabilities are deliberately absent in a browser rather than stubbed —
-PDF export from docs, Genspark sign-in, AI web search. `docs/web-migration.md`
+PDF export from docs, and AI web search. `docs/web-migration.md`
 §8 lists them, and §2.1 explains why a missing capability is `null` at the seam
 instead of a stub that fails at the call site.
 
@@ -112,7 +107,7 @@ All pure TypeScript, no Electron dependency, unit-tested (except the UI kit):
   every app.
 - `packages/ai-provider` / `packages/ai-electron` — provider abstraction and
   streaming, and the main-process settings + encrypted credential store.
-- `packages/ai-search` — Genspark auth + web/image search tools.
+- `packages/ai-search` — web/image search tools (Serper, DuckDuckGo fallback).
 - `packages/i18n`, `packages/ui`, `packages/project-store`,
   `packages/electron-utils` — shared i18n core, React UI kit, recent-files
   store, and Electron main-process helpers.
@@ -138,9 +133,9 @@ npm run build:shell:web  # the composed web bundle the container image serves
 ```
 
 The sheets app needs a Rust toolchain for its xlsx engine (`cargo` on PATH).
-`npm run build -w @genoffice/sheets` compiles the desktop sidecar; the browser
+`npm run build -w @samugen/sheets` compiles the desktop sidecar; the browser
 build additionally needs the `wasm32-wasip1` target and a WASI sysroot, and
-`npm run wasm:build -w @genoffice/sheets` produces the module (the web and
+`npm run wasm:build -w @samugen/sheets` produces the module (the web and
 Docker build scripts run it for you). Tests that need the module skip loudly
 when it has not been built.
 
@@ -186,10 +181,11 @@ CJK subsets) are OFL/Apache.
 
 ## License
 
-GenOffice is licensed under the [Apache License 2.0](LICENSE), with one
+SamuGen is licensed under the [Apache License 2.0](LICENSE), with one
 exception: the `ee/` directory is reserved for future enterprise modules and
-is covered by the [GenOffice Enterprise License](ee/LICENSE).
+is covered by the [SamuGen Enterprise License](ee/LICENSE).
 
-The GenOffice and Genspark names and logos are trademarks of Mainfunc, Inc.
-The Apache-2.0 license does not grant permission to use them (see section 6);
-forks should use their own branding.
+This is a fork. The GenOffice and Genspark names and logos are trademarks of
+Mainfunc, Inc.; the Apache-2.0 license does not grant permission to use them
+(see section 6), so they have been removed from this tree and replaced with the
+SamuGen name and mark. Anyone forking this in turn should do the same.

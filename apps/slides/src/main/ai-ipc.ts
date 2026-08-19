@@ -11,7 +11,7 @@ import {
   getConfiguredAiSettingsStore,
   resolveConfiguredAiProvider,
   type AiTask,
-} from '@genoffice/ai-electron'
+} from '@samugen/ai-electron'
 import {
   AiCreditsError,
   AiTimeoutError,
@@ -24,15 +24,15 @@ import {
   type AiStreamChunk,
   type AiStreamRequest,
   type LegacyAiSettings,
-} from '@genoffice/ai-provider'
-import { fetchWithSsrfGuard } from '@genoffice/electron-utils'
-import { webSearch, imageSearch } from '@genoffice/ai-search'
-import { addPicture } from '@genoffice/pptx-engine'
-import { EMU_PER_PX_96 } from '@genoffice/pptx-render'
+} from '@samugen/ai-provider'
+import { fetchWithSsrfGuard } from '@samugen/electron-utils'
+import { webSearch, imageSearch } from '@samugen/ai-search'
+import { addPicture } from '@samugen/pptx-engine'
+import { EMU_PER_PX_96 } from '@samugen/pptx-render'
 import { tm } from './i18n-main'
 import { pushHistory, rebuildSlide, sessions } from './session-state'
 
-// ---- AI settings + streaming proxy (the main process does the networking to avoid renderer CORS; implementation shared via @genoffice/ai-provider) ----
+// ---- AI settings + streaming proxy (the main process does the networking to avoid renderer CORS; implementation shared via @samugen/ai-provider) ----
 
 const AI_SETTINGS_PATH = () => join(app.getPath('userData'), 'ai-settings.json')
 
@@ -70,7 +70,7 @@ export function registerAiIpc(): void {
     }
     const stored = readJson<Partial<AiSettings> & LegacyAiSettings>(AI_SETTINGS_PATH(), {})
     // The stored provider is honoured as stored. It used to be overwritten with
-    // 'genspark' on every read, which silently undid whatever the settings
+    // 'samugen' on every read, which silently undid whatever the settings
     // screen had just saved.
     return resolveAiSettings(stored, defaultAiSettings())
   })
@@ -180,7 +180,7 @@ export function registerAiIpc(): void {
 // never called; docs does not have these channels, so putting them in the wrong place raises
 // "No handler registered".
 export function registerSlidesOnlyAiIpc(): void {
-  // gsk (Genspark CLI) capabilities: AI image generation / media analysis. Returns an error prompt when not logged in.
+  // gsk (SamuGen CLI) capabilities: AI image generation / media analysis. Returns an error prompt when not logged in.
   ipcMain.handle(
     'ai:generate-image',
     async (
@@ -199,7 +199,7 @@ export function registerSlidesOnlyAiIpc(): void {
           if (!configured.apiKey)
             return { error: tm('errNoApiKey', { provider: configured.providerId }) }
           const images = await generateImageForProvider(
-            configured.providerId as import('@genoffice/ai-provider').AiProviderId,
+            configured.providerId as import('@samugen/ai-provider').AiProviderId,
             {
               apiKey: configured.apiKey,
               model: op.model || configured.model,

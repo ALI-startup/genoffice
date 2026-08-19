@@ -6,7 +6,7 @@
  * worker host's dispatch and serialisation, and the real wasm module underneath. What a real
  * Worker adds on top of this is a thread, which is exactly the part with no logic in it.
  *
- * Skipped, loudly, when `npm run wasm:build -w @genoffice/sheets` has not been run.
+ * Skipped, loudly, when `npm run wasm:build -w @samugen/sheets` has not been run.
  */
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
@@ -53,7 +53,7 @@ function linkedPair(): { page: MessageLink; worker: MessageLink } {
 const built = existsSync(WASM)
 const describeWorker = built ? describe : describe.skip
 if (!built) {
-  console.warn('[wasm-worker] skipped: run `npm run wasm:build -w @genoffice/sheets` first')
+  console.warn('[wasm-worker] skipped: run `npm run wasm:build -w @samugen/sheets` first')
 }
 
 describeWorker('the engine behind a worker link', () => {

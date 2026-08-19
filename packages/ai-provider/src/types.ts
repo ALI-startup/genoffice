@@ -1,4 +1,4 @@
-import type { AgentMessage, AgentToolCall, AgentToolDef } from '@genoffice/agent-core'
+import type { AgentMessage, AgentToolCall, AgentToolDef } from '@samugen/agent-core'
 
 /** Built-in provider presets. `custom` accepts any OpenAI-compatible endpoint. */
 export type AiProviderId =

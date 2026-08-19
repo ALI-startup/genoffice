@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { AiStreamChunk } from '@genoffice/ai-provider'
+import type { AiStreamChunk } from '@samugen/ai-provider'
 import { createWebAiPort, toAiSettings } from '../src/ai'
 import { AI_BFF_ROUTES, type PublicAiSettings } from '../src/ai-wire'
 

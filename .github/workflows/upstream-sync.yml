@@ -60,5 +60,5 @@ jobs:
           gh pr create \
             --base main \
             --head "$SYNC_BRANCH" \
-            --title "Sync upstream GenOffice changes" \
+            --title "Sync upstream SamuGen changes" \
             --body "Review upstream changes before merging. Run the provider, migration, and full regression suites; this workflow does not access userData settings or credentials."

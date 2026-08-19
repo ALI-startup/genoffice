@@ -10,23 +10,23 @@
  *      prefix through this dev server is what makes the request same-origin, and it is also
  *      why the browser never needs to know the BFF's address. A deployment replaces this
  *      proxy with the equivalent rule in whatever fronts the static files — the route prefix
- *      is the contract, and it is declared once, in @genoffice/platform-web's wire module.
+ *      is the contract, and it is declared once, in @samugen/platform-web's wire module.
  *
  * The workspace aliases are the Electron config's, minus nothing: the same subpath-before-
  * bare-name ordering is required here for the same reason (string aliases are prefix
- * replacements), and `@genoffice/pptx-engine/node` — the only module in that package that
+ * replacements), and `@samugen/pptx-engine/node` — the only module in that package that
  * touches `node:fs` — is deliberately absent so a browser bundle cannot resolve it at all.
  */
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
-import { AI_BFF_BASE_PATH } from '@genoffice/platform-web/wire'
+import { AI_BFF_BASE_PATH } from '@samugen/platform-web/wire'
 import { hostAlias } from './vite.shared'
 
 const here = dirname(fileURLToPath(import.meta.url))
 
-/** Where `npm run start -w @genoffice/ai-bff` listens by default. */
+/** Where `npm run start -w @samugen/ai-bff` listens by default. */
 const bffTarget = process.env.AI_BFF_URL || 'http://127.0.0.1:8788'
 
 export default defineConfig({
@@ -38,16 +38,16 @@ export default defineConfig({
   base: process.env.SLIDES_WEB_BASE || './',
   resolve: {
     alias: {
-      '@genoffice/pptx-engine/table-grid': resolve(
+      '@samugen/pptx-engine/table-grid': resolve(
         here,
         '../../packages/pptx-engine/src/table-grid.ts',
       ),
-      '@genoffice/pptx-engine/background-promote': resolve(
+      '@samugen/pptx-engine/background-promote': resolve(
         here,
         '../../packages/pptx-engine/src/background-promote.ts',
       ),
-      '@genoffice/pptx-engine': resolve(here, '../../packages/pptx-engine/src/index.ts'),
-      '@genoffice/pptx-render': resolve(here, '../../packages/pptx-render/src/index.ts'),
+      '@samugen/pptx-engine': resolve(here, '../../packages/pptx-engine/src/index.ts'),
+      '@samugen/pptx-render': resolve(here, '../../packages/pptx-render/src/index.ts'),
       ...hostAlias('web'),
     },
   },

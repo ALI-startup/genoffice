@@ -6,7 +6,7 @@ const GEMINI_UNSUPPORTED_SCHEMA_KEYS = [
   'propertyNames',
 ] as const
 
-/** Convert JSON Schema emitted by GenOffice tools to Gemini's OpenAPI subset. */
+/** Convert JSON Schema emitted by SamuGen tools to Gemini's OpenAPI subset. */
 export function sanitizeGeminiSchema(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sanitizeGeminiSchema)
   if (!value || typeof value !== 'object') return value

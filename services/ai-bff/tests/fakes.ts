@@ -21,9 +21,9 @@ import type {
   AiSettings,
   chatForProvider,
   streamForProvider,
-} from '@genoffice/ai-provider'
-import { defaultAiSettings, resolveAiSettings } from '@genoffice/ai-provider'
-import type { AgentMessage, AgentToolDef } from '@genoffice/agent-core'
+} from '@samugen/ai-provider'
+import { defaultAiSettings, resolveAiSettings } from '@samugen/ai-provider'
+import type { AgentMessage, AgentToolDef } from '@samugen/agent-core'
 import { createAiBffHandler, type AiBffOptions } from '../src/server.js'
 
 /**

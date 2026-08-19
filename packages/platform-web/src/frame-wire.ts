@@ -37,7 +37,7 @@
  * makes this a distinctive token to grep the Electron bundle for: it must never
  * appear there.
  */
-export const FRAME_PROTOCOL = 'genoffice.shell.frame.v1'
+export const FRAME_PROTOCOL = 'samugen.shell.frame.v1'
 
 /**
  * Query parameter naming the frame, set by the shell on the iframe URL.

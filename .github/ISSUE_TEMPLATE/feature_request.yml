@@ -7,10 +7,10 @@ body:
     attributes:
       label: App
       options:
-        - GenOffice Docs (docs)
-        - GenOffice Sheets (sheets)
-        - GenOffice Slides (slides)
-        - GenOffice PDF (pdf)
+        - SamuGen Docs (docs)
+        - SamuGen Sheets (sheets)
+        - SamuGen Slides (slides)
+        - SamuGen PDF (pdf)
         - Shell / home screen
         - AI panel / providers
         - Whole suite

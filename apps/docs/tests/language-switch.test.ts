@@ -10,7 +10,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement, type ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
-import type { Lang } from '@genoffice/i18n'
+import type { Lang } from '@samugen/i18n'
 import { LangSwitch } from '../src/renderer/components/LangSwitch'
 import { LocaleProvider, useI18n } from '../src/renderer/i18n/locale'
 import { setDocsPlatform, type DocsPlatform } from '../src/renderer/platform'

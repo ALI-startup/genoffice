@@ -14,7 +14,7 @@
  * The descriptions are also what the provider search box matches, so a reader
  * who searches "이미지" finds the image providers rather than nothing.
  */
-import type { Lang } from '@genoffice/i18n'
+import type { Lang } from '@samugen/i18n'
 
 const KO: Record<string, string> = {
   openai: '공식 API를 통해 OpenAI 모델을 사용합니다.',

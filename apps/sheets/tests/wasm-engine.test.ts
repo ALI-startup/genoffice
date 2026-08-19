@@ -10,7 +10,7 @@
  * shortcut: what is being tested is the module, and the module cannot tell which
  * implementation of `fd_read` answered it. The browser's shim is exercised by its own tests.
  *
- * Skipped, loudly, when `npm run wasm:build -w @genoffice/sheets` has not been run — the
+ * Skipped, loudly, when `npm run wasm:build -w @samugen/sheets` has not been run — the
  * module is 4.5MB of generated binary and is not committed.
  */
 import { execFileSync } from 'node:child_process'
@@ -85,7 +85,7 @@ function throughNative(requests: Record<string, unknown>[]): Record<string, unkn
 const built = existsSync(WASM)
 const describeWasm = built ? describe : describe.skip
 if (!built) {
-  console.warn(`[wasm-engine] skipped: run \`npm run wasm:build -w @genoffice/sheets\` first`)
+  console.warn(`[wasm-engine] skipped: run \`npm run wasm:build -w @samugen/sheets\` first`)
 }
 
 describeWasm('the xlsx engine in WebAssembly', () => {

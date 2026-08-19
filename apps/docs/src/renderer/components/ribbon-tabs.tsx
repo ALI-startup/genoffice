@@ -8,8 +8,8 @@ import {
   WORDART_PRESETS,
   type HeaderFooter,
   type TextboxDisplay,
-} from '@genoffice/docx-engine'
-import type { TabInfo } from '@genoffice/platform'
+} from '@samugen/docx-engine'
+import type { TabInfo } from '@samugen/platform'
 import { tableModelToPmNode } from '../editor/convert'
 import type { InkTool } from '../editor/ink'
 import { t, useI18n, type StringKey } from '../i18n/locale'
@@ -1133,7 +1133,7 @@ export function ViewTab({
                       }}
                     >
                       {w.focused ? '✓ ' : ''}
-                      {w.title || 'GenOffice Docs'}
+                      {w.title || 'SamuGen Docs'}
                     </button>
                   ))}
                 </div>

@@ -33,7 +33,7 @@ import {
   type ThemeColors,
   type ThemeFonts,
   type ParsedDocFull,
-} from '@genoffice/docx-engine'
+} from '@samugen/docx-engine'
 import type { Dispatch, SetStateAction } from 'react'
 import {
   hfVariantsFromParsed,

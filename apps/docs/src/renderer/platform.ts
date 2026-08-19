@@ -55,7 +55,7 @@ import {
   type Platform,
   type SearchPort,
   type WindowPort,
-} from '@genoffice/platform'
+} from '@samugen/platform'
 import type { MenuCommand, PickImageResult } from '../shared/ipc'
 
 /**
@@ -66,7 +66,7 @@ import type { MenuCommand, PickImageResult } from '../shared/ipc'
  * to be an absolute path, a browser host's would be a key into its own handle
  * store, and only the host that issued a ref may interpret it. Anything the UI
  * has to show comes from a sibling `name` / `location` field, exactly as with
- * `DocumentRef` in apps/pdf and `AttachmentRef` in @genoffice/platform.
+ * `DocumentRef` in apps/pdf and `AttachmentRef` in @samugen/platform.
  */
 export type DocumentRef = string
 
@@ -323,7 +323,7 @@ export interface CloseCheckState {
  *
  * The three channels are registered by docs-main and the shell owns the tab
  * strip, so any shell-hosted adapter backs the whole port; see
- * @genoffice/platform's ports/window.ts.
+ * @samugen/platform's ports/window.ts.
  */
 export type DocsTabsPort = Pick<WindowPort, 'openNewTab' | 'listTabs' | 'focusTab'>
 
@@ -476,7 +476,7 @@ export interface HwpxExportResult {
  *
  * Behind the host rather than called directly, because *where* the conversion
  * runs differs: the Electron adapter forwards to the main process, and the web
- * adapter runs @genoffice/hwpx-convert in the page and writes through the File
+ * adapter runs @samugen/hwpx-convert in the page and writes through the File
  * System Access API. Both use the same converter, so neither host can produce a
  * different document from the other.
  *
@@ -587,7 +587,7 @@ export type DocsPlatform = Platform<'language' | 'ai' | 'attachments'> & {
    * above. A browser-side PDF exporter would have to re-render the document and
    * would write something *different* from the desktop under one command name;
    * HWPX runs the identical converter in both places, because
-   * @genoffice/hwpx-convert assembles the package from an embedded template and
+   * @samugen/hwpx-convert assembles the package from an embedded template and
    * so needs no filesystem. Electron converts in the main process, the browser
    * in the page.
    *

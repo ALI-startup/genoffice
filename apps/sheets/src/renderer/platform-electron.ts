@@ -15,8 +15,8 @@
  * Nothing here touches Electron or a global: the bridges are passed in, so the globals are
  * read exactly once, in host-electron.ts.
  */
-import { createElectronAttachmentsPort } from '@genoffice/platform-electron'
-import type { ProjectApi } from '@genoffice/project-store'
+import { createElectronAttachmentsPort } from '@samugen/platform-electron'
+import type { ProjectApi } from '@samugen/project-store'
 import type { DesktopApi } from '../shared/desktop-api'
 import type { SheetsPlatform } from './platform'
 

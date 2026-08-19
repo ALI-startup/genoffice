@@ -13,17 +13,17 @@ export default defineConfig({
       // Kept in step with electron.vite.config.ts: a bare-name alias is a prefix
       // replacement, so every declared subpath needs its own entry or it resolves
       // to a path under index.ts.
-      '@genoffice/pptx-engine/node': resolve(here, '../../packages/pptx-engine/src/save-node.ts'),
-      '@genoffice/pptx-engine/table-grid': resolve(
+      '@samugen/pptx-engine/node': resolve(here, '../../packages/pptx-engine/src/save-node.ts'),
+      '@samugen/pptx-engine/table-grid': resolve(
         here,
         '../../packages/pptx-engine/src/table-grid.ts',
       ),
-      '@genoffice/pptx-engine/background-promote': resolve(
+      '@samugen/pptx-engine/background-promote': resolve(
         here,
         '../../packages/pptx-engine/src/background-promote.ts',
       ),
-      '@genoffice/pptx-engine': resolve(here, '../../packages/pptx-engine/src/index.ts'),
-      '@genoffice/pptx-render': resolve(here, '../../packages/pptx-render/src/index.ts'),
+      '@samugen/pptx-engine': resolve(here, '../../packages/pptx-engine/src/index.ts'),
+      '@samugen/pptx-render': resolve(here, '../../packages/pptx-render/src/index.ts'),
       // Tests exercise the Electron host, the same one tsconfig maps `@host` to.
       ...hostAlias('electron'),
     },

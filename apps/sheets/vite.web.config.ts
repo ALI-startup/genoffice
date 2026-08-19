@@ -15,10 +15,10 @@
  */
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
-import { AI_BFF_BASE_PATH } from '@genoffice/platform-web/wire'
+import { AI_BFF_BASE_PATH } from '@samugen/platform-web/wire'
 import { hostAlias } from './vite.shared'
 
-/** Where `npm run start -w @genoffice/ai-bff` listens by default. */
+/** Where `npm run start -w @samugen/ai-bff` listens by default. */
 const bffTarget = process.env.AI_BFF_URL || 'http://127.0.0.1:8788'
 
 export default defineConfig({

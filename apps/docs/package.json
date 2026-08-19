@@ -1,6 +1,6 @@
 {
-  "name": "@genoffice/docs",
-  "productName": "GenOffice Docs",
+  "name": "@samugen/docs",
+  "productName": "SamuGen Docs",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "private": true,
@@ -20,19 +20,19 @@
     "dist:dir": "electron-vite build && electron-builder --dir"
   },
   "devDependencies": {
-    "@genoffice/agent-core": "*",
-    "@genoffice/ai-electron": "*",
-    "@genoffice/ai-provider": "*",
-    "@genoffice/ai-search": "*",
-    "@genoffice/docx-engine": "*",
-    "@genoffice/file-parse": "*",
-    "@genoffice/hwpx-convert": "*",
-    "@genoffice/i18n": "*",
-    "@genoffice/platform": "*",
-    "@genoffice/platform-electron": "*",
-    "@genoffice/platform-web": "*",
-    "@genoffice/project-store": "*",
-    "@genoffice/ui": "*",
+    "@samugen/agent-core": "*",
+    "@samugen/ai-electron": "*",
+    "@samugen/ai-provider": "*",
+    "@samugen/ai-search": "*",
+    "@samugen/docx-engine": "*",
+    "@samugen/file-parse": "*",
+    "@samugen/hwpx-convert": "*",
+    "@samugen/i18n": "*",
+    "@samugen/platform": "*",
+    "@samugen/platform-electron": "*",
+    "@samugen/platform-web": "*",
+    "@samugen/project-store": "*",
+    "@samugen/ui": "*",
     "@tiptap/core": "^3.28.0",
     "@tiptap/extensions": "^3.28.0",
     "@tiptap/pm": "^3.28.0",
@@ -54,10 +54,10 @@
     "vite": "^7.3.1",
     "vitest": "^4.1.0"
   },
-  "author": "GenOffice",
+  "author": "SamuGen",
   "build": {
-    "appId": "com.genoffice.docs",
-    "productName": "GenOffice Docs",
+    "appId": "com.samugen.docs",
+    "productName": "SamuGen Docs",
     "electronVersion": "41.7.1",
     "artifactName": "AIDocx-${version}-${arch}.${ext}",
     "directories": {
@@ -103,7 +103,7 @@
     }
   },
   "dependencies": {
-    "@genoffice/electron-utils": "*",
+    "@samugen/electron-utils": "*",
     "electron-updater": "^6.8.9",
     "pdf-lib": "^1.17.1"
   }

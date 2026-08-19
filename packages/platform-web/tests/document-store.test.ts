@@ -92,7 +92,7 @@ describe('read and write', () => {
     expect(handle.contents).toEqual(new Uint8Array([9, 9]))
   })
 
-  it('exposes the PdfBytesIo pair @genoffice/pdf-edit savePdf drives', async () => {
+  it('exposes the PdfBytesIo pair @samugen/pdf-edit savePdf drives', async () => {
     const store = newStore()
     const handle = fakeFileHandle('a.pdf', new Uint8Array([1, 2, 3]))
     pickers.openQueue.push(handle)
@@ -416,7 +416,7 @@ describe('file types', () => {
     }
 
     await store.open()
-    expect(seen).toEqual([{ types: PDF_FILE_TYPES, id: 'genoffice-pdf' }])
+    expect(seen).toEqual([{ types: PDF_FILE_TYPES, id: 'samugen-pdf' }])
   })
 
   it('filters and groups dialogs by the configured format, which is how docs gets .docx', async () => {
@@ -424,7 +424,7 @@ describe('file types', () => {
       handles,
       pickers,
       fileTypes: DOCX_FILE_TYPES,
-      pickerId: 'genoffice-docx',
+      pickerId: 'samugen-docx',
       newRef: () => 'ref-1',
       now: () => 1_000,
     })
@@ -442,8 +442,8 @@ describe('file types', () => {
     await store.saveBytesAs('copy.docx', new Uint8Array([1]))
 
     expect(seen).toEqual([
-      { types: DOCX_FILE_TYPES, id: 'genoffice-docx' },
-      { types: DOCX_FILE_TYPES, suggestedName: 'copy.docx', id: 'genoffice-docx' },
+      { types: DOCX_FILE_TYPES, id: 'samugen-docx' },
+      { types: DOCX_FILE_TYPES, suggestedName: 'copy.docx', id: 'samugen-docx' },
     ])
   })
 })

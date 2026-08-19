@@ -1,4 +1,4 @@
-import { createIpcTransport, type AgentTransport } from '@genoffice/agent-core'
+import { createIpcTransport, type AgentTransport } from '@samugen/agent-core'
 import { t } from '../i18n/locale'
 import { docsPlatform } from '../platform'
 

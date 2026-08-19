@@ -2,32 +2,32 @@
  * Where the keys live: the server's environment, and nowhere else.
  *
  * Electron keeps credentials in an OS-encrypted store next to the app
- * (@genoffice/ai-electron). A browser has no equivalent — anything the page can
+ * (@samugen/ai-electron). A browser has no equivalent — anything the page can
  * read, an extension or an XSS can read — so on the web the credential must
  * never leave the server. This module is the only place in the web stack that
  * ever holds one.
  *
- * The env shape mirrors the provider ids in @genoffice/ai-provider:
+ * The env shape mirrors the provider ids in @samugen/ai-provider:
  *
- *   GENOFFICE_AI_PROVIDER              active provider id (default: whatever
- *                                      @genoffice/ai-provider's
+ *   SAMUGEN_AI_PROVIDER              active provider id (default: whatever
+ *                                      @samugen/ai-provider's
  *                                      `defaultAiSettings` selects)
- *   GENOFFICE_AI_KEY_<PROVIDER>        credential, e.g. GENOFFICE_AI_KEY_ANTHROPIC
- *   GENOFFICE_AI_MODEL_<PROVIDER>      model override
- *   GENOFFICE_AI_BASE_URL_<PROVIDER>   endpoint override (custom / local providers)
- *   GENOFFICE_AI_HEADERS_<PROVIDER>    extra request headers, as a JSON object
+ *   SAMUGEN_AI_KEY_<PROVIDER>        credential, e.g. SAMUGEN_AI_KEY_ANTHROPIC
+ *   SAMUGEN_AI_MODEL_<PROVIDER>      model override
+ *   SAMUGEN_AI_BASE_URL_<PROVIDER>   endpoint override (custom / local providers)
+ *   SAMUGEN_AI_HEADERS_<PROVIDER>    extra request headers, as a JSON object
  *                                      e.g. {"X-Caller":"my-service"}
  *
  * `<PROVIDER>` is the provider id upper-cased with `-` → `_`.
  *
  * Extra headers exist for gateways that require caller attribution for billing
  * or tracking. They are merged *under* the transport's own headers in
- * @genoffice/ai-provider, so they can add to a request but never rewrite its
+ * @samugen/ai-provider, so they can add to a request but never rewrite its
  * credential, content type or protocol version. A malformed value throws rather
  * than being skipped: a tracking header that silently failed to load is worse
  * than a service that refuses to start.
  *
- * The resulting `AiSettings` is built with @genoffice/ai-provider's own
+ * The resulting `AiSettings` is built with @samugen/ai-provider's own
  * `defaultAiSettings` + `resolveAiSettings`, so model defaults and the legacy
  * migration behave exactly as they do in the Electron main process.
  */
@@ -38,8 +38,8 @@ import {
   type AiProviderConfig,
   type AiProviderId,
   type AiSettings,
-} from '@genoffice/ai-provider'
-import type { PublicAiSettings } from '@genoffice/platform-web/wire'
+} from '@samugen/ai-provider'
+import type { PublicAiSettings } from '@samugen/platform-web/wire'
 
 export type Env = Record<string, string | undefined>
 
@@ -50,10 +50,10 @@ export function loadAiSettings(env: Env = process.env): AiSettings {
   const providers: Partial<Record<AiProviderId, AiProviderConfig>> = {}
   for (const meta of AI_PROVIDERS) {
     const suffix = envSuffix(meta.id)
-    const apiKey = env[`GENOFFICE_AI_KEY_${suffix}`]?.trim()
-    const model = env[`GENOFFICE_AI_MODEL_${suffix}`]?.trim()
-    const baseUrl = env[`GENOFFICE_AI_BASE_URL_${suffix}`]?.trim()
-    const headersVar = `GENOFFICE_AI_HEADERS_${suffix}`
+    const apiKey = env[`SAMUGEN_AI_KEY_${suffix}`]?.trim()
+    const model = env[`SAMUGEN_AI_MODEL_${suffix}`]?.trim()
+    const baseUrl = env[`SAMUGEN_AI_BASE_URL_${suffix}`]?.trim()
+    const headersVar = `SAMUGEN_AI_HEADERS_${suffix}`
     const headers = parseHeaders(env[headersVar], headersVar)
     if (!apiKey && !model && !baseUrl && !headers) continue
     providers[meta.id] = {
@@ -71,14 +71,14 @@ export function loadAiSettings(env: Env = process.env): AiSettings {
   // `resolveAiSettings` ignores every other field when `providers` is absent
   // (that branch exists for the legacy single-endpoint migration), so passing
   // `provider` in alongside would silently drop it whenever the operator set
-  // GENOFFICE_AI_PROVIDER without also setting a key, model or base URL for it
+  // SAMUGEN_AI_PROVIDER without also setting a key, model or base URL for it
   // — and `resolveProvider` would then name the wrong env var in its error.
-  const active = env.GENOFFICE_AI_PROVIDER?.trim()
+  const active = env.SAMUGEN_AI_PROVIDER?.trim()
   return isProviderId(active) ? { ...merged, provider: active } : merged
 }
 
 /**
- * Parse a `GENOFFICE_AI_HEADERS_*` value into request headers.
+ * Parse a `SAMUGEN_AI_HEADERS_*` value into request headers.
  *
  * JSON rather than a `Name: value, Name: value` list, because header values
  * legitimately contain both commas and colons and no delimiter convention
@@ -88,7 +88,10 @@ export function loadAiSettings(env: Env = process.env): AiSettings {
  * boot, so a typo surfaces as a startup failure the operator reads once, rather
  * than as a header that is quietly missing from every request thereafter.
  */
-function parseHeaders(raw: string | undefined, envName: string): Record<string, string> | undefined {
+function parseHeaders(
+  raw: string | undefined,
+  envName: string,
+): Record<string, string> | undefined {
   const text = raw?.trim()
   if (!text) return undefined
 
@@ -126,7 +129,7 @@ export function isProviderId(value: string | undefined): value is AiProviderId {
 /**
  * The only view of the settings the browser is allowed to see.
  *
- * @genoffice/ai-electron's `toPublicAiSettings` keeps a `••••1234` hint of the
+ * @samugen/ai-electron's `toPublicAiSettings` keeps a `••••1234` hint of the
  * credential for its settings UI. This one drops the hint: the browser build
  * has no settings UI to render it, and without it "no credential material
  * appears in any response body" becomes an absolute, testable property rather
@@ -178,7 +181,7 @@ export function resolveProvider(
       ok: false,
       error:
         `No credential is configured on the server for "${provider}". Set ` +
-        `GENOFFICE_AI_KEY_${envSuffix(provider)} and restart the BFF.`,
+        `SAMUGEN_AI_KEY_${envSuffix(provider)} and restart the BFF.`,
     }
   }
   if (!config.model) {

@@ -1,15 +1,15 @@
 import { slidesAi, slidesAttachments, slidesDoc } from '../platform'
 import { slidesPlatform } from '../platform'
 import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { AgentLoop, composeSkills, type AgentImage, type ToolDisplay } from '@genoffice/agent-core'
-import type { RenderSlide } from '@genoffice/pptx-render'
+import { AgentLoop, composeSkills, type AgentImage, type ToolDisplay } from '@samugen/agent-core'
+import type { RenderSlide } from '@samugen/pptx-render'
 import type { AiSettings } from '../../shared/ipc'
 import {
   ATTACHMENT_IMAGE_EXTS,
   type AttachmentAddResult,
   type AttachmentMeta,
   type AttachmentRef,
-} from '@genoffice/platform'
+} from '@samugen/platform'
 import {
   createSlidesSkill,
   type DeckAccess,
@@ -23,8 +23,8 @@ import { createElectronTransport } from './transport'
 import { renderSlidesToPngBase64 } from '../export-render'
 import { isQcEnabled, qcSlidePage, QC_MAX_PAGES } from './slide-qc'
 import { useI18n, t as tGlobal, aiLangDirective, type TFunc } from '../i18n/locale'
-import { Markdown } from '@genoffice/ui'
-import { GensparkMark } from '../components/icons'
+import { Markdown } from '@samugen/ui'
+import { SamuGenMark } from '../components/icons'
 import sendEnterOn from '../assets/send-enter-on.png'
 import sendEnterOff from '../assets/send-enter-off.png'
 import sendStop from '../assets/send-stop.png'
@@ -119,7 +119,7 @@ interface ChatEntry {
   streaming?: boolean
   /** the run failed and this user message was rolled back out of the model context */
   undelivered?: boolean
-  /** the run failed because Genspark is signed out — render an inline sign-in button */
+  /** the run failed because SamuGen is signed out — render an inline sign-in button */
   tools?: ToolActivity[]
   /** Generation progress card (only one per turn, replaced in real time) */
   deckProgress?: DeckProgressSnapshot
@@ -1265,7 +1265,7 @@ export function AiPanel({
   if (!open) {
     return (
       <button className="ai-rail" title={t('appAiRailExpand')} onClick={onExpand}>
-        <GensparkMark size={22} />
+        <SamuGenMark size={22} />
       </button>
     )
   }
@@ -1292,11 +1292,11 @@ export function AiPanel({
         onPointerDown={startResize}
         role="separator"
         aria-orientation="vertical"
-        aria-label="Genspark AI"
+        aria-label="SamuGen AI"
       />
       <div className="ai-panel-header">
         <span className="ai-panel-title">
-          <GensparkMark size={22} />
+          <SamuGenMark size={22} />
           {t('aiPanelTitle')}
         </span>
         <div className="ai-panel-header-actions">

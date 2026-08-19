@@ -19,7 +19,7 @@ import {
   createWebAiPort,
   createWebAttachmentsPort,
   createWebLanguagePort,
-} from '@genoffice/platform-web'
+} from '@samugen/platform-web'
 import { t } from './i18n/locale'
 import type { CreateSheetsPlatform } from './platform'
 import { createWebSheetsPlatform } from './platform-web'

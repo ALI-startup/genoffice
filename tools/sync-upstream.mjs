@@ -22,8 +22,8 @@ export function parseArgs(argv) {
     apply: false,
     remote: DEFAULT_REMOTE,
     branch: DEFAULT_BRANCH,
-    settingsPath: process.env.GENOFFICE_SETTINGS_PATH ?? null,
-    credentialsPath: process.env.GENOFFICE_CREDENTIALS_PATH ?? null,
+    settingsPath: process.env.SAMUGEN_SETTINGS_PATH ?? null,
+    credentialsPath: process.env.SAMUGEN_CREDENTIALS_PATH ?? null,
     help: false,
   }
   for (let i = 0; i < argv.length; i += 1) {
@@ -171,7 +171,7 @@ export function syncUpstream(options) {
   console.log(`Created local backup ref ${backupBranch}.`)
 
   const snapshots = captureProtectedFiles(paths)
-  const tempDir = mkdtempSync(join(tmpdir(), 'genoffice-upstream-sync-'))
+  const tempDir = mkdtempSync(join(tmpdir(), 'samugen-upstream-sync-'))
   chmodSync(tempDir, 0o700)
   for (const snapshot of snapshots) {
     if (snapshot.exists && snapshot.bytes) {

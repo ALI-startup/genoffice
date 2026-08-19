@@ -3,7 +3,7 @@
  * injected browser surfaces.
  *
  * The mirror of platform-electron.ts, and it follows the same division: the
- * shared ports come from @genoffice/platform-web, and docs' own surfaces — the
+ * shared ports come from @samugen/platform-web, and docs' own surfaces — the
  * docx document operations and the window/close-guard channels — are adapted
  * here, next to the port declarations they satisfy. Nothing in this file touches
  * a browser global: the store, the pickers, the AI port and the activation probe
@@ -12,7 +12,7 @@
  *
  * Where Electron's file port is mostly a rename (its `DocumentRef` *is* a path,
  * so it forwards to IPC), this one does the work in the renderer. That costs
- * nothing to arrange, because @genoffice/docx-engine already runs in the docs
+ * nothing to arrange, because @samugen/docx-engine already runs in the docs
  * renderer: the parsing and the docx serialization were always renderer-side, and
  * the Electron main process only ever received finished bytes and wrote them to
  * disk. So the browser needs exactly one thing the desktop had — somewhere to put
@@ -41,16 +41,16 @@
  * is the browser's). The call that *opens* the dialog is still injected, so a test
  * drives the whole port without a real print, and jsdom supplies the event target.
  */
-import type { AiPort, AttachmentsPort, DiskFileState, LanguagePort } from '@genoffice/platform'
-import { isExternallyModified } from '@genoffice/platform'
-import type { FilePickers, FrameChildLink, WebDocumentStore } from '@genoffice/platform-web'
+import type { AiPort, AttachmentsPort, DiskFileState, LanguagePort } from '@samugen/platform'
+import { isExternallyModified } from '@samugen/platform'
+import type { FilePickers, FrameChildLink, WebDocumentStore } from '@samugen/platform-web'
 import {
   HWPX_FILE_TYPES,
   IMAGE_FILE_TYPES,
   createWebUnloadPrompt,
   ensurePermission,
   isPickerCancel,
-} from '@genoffice/platform-web'
+} from '@samugen/platform-web'
 import type { PickImageResult } from '../shared/ipc'
 import type {
   CloseCheckState,
@@ -136,7 +136,7 @@ export interface WebDocsPlatformDeps {
   /**
    * Hands a file to the user's downloads. Injected like every other browser
    * surface here, so `download` is exercisable without a DOM; host-web.ts supplies
-   * @genoffice/platform-web's `downloadBytes`.
+   * @samugen/platform-web's `downloadBytes`.
    */
   deliverDownload: DownloadDelivery
 }
@@ -219,7 +219,7 @@ export function createWebDocsFilePort(
   ): Promise<OpenOutcome> => {
     // Loaded on demand: the converter is the heaviest thing in this bundle and a
     // session that never opens a .hwpx should not download it.
-    const { hwpxToHtml } = await import('@genoffice/hwpx-convert')
+    const { hwpxToHtml } = await import('@samugen/hwpx-convert')
     try {
       const imported = await hwpxToHtml(bytes)
       return {
@@ -240,7 +240,7 @@ export function createWebDocsFilePort(
   /**
    * Has another program written this document since we last read or wrote it?
    *
-   * `isExternallyModified` is @genoffice/platform's shared predicate — the very
+   * `isExternallyModified` is @samugen/platform's shared predicate — the very
    * function the Electron main process calls — so the two hosts cannot disagree
    * about what a conflict is. Its performance property is preserved here: the
    * `readHash` callback is what rereads the file, and it only runs when
@@ -435,7 +435,7 @@ export function createWebDocsFilePort(
     pickImage: async (): Promise<PickImageResult | null> => {
       let handle
       try {
-        handle = await pickers.openFile({ types: IMAGE_FILE_TYPES, id: 'genoffice-image' })
+        handle = await pickers.openFile({ types: IMAGE_FILE_TYPES, id: 'samugen-image' })
       } catch (error) {
         if (isPickerCancel(error)) return null
         throw error
@@ -701,7 +701,7 @@ export function createWebDocsDownloadPort(deliver: DownloadDelivery): DocsDownlo
  * Non-null here, unlike `pdfExport`, and the two are not alike. A browser-side
  * PDF exporter would have to re-render the document and would produce something
  * *different* from what the desktop writes under the same command name. This
- * runs the very same converter the Electron host runs: @genoffice/hwpx-convert
+ * runs the very same converter the Electron host runs: @samugen/hwpx-convert
  * assembles the package from an embedded template, so there is no filesystem on
  * the path and no second implementation to diverge.
  *
@@ -715,7 +715,7 @@ export function createWebDocsHwpxPort(store: WebDocumentStore): DocsHwpxPort {
       try {
         // On demand: the converter is the heaviest thing in this bundle, and a
         // session that never exports should not download it.
-        const { htmlToHwpx } = await import('@genoffice/hwpx-convert')
+        const { htmlToHwpx } = await import('@samugen/hwpx-convert')
         const bytes = await htmlToHwpx(html)
         const suggested = `${defaultName.replace(/\.docx$/i, '')}.hwpx`
         const written = await store.saveBytesAs(suggested, bytes, HWPX_FILE_TYPES)

@@ -1,7 +1,7 @@
 /**
  * Builds pdf's platform from the Electron preload bridge (`window.pdfApi`).
  *
- * The shared ports come from @genoffice/platform-electron; the two app-specific
+ * The shared ports come from @samugen/platform-electron; the two app-specific
  * surfaces — the document operations and the Save As handshake — are adapted
  * here, next to the port declarations they satisfy. Nothing in this file talks
  * to Electron directly: the bridge is passed in, so the global is read exactly
@@ -12,7 +12,7 @@ import {
   createPdfAiPort,
   createPdfLanguagePort,
   createPdfWindowPort,
-} from '@genoffice/platform-electron'
+} from '@samugen/platform-electron'
 import type { PdfApi } from '../shared/ipc'
 import type { PdfFilePort, PdfPlatform } from './platform'
 

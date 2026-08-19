@@ -20,8 +20,8 @@
  * sheets all expose the same six path-based attachment methods, so that adapter is
  * app-independent and lives in attachments.ts.
  */
-import type { AiSettings, AiStreamChunk, AiStreamRequest } from '@genoffice/ai-provider'
-import type { Lang } from '@genoffice/i18n'
+import type { AiSettings, AiStreamChunk, AiStreamRequest } from '@samugen/ai-provider'
+import type { Lang } from '@samugen/i18n'
 import type {
   AiPort,
   ImageSearchResult,
@@ -29,7 +29,7 @@ import type {
   SearchPort,
   WebSearchResult,
   WindowPort,
-} from '@genoffice/platform'
+} from '@samugen/platform'
 
 /** The language members of DesktopApi. Its own union is a subset of `Lang`, so it satisfies this. */
 export interface DocsLanguageBridge {

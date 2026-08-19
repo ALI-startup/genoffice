@@ -7,7 +7,7 @@
  * ships — which is where a mistake would be silent, since an `fd_read` that returns the wrong
  * count corrupts a workbook rather than failing.
  *
- * Skipped, loudly, when `npm run wasm:build -w @genoffice/sheets` has not been run.
+ * Skipped, loudly, when `npm run wasm:build -w @samugen/sheets` has not been run.
  */
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
@@ -56,7 +56,7 @@ describe('the in-memory filesystem', () => {
 const built = existsSync(WASM)
 const describeEngine = built ? describe : describe.skip
 if (!built) {
-  console.warn('[wasm-browser-host] skipped: run `npm run wasm:build -w @genoffice/sheets` first')
+  console.warn('[wasm-browser-host] skipped: run `npm run wasm:build -w @samugen/sheets` first')
 }
 
 describeEngine('the engine over the browser shim', () => {

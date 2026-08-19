@@ -32,14 +32,14 @@
  * lists are empty and every other member takes a `FileRef` it never issued and
  * is therefore unreachable by construction. Those members warn rather than
  * returning silently, on the same principle as `reportCloseSaveResult` in
- * @genoffice/platform-web — if the invariant is ever broken, the mismatch is
+ * @samugen/platform-web — if the invariant is ever broken, the mismatch is
  * visible instead of swallowed. Recent documents are not lost, only relocated:
  * each editor keeps its own, in the IndexedDB handle store that survives a
  * reload, and shows it inside its own frame.
  */
-import type { LanguagePort } from '@genoffice/platform'
-import type { PublicAiSettings, ShellFrameLink } from '@genoffice/platform-web'
-import { FRAME_ID_PARAM } from '@genoffice/platform-web'
+import type { LanguagePort } from '@samugen/platform'
+import type { PublicAiSettings, ShellFrameLink } from '@samugen/platform-web'
+import { FRAME_ID_PARAM } from '@samugen/platform-web'
 import type { AiProviderConfigView, AiSettingsSnapshot } from '../../shared/ai-settings-api'
 import { AI_PROVIDER_DEFINITIONS } from '../../shared/ai-settings-api'
 import type { TabKind, TabSummary } from '../../shared/tabs-api'

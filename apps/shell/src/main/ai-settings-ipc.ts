@@ -6,7 +6,7 @@ import {
   configureAiSettingsStore,
   type PersistedAiSettings,
   type SafeStorageAdapter,
-} from '@genoffice/ai-electron'
+} from '@samugen/ai-electron'
 import {
   discoverFalImageModels,
   discoverModels,
@@ -14,7 +14,7 @@ import {
   discoverRunwareImageModels,
   validateAiEndpoint,
   type AiProviderId,
-} from '@genoffice/ai-provider'
+} from '@samugen/ai-provider'
 import {
   AI_PROVIDER_DEFINITIONS,
   AI_SETTINGS_CHANNELS,
@@ -45,9 +45,9 @@ function defaults(): PersistedAiSettings {
   return {
     version: 1,
     active: {
-      chat: { providerId: 'genspark', model: AI_PROVIDER_DEFINITIONS[0]?.models[0] ?? '' },
+      chat: { providerId: 'samugen', model: AI_PROVIDER_DEFINITIONS[0]?.models[0] ?? '' },
       image: {
-        providerId: 'genspark',
+        providerId: 'samugen',
         model:
           AI_PROVIDER_DEFINITIONS[0]?.imageModels?.[0] ??
           AI_PROVIDER_DEFINITIONS[0]?.models[0] ??
@@ -213,7 +213,7 @@ export function registerAiSettingsIpc(settingsPath: () => string): void {
     )
     if (!validation.ok) return validation
     const definition = definitionFor(input.providerId)
-    if (!definition || input.providerId === 'genspark') return validation
+    if (!definition || input.providerId === 'samugen') return validation
     if (!definition.supportsModelDiscovery) {
       return { ok: true, message: 'Provider configuration is ready.' }
     }

@@ -8,17 +8,17 @@
  *
  * Environment (credentials themselves are documented in credentials.ts):
  *
- *   GENOFFICE_AI_BFF_HOST        bind address (default 127.0.0.1)
- *   GENOFFICE_AI_BFF_PORT        port (default 8788); 0 asks the OS for a free one
- *   GENOFFICE_AI_BFF_MAX_TOKENS  output token ceiling per turn (default 8192)
+ *   SAMUGEN_AI_BFF_HOST        bind address (default 127.0.0.1)
+ *   SAMUGEN_AI_BFF_PORT        port (default 8788); 0 asks the OS for a free one
+ *   SAMUGEN_AI_BFF_MAX_TOKENS  output token ceiling per turn (default 8192)
  *
  * The default bind address is loopback, not `0.0.0.0`. This process holds the
  * provider credentials and applies no authentication of its own — it trusts
  * whatever reaches it — so it must not be reachable from off the machine by
- * accident. Exposing it is an explicit opt-in via GENOFFICE_AI_BFF_HOST.
+ * accident. Exposing it is an explicit opt-in via SAMUGEN_AI_BFF_HOST.
  */
 import type { Server } from 'node:http'
-import { AI_BFF_BASE_PATH } from '@genoffice/platform-web/wire'
+import { AI_BFF_BASE_PATH } from '@samugen/platform-web/wire'
 import { loadAiSettings, toPublicSettings, type Env } from './credentials.js'
 import { createAiBffServer, DEFAULT_MAX_TOKENS } from './server.js'
 
@@ -40,11 +40,11 @@ export interface RunningAiBff {
 
 export function loadServerConfig(env: Env = process.env): AiBffServerConfig {
   return {
-    host: env.GENOFFICE_AI_BFF_HOST?.trim() || DEFAULT_HOST,
+    host: env.SAMUGEN_AI_BFF_HOST?.trim() || DEFAULT_HOST,
     // Port 0 is meaningful (ask the OS for a free one), so its floor is 0;
     // a zero token ceiling is not, so its floor is 1.
-    port: intFromEnv(env.GENOFFICE_AI_BFF_PORT, DEFAULT_PORT, 0),
-    maxTokens: intFromEnv(env.GENOFFICE_AI_BFF_MAX_TOKENS, DEFAULT_MAX_TOKENS, 1),
+    port: intFromEnv(env.SAMUGEN_AI_BFF_PORT, DEFAULT_PORT, 0),
+    maxTokens: intFromEnv(env.SAMUGEN_AI_BFF_MAX_TOKENS, DEFAULT_MAX_TOKENS, 1),
   }
 }
 
@@ -128,7 +128,7 @@ const invokedDirectly =
   process.argv[1] !== undefined && /(?:^|[\\/])main\.(?:ts|js|mjs)$/.test(process.argv[1])
 
 if (invokedDirectly) {
-  // Reading the environment can now fail (a malformed GENOFFICE_AI_HEADERS_*),
+  // Reading the environment can now fail (a malformed SAMUGEN_AI_HEADERS_*),
   // and it happens before `startAiBff` has a promise to reject — so it needs the
   // same one-line diagnosis as any other startup failure rather than a stack trace.
   let config: AiBffServerConfig

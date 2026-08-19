@@ -17,7 +17,7 @@ afterEach(() => {
 })
 
 function tempDir() {
-  const dir = mkdtempSync(join(tmpdir(), 'genoffice-upstream-test-'))
+  const dir = mkdtempSync(join(tmpdir(), 'samugen-upstream-test-'))
   tempDirs.push(dir)
   return dir
 }

@@ -1,8 +1,8 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
-import type { AiChatResponse, AiSettings, AiStreamChunk } from '@genoffice/ai-provider'
-import type { Lang } from '@genoffice/i18n'
-import type { ProjectApi } from '@genoffice/project-store'
+import type { AiChatResponse, AiSettings, AiStreamChunk } from '@samugen/ai-provider'
+import type { Lang } from '@samugen/i18n'
+import type { ProjectApi } from '@samugen/project-store'
 import type {
   AttachmentAddResult,
   AttachmentImageResult,

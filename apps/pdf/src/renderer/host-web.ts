@@ -23,7 +23,7 @@ import {
   createWebLanguagePort,
   createWebWindowPort,
   WebDocumentStore,
-} from '@genoffice/platform-web'
+} from '@samugen/platform-web'
 import type { CreatePdfPlatform, PdfFilePort } from './platform'
 import { createWebPdfPlatform } from './platform-web'
 

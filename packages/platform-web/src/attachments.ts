@@ -22,14 +22,14 @@
  * keeps this package free of jszip / pdfjs, and keeps these tests free of
  * fixtures.
  */
-import { ATTACHMENT_IMAGE_EXTS, type AttachmentsPort } from '@genoffice/platform'
+import { ATTACHMENT_IMAGE_EXTS, type AttachmentsPort } from '@samugen/platform'
 import type {
   AttachmentAddResult,
   AttachmentImageResult,
   AttachmentMeta,
   AttachmentReadResult,
   AttachmentRef,
-} from '@genoffice/platform'
+} from '@samugen/platform'
 import type { WebFile } from './fs-access.js'
 import type { MultiFilePicker } from './fs-access.js'
 
@@ -161,7 +161,7 @@ export function createWebAttachmentsPort(options: WebAttachmentsOptions): Attach
     }
     // No `location`: a picked File exposes no path, and inventing one would put a
     // fiction in the attachment chip's tooltip. The field is optional for exactly
-    // this host — see @genoffice/platform's ports/attachments.ts.
+    // this host — see @samugen/platform's ports/attachments.ts.
     return { meta: { ref: entry.ref, name, ext, sizeBytes } }
   }
 
@@ -210,7 +210,7 @@ export function createWebAttachmentsPort(options: WebAttachmentsOptions): Attach
 
   return {
     async pickAttachments(): Promise<AttachmentAddResult | null> {
-      const files = await options.pick({ id: 'genoffice-attachments' })
+      const files = await options.pick({ id: 'samugen-attachments' })
       if (files === null) return null
       return accept(files.map(hold))
     },

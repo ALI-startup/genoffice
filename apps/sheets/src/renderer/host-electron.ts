@@ -9,7 +9,7 @@
  * config points at exactly one host, so the Electron bundle carries no browser file code
  * and a web bundle no reference to `window.desktopApi`.
  */
-import type { ProjectApi } from '@genoffice/project-store'
+import type { ProjectApi } from '@samugen/project-store'
 import { createElectronSheetsPlatform } from './platform-electron'
 import type { CreateSheetsPlatform } from './platform'
 

@@ -37,7 +37,7 @@ export interface WebFile {
    *
    * Present because it is half of the conflict check that stops a save from
    * overwriting another program's edits: together with `size` it is exactly
-   * @genoffice/platform's `DiskFileState`, whose other producer is `fs.stat`.
+   * @samugen/platform's `DiskFileState`, whose other producer is `fs.stat`.
    * Without it a browser host would have to write blind — see
    * `WebDocumentStore.stat`.
    */
@@ -233,7 +233,7 @@ export function browserFilePickers(scope: object = globalThis): FilePickers {
   const required = <T>(fn: T | undefined, api: string): T => {
     if (!fn) {
       throw new Error(
-        `This browser does not support ${api}. GenOffice's web build requires the File System ` +
+        `This browser does not support ${api}. SamuGen's web build requires the File System ` +
           `Access API (Chromium 86+); it is what lets the app save edits back into the file you opened.`,
       )
     }
@@ -279,7 +279,7 @@ export function browserMultiFilePicker(scope: object = globalThis): MultiFilePic
     const show = globals.showOpenFilePicker
     if (!show) {
       throw new Error(
-        `This browser does not support showOpenFilePicker. GenOffice's web build requires the ` +
+        `This browser does not support showOpenFilePicker. SamuGen's web build requires the ` +
           `File System Access API (Chromium 86+).`,
       )
     }

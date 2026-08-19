@@ -13,15 +13,15 @@
  *      needs to know the BFF's address. A deployment replaces this proxy with
  *      the equivalent rule in whatever fronts the static files — the route
  *      prefix is the contract, and it is declared once, in
- *      @genoffice/platform-web's wire module.
+ *      @samugen/platform-web's wire module.
  */
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
-import { AI_BFF_BASE_PATH } from '@genoffice/platform-web/wire'
+import { AI_BFF_BASE_PATH } from '@samugen/platform-web/wire'
 import { hostAlias, pdfjsCopyTargets } from './vite.shared'
 
-/** Where `npm run start -w @genoffice/ai-bff` listens by default. */
+/** Where `npm run start -w @samugen/ai-bff` listens by default. */
 const bffTarget = process.env.AI_BFF_URL || 'http://127.0.0.1:8788'
 
 export default defineConfig({

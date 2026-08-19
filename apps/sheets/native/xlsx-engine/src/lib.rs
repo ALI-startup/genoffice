@@ -520,7 +520,7 @@ impl WorkbookSessions {
 
         let session_id = Uuid::new_v4().to_string();
         let cache_directory =
-            paths::temp_root().join(format!("genspark-ai-excel-{session_id}"));
+            paths::temp_root().join(format!("samugen-ai-excel-{session_id}"));
         fs::create_dir(&cache_directory)?;
         let name = canonical_path
             .file_name()

@@ -30,7 +30,7 @@ export interface DocumentHandleStore {
   delete(ref: string): Promise<void>
 }
 
-export const DOCUMENT_DB_NAME = 'genoffice-web-host'
+export const DOCUMENT_DB_NAME = 'samugen-web-host'
 export const DOCUMENT_STORE_NAME = 'documents'
 
 function promisify<T>(request: IDBRequest<T>): Promise<T> {

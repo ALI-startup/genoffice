@@ -36,7 +36,7 @@ export function hwpxBrowserAlias(): Record<string, string> {
   const reader = fileURLToPath(new URL(READER_ENTRY, import.meta.url))
   if (!existsSync(reader)) {
     throw new Error(
-      `@genoffice/hwpx-convert: neoali-hwpxjs' reader is not at ${READER_ENTRY}. ` +
+      `@samugen/hwpx-convert: neoali-hwpxjs' reader is not at ${READER_ENTRY}. ` +
         'The package layout changed — update hwpxBrowserAlias() in packages/hwpx-convert/vite.ts.',
     )
   }

@@ -17,7 +17,7 @@
  *     print, but that is a different operation with a different result, and offering it
  *     under the same name would misreport what happened (docs reached this conclusion
  *     first).
- *   - `genspark` — sign-in shells out to the `gsk` CLI.
+ *   - `samugen` — sign-in shells out to the `gsk` CLI.
  *   - `search` — the main process's Serper/DuckDuckGo client, holding its own credential.
  *     There is no BFF route for it yet, so a browser host has nothing to call.
  *   - `project` — the chat/project history store, a main-process database (§6.1).
@@ -27,8 +27,8 @@
  * it is one port with five members, rather than five members scattered across the seam, is
  * what makes that swap a change of host rather than a change of renderer.
  */
-import { createPlatformSlot, type AttachmentsPort } from '@genoffice/platform'
-import type { ProjectApi } from '@genoffice/project-store'
+import { createPlatformSlot, type AttachmentsPort } from '@samugen/platform'
+import type { ProjectApi } from '@samugen/project-store'
 import type { DesktopApi } from '../shared/desktop-api'
 
 /**

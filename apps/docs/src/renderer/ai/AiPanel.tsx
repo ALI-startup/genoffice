@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Editor } from '@tiptap/core'
-import type { Block } from '@genoffice/docx-engine'
-import { AgentLoop, composeSkills, type AgentImage } from '@genoffice/agent-core'
-import { AI_PROVIDERS, type AiSettings } from '@genoffice/ai-provider'
+import type { Block } from '@samugen/docx-engine'
+import { AgentLoop, composeSkills, type AgentImage } from '@samugen/agent-core'
+import { AI_PROVIDERS, type AiSettings } from '@samugen/ai-provider'
 import {
   ATTACHMENT_IMAGE_EXTS,
   type AttachmentAddResult,
   type AttachmentMeta,
   type AttachmentRef,
-} from '@genoffice/platform'
+} from '@samugen/platform'
 import type { PmNode } from '../editor/convert'
 import { docsPlatform } from '../platform'
 import { findNumId, type NumIds } from './protocol'
@@ -19,9 +19,9 @@ import { DOCS_AGENT_MAX_TURNS, DOCS_CONTINUE_INSTRUCTION } from './continuation'
 import { createFilesSkill } from './files-skill'
 import { createElectronTransport } from './transport'
 import { useI18n, t as tModule, aiLangDirective, type StringKey } from '../i18n/locale'
-import { Markdown } from '@genoffice/ui'
-import { AiComposer, AiTypingIndicator } from '@genoffice/ui'
-import { GensparkMark } from '../components/icons'
+import { Markdown } from '@samugen/ui'
+import { AiComposer, AiTypingIndicator } from '@samugen/ui'
+import { SamuGenMark } from '../components/icons'
 import sendEnterOn from '../assets/send-enter-on.png'
 import sendEnterOff from '../assets/send-enter-off.png'
 import sendStop from '../assets/send-stop.png'
@@ -699,7 +699,7 @@ export function AiPanel({
   if (!open) {
     return (
       <button className="ai-rail" title={t('appExpandAiPanel')} onClick={onExpand}>
-        <GensparkMark size={22} />
+        <SamuGenMark size={22} />
       </button>
     )
   }
@@ -730,7 +730,7 @@ export function AiPanel({
       />
       <div className="ai-panel-header">
         <span className="ai-panel-title">
-          <GensparkMark size={22} />
+          <SamuGenMark size={22} />
           {runtimeLabel}
         </span>
         <div className="ai-panel-header-actions">

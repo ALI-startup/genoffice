@@ -1,4 +1,4 @@
-import type { AgentMessage, AgentToolCall, AgentToolDef } from '@genoffice/agent-core'
+import type { AgentMessage, AgentToolCall, AgentToolDef } from '@samugen/agent-core'
 import { sanitizeGeminiSchema } from './gemini-schema'
 import { httpBodyDetail } from './http-error'
 import { AI_PROVIDER_BY_ID } from './providers'

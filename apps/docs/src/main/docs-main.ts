@@ -29,9 +29,9 @@ import {
   registerLanguageIpc,
   safeExternalUrl,
   windowMenuTemplate,
-} from '@genoffice/electron-utils'
-import { createI18n, getUiLang, normalizeLang, setUiLang } from '@genoffice/i18n'
-import { ProjectStore } from '@genoffice/project-store'
+} from '@samugen/electron-utils'
+import { createI18n, getUiLang, normalizeLang, setUiLang } from '@samugen/i18n'
+import { ProjectStore } from '@samugen/project-store'
 import type {
   IpcMainInvokeEvent,
   MenuItemConstructorOptions,
@@ -39,12 +39,12 @@ import type {
   SaveDialogOptions,
   WebContents,
 } from 'electron'
-import { parseFileToText } from '@genoffice/file-parse'
+import { parseFileToText } from '@samugen/file-parse'
 import {
   getConfiguredAiSettingsStore,
   resolveConfiguredAiProvider,
   type AiTask,
-} from '@genoffice/ai-electron'
+} from '@samugen/ai-electron'
 import {
   AiCreditsError,
   AiTimeoutError,
@@ -58,8 +58,8 @@ import {
   type AiStreamChunk,
   type AiStreamRequest,
   type LegacyAiSettings,
-} from '@genoffice/ai-provider'
-import { webSearch, imageSearch } from '@genoffice/ai-search'
+} from '@samugen/ai-provider'
+import { webSearch, imageSearch } from '@samugen/ai-search'
 import type {
   AttachmentAddResult,
   AttachmentImageResult,
@@ -74,7 +74,7 @@ import type {
 import { ATTACHMENT_IMAGE_EXTS } from '../shared/ipc'
 import { findDocxPath } from '../shared/open-file'
 import { atomicWriteFile, looksLikeZip } from './atomic-write'
-import { isExternallyModified, type DiskFileState } from '@genoffice/platform'
+import { isExternallyModified, type DiskFileState } from '@samugen/platform'
 import { initDocsAutoUpdater } from './updater'
 
 /**
@@ -123,7 +123,6 @@ const tMain = createI18n({
     errParseFailed: '文件解析失败',
     errImageNoText: '图片附件不提供文本,已作为图像随用户消息发送,直接看图即可',
     errNotImage: '不是支持的图片类型',
-    errGskNotLoggedIn: '未登录 Genspark:请点击下方「登录 Genspark」完成登录后重试',
     errNoApiKey: '未配置 {provider} 的 API Key',
     errNoModel: '未配置模型名称',
     menuFile: '文件',
@@ -180,7 +179,7 @@ const tMain = createI18n({
     menuMacros: '宏',
     menuWindow: '窗口',
     menuHelp: '帮助',
-    menuDocsHelp: 'GenOffice Docs 帮助',
+    menuDocsHelp: 'SamuGen Docs 帮助',
   },
   en: {
     dlgOpenDoc: 'Open Document',
@@ -219,8 +218,6 @@ const tMain = createI18n({
     errParseFailed: 'Failed to parse file',
     errImageNoText: 'Image attachments have no text; the image is sent along with the user message',
     errNotImage: 'not a supported image type',
-    errGskNotLoggedIn:
-      'Not signed in to Genspark: click “Sign in to Genspark” below, sign in, then retry',
     errNoApiKey: 'No API key configured for {provider}',
     errNoModel: 'No model name configured',
     menuFile: 'File',
@@ -277,7 +274,7 @@ const tMain = createI18n({
     menuMacros: 'Macros',
     menuWindow: 'Window',
     menuHelp: 'Help',
-    menuDocsHelp: 'GenOffice Docs Help',
+    menuDocsHelp: 'SamuGen Docs Help',
   },
   ja: {
     dlgOpenDoc: '文書を開く',
@@ -316,8 +313,6 @@ const tMain = createI18n({
     errImageNoText:
       '画像の添付ファイルはテキストを提供しません。画像としてユーザーメッセージと一緒に送信されるため、そのまま画像をご確認ください',
     errNotImage: 'サポートされていない画像形式です',
-    errGskNotLoggedIn:
-      'Genspark にサインインしていません。下の「Genspark にサインイン」からサインインして再試行してください',
     errNoApiKey: '{provider} の API キーが設定されていません',
     errNoModel: 'モデル名が設定されていません',
     menuFile: 'ファイル',
@@ -374,7 +369,7 @@ const tMain = createI18n({
     menuMacros: 'マクロ',
     menuWindow: 'ウィンドウ',
     menuHelp: 'ヘルプ',
-    menuDocsHelp: 'GenOffice Docs ヘルプ',
+    menuDocsHelp: 'SamuGen Docs ヘルプ',
   },
   ko: {
     dlgOpenDoc: '문서 열기',
@@ -414,8 +409,6 @@ const tMain = createI18n({
     errImageNoText:
       '이미지 첨부 파일은 텍스트를 제공하지 않으며, 이미지 형태로 사용자 메시지와 함께 전송되므로 이미지를 직접 확인하면 됩니다',
     errNotImage: '지원되지 않는 이미지 형식입니다',
-    errGskNotLoggedIn:
-      'Genspark에 로그인되어 있지 않습니다. 아래 "Genspark 로그인"을 눌러 로그인한 뒤 다시 시도하세요',
     errNoApiKey: '{provider}의 API 키가 설정되지 않았습니다',
     errNoModel: '모델 이름이 설정되지 않았습니다',
     menuFile: '파일',
@@ -472,7 +465,7 @@ const tMain = createI18n({
     menuMacros: '매크로',
     menuWindow: '창',
     menuHelp: '도움말',
-    menuDocsHelp: 'GenOffice Docs 도움말',
+    menuDocsHelp: 'SamuGen Docs 도움말',
   },
   fr: {
     dlgOpenDoc: 'Ouvrir un document',
@@ -513,8 +506,6 @@ const tMain = createI18n({
     errImageNoText:
       "Les pièces jointes image ne fournissent pas de texte ; l'image est envoyée avec le message de l'utilisateur, consultez-la directement",
     errNotImage: "type d'image non pris en charge",
-    errGskNotLoggedIn:
-      'Non connecté à Genspark : cliquez sur « Se connecter à Genspark » ci-dessous, connectez-vous puis réessayez',
     errNoApiKey: 'Aucune clé API configurée pour {provider}',
     errNoModel: 'Aucun nom de modèle configuré',
     menuFile: 'Fichier',
@@ -571,7 +562,7 @@ const tMain = createI18n({
     menuMacros: 'Macros',
     menuWindow: 'Fenêtre',
     menuHelp: 'Aide',
-    menuDocsHelp: 'Aide GenOffice Docs',
+    menuDocsHelp: 'Aide SamuGen Docs',
   },
   de: {
     dlgOpenDoc: 'Dokument öffnen',
@@ -612,8 +603,6 @@ const tMain = createI18n({
     errImageNoText:
       'Bildanlagen liefern keinen Text; das Bild wird mit der Benutzernachricht gesendet und kann direkt betrachtet werden',
     errNotImage: 'kein unterstütztes Bildformat',
-    errGskNotLoggedIn:
-      'Nicht bei Genspark angemeldet: Klicken Sie unten auf „Bei Genspark anmelden“, melden Sie sich an und versuchen Sie es erneut',
     errNoApiKey: 'Kein API-Schlüssel für {provider} konfiguriert',
     errNoModel: 'Kein Modellname konfiguriert',
     menuFile: 'Datei',
@@ -670,7 +659,7 @@ const tMain = createI18n({
     menuMacros: 'Makros',
     menuWindow: 'Fenster',
     menuHelp: 'Hilfe',
-    menuDocsHelp: 'GenOffice Docs-Hilfe',
+    menuDocsHelp: 'SamuGen Docs-Hilfe',
   },
   es: {
     dlgOpenDoc: 'Abrir documento',
@@ -710,8 +699,6 @@ const tMain = createI18n({
     errImageNoText:
       'Las imágenes adjuntas no proporcionan texto; la imagen se envía junto con el mensaje del usuario, puedes verla directamente',
     errNotImage: 'no es un tipo de imagen compatible',
-    errGskNotLoggedIn:
-      'No has iniciado sesión en Genspark: pulsa «Iniciar sesión en Genspark» abajo, inicia sesión y vuelve a intentarlo',
     errNoApiKey: 'No hay clave de API configurada para {provider}',
     errNoModel: 'No se ha configurado el nombre del modelo',
     menuFile: 'Archivo',
@@ -768,7 +755,7 @@ const tMain = createI18n({
     menuMacros: 'Macros',
     menuWindow: 'Ventana',
     menuHelp: 'Ayuda',
-    menuDocsHelp: 'Ayuda de GenOffice Docs',
+    menuDocsHelp: 'Ayuda de SamuGen Docs',
   },
   th: {
     dlgOpenDoc: 'เปิดเอกสาร',
@@ -807,8 +794,6 @@ const tMain = createI18n({
     errImageNoText:
       'สิ่งที่แนบเป็นรูปภาพไม่มีข้อความ รูปจะถูกส่งไปพร้อมข้อความของผู้ใช้ ดูรูปได้โดยตรง',
     errNotImage: 'ไม่ใช่ชนิดรูปภาพที่รองรับ',
-    errGskNotLoggedIn:
-      'ยังไม่ได้ลงชื่อเข้าใช้ Genspark: แตะ “ลงชื่อเข้าใช้ Genspark” ด้านล่าง แล้วลองอีกครั้ง',
     errNoApiKey: 'ยังไม่ได้ตั้งค่า API Key ของ {provider}',
     errNoModel: 'ยังไม่ได้ตั้งค่าชื่อโมเดล',
     menuFile: 'ไฟล์',
@@ -865,7 +850,7 @@ const tMain = createI18n({
     menuMacros: 'แมโคร',
     menuWindow: 'หน้าต่าง',
     menuHelp: 'วิธีใช้',
-    menuDocsHelp: 'วิธีใช้ GenOffice Docs',
+    menuDocsHelp: 'วิธีใช้ SamuGen Docs',
   },
   id: {
     dlgOpenDoc: 'Buka Dokumen',
@@ -905,7 +890,6 @@ const tMain = createI18n({
     errImageNoText:
       'Lampiran gambar tidak menyediakan teks; gambar dikirim bersama pesan pengguna dan dapat dilihat langsung',
     errNotImage: 'bukan jenis gambar yang didukung',
-    errGskNotLoggedIn: 'Belum masuk ke Genspark: klik “Masuk ke Genspark” di bawah, lalu coba lagi',
     errNoApiKey: 'API Key untuk {provider} belum dikonfigurasi',
     errNoModel: 'Nama model belum dikonfigurasi',
     menuFile: 'File',
@@ -962,7 +946,7 @@ const tMain = createI18n({
     menuMacros: 'Makro',
     menuWindow: 'Jendela',
     menuHelp: 'Bantuan',
-    menuDocsHelp: 'Bantuan GenOffice Docs',
+    menuDocsHelp: 'Bantuan SamuGen Docs',
   },
   ru: {
     dlgOpenDoc: 'Открыть документ',
@@ -1002,8 +986,6 @@ const tMain = createI18n({
     errImageNoText:
       'Вложенные изображения не содержат текста; изображение отправляется вместе с сообщением пользователя, смотрите его напрямую',
     errNotImage: 'неподдерживаемый тип изображения',
-    errGskNotLoggedIn:
-      'Вы не вошли в Genspark: нажмите «Войти в Genspark» ниже, войдите и повторите попытку',
     errNoApiKey: 'API-ключ для {provider} не настроен',
     errNoModel: 'Не указано имя модели',
     menuFile: 'Файл',
@@ -1060,7 +1042,7 @@ const tMain = createI18n({
     menuMacros: 'Макросы',
     menuWindow: 'Окно',
     menuHelp: 'Справка',
-    menuDocsHelp: 'Справка GenOffice Docs',
+    menuDocsHelp: 'Справка SamuGen Docs',
   },
   ar: {
     dlgOpenDoc: 'فتح مستند',
@@ -1100,8 +1082,6 @@ const tMain = createI18n({
     errImageNoText:
       'مرفقات الصور لا توفر نصًا؛ تُرسل الصورة مع رسالة المستخدم ويمكن الاطلاع عليها مباشرة',
     errNotImage: 'ليس نوع صورة مدعومًا',
-    errGskNotLoggedIn:
-      'لم تسجّل الدخول إلى Genspark: انقر على «تسجيل الدخول إلى Genspark» أدناه ثم أعد المحاولة',
     errNoApiKey: 'لم يتم تكوين مفتاح API لـ {provider}',
     errNoModel: 'لم يتم تكوين اسم النموذج',
     menuFile: 'ملف',
@@ -1158,7 +1138,7 @@ const tMain = createI18n({
     menuMacros: 'وحدات الماكرو',
     menuWindow: 'نافذة',
     menuHelp: 'تعليمات',
-    menuDocsHelp: 'تعليمات GenOffice Docs',
+    menuDocsHelp: 'تعليمات SamuGen Docs',
   },
   pt: {
     dlgOpenDoc: 'Abrir Documento',
@@ -1198,8 +1178,6 @@ const tMain = createI18n({
     errImageNoText:
       'Anexos de imagem não fornecem texto; a imagem é enviada junto com a mensagem do usuário, basta vê-la diretamente',
     errNotImage: 'não é um tipo de imagem suportado',
-    errGskNotLoggedIn:
-      'Não conectado ao Genspark: clique em “Entrar no Genspark” abaixo, entre e tente novamente',
     errNoApiKey: 'Nenhuma chave de API configurada para {provider}',
     errNoModel: 'Nenhum nome de modelo configurado',
     menuFile: 'Arquivo',
@@ -1256,7 +1234,7 @@ const tMain = createI18n({
     menuMacros: 'Macros',
     menuWindow: 'Janela',
     menuHelp: 'Ajuda',
-    menuDocsHelp: 'Ajuda do GenOffice Docs',
+    menuDocsHelp: 'Ajuda do SamuGen Docs',
   },
   it: {
     dlgOpenDoc: 'Apri documento',
@@ -1296,8 +1274,6 @@ const tMain = createI18n({
     errImageNoText:
       "Gli allegati immagine non forniscono testo; l'immagine viene inviata insieme al messaggio dell'utente, basta guardarla direttamente",
     errNotImage: 'tipo di immagine non supportato',
-    errGskNotLoggedIn:
-      'Accesso a Genspark non effettuato: fai clic su “Accedi a Genspark” qui sotto, accedi e riprova',
     errNoApiKey: 'Nessuna chiave API configurata per {provider}',
     errNoModel: 'Nessun nome di modello configurato',
     menuFile: 'File',
@@ -1354,7 +1330,7 @@ const tMain = createI18n({
     menuMacros: 'Macro',
     menuWindow: 'Finestra',
     menuHelp: 'Aiuto',
-    menuDocsHelp: 'Guida di GenOffice Docs',
+    menuDocsHelp: 'Guida di SamuGen Docs',
   },
   pl: {
     dlgOpenDoc: 'Otwórz dokument',
@@ -1394,8 +1370,6 @@ const tMain = createI18n({
     errImageNoText:
       'Załączniki graficzne nie zawierają tekstu; obraz jest wysyłany razem z wiadomością użytkownika, wystarczy na niego spojrzeć',
     errNotImage: 'nieobsługiwany typ obrazu',
-    errGskNotLoggedIn:
-      'Nie zalogowano do Genspark: kliknij „Zaloguj się do Genspark” poniżej, zaloguj się i spróbuj ponownie',
     errNoApiKey: 'Nie skonfigurowano klucza API dla {provider}',
     errNoModel: 'Nie skonfigurowano nazwy modelu',
     menuFile: 'Plik',
@@ -1452,7 +1426,7 @@ const tMain = createI18n({
     menuMacros: 'Makra',
     menuWindow: 'Okno',
     menuHelp: 'Pomoc',
-    menuDocsHelp: 'Pomoc GenOffice Docs',
+    menuDocsHelp: 'Pomoc SamuGen Docs',
   },
   nl: {
     dlgOpenDoc: 'Document openen',
@@ -1492,8 +1466,6 @@ const tMain = createI18n({
     errImageNoText:
       'Afbeeldingsbijlagen bevatten geen tekst; de afbeelding wordt samen met het gebruikersbericht verzonden en kan direct worden bekeken',
     errNotImage: 'geen ondersteund afbeeldingstype',
-    errGskNotLoggedIn:
-      'Niet aangemeld bij Genspark: klik hieronder op “Aanmelden bij Genspark”, meld u aan en probeer het opnieuw',
     errNoApiKey: 'Geen API-sleutel geconfigureerd voor {provider}',
     errNoModel: 'Geen modelnaam geconfigureerd',
     menuFile: 'Bestand',
@@ -1550,7 +1522,7 @@ const tMain = createI18n({
     menuMacros: "Macro's",
     menuWindow: 'Venster',
     menuHelp: 'Help',
-    menuDocsHelp: 'GenOffice Docs Help',
+    menuDocsHelp: 'SamuGen Docs Help',
   },
   ms: {
     dlgOpenDoc: 'Buka Dokumen',
@@ -1590,8 +1562,6 @@ const tMain = createI18n({
     errImageNoText:
       'Lampiran imej tidak menyediakan teks; imej dihantar bersama mesej pengguna dan boleh dilihat terus',
     errNotImage: 'bukan jenis imej yang disokong',
-    errGskNotLoggedIn:
-      'Belum log masuk ke Genspark: klik “Log masuk ke Genspark” di bawah, kemudian cuba lagi',
     errNoApiKey: 'Kunci API untuk {provider} belum dikonfigurasikan',
     errNoModel: 'Nama model belum dikonfigurasikan',
     menuFile: 'Fail',
@@ -1648,7 +1618,7 @@ const tMain = createI18n({
     menuMacros: 'Makro',
     menuWindow: 'Tetingkap',
     menuHelp: 'Bantuan',
-    menuDocsHelp: 'Bantuan GenOffice Docs',
+    menuDocsHelp: 'Bantuan SamuGen Docs',
   },
   he: {
     dlgOpenDoc: 'פתיחת מסמך',
@@ -1687,7 +1657,6 @@ const tMain = createI18n({
     errImageNoText:
       'קבצים מצורפים מסוג תמונה אינם מספקים טקסט; התמונה נשלחת יחד עם הודעת המשתמש וניתן לצפות בה ישירות',
     errNotImage: 'סוג תמונה שאינו נתמך',
-    errGskNotLoggedIn: 'לא מחובר ל-Genspark: לחץ על "התחבר ל-Genspark" למטה, התחבר ונסה שוב',
     errNoApiKey: 'לא הוגדר מפתח API עבור {provider}',
     errNoModel: 'לא הוגדר שם מודל',
     menuFile: 'קובץ',
@@ -1744,7 +1713,7 @@ const tMain = createI18n({
     menuMacros: 'פקודות מאקרו',
     menuWindow: 'חלון',
     menuHelp: 'עזרה',
-    menuDocsHelp: 'עזרה של GenOffice Docs',
+    menuDocsHelp: 'עזרה של SamuGen Docs',
   },
   hi: {
     dlgOpenDoc: 'दस्तावेज़ खोलें',
@@ -1784,8 +1753,6 @@ const tMain = createI18n({
     errImageNoText:
       'छवि अनुलग्नक टेक्स्ट प्रदान नहीं करते; छवि उपयोगकर्ता संदेश के साथ भेजी जाती है, उसे सीधे देखें',
     errNotImage: 'समर्थित छवि प्रकार नहीं है',
-    errGskNotLoggedIn:
-      'Genspark में साइन इन नहीं है: नीचे “Genspark में साइन इन करें” पर क्लिक करें, साइन इन करें और फिर से कोशिश करें',
     errNoApiKey: '{provider} के लिए कोई API कुंजी कॉन्फ़िगर नहीं है',
     errNoModel: 'कोई मॉडल नाम कॉन्फ़िगर नहीं है',
     menuFile: 'फ़ाइल',
@@ -1842,7 +1809,7 @@ const tMain = createI18n({
     menuMacros: 'मैक्रो',
     menuWindow: 'विंडो',
     menuHelp: 'सहायता',
-    menuDocsHelp: 'GenOffice Docs सहायता',
+    menuDocsHelp: 'SamuGen Docs सहायता',
   },
   'zh-TW': {
     dlgOpenDoc: '開啟文件',
@@ -1880,7 +1847,6 @@ const tMain = createI18n({
     errParseFailed: '檔案解析失敗',
     errImageNoText: '圖片附件不提供文字,已作為影像隨使用者訊息傳送,直接看圖即可',
     errNotImage: '不是支援的圖片類型',
-    errGskNotLoggedIn: '未登入 Genspark:請點擊下方「登入 Genspark」完成登入後重試',
     errNoApiKey: '未設定 {provider} 的 API Key',
     errNoModel: '未設定模型名稱',
     menuFile: '檔案',
@@ -1937,7 +1903,7 @@ const tMain = createI18n({
     menuMacros: '巨集',
     menuWindow: '視窗',
     menuHelp: '說明',
-    menuDocsHelp: 'GenOffice Docs 說明',
+    menuDocsHelp: 'SamuGen Docs 說明',
   },
 })
 const tm = (key: Parameters<typeof tMain>[1], params?: Parameters<typeof tMain>[2]) =>
@@ -2016,7 +1982,7 @@ async function saveDialog(event: IpcMainInvokeEvent, options: SaveDialogOptions)
 
 /** default folder where new files land on their first (silent) save; shared with the other editors via shell */
 export function defaultSaveDir(): string {
-  const dir = join(app.getPath('documents'), 'GenOffice')
+  const dir = join(app.getPath('documents'), 'SamuGen')
   mkdirSync(dir, { recursive: true })
   return dir
 }
@@ -2360,7 +2326,7 @@ const HWPX_RE = /\.hwpx$/i
  */
 async function loadHwpx(filePath: string): Promise<ImportFileResult | null> {
   if (!existsSync(filePath)) return null
-  const { hwpxToHtml } = await import('@genoffice/hwpx-convert')
+  const { hwpxToHtml } = await import('@samugen/hwpx-convert')
   const imported = await hwpxToHtml(await readFile(filePath))
   const sourceName = basename(filePath)
   return {
@@ -2443,7 +2409,7 @@ const TEXT_EXTS = new Set([
   'sql',
   'css',
 ])
-/** office/pdf formats get text extracted via @genoffice/file-parse; images skip extraction and go multimodal (files:read-image) */
+/** office/pdf formats get text extracted via @samugen/file-parse; images skip extraction and go multimodal (files:read-image) */
 const ATTACHMENT_EXTS = new Set([
   ...TEXT_EXTS,
   'docx',
@@ -2532,7 +2498,7 @@ function savePastedImage(data: unknown, ext: unknown): string | null {
         ? Buffer.from(data.buffer, data.byteOffset, data.byteLength)
         : null
   if (!bytes || bytes.byteLength === 0) return null
-  const dir = join(app.getPath('temp'), 'genoffice-pasted')
+  const dir = join(app.getPath('temp'), 'samugen-pasted')
   mkdirSync(dir, { recursive: true })
   prunePastedImages(dir)
   const stamp = new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '-')
@@ -2541,7 +2507,7 @@ function savePastedImage(data: unknown, ext: unknown): string | null {
   return filePath
 }
 
-/** parse an attachment to text via @genoffice/file-parse (docx/pdf/pptx/xlsx/plain text) */
+/** parse an attachment to text via @samugen/file-parse (docx/pdf/pptx/xlsx/plain text) */
 async function extractAttachmentText(filePath: string): Promise<string> {
   const stat = statSync(filePath)
   const stamp = `${stat.mtimeMs}:${stat.size}`
@@ -2567,14 +2533,14 @@ const TWIPS_PER_INCH = 1440
 
 // ---- AI settings + chat proxy (main process avoids renderer CORS) ----
 // provider metadata, settings defaults/migration, and per-provider streaming/chat
-// implementations live in @genoffice/ai-provider, shared with apps/sheets.
+// implementations live in @samugen/ai-provider, shared with apps/sheets.
 
 const SETTINGS_PATH = () => userDataPath('ai-settings.json')
 
 const activeAiStreams = new Map<string, AbortController>()
 
 function withAiRuntimeIdentity(system: string, provider: string, model: string): string {
-  return `${system}\n\nRuntime identity: the active AI provider is "${provider}" and the active model is "${model}". If the user asks which provider or model is running, answer with these exact values. Do not identify the runtime as Genspark unless the active provider is "genspark".`
+  return `${system}\n\nRuntime identity: the active AI provider is "${provider}" and the active model is "${model}". If the user asks which provider or model is running, answer with these exact values. Do not identify the runtime as SamuGen unless the active provider is "samugen".`
 }
 
 /**
@@ -2600,7 +2566,7 @@ export function registerAiIpc(): void {
     }
     const stored = readJson<Partial<AiSettings> & LegacyAiSettings>(SETTINGS_PATH(), {})
     // The stored provider is honoured as stored. It used to be overwritten with
-    // 'genspark' on every read, because AI went through that one account — which
+    // 'samugen' on every read, because AI went through that one account — which
     // silently undid whatever the settings screen had just saved.
     return resolveAiSettings(stored, defaultAiSettings())
   })
@@ -2951,7 +2917,7 @@ export function registerProjectIpc(): void {
 /** document/attachment/window IPC (everything except the AI proxy above) */
 export function registerDocsIpc(): void {
   // registered by every editor module and by the shell; identical handlers, so
-  // whichever runs last is the one that stays (see @genoffice/electron-utils)
+  // whichever runs last is the one that stays (see @samugen/electron-utils)
   registerLanguageIpc(ipcMain, () => webContents.getAllWebContents())
 
   ipcMain.handle('docs:open', async (event) => {
@@ -3089,7 +3055,7 @@ export function registerDocsIpc(): void {
     if (result.canceled || !result.filePath) return { ok: false }
     if (tornDownWcIds.has(event.sender.id)) return { ok: false }
     try {
-      const { htmlToHwpx } = await import('@genoffice/hwpx-convert')
+      const { htmlToHwpx } = await import('@samugen/hwpx-convert')
       await atomicWriteFile(result.filePath, Buffer.from(await htmlToHwpx(html)))
       return { ok: true, path: result.filePath }
     } catch (err) {
@@ -3621,7 +3587,7 @@ export function createDocsWindow(openPath?: string): BrowserWindow {
     height: 900,
     minWidth: 980,
     minHeight: 600,
-    title: 'GenOffice Docs',
+    title: 'SamuGen Docs',
     // Word-like custom title bar (document name centered, quick-access buttons)
     ...(process.platform === 'darwin'
       ? { titleBarStyle: 'hiddenInset' as const }
@@ -3894,8 +3860,8 @@ export function startDocsStandalone(): void {
   installContextMenu(app, () => contextMenuLabels(getUiLang()))
   // dev runs must not share the packaged app's userData (recent files, AI settings)
   // or its single-instance lock — otherwise `npm run dev` silently quits whenever
-  // the installed GenOffice Docs is open and forwards its argv there instead.
-  if (isDev) app.setPath('userData', join(app.getPath('appData'), 'GenOffice Docs Dev'))
+  // the installed SamuGen Docs is open and forwards its argv there instead.
+  if (isDev) app.setPath('userData', join(app.getPath('appData'), 'SamuGen Docs Dev'))
 
   const hasSingleInstanceLock = app.requestSingleInstanceLock()
   if (!hasSingleInstanceLock) {
@@ -3919,7 +3885,7 @@ export function startDocsStandalone(): void {
   registerDocsIpc()
 
   app.whenReady().then(() => {
-    setUiLang(normalizeLang(process.env.GENOFFICE_LANG ?? app.getLocale()))
+    setUiLang(normalizeLang(process.env.SAMUGEN_LANG ?? app.getLocale()))
     // packaged builds get the Dock icon from icon.icns; dev shows Electron's default
     if (isDev && process.platform === 'darwin') {
       app.dock?.setIcon(join(app.getAppPath(), 'build/icon.png'))

@@ -17,7 +17,7 @@
  * are all passed in, so this module is exercisable without a `window`, and host-web.ts is the
  * only place globals are read.
  */
-import type { AiPort, AttachmentsPort, LanguagePort } from '@genoffice/platform'
+import type { AiPort, AttachmentsPort, LanguagePort } from '@samugen/platform'
 import {
   createWebUnloadPrompt,
   ensurePermission,
@@ -26,7 +26,7 @@ import {
   type FilePickers,
   type FrameChildLink,
   type WebFileHandle,
-} from '@genoffice/platform-web'
+} from '@samugen/platform-web'
 import { parsePivotDefinition } from '../gateway/xlsx-pivot'
 import { readArchiveEntryText } from '../gateway/xlsx-package-io'
 import { writeWorkbookTo } from '../gateway/workbook-save'
@@ -270,7 +270,7 @@ export function createWebSheetsFilePort(
       try {
         handle = await services.pickers.openFile({
           types: WORKBOOK_TYPES,
-          id: 'genoffice-xlsx',
+          id: 'samugen-xlsx',
         })
       } catch (error) {
         if (isPickerCancel(error)) return null
@@ -289,7 +289,7 @@ export function createWebSheetsFilePort(
           handle = await services.pickers.saveFile({
             suggestedName: session.name.endsWith('.xlsx') ? session.name : `${session.name}.xlsx`,
             types: WORKBOOK_TYPES,
-            id: 'genoffice-xlsx',
+            id: 'samugen-xlsx',
           })
         } catch (error) {
           if (isPickerCancel(error)) return { canceled: true }
@@ -416,7 +416,7 @@ export function createWebSheetsWindowPort(
  * The UI language, from the shared web language storage every app uses.
  *
  * The shared port verbatim, as sheets' AI port is. It used to cast, because sheets declared an
- * eleven-value copy of @genoffice/i18n's nineteen-value `Lang` (§6.4 of the migration doc) and
+ * eleven-value copy of @samugen/i18n's nineteen-value `Lang` (§6.4 of the migration doc) and
  * a shared `Lang` did not fit through it. The bridge now says `Lang`, so the two agree and
  * there is nothing left to adapt.
  */

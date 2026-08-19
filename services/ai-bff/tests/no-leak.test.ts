@@ -9,15 +9,15 @@
  * be found where nobody was looking.
  */
 import { describe, expect, it } from 'vitest'
-import { AI_BFF_ROUTES } from '@genoffice/platform-web/wire'
-import { defaultAiSettings, resolveAiSettings } from '@genoffice/ai-provider'
+import { AI_BFF_ROUTES } from '@samugen/platform-web/wire'
+import { defaultAiSettings, resolveAiSettings } from '@samugen/ai-provider'
 import { SECRET_KEY, settingsWithSecret, sseChunks, startHarness } from './fakes.js'
 
 /**
  * Every substring of the credential of length >= 4, which is what makes this a
  * "no fragment" check rather than a "no whole key" check. Length 4 is the floor
  * on purpose: it is exactly the size of the `••••1234` hint that
- * @genoffice/ai-electron's `toPublicAiSettings` keeps and the wire contract
+ * @samugen/ai-electron's `toPublicAiSettings` keeps and the wire contract
  * deliberately drops, so a regression that reintroduced the hint would fail here.
  */
 function fragments(secret: string, minLength = 4): string[] {
@@ -68,7 +68,7 @@ describe('no credential fragment reaches the client', () => {
 
   it('redacts a credential echoed back inside a provider error message', async () => {
     // Real gateways do this: a 401 body can quote the Authorization header it
-    // rejected, and @genoffice/ai-provider forwards the body verbatim.
+    // rejected, and @samugen/ai-provider forwards the body verbatim.
     const harness = await startHarness({
       behavior: { throws: new Error(`HTTP 401: invalid key "${SECRET_KEY}"`) },
     })

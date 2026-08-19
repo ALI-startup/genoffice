@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Lang } from '@genoffice/i18n'
-import type { AttachmentReadResult } from '@genoffice/platform'
+import type { Lang } from '@samugen/i18n'
+import type { AttachmentReadResult } from '@samugen/platform'
 import {
   createDocsCloseSavePort,
   createDocsLanguagePort,

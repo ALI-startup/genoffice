@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { IpcRendererEvent } from 'electron'
-import type { Lang } from '@genoffice/i18n'
+import type { Lang } from '@samugen/i18n'
 import type {
   AiChatRequest,
   AiSettings,
@@ -9,7 +9,7 @@ import type {
   DesktopApi,
   MenuCommand,
 } from '../shared/ipc'
-import type { ProjectApi } from '@genoffice/project-store'
+import type { ProjectApi } from '@samugen/project-store'
 
 const api: DesktopApi = {
   getLanguage: () => ipcRenderer.invoke('app:get-language'),

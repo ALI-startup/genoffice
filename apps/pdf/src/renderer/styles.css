@@ -131,7 +131,7 @@ button {
    A segmented pill at the far end of the tab row. Small and quiet, because it
    is not a command: it sits past everything the row offers, in the same corner
    on every screen, so switching is one click from wherever the user is.
-   The markup is @genoffice/ui's LanguageToggle; only the paint is here. */
+   The markup is @samugen/ui's LanguageToggle; only the paint is here. */
 .lang-toggle {
   /* the tab row is the frameless window's drag region */
   -webkit-app-region: no-drag;
@@ -1750,15 +1750,15 @@ button {
   white-space: nowrap;
 }
 
-/* Genspark brand logo (shared by the collapsed entry and the AI panel title) */
-.genspark-badge {
+/* SamuGen brand logo (shared by the collapsed entry and the AI panel title) */
+.samugen-badge {
   display: block;
   width: 22px;
   height: 22px;
   border-radius: 50%;
 }
 
-.ai-panel-title .genspark-badge {
+.ai-panel-title .samugen-badge {
   width: 18px;
   height: 18px;
 }

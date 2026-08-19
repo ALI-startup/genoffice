@@ -1,4 +1,4 @@
-import type { Lang } from '@genoffice/i18n'
+import type { Lang } from '@samugen/i18n'
 
 /**
  * The English ⇄ Korean switch that sits in every app's chrome.

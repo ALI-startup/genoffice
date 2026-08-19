@@ -7,7 +7,7 @@
  * hosts unchanged.
  */
 import { describe, expect, it } from 'vitest'
-import { AI_BFF_ROUTES } from '@genoffice/platform-web/wire'
+import { AI_BFF_ROUTES } from '@samugen/platform-web/wire'
 import { DEFAULT_MAX_TOKENS } from '../src/server.js'
 import { sseChunks, startHarness } from './fakes.js'
 
@@ -135,7 +135,7 @@ describe('stream route', () => {
   })
 
   it('maps a timeout to errorCode "timeout"', async () => {
-    const { AiTimeoutError } = await import('@genoffice/ai-provider')
+    const { AiTimeoutError } = await import('@samugen/ai-provider')
     const harness = await startHarness({ behavior: { throws: new AiTimeoutError(30_000) } })
     try {
       const { body } = await harness.post(AI_BFF_ROUTES.stream, {
@@ -151,7 +151,7 @@ describe('stream route', () => {
   })
 
   it('maps exhausted credits to errorCode "credits"', async () => {
-    const { AiCreditsError } = await import('@genoffice/ai-provider')
+    const { AiCreditsError } = await import('@samugen/ai-provider')
     const harness = await startHarness({ behavior: { throws: new AiCreditsError('out') } })
     try {
       const { body } = await harness.post(AI_BFF_ROUTES.stream, {

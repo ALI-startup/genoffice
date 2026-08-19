@@ -5,7 +5,7 @@ import type { CSSProperties, ReactElement, ReactNode, RefObject } from 'react'
 import { GlobalWorkerOptions, TextLayer, getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist'
 import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'
-import { AiPanel, GensparkMark } from './ai/AiPanel'
+import { AiPanel, SamuGenMark } from './ai/AiPanel'
 import type { PdfAiDeps } from './ai/tools'
 import {
   MARKUP_COLORS,
@@ -2047,7 +2047,7 @@ export default function App() {
             </div>
           </div>
           <div className="ribbon-sep" />
-          {/* ---- AI assistant (same far-right Genspark entry as the docs ribbon) ---- */}
+          {/* ---- AI assistant (same far-right SamuGen entry as the docs ribbon) ---- */}
           <div className="ribbon-group">
             <div className="ribbon-group-items">
               <button
@@ -2056,7 +2056,7 @@ export default function App() {
                 onClick={() => setAiCollapsed((v) => !v)}
               >
                 <span className="rb-big-icon">
-                  <GensparkMark size={28} />
+                  <SamuGenMark size={28} />
                 </span>
                 <span>{t('ribbonAiAssistant')}</span>
               </button>
@@ -2074,7 +2074,7 @@ export default function App() {
               title={t('aiOpenAssistant')}
               onClick={() => setAiCollapsed(false)}
             >
-              <GensparkMark size={22} />
+              <SamuGenMark size={22} />
             </button>
           )}
           <AiPanel api={aiApi} onCollapse={() => setAiCollapsed(true)} />

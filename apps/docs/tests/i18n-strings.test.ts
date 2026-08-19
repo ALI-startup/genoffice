@@ -6,7 +6,7 @@
  * runtime rather than failing the build. Same guard apps/pdf already has.
  */
 import { describe, expect, it } from 'vitest'
-import { LANGS } from '@genoffice/i18n'
+import { LANGS } from '@samugen/i18n'
 import { strings } from '../src/renderer/i18n/strings'
 
 const dicts = strings as Record<string, Record<string, string>>

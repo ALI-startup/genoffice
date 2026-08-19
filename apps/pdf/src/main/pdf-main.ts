@@ -9,9 +9,9 @@ import {
   installNavigationGuard,
   registerLanguageIpc,
   safeExternalUrl,
-} from '@genoffice/electron-utils'
-import { createI18n, getUiLang } from '@genoffice/i18n'
-import { extractPagesBytes, insertPdfBytes } from '@genoffice/pdf-edit'
+} from '@samugen/electron-utils'
+import { createI18n, getUiLang } from '@samugen/i18n'
+import { extractPagesBytes, insertPdfBytes } from '@samugen/pdf-edit'
 import { PDF_CHANNELS } from '../shared/ipc'
 import type {
   ExportImagesRequest,
@@ -503,7 +503,7 @@ function registerPdfIpc(): void {
   })
 
   // registered by every editor module and by the shell; identical handlers, so
-  // whichever runs last is the one that stays (see @genoffice/electron-utils)
+  // whichever runs last is the one that stays (see @samugen/electron-utils)
   registerLanguageIpc(ipcMain, () => webContents.getAllWebContents())
 }
 
@@ -547,7 +547,7 @@ export function createPdfView(openPath?: string | null): WebContentsView {
   return view
 }
 
-/** Standalone window mode: `npm run dev -w @genoffice/pdf`, pdf path passed via argv */
+/** Standalone window mode: `npm run dev -w @samugen/pdf`, pdf path passed via argv */
 export function startPdfStandalone(): void {
   installNavigationGuard(app)
   installContextMenu(app, () => contextMenuLabels(getUiLang()))

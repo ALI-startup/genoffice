@@ -20,7 +20,7 @@
  * lets the tests drive this without an Electron runtime.
  */
 import type { IpcMain, WebContents } from 'electron'
-import { getUiLang, isLang, setUiLang, type Lang } from '@genoffice/i18n'
+import { getUiLang, isLang, setUiLang, type Lang } from '@samugen/i18n'
 
 /** IPC channel names, shared with each app's preload. */
 export const LANGUAGE_CHANNELS = {

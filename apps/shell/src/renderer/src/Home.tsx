@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import logoLockup from './assets/genoffice-logo.svg'
+import appMark from './assets/samugen-mark.svg'
 import iconDocx from './assets/file-docx.svg'
 import iconXlsx from './assets/file-xlsx.svg'
 import iconPptx from './assets/file-pptx.svg'
@@ -1500,7 +1500,12 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
     <div className="home">
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <img className="logo-lockup" src={logoLockup} alt="GenOffice" />
+          {/* The mark is an image and the word is DOM text, rather than one
+              lockup SVG: an <img> cannot reach the app's font stack, so a
+              wordmark inside it would render in whatever the platform happened
+              to substitute. */}
+          <img className="logo-mark" src={appMark} alt="" />
+          <span className="logo-word">SamuGen</span>
         </div>
 
         <nav className="sidebar-nav">

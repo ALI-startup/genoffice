@@ -7,7 +7,7 @@
  * and every registration routes through it.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { getUiLang, setUiLang, type Lang } from '@genoffice/i18n'
+import { getUiLang, setUiLang, type Lang } from '@samugen/i18n'
 import type { IpcMain, WebContents } from 'electron'
 import {
   applyLanguageChange,

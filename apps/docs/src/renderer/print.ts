@@ -43,7 +43,7 @@
  * verified against `printToPDF` with `preferCSSPageSize` off, where naming pages
  * changes neither the sheet count nor the sheet size.
  */
-import type { SectionSettings } from '@genoffice/docx-engine'
+import type { SectionSettings } from '@samugen/docx-engine'
 import { sectionPageBox } from './pagination'
 
 /**

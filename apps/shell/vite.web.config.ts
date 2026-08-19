@@ -10,7 +10,7 @@
  *      so the browser refuses a cross-origin AI request outright; proxying the
  *      BFF's own route prefix through this dev server is what makes the request
  *      same-origin, and it is why the browser never needs to know the BFF's
- *      address. The route prefix is declared once, in @genoffice/platform-web's
+ *      address. The route prefix is declared once, in @samugen/platform-web's
  *      wire module.
  *   3. **The editors are proxied under paths of this origin**, not embedded from
  *      their own dev-server ports. That is not a convenience: a cross-origin
@@ -32,13 +32,13 @@
 import { createRequire } from 'node:module'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
-import { AI_BFF_BASE_PATH } from '@genoffice/platform-web/wire'
+import { AI_BFF_BASE_PATH } from '@samugen/platform-web/wire'
 import { hostAlias } from './vite.shared'
 
 const require = createRequire(import.meta.url)
 const { version } = require('./package.json') as { version: string }
 
-/** Where `npm run start -w @genoffice/ai-bff` listens by default. */
+/** Where `npm run start -w @samugen/ai-bff` listens by default. */
 const bffTarget = process.env.AI_BFF_URL || 'http://127.0.0.1:8788'
 /** Where the editors' own web dev servers listen (see their vite.web.config.ts). */
 const docsTarget = process.env.DOCS_WEB_URL || 'http://127.0.0.1:5183'

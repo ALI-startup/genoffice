@@ -3,7 +3,7 @@
  * auto-update feed URL can be injected at build time instead of living in
  * the repo).
  *
- * GENOFFICE_UPDATE_URL — public base URL of the update channel (the generic
+ * SAMUGEN_UPDATE_URL — public base URL of the update channel (the generic
  * provider prefix that serves latest.yml / latest-mac.yml). Required for
  * release builds; CI provides it as a repository secret. For local release
  * builds put it in apps/shell/electron-builder.env (gitignored) — the
@@ -14,31 +14,12 @@
  * app-update.yml into the app and in-app auto-update stays disabled.
  */
 
-const { existsSync } = require('node:fs')
-const { join } = require('node:path')
-
-const updateUrl = process.env.GENOFFICE_UPDATE_URL
-
-// The gsk CLI tree below is copied verbatim from node_modules, and the
-// nested commander path depends on npm's current hoisting layout — fail the
-// build with a clear message if an install ever changes it, instead of
-// shipping an installer with a broken gsk runtime.
-for (const rel of [
-  '../../node_modules/@genspark/cli',
-  '../../node_modules/@genspark/cli/node_modules/commander',
-  '../../node_modules/ws',
-]) {
-  if (!existsSync(join(__dirname, rel))) {
-    throw new Error(
-      `electron-builder extraResources source missing: ${rel} (npm hoisting changed?)`,
-    )
-  }
-}
+const updateUrl = process.env.SAMUGEN_UPDATE_URL
 
 /** @type {import('electron-builder').Configuration} */
 const config = {
-  appId: 'com.genoffice.app',
-  productName: 'GenOffice',
+  appId: 'com.samugen.app',
+  productName: 'SamuGen',
   electronVersion: '41.7.1',
   directories: {
     output: 'release',
@@ -68,18 +49,6 @@ const config = {
     {
       from: '../pdf/out',
       to: 'modules/pdf',
-    },
-    {
-      from: '../../node_modules/@genspark/cli',
-      to: 'gsk/node_modules/@genspark/cli',
-    },
-    {
-      from: '../../node_modules/@genspark/cli/node_modules/commander',
-      to: 'gsk/node_modules/commander',
-    },
-    {
-      from: '../../node_modules/ws',
-      to: 'gsk/node_modules/ws',
     },
   ],
   fileAssociations: [

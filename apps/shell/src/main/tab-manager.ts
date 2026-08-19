@@ -46,9 +46,7 @@ const HOME_ID = 'home'
  * own — hiding every other tab reveals the shell window's own content.
  */
 export class TabManager {
-  private readonly tabs: TabRecord[] = [
-    { id: HOME_ID, kind: 'home', view: null, title: 'GenOffice' },
-  ]
+  private readonly tabs: TabRecord[] = [{ id: HOME_ID, kind: 'home', view: null, title: 'SamuGen' }]
   private activeId: string = HOME_ID
   private nextId = 1
   /** tab whose page entered HTML fullscreen (e.g. slides slideshow) — its view covers the tab strip */
@@ -125,7 +123,7 @@ export class TabManager {
       id,
       kind: 'docs',
       view,
-      title: openPath ? basename(openPath) : this.untitled('docs', 'GenOffice Docs'),
+      title: openPath ? basename(openPath) : this.untitled('docs', 'SamuGen Docs'),
       filePath: openPath,
     })
     this.activateTab(id)

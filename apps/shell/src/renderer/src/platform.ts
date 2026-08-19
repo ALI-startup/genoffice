@@ -15,7 +15,7 @@
  * channel for — the exact failure this seam exists to prevent. See
  * `UpdateWindowPlatform` at the bottom.
  *
- * Almost nothing here comes from @genoffice/platform's shared catalogue, and
+ * Almost nothing here comes from @samugen/platform's shared catalogue, and
  * that is the honest result rather than an oversight: the shell is the *host
  * surface* the editors are hosted in, so its capabilities are the ones the
  * shared ports are defined against, not instances of them. Port by port:
@@ -26,7 +26,7 @@
  *     so the shell subscribes to `onLanguageChanged` on the same channel its
  *     editors do.
  *   - `project` — deliberately not the shared `ProjectPort`. That port aliases
- *     @genoffice/project-store's `ProjectApi`; the shell's own surface is the
+ *     @samugen/project-store's `ProjectApi`; the shell's own surface is the
  *     flatter, positional-argument UI adapter that ports/project.ts already
  *     names as a separate thing. Wiring the canonical one here would mean
  *     reshaping the main-process IPC, which this phase must not touch.
@@ -34,7 +34,7 @@
  *     app's own tabs; the shell's `TabSummary` is the cross-app strip (kind,
  *     closable, active) that positions every editor's WebContentsView.
  *     ports/window.ts records this divergence already.
- *   - `ai`, `aiSettings` (the shared one), `aiChat`, `genspark`, `search`,
+ *   - `ai`, `aiSettings` (the shared one), `aiChat`, `samugen`, `search`,
  *     `attachments` — no shell renderer call site. The shell never streams,
  *     never searches and has no chat surface; its AI screen edits provider
  *     configuration through its own IPC (see `ShellAiSettingsPort`).
@@ -57,7 +57,7 @@
  * `statPaths`. Every one of those is now a host-issued `FileRef` plus
  * host-supplied display fields, on the `DocumentRef` precedent from apps/pdf.
  */
-import { createPlatformSlot, type LanguagePort } from '@genoffice/platform'
+import { createPlatformSlot, type LanguagePort } from '@samugen/platform'
 import type { AiSettingsApi } from '../../shared/ai-settings-api'
 import type { ProjectSummaryEntry, RecentQuery } from '../../shared/home-api'
 import type { TabsApi, TabSummary } from '../../shared/tabs-api'
@@ -409,12 +409,12 @@ export interface ShellFramesPort {
  * has to test it before it can use it, so each command exists exactly when it
  * works.
  *
- *   - `projects` — Electron: @genoffice/project-store over the project IPC.
+ *   - `projects` — Electron: @samugen/project-store over the project IPC.
  *     Already effectively nullable before this phase: Home.tsx tested
  *     `typeof window.aiOfficeProject !== 'undefined'` and hid the whole sidebar
  *     panel when absent, because the Home renderer is also loaded outside the
  *     shell. That runtime `typeof` check is now a typed key. Null on the web
- *     host: @genoffice/project-store is `node:fs` keyed on absolute paths.
+ *     host: @samugen/project-store is `node:fs` keyed on absolute paths.
  *   - `tabMenus` — Electron: the native popup menus. See `ShellTabMenusPort` for
  *     why a browser backs this with DOM instead of claiming it.
  *   - `aiSettingsEditor` — Electron: `safeStorage`-backed credential writes. See
@@ -474,7 +474,7 @@ export const { set: setShellPlatform, get: shellPlatform } =
  * transport-agnostic (shared/update-api.ts imports nothing from Electron, and
  * the window's copy is localized in the main process and delivered as data), so
  * re-declaring it here would only create something to drift. Same reasoning as
- * `ProjectPort` aliasing `ProjectApi` in @genoffice/platform.
+ * `ProjectPort` aliasing `ProjectApi` in @samugen/platform.
  */
 export type UpdateWindowPort = UpdateWindowApi
 

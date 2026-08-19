@@ -1,13 +1,13 @@
 /**
  * The Electron main process's byte I/O for PDF saving.
  *
- * The editing itself lives in @genoffice/pdf-edit and knows nothing about
+ * The editing itself lives in @samugen/pdf-edit and knows nothing about
  * files; this module supplies the node:fs half — read the source, write the
  * target atomically — and is all that stays behind here.
  */
 import { readFile, rename, rm, writeFile } from 'node:fs/promises'
-import { savePdf } from '@genoffice/pdf-edit'
-import type { PdfBytesIo } from '@genoffice/pdf-edit'
+import { savePdf } from '@samugen/pdf-edit'
+import type { PdfBytesIo } from '@samugen/pdf-edit'
 import type { SavePdfRequest } from '../shared/ipc'
 
 /**

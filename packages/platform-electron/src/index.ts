@@ -1,5 +1,5 @@
 /**
- * Electron implementations of the @genoffice/platform ports.
+ * Electron implementations of the @samugen/platform ports.
  *
  * This package runs in the **renderer**, not the main process: it adapts the
  * globals a preload has already exposed (`window.pdfApi`, `window.desktop`,

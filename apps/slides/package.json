@@ -1,6 +1,6 @@
 {
-  "name": "@genoffice/slides",
-  "productName": "GenOffice Slides",
+  "name": "@samugen/slides",
+  "productName": "SamuGen Slides",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "private": true,
@@ -20,19 +20,19 @@
     "dist:dir": "electron-vite build && electron-builder --dir"
   },
   "devDependencies": {
-    "@genoffice/agent-core": "*",
-    "@genoffice/ai-electron": "*",
-    "@genoffice/ai-provider": "*",
-    "@genoffice/ai-search": "*",
-    "@genoffice/file-parse": "*",
-    "@genoffice/i18n": "*",
-    "@genoffice/platform": "*",
-    "@genoffice/platform-electron": "*",
-    "@genoffice/platform-web": "*",
-    "@genoffice/pptx-engine": "*",
-    "@genoffice/pptx-render": "*",
-    "@genoffice/project-store": "*",
-    "@genoffice/ui": "*",
+    "@samugen/agent-core": "*",
+    "@samugen/ai-electron": "*",
+    "@samugen/ai-provider": "*",
+    "@samugen/ai-search": "*",
+    "@samugen/file-parse": "*",
+    "@samugen/i18n": "*",
+    "@samugen/platform": "*",
+    "@samugen/platform-electron": "*",
+    "@samugen/platform-web": "*",
+    "@samugen/pptx-engine": "*",
+    "@samugen/pptx-render": "*",
+    "@samugen/project-store": "*",
+    "@samugen/ui": "*",
     "@types/opentype.js": "^1.3.8",
     "@types/pngjs": "^6.0.5",
     "@types/react": "^19.2.14",
@@ -51,10 +51,10 @@
     "vite": "^7.3.1",
     "vitest": "^4.1.0"
   },
-  "author": "GenOffice",
+  "author": "SamuGen",
   "build": {
-    "appId": "com.genoffice.slides",
-    "productName": "GenOffice Slides",
+    "appId": "com.samugen.slides",
+    "productName": "SamuGen Slides",
     "electronVersion": "41.7.1",
     "directories": {
       "output": "release"
@@ -93,7 +93,7 @@
     }
   },
   "dependencies": {
-    "@genoffice/electron-utils": "*",
+    "@samugen/electron-utils": "*",
     "acorn": "^8.18.0",
     "harfbuzzjs": "^1.4.0",
     "pngjs": "^7.0.0",

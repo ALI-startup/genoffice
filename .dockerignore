@@ -22,7 +22,7 @@ apps/sheets/native/xlsx-engine/target/
 # The `**/` forms are load-bearing, not belt-and-braces: .dockerignore patterns
 # are matched against the whole path from the context root, so a bare `.env`
 # excludes ./.env and nothing else. services/ai-bff/.env is a real file in this
-# repo — `npm run start -w @genoffice/ai-bff` loads it via tsx
+# repo — `npm run start -w @samugen/ai-bff` loads it via tsx
 # --env-file-if-exists — and without these lines it is copied into the bff image
 # with a live provider credential inside it.
 .env

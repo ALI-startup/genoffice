@@ -11,7 +11,7 @@
  * touches it.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createBlankPptx, openPptx, utf8Bytes, type OpenedPptx } from '@genoffice/pptx-engine'
+import { createBlankPptx, openPptx, utf8Bytes, type OpenedPptx } from '@samugen/pptx-engine'
 import {
   buildAllRenderSlides,
   makeMediaResolver,

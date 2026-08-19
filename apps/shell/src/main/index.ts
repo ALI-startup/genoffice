@@ -27,7 +27,7 @@ import menuXlsxIcon1x from './assets/menu-xlsx.png?asset'
 import menuXlsxIcon2x from './assets/menu-xlsx@2x.png?asset'
 import menuPptxIcon1x from './assets/menu-pptx.png?asset'
 import menuPptxIcon2x from './assets/menu-pptx@2x.png?asset'
-import { createI18n, isLang, normalizeLang, setUiLang, type Lang } from '@genoffice/i18n'
+import { createI18n, isLang, normalizeLang, setUiLang, type Lang } from '@samugen/i18n'
 import {
   appMenuLabels,
   applyLanguageChange,
@@ -38,10 +38,10 @@ import {
   registerLanguageIpc,
   setLanguageApplier,
   windowMenuTemplate,
-} from '@genoffice/electron-utils'
+} from '@samugen/electron-utils'
 import { readAppSettings, writeAppSetting } from './app-settings'
-import { ProjectStore } from '@genoffice/project-store'
-import {} from '@genoffice/ai-search'
+import { ProjectStore } from '@samugen/project-store'
+import {} from '@samugen/ai-search'
 
 import {
   buildDocsMenu,
@@ -116,7 +116,7 @@ import { initAutoUpdater } from './updater'
 import { registerAiSettingsIpc } from './ai-settings-ipc'
 
 /**
- * GenOffice unified shell: ONE Electron app, ONE BrowserWindow, hosting the
+ * SamuGen unified shell: ONE Electron app, ONE BrowserWindow, hosting the
  * docs and sheets modules as WebContentsView tabs behind a WPS-style tab
  * strip. The shell owns the lifecycle — single-instance lock, file-
  * association routing by extension, and per-active-tab menu switching.
@@ -126,16 +126,16 @@ import { registerAiSettingsIpc } from './ai-settings-ipc'
 
 // ANY unpacked run (`npm run shell`, `npm run dev`, `npx electron .`) must not
 // share the installed app's userData or single-instance lock — otherwise a dev
-// run silently quits and forwards its argv to the running installed GenOffice.
-// GENOFFICE_USER_DATA: test drivers point this at a scratch dir so an
+// run silently quits and forwards its argv to the running installed SamuGen.
+// SAMUGEN_USER_DATA: test drivers point this at a scratch dir so an
 // automated instance can run alongside the dev instance (separate lock).
 if (!app.isPackaged)
   app.setPath(
     'userData',
-    process.env.GENOFFICE_USER_DATA ?? join(app.getPath('appData'), 'GenOffice Dev'),
+    process.env.SAMUGEN_USER_DATA ?? join(app.getPath('appData'), 'SamuGen Dev'),
   )
 
-// The product rename from "AI Office" to GenOffice changed the userData path; migrate old user data once
+// The product rename from "AI Office" to SamuGen changed the userData path; migrate old user data once
 if (app.isPackaged) {
   const oldDir = join(app.getPath('appData'), 'AI Office')
   const newDir = app.getPath('userData')
@@ -188,7 +188,7 @@ configurePdfRuntime({
 
 // ---- UI language ----
 // Persisted in userData/app-settings.json so the editor modules can read the
-// same file when they pick up i18n later. GENOFFICE_LANG overrides for tests.
+// same file when they pick up i18n later. SAMUGEN_LANG overrides for tests.
 
 const APP_SETTINGS_PATH = () => join(app.getPath('userData'), 'app-settings.json')
 
@@ -196,8 +196,8 @@ let uiLang: Lang | null = null
 
 function currentLang(): Lang {
   if (uiLang) return uiLang
-  if (process.env.GENOFFICE_LANG) {
-    uiLang = normalizeLang(process.env.GENOFFICE_LANG)
+  if (process.env.SAMUGEN_LANG) {
+    uiLang = normalizeLang(process.env.SAMUGEN_LANG)
     setUiLang(uiLang)
     return uiLang
   }
@@ -217,7 +217,7 @@ function persistLang(lang: Lang): void {
 // What a language switch means in this process, wherever it was asked for: the
 // home page's menu, an editor's toggle, or a second window's. A standalone
 // editor has no settings file and no menus of the shell's to rebuild, so it
-// keeps @genoffice/electron-utils' plainer default.
+// keeps @samugen/electron-utils' plainer default.
 setLanguageApplier((lang) => {
   persistLang(lang)
   buildHomeMenu()
@@ -261,18 +261,7 @@ const tMain = createI18n({
     copySuffix: '副本',
     menuHelp: '帮助',
     thirdPartyNotices: '第三方软件声明',
-    menuExportDocx: '导出为 Word…',
-    pdfDocxLoginMsg: '导出为 Word 需要登录 Genspark 账号。',
-    pdfDocxLoginDetail: '点击“登录”将打开浏览器完成授权，完成后请重新点击导出。',
-    pdfDocxBtnLogin: '登录',
-    pdfDocxConfirmMsg: '将此 PDF 上传到 Genspark 云端转换为 Word？',
-    pdfDocxConfirmDetail: '本次转换将消耗 5 credits，文件将上传至云端处理。',
-    pdfDocxConfirmBalance: '当前余额 {balance} credits。',
-    pdfDocxBtnConvert: '继续',
     btnCancel: '取消',
-    pdfDocxFailedMsg: '导出为 Word 失败',
-    pdfDocxNoCliMsg: '无法登录 Genspark：缺少必需组件（gsk），请重新安装应用。',
-    pdfDocxBusyMsg: '正在转换中，请等待当前导出完成。',
   },
   en: {
     menuFile: 'File',
@@ -307,21 +296,7 @@ const tMain = createI18n({
     copySuffix: 'copy',
     menuHelp: 'Help',
     thirdPartyNotices: 'Third-Party Notices',
-    menuExportDocx: 'Export as Word…',
-    pdfDocxLoginMsg: 'Exporting as Word requires signing in to Genspark.',
-    pdfDocxLoginDetail:
-      'Clicking “Sign In” opens your browser to authorize; once done, click Export again.',
-    pdfDocxBtnLogin: 'Sign In',
-    pdfDocxConfirmMsg: 'Upload this PDF to Genspark cloud and convert it to Word?',
-    pdfDocxConfirmDetail:
-      'The conversion costs 5 credits. The file will be uploaded for cloud processing.',
-    pdfDocxConfirmBalance: 'Current balance: {balance} credits.',
-    pdfDocxBtnConvert: 'Continue',
     btnCancel: 'Cancel',
-    pdfDocxFailedMsg: 'Export as Word failed',
-    pdfDocxNoCliMsg:
-      'Cannot sign in to Genspark: a required component (gsk) is missing. Please reinstall the app.',
-    pdfDocxBusyMsg: 'A Word export is already in progress. Please wait for it to finish.',
   },
   ja: {
     menuFile: 'ファイル',
@@ -356,21 +331,7 @@ const tMain = createI18n({
     copySuffix: 'コピー',
     menuHelp: 'ヘルプ',
     thirdPartyNotices: 'サードパーティソフトウェアに関する通知',
-    menuExportDocx: 'Word として書き出す…',
-    pdfDocxLoginMsg: 'Word への書き出しには Genspark へのログインが必要です。',
-    pdfDocxLoginDetail:
-      '「ログイン」をクリックするとブラウザで認証します。完了後、もう一度書き出しを実行してください。',
-    pdfDocxBtnLogin: 'ログイン',
-    pdfDocxConfirmMsg: 'この PDF を Genspark クラウドにアップロードして Word に変換しますか？',
-    pdfDocxConfirmDetail:
-      '変換には 5 クレジットを消費します。ファイルはクラウドにアップロードされ処理されます。',
-    pdfDocxConfirmBalance: '現在の残高：{balance} クレジット。',
-    pdfDocxBtnConvert: '続行',
     btnCancel: 'キャンセル',
-    pdfDocxFailedMsg: 'Word への書き出しに失敗しました',
-    pdfDocxNoCliMsg:
-      'Genspark にサインインできません：必要なコンポーネント（gsk）が見つかりません。アプリを再インストールしてください。',
-    pdfDocxBusyMsg: 'Word への書き出しが進行中です。完了までお待ちください。',
   },
   ko: {
     menuFile: '파일',
@@ -405,21 +366,7 @@ const tMain = createI18n({
     copySuffix: '복사본',
     menuHelp: '도움말',
     thirdPartyNotices: '타사 소프트웨어 고지',
-    menuExportDocx: 'Word로 내보내기…',
-    pdfDocxLoginMsg: 'Word로 내보내려면 Genspark 로그인이 필요합니다.',
-    pdfDocxLoginDetail:
-      '“로그인”을 클릭하면 브라우저에서 인증합니다. 완료 후 내보내기를 다시 클릭하세요.',
-    pdfDocxBtnLogin: '로그인',
-    pdfDocxConfirmMsg: '이 PDF를 Genspark 클라우드에 업로드하여 Word로 변환할까요?',
-    pdfDocxConfirmDetail:
-      '변환에는 5 크레딧이 소모됩니다. 파일은 클라우드로 업로드되어 처리됩니다.',
-    pdfDocxConfirmBalance: '현재 잔액: {balance} 크레딧.',
-    pdfDocxBtnConvert: '계속',
     btnCancel: '취소',
-    pdfDocxFailedMsg: 'Word로 내보내기 실패',
-    pdfDocxNoCliMsg:
-      'Genspark에 로그인할 수 없습니다. 필수 구성 요소(gsk)가 없습니다. 앱을 다시 설치해 주세요.',
-    pdfDocxBusyMsg: 'Word 내보내기가 이미 진행 중입니다. 완료될 때까지 기다려 주세요.',
   },
   fr: {
     menuFile: 'Fichier',
@@ -454,21 +401,7 @@ const tMain = createI18n({
     copySuffix: 'copie',
     menuHelp: 'Aide',
     thirdPartyNotices: 'Mentions relatives aux logiciels tiers',
-    menuExportDocx: 'Exporter en Word…',
-    pdfDocxLoginMsg: "L'export en Word nécessite une connexion à Genspark.",
-    pdfDocxLoginDetail:
-      "Cliquez sur « Se connecter » pour autoriser dans le navigateur, puis relancez l'export.",
-    pdfDocxBtnLogin: 'Se connecter',
-    pdfDocxConfirmMsg: 'Téléverser ce PDF vers le cloud Genspark pour le convertir en Word ?',
-    pdfDocxConfirmDetail:
-      'La conversion coûte 5 crédits. Le fichier sera téléversé pour traitement dans le cloud.',
-    pdfDocxConfirmBalance: 'Solde actuel : {balance} crédits.',
-    pdfDocxBtnConvert: 'Continuer',
     btnCancel: 'Annuler',
-    pdfDocxFailedMsg: "Échec de l'export en Word",
-    pdfDocxNoCliMsg:
-      "Connexion à Genspark impossible : un composant requis (gsk) est manquant. Veuillez réinstaller l'application.",
-    pdfDocxBusyMsg: "Un export en Word est déjà en cours. Veuillez attendre qu'il se termine.",
   },
   de: {
     menuFile: 'Datei',
@@ -503,21 +436,7 @@ const tMain = createI18n({
     copySuffix: 'Kopie',
     menuHelp: 'Hilfe',
     thirdPartyNotices: 'Hinweise zu Drittanbietersoftware',
-    menuExportDocx: 'Als Word exportieren…',
-    pdfDocxLoginMsg: 'Für den Word-Export ist eine Anmeldung bei Genspark erforderlich.',
-    pdfDocxLoginDetail:
-      'Klicken Sie auf „Anmelden“, um die Autorisierung im Browser abzuschließen, und starten Sie den Export danach erneut.',
-    pdfDocxBtnLogin: 'Anmelden',
-    pdfDocxConfirmMsg: 'Dieses PDF in die Genspark-Cloud hochladen und in Word konvertieren?',
-    pdfDocxConfirmDetail:
-      'Die Konvertierung kostet 5 Credits. Die Datei wird zur Verarbeitung in die Cloud hochgeladen.',
-    pdfDocxConfirmBalance: 'Aktuelles Guthaben: {balance} Credits.',
-    pdfDocxBtnConvert: 'Fortfahren',
     btnCancel: 'Abbrechen',
-    pdfDocxFailedMsg: 'Word-Export fehlgeschlagen',
-    pdfDocxNoCliMsg:
-      'Anmeldung bei Genspark nicht möglich: Eine erforderliche Komponente (gsk) fehlt. Bitte installieren Sie die App neu.',
-    pdfDocxBusyMsg: 'Ein Word-Export läuft bereits. Bitte warten Sie, bis er abgeschlossen ist.',
   },
   es: {
     menuFile: 'Archivo',
@@ -552,21 +471,7 @@ const tMain = createI18n({
     copySuffix: 'copia',
     menuHelp: 'Ayuda',
     thirdPartyNotices: 'Avisos de software de terceros',
-    menuExportDocx: 'Exportar como Word…',
-    pdfDocxLoginMsg: 'Para exportar como Word es necesario iniciar sesión en Genspark.',
-    pdfDocxLoginDetail:
-      'Al hacer clic en «Iniciar sesión» se abrirá el navegador para autorizar; después, vuelve a hacer clic en Exportar.',
-    pdfDocxBtnLogin: 'Iniciar sesión',
-    pdfDocxConfirmMsg: '¿Subir este PDF a la nube de Genspark para convertirlo a Word?',
-    pdfDocxConfirmDetail:
-      'La conversión cuesta 5 créditos. El archivo se subirá para procesarse en la nube.',
-    pdfDocxConfirmBalance: 'Saldo actual: {balance} créditos.',
-    pdfDocxBtnConvert: 'Continuar',
     btnCancel: 'Cancelar',
-    pdfDocxFailedMsg: 'Error al exportar como Word',
-    pdfDocxNoCliMsg:
-      'No se puede iniciar sesión en Genspark: falta un componente necesario (gsk). Reinstale la aplicación.',
-    pdfDocxBusyMsg: 'Ya hay una exportación a Word en curso. Espera a que termine.',
   },
   th: {
     menuFile: 'ไฟล์',
@@ -601,20 +506,7 @@ const tMain = createI18n({
     copySuffix: 'สำเนา',
     menuHelp: 'วิธีใช้',
     thirdPartyNotices: 'ประกาศเกี่ยวกับซอฟต์แวร์ของบุคคลที่สาม',
-    menuExportDocx: 'ส่งออกเป็น Word…',
-    pdfDocxLoginMsg: 'การส่งออกเป็น Word ต้องเข้าสู่ระบบ Genspark',
-    pdfDocxLoginDetail:
-      'คลิก “เข้าสู่ระบบ” เพื่อเปิดเบราว์เซอร์ยืนยันตัวตน เสร็จแล้วให้คลิกส่งออกอีกครั้ง',
-    pdfDocxBtnLogin: 'เข้าสู่ระบบ',
-    pdfDocxConfirmMsg: 'อัปโหลด PDF นี้ไปยังคลาวด์ Genspark เพื่อแปลงเป็น Word หรือไม่?',
-    pdfDocxConfirmDetail: 'การแปลงใช้ 5 เครดิต ไฟล์จะถูกอัปโหลดเพื่อประมวลผลบนคลาวด์',
-    pdfDocxConfirmBalance: 'ยอดคงเหลือปัจจุบัน: {balance} เครดิต',
-    pdfDocxBtnConvert: 'ดำเนินการต่อ',
     btnCancel: 'ยกเลิก',
-    pdfDocxFailedMsg: 'ส่งออกเป็น Word ไม่สำเร็จ',
-    pdfDocxNoCliMsg:
-      'ไม่สามารถลงชื่อเข้าใช้ Genspark ได้: ไม่พบคอมโพเนนต์ที่จำเป็น (gsk) โปรดติดตั้งแอปใหม่',
-    pdfDocxBusyMsg: 'กำลังส่งออกเป็น Word อยู่ โปรดรอให้เสร็จสิ้นก่อน',
   },
   id: {
     menuFile: 'File',
@@ -649,21 +541,7 @@ const tMain = createI18n({
     copySuffix: 'salinan',
     menuHelp: 'Bantuan',
     thirdPartyNotices: 'Pemberitahuan Perangkat Lunak Pihak Ketiga',
-    menuExportDocx: 'Ekspor sebagai Word…',
-    pdfDocxLoginMsg: 'Ekspor sebagai Word memerlukan login ke Genspark.',
-    pdfDocxLoginDetail:
-      'Klik “Masuk” untuk membuka browser dan memberi otorisasi; setelah selesai, klik Ekspor lagi.',
-    pdfDocxBtnLogin: 'Masuk',
-    pdfDocxConfirmMsg: 'Unggah PDF ini ke cloud Genspark untuk dikonversi ke Word?',
-    pdfDocxConfirmDetail:
-      'Konversi ini menggunakan 5 kredit. File akan diunggah untuk diproses di cloud.',
-    pdfDocxConfirmBalance: 'Saldo saat ini: {balance} kredit.',
-    pdfDocxBtnConvert: 'Lanjutkan',
     btnCancel: 'Batal',
-    pdfDocxFailedMsg: 'Gagal mengekspor sebagai Word',
-    pdfDocxNoCliMsg:
-      'Tidak dapat masuk ke Genspark: komponen yang diperlukan (gsk) tidak ditemukan. Silakan instal ulang aplikasi.',
-    pdfDocxBusyMsg: 'Ekspor ke Word sedang berlangsung. Harap tunggu hingga selesai.',
   },
   ru: {
     menuFile: 'Файл',
@@ -698,21 +576,7 @@ const tMain = createI18n({
     copySuffix: 'копия',
     menuHelp: 'Справка',
     thirdPartyNotices: 'Уведомления о стороннем ПО',
-    menuExportDocx: 'Экспортировать в Word…',
-    pdfDocxLoginMsg: 'Для экспорта в Word требуется вход в Genspark.',
-    pdfDocxLoginDetail:
-      'Нажмите «Войти», чтобы авторизоваться в браузере, затем снова запустите экспорт.',
-    pdfDocxBtnLogin: 'Войти',
-    pdfDocxConfirmMsg: 'Загрузить этот PDF в облако Genspark и конвертировать в Word?',
-    pdfDocxConfirmDetail:
-      'Конвертация стоит 5 кредитов. Файл будет загружен для обработки в облаке.',
-    pdfDocxConfirmBalance: 'Текущий баланс: {balance} кредитов.',
-    pdfDocxBtnConvert: 'Продолжить',
     btnCancel: 'Отмена',
-    pdfDocxFailedMsg: 'Не удалось экспортировать в Word',
-    pdfDocxNoCliMsg:
-      'Не удаётся войти в Genspark: отсутствует необходимый компонент (gsk). Переустановите приложение.',
-    pdfDocxBusyMsg: 'Экспорт в Word уже выполняется. Дождитесь его завершения.',
   },
   ar: {
     menuFile: 'ملف',
@@ -747,20 +611,7 @@ const tMain = createI18n({
     copySuffix: 'نسخة',
     menuHelp: 'تعليمات',
     thirdPartyNotices: 'إشعارات برامج الجهات الخارجية',
-    menuExportDocx: 'تصدير كملف Word…',
-    pdfDocxLoginMsg: 'يتطلب التصدير كملف Word تسجيل الدخول إلى Genspark.',
-    pdfDocxLoginDetail:
-      'انقر على «تسجيل الدخول» لفتح المتصفح وإتمام التفويض، ثم انقر على التصدير مرة أخرى.',
-    pdfDocxBtnLogin: 'تسجيل الدخول',
-    pdfDocxConfirmMsg: 'رفع هذا الـ PDF إلى سحابة Genspark وتحويله إلى Word؟',
-    pdfDocxConfirmDetail: 'يكلف التحويل 5 أرصدة. سيتم رفع الملف للمعالجة في السحابة.',
-    pdfDocxConfirmBalance: 'الرصيد الحالي: {balance} من الأرصدة.',
-    pdfDocxBtnConvert: 'متابعة',
     btnCancel: 'إلغاء',
-    pdfDocxFailedMsg: 'فشل التصدير كملف Word',
-    pdfDocxNoCliMsg:
-      'تعذّر تسجيل الدخول إلى Genspark: المكوّن المطلوب (gsk) مفقود. يُرجى إعادة تثبيت التطبيق.',
-    pdfDocxBusyMsg: 'يجري حاليًا تصدير إلى Word. يُرجى الانتظار حتى يكتمل.',
   },
   pt: {
     menuFile: 'Arquivo',
@@ -795,21 +646,7 @@ const tMain = createI18n({
     copySuffix: 'cópia',
     menuHelp: 'Ajuda',
     thirdPartyNotices: 'Avisos de software de terceiros',
-    menuExportDocx: 'Exportar como Word…',
-    pdfDocxLoginMsg: 'Exportar como Word requer login no Genspark.',
-    pdfDocxLoginDetail:
-      'Clique em “Entrar” para autorizar no navegador; depois, clique em Exportar novamente.',
-    pdfDocxBtnLogin: 'Entrar',
-    pdfDocxConfirmMsg: 'Enviar este PDF para a nuvem do Genspark e convertê-lo em Word?',
-    pdfDocxConfirmDetail:
-      'A conversão custa 5 créditos. O arquivo será enviado para processamento na nuvem.',
-    pdfDocxConfirmBalance: 'Saldo atual: {balance} créditos.',
-    pdfDocxBtnConvert: 'Continuar',
     btnCancel: 'Cancelar',
-    pdfDocxFailedMsg: 'Falha ao exportar como Word',
-    pdfDocxNoCliMsg:
-      'Não é possível iniciar sessão no Genspark: falta um componente necessário (gsk). Reinstale o aplicativo.',
-    pdfDocxBusyMsg: 'Já há uma exportação para Word em andamento. Aguarde a conclusão.',
   },
   it: {
     menuFile: 'File',
@@ -844,21 +681,7 @@ const tMain = createI18n({
     copySuffix: 'copia',
     menuHelp: 'Aiuto',
     thirdPartyNotices: 'Note sul software di terze parti',
-    menuExportDocx: 'Esporta come Word…',
-    pdfDocxLoginMsg: 'Per esportare come Word è necessario accedere a Genspark.',
-    pdfDocxLoginDetail:
-      'Fai clic su “Accedi” per autorizzare nel browser; al termine, fai di nuovo clic su Esporta.',
-    pdfDocxBtnLogin: 'Accedi',
-    pdfDocxConfirmMsg: 'Caricare questo PDF sul cloud Genspark e convertirlo in Word?',
-    pdfDocxConfirmDetail:
-      "La conversione costa 5 crediti. Il file verrà caricato per l'elaborazione nel cloud.",
-    pdfDocxConfirmBalance: 'Saldo attuale: {balance} crediti.',
-    pdfDocxBtnConvert: 'Continua',
     btnCancel: 'Annulla',
-    pdfDocxFailedMsg: 'Esportazione in Word non riuscita',
-    pdfDocxNoCliMsg:
-      "Impossibile accedere a Genspark: manca un componente necessario (gsk). Reinstallare l'app.",
-    pdfDocxBusyMsg: "Un'esportazione in Word è già in corso. Attendi il completamento.",
   },
   pl: {
     menuFile: 'Plik',
@@ -893,21 +716,7 @@ const tMain = createI18n({
     copySuffix: 'kopia',
     menuHelp: 'Pomoc',
     thirdPartyNotices: 'Informacje o oprogramowaniu innych firm',
-    menuExportDocx: 'Eksportuj jako Word…',
-    pdfDocxLoginMsg: 'Eksport do formatu Word wymaga zalogowania do Genspark.',
-    pdfDocxLoginDetail:
-      'Kliknij „Zaloguj się”, aby autoryzować w przeglądarce; po zakończeniu kliknij Eksportuj ponownie.',
-    pdfDocxBtnLogin: 'Zaloguj się',
-    pdfDocxConfirmMsg: 'Przesłać ten PDF do chmury Genspark i przekonwertować na Word?',
-    pdfDocxConfirmDetail:
-      'Konwersja kosztuje 5 kredytów. Plik zostanie przesłany do przetworzenia w chmurze.',
-    pdfDocxConfirmBalance: 'Aktualne saldo: {balance} kredytów.',
-    pdfDocxBtnConvert: 'Kontynuuj',
     btnCancel: 'Anuluj',
-    pdfDocxFailedMsg: 'Eksport do formatu Word nie powiódł się',
-    pdfDocxNoCliMsg:
-      'Nie można zalogować się do Genspark: brakuje wymaganego komponentu (gsk). Zainstaluj aplikację ponownie.',
-    pdfDocxBusyMsg: 'Eksport do formatu Word już trwa. Poczekaj na jego zakończenie.',
   },
   nl: {
     menuFile: 'Bestand',
@@ -942,21 +751,7 @@ const tMain = createI18n({
     copySuffix: 'kopie',
     menuHelp: 'Help',
     thirdPartyNotices: 'Kennisgevingen over software van derden',
-    menuExportDocx: 'Exporteren als Word…',
-    pdfDocxLoginMsg: 'Exporteren als Word vereist inloggen bij Genspark.',
-    pdfDocxLoginDetail:
-      'Klik op “Inloggen” om in de browser te autoriseren; klik daarna opnieuw op Exporteren.',
-    pdfDocxBtnLogin: 'Inloggen',
-    pdfDocxConfirmMsg: 'Deze PDF uploaden naar de Genspark-cloud en converteren naar Word?',
-    pdfDocxConfirmDetail:
-      'De conversie kost 5 credits. Het bestand wordt geüpload voor verwerking in de cloud.',
-    pdfDocxConfirmBalance: 'Huidig saldo: {balance} credits.',
-    pdfDocxBtnConvert: 'Doorgaan',
     btnCancel: 'Annuleren',
-    pdfDocxFailedMsg: 'Exporteren als Word mislukt',
-    pdfDocxNoCliMsg:
-      'Kan niet inloggen bij Genspark: een vereist onderdeel (gsk) ontbreekt. Installeer de app opnieuw.',
-    pdfDocxBusyMsg: 'Er is al een Word-export bezig. Wacht tot deze is voltooid.',
   },
   ms: {
     menuFile: 'Fail',
@@ -991,21 +786,7 @@ const tMain = createI18n({
     copySuffix: 'salinan',
     menuHelp: 'Bantuan',
     thirdPartyNotices: 'Notis Perisian Pihak Ketiga',
-    menuExportDocx: 'Eksport sebagai Word…',
-    pdfDocxLoginMsg: 'Eksport sebagai Word memerlukan log masuk ke Genspark.',
-    pdfDocxLoginDetail:
-      'Klik “Log Masuk” untuk membuka pelayar dan memberi kebenaran; selepas selesai, klik Eksport sekali lagi.',
-    pdfDocxBtnLogin: 'Log Masuk',
-    pdfDocxConfirmMsg: 'Muat naik PDF ini ke awan Genspark untuk ditukar kepada Word?',
-    pdfDocxConfirmDetail:
-      'Penukaran ini menggunakan 5 kredit. Fail akan dimuat naik untuk diproses di awan.',
-    pdfDocxConfirmBalance: 'Baki semasa: {balance} kredit.',
-    pdfDocxBtnConvert: 'Teruskan',
     btnCancel: 'Batal',
-    pdfDocxFailedMsg: 'Gagal mengeksport sebagai Word',
-    pdfDocxNoCliMsg:
-      'Tidak dapat log masuk ke Genspark: komponen yang diperlukan (gsk) tiada. Sila pasang semula aplikasi.',
-    pdfDocxBusyMsg: 'Eksport ke Word sedang dijalankan. Sila tunggu sehingga selesai.',
   },
   he: {
     menuFile: 'קובץ',
@@ -1040,18 +821,7 @@ const tMain = createI18n({
     copySuffix: 'עותק',
     menuHelp: 'עזרה',
     thirdPartyNotices: 'הודעות על תוכנות צד שלישי',
-    menuExportDocx: 'ייצוא כ-Word…',
-    pdfDocxLoginMsg: 'ייצוא כ-Word דורש התחברות ל-Genspark.',
-    pdfDocxLoginDetail: 'לחיצה על ”התחברות” תפתח את הדפדפן לאישור; בסיום, לחצו שוב על ייצוא.',
-    pdfDocxBtnLogin: 'התחברות',
-    pdfDocxConfirmMsg: 'להעלות את ה-PDF לענן של Genspark ולהמיר אותו ל-Word?',
-    pdfDocxConfirmDetail: 'ההמרה עולה 5 קרדיטים. הקובץ יועלה לעיבוד בענן.',
-    pdfDocxConfirmBalance: 'יתרה נוכחית: {balance} קרדיטים.',
-    pdfDocxBtnConvert: 'המשך',
     btnCancel: 'ביטול',
-    pdfDocxFailedMsg: 'הייצוא כ-Word נכשל',
-    pdfDocxNoCliMsg: 'לא ניתן להתחבר ל-Genspark: רכיב נדרש (gsk) חסר. נא להתקין מחדש את האפליקציה.',
-    pdfDocxBusyMsg: 'ייצוא ל-Word כבר מתבצע. נא להמתין לסיומו.',
   },
   hi: {
     menuFile: 'फ़ाइल',
@@ -1086,21 +856,7 @@ const tMain = createI18n({
     copySuffix: 'प्रतिलिपि',
     menuHelp: 'सहायता',
     thirdPartyNotices: 'तृतीय-पक्ष सॉफ़्टवेयर सूचनाएँ',
-    menuExportDocx: 'Word के रूप में निर्यात करें…',
-    pdfDocxLoginMsg: 'Word के रूप में निर्यात करने के लिए Genspark में लॉगिन आवश्यक है।',
-    pdfDocxLoginDetail:
-      '“लॉगिन” पर क्लिक करने से ब्राउज़र में प्राधिकरण खुलेगा; पूरा होने पर फिर से निर्यात पर क्लिक करें।',
-    pdfDocxBtnLogin: 'लॉगिन',
-    pdfDocxConfirmMsg: 'इस PDF को Genspark क्लाउड पर अपलोड करके Word में बदलें?',
-    pdfDocxConfirmDetail:
-      'रूपांतरण में 5 क्रेडिट लगते हैं। फ़ाइल क्लाउड में प्रोसेसिंग के लिए अपलोड की जाएगी।',
-    pdfDocxConfirmBalance: 'वर्तमान शेष: {balance} क्रेडिट।',
-    pdfDocxBtnConvert: 'जारी रखें',
     btnCancel: 'रद्द करें',
-    pdfDocxFailedMsg: 'Word के रूप में निर्यात विफल रहा',
-    pdfDocxNoCliMsg:
-      'Genspark में साइन इन नहीं किया जा सकता: आवश्यक घटक (gsk) मौजूद नहीं है। कृपया ऐप को फिर से इंस्टॉल करें।',
-    pdfDocxBusyMsg: 'Word के रूप में निर्यात पहले से चल रहा है। कृपया पूरा होने तक प्रतीक्षा करें।',
   },
   'zh-TW': {
     menuFile: '檔案',
@@ -1135,18 +891,7 @@ const tMain = createI18n({
     copySuffix: '副本',
     menuHelp: '說明',
     thirdPartyNotices: '第三方軟體聲明',
-    menuExportDocx: '匯出為 Word…',
-    pdfDocxLoginMsg: '匯出為 Word 需要登入 Genspark 帳號。',
-    pdfDocxLoginDetail: '點擊「登入」將開啟瀏覽器完成授權，完成後請重新點擊匯出。',
-    pdfDocxBtnLogin: '登入',
-    pdfDocxConfirmMsg: '將此 PDF 上傳到 Genspark 雲端轉換為 Word？',
-    pdfDocxConfirmDetail: '本次轉換將消耗 5 credits，檔案將上傳至雲端處理。',
-    pdfDocxConfirmBalance: '目前餘額 {balance} credits。',
-    pdfDocxBtnConvert: '繼續',
     btnCancel: '取消',
-    pdfDocxFailedMsg: '匯出為 Word 失敗',
-    pdfDocxNoCliMsg: '無法登入 Genspark：缺少必要元件（gsk），請重新安裝應用程式。',
-    pdfDocxBusyMsg: '正在轉換中，請等待目前的匯出完成。',
   },
 })
 
@@ -1215,7 +960,7 @@ function createShellWindow(): void {
     height: 900,
     minWidth: 980,
     minHeight: 600,
-    title: 'GenOffice',
+    title: 'SamuGen',
     // vibrancy: editor modules punch translucent regions (e.g. the slides
     // thumbnail pane) through to the desktop
     ...(process.platform === 'darwin'

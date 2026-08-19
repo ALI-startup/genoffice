@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { AgentMessage } from '@genoffice/agent-core'
+import type { AgentMessage } from '@samugen/agent-core'
 import { chatForProvider } from '../src/chat'
 import { generateImageForProvider } from '../src/image-generation'
 import { discoverModels } from '../src/model-discovery'

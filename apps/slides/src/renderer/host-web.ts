@@ -16,7 +16,7 @@
  * the page's CSP is `connect-src 'self'`, so a cross-origin AI request would be blocked by
  * the browser, and same-origin is also what keeps every credential out of this page.
  */
-import { CanvasMetrics, HeuristicMetrics, type FontMetricsProvider } from '@genoffice/pptx-render'
+import { CanvasMetrics, HeuristicMetrics, type FontMetricsProvider } from '@samugen/pptx-render'
 import {
   browserDownloadEnv,
   browserFilePickers,
@@ -32,7 +32,7 @@ import {
   DOCUMENT_DB_NAME,
   PRESENTATION_FILE_TYPES,
   WebDocumentStore,
-} from '@genoffice/platform-web'
+} from '@samugen/platform-web'
 import { setSlideRenderEnv } from '../domain/session'
 import type { OpsLabelKey, OpsTranslate } from '../domain/ops'
 import { tOps } from '../shared/ops-i18n'
@@ -158,7 +158,7 @@ export const createSlidesPlatform: CreateSlidesPlatform = async () => {
     handles: createIndexedDbHandleStore(indexedDB, `${DOCUMENT_DB_NAME}-slides`),
     pickers,
     fileTypes: PRESENTATION_FILE_TYPES,
-    pickerId: 'genoffice-pptx',
+    pickerId: 'samugen-pptx',
   })
   /**
    * The operations' labels, in the UI language. `getLang()` is read per call rather than

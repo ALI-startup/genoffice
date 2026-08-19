@@ -45,13 +45,13 @@ check_route_prefix() {
   [ -n "$declared" ] || die "could not read AI_BFF_BASE_PATH from $WIRE"
 
   # Every occurrence in the compose file, deduplicated.
-  configured="$(sed -n 's/.*GENOFFICE_AI_BFF_PATH:[[:space:]]*\(.*\)/\1/p' "$COMPOSE_FILE" \
+  configured="$(sed -n 's/.*SAMUGEN_AI_BFF_PATH:[[:space:]]*\(.*\)/\1/p' "$COMPOSE_FILE" \
     | tr -d '"'"'"' \r' | sort -u)"
-  [ -n "$configured" ] || die "no GENOFFICE_AI_BFF_PATH set in $COMPOSE_FILE"
+  [ -n "$configured" ] || die "no SAMUGEN_AI_BFF_PATH set in $COMPOSE_FILE"
 
   if [ "$configured" != "$declared" ]; then
     die "route prefix drift: ai-wire.ts declares '$declared', docker-compose.yml sets '$configured'.
-      Every AI call would 404. Update GENOFFICE_AI_BFF_PATH in docker-compose.yml."
+      Every AI call would 404. Update SAMUGEN_AI_BFF_PATH in docker-compose.yml."
   fi
   info "route prefix ok: $declared"
 }
@@ -79,8 +79,8 @@ check_env() {
       report no configured provider. Run: cp docker/env.example .env"
     return 0
   fi
-  if ! grep -qE '^GENOFFICE_AI_KEY_[A-Z_]+=.+' "$ROOT/.env"; then
-    warn ".env holds no non-empty GENOFFICE_AI_KEY_* value; AI will be unconfigured."
+  if ! grep -qE '^SAMUGEN_AI_KEY_[A-Z_]+=.+' "$ROOT/.env"; then
+    warn ".env holds no non-empty SAMUGEN_AI_KEY_* value; AI will be unconfigured."
     return 0
   fi
   info ".env ok: a provider credential is set"
@@ -104,17 +104,17 @@ cmd_up() {
   printf '\n'
   # Defaults here must match docker-compose.yml's, or the lines below send people
   # to a port nothing is listening on.
-  info "shell  (entry point)  http://localhost:${GENOFFICE_SHELL_PORT:-8080}"
-  info "docs   (standalone)   http://localhost:${GENOFFICE_DOCS_PORT:-9081}"
-  info "pdf    (standalone)   http://localhost:${GENOFFICE_PDF_PORT:-9082}"
-  info "slides (standalone)   http://localhost:${GENOFFICE_SLIDES_PORT:-9083}"
-  info "sheets (standalone)   http://localhost:${GENOFFICE_SHEETS_PORT:-9084}"
+  info "shell  (entry point)  http://localhost:${SAMUGEN_SHELL_PORT:-8080}"
+  info "docs   (standalone)   http://localhost:${SAMUGEN_DOCS_PORT:-9081}"
+  info "pdf    (standalone)   http://localhost:${SAMUGEN_PDF_PORT:-9082}"
+  info "slides (standalone)   http://localhost:${SAMUGEN_SLIDES_PORT:-9083}"
+  info "sheets (standalone)   http://localhost:${SAMUGEN_SHEETS_PORT:-9084}"
   info "ai-bff                internal only, on the compose network"
 }
 
 usage() {
   cat <<'EOF'
-GenOffice web stack.
+SamuGen web stack.
 
   docker/docker.sh up [service...]      build and start (detached)
   docker/docker.sh down [--volumes]     stop and remove
@@ -159,7 +159,7 @@ main() {
       ;;
     clean)
       compose down --remove-orphans "$@"
-      docker image rm -f genoffice/web:local genoffice/ai-bff:local 2>/dev/null || true
+      docker image rm -f samugen/web:local samugen/ai-bff:local 2>/dev/null || true
       info "removed the stack and its images"
       ;;
     ''|-h|--help|help) usage ;;

@@ -9,13 +9,13 @@
  *     live switching).
  *   - `ai` — the shared AiPort only. The AI panel reads settings and streams;
  *     it never writes settings, never makes a one-shot aiChat call and has no
- *     Genspark surface, and those ports have no ipcMain handler behind them
- *     when pdf runs standalone anyway (see @genoffice/platform's ports/ai.ts).
+ *     SamuGen surface, and those ports have no ipcMain handler behind them
+ *     when pdf runs standalone anyway (see @samugen/platform's ports/ai.ts).
  *   - `window` — the dirty/close-guard slice of WindowPort plus pdf's Save As
  *     handshake. pdf claims no tab channels: its preload forwards none, and in
  *     standalone mode there is no shell tab strip to drive.
  *   - `file` — pdf's own document surface, which is app-specific by design and
- *     so is declared here rather than in @genoffice/platform. Requests are
+ *     so is declared here rather than in @samugen/platform. Requests are
  *     declared here too, keyed by an opaque DocumentRef; the result types still
  *     come from shared/ipc, since the renderer only reads `ok`/`error` from
  *     them and the paths they carry are the host's own bookkeeping.
@@ -23,8 +23,8 @@
  * Ports not composed in, and why: `search`, `attachments` and `project` have no
  * call site in this renderer.
  */
-import { createPlatformSlot, type Platform, type WindowPort } from '@genoffice/platform'
-import type { PdfEditRequest } from '@genoffice/pdf-edit'
+import { createPlatformSlot, type Platform, type WindowPort } from '@samugen/platform'
+import type { PdfEditRequest } from '@samugen/pdf-edit'
 import type {
   ExportImagesRequest,
   ExportImagesResult,

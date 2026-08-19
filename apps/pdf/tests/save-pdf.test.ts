@@ -1,5 +1,5 @@
 /**
- * The editing logic itself is covered in @genoffice/pdf-edit; what is tested
+ * The editing logic itself is covered in @samugen/pdf-edit; what is tested
  * here is this app's node:fs byte I/O — the atomic write-then-rename and the
  * "the source is only ever read" guarantee.
  */

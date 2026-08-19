@@ -9,7 +9,7 @@
  * Nothing here mocks `electron`, because nothing on this path touches it.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createBlankPptx, openPptx, type OpenedPptx } from '@genoffice/pptx-engine'
+import { createBlankPptx, openPptx, type OpenedPptx } from '@samugen/pptx-engine'
 import { setSlideRenderEnv } from '../src/domain/session'
 import {
   createWebSlidesDeckClipboardPort,

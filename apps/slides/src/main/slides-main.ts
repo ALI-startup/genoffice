@@ -1,5 +1,5 @@
 /**
- * GenOffice Slides main process — pptx parsing/render-tree building/edit application/saving all live
+ * SamuGen Slides main process — pptx parsing/render-tree building/edit application/saving all live
  * here (Node side). The renderer only gets plain-data RenderSlide; edit intents are sent back
  * here to apply. Structure mirrors apps/docs: exports embeddable configure/register/start for
  * future shell reuse.
@@ -32,9 +32,9 @@ import {
   installNavigationGuard,
   registerLanguageIpc,
   safeExternalUrl,
-} from '@genoffice/electron-utils'
-import { getUiLang, normalizeLang, setUiLang } from '@genoffice/i18n'
-import { ProjectStore } from '@genoffice/project-store'
+} from '@samugen/electron-utils'
+import { getUiLang, normalizeLang, setUiLang } from '@samugen/i18n'
+import { ProjectStore } from '@samugen/project-store'
 import {
   addMedia,
   createBlankPptx,
@@ -43,9 +43,9 @@ import {
   commitSaved,
   type SectionInfo,
   type ElementClipboardItem,
-} from '@genoffice/pptx-engine'
+} from '@samugen/pptx-engine'
 // Node-only streaming save; see the subpath's module header.
-import { savePptxToFile } from '@genoffice/pptx-engine/node'
+import { savePptxToFile } from '@samugen/pptx-engine/node'
 import { refineComplexWidths, shapedMetricsReady } from './shaped-metrics'
 import { slideOps as ops } from '../domain/ops'
 import { buildPrintHtml } from '../domain/print-html'
@@ -359,7 +359,7 @@ const AUTOSAVE_BACKOFF_TICKS = 10
 let autosaveRunning = false
 
 /**
- * Recovery drafts for never-saved decks (wcId → visible path in <Documents>/GenOffice):
+ * Recovery drafts for never-saved decks (wcId → visible path in <Documents>/SamuGen):
  * the sha1-keyed recovery copy needs session.path, so before the first save a freeze or
  * crash used to lose everything. Removed on save, explicit discard, or clean close.
  */
@@ -586,9 +586,9 @@ async function openAndBuild(
   }
 }
 
-/** Directory where AI-generated drafts are saved: <Documents>/GenOffice/ */
+/** Directory where AI-generated drafts are saved: <Documents>/SamuGen/ */
 function getDraftsDir(): string {
-  return join(app.getPath('documents'), 'GenOffice')
+  return join(app.getPath('documents'), 'SamuGen')
 }
 
 /** Fallback draft filename: <untitled label>-YYYYMMDD-HHmmss.pptx */
@@ -640,7 +640,7 @@ export function registerSlidesIpc(): void {
   installSlidesRenderEnv()
 
   // registered by every editor module and by the shell; identical handlers, so
-  // whichever runs last is the one that stays (see @genoffice/electron-utils)
+  // whichever runs last is the one that stays (see @samugen/electron-utils)
   registerLanguageIpc(ipcMain, () => webContents.getAllWebContents())
 
   // Screen recording: source dispatch for the renderer's navigator.mediaDevices.getDisplayMedia.
@@ -902,7 +902,7 @@ export function registerSlidesIpc(): void {
     // whether this app or another application copied most recently.
     markCopied: (kind) =>
       clipboard.writeBuffer(
-        `io.genoffice.slides.${kind === 'slide' ? 'slide' : 'elements'}`,
+        `io.samugen.slides.${kind === 'slide' ? 'slide' : 'elements'}`,
         Buffer.from('1'),
       ),
   })
@@ -1073,8 +1073,8 @@ export function registerSlidesIpc(): void {
         return false
       }
     }
-    if (slideClipboard && marker('io.genoffice.slides.slide')) return { kind: 'slide' }
-    if (marker('io.genoffice.slides.elements')) return { kind: 'internal' }
+    if (slideClipboard && marker('io.samugen.slides.slide')) return { kind: 'slide' }
+    if (marker('io.samugen.slides.elements')) return { kind: 'internal' }
     const img = clipboard.readImage()
     if (!img.isEmpty()) return { kind: 'image', base64: img.toPNG().toString('base64'), ext: 'png' }
     const text = clipboard.readText()
@@ -1667,7 +1667,7 @@ export function createSlidesWindow(openPath?: string | null): BrowserWindow {
   const win = new BrowserWindow({
     width: 1280,
     height: 840,
-    title: 'GenOffice Slides',
+    title: 'SamuGen Slides',
     ...(process.platform === 'darwin'
       ? { titleBarStyle: 'hiddenInset' as const }
       : {
@@ -1889,11 +1889,11 @@ export function startSlidesStandalone(): void {
     app.commandLine.appendSwitch('remote-debugging-port', process.env.SLIDES_CDP_PORT)
     app.commandLine.appendSwitch('remote-allow-origins', '*')
   }
-  // GENOFFICE_USER_DATA: test drivers point this at a scratch dir so automated
+  // SAMUGEN_USER_DATA: test drivers point this at a scratch dir so automated
   // instances get their own userData AND single-instance lock (the lock is scoped
   // to userData), allowing parallel instances alongside a normal dev run.
-  if (!app.isPackaged && process.env.GENOFFICE_USER_DATA) {
-    app.setPath('userData', process.env.GENOFFICE_USER_DATA)
+  if (!app.isPackaged && process.env.SAMUGEN_USER_DATA) {
+    app.setPath('userData', process.env.SAMUGEN_USER_DATA)
   }
   // The main process's Node fetch (undici) does not use the system proxy by default, so access
   // from mainland China to overseas LLM APIs like api.anthropic.com hits ETIMEDOUT on direct
@@ -1925,7 +1925,7 @@ export function startSlidesStandalone(): void {
   if (argPath && existsSync(argPath)) pendingOpenPath = argPath
 
   app.whenReady().then(async () => {
-    setUiLang(normalizeLang(process.env.GENOFFICE_LANG ?? app.getLocale()))
+    setUiLang(normalizeLang(process.env.SAMUGEN_LANG ?? app.getLocale()))
     registerSlidesIpc()
     registerAiIpc()
     registerProjectIpc()

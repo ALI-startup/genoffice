@@ -12,7 +12,7 @@
  * always the same string.
  */
 import { describe, expect, it, vi } from 'vitest'
-import type { SectionSettings } from '@genoffice/docx-engine'
+import type { SectionSettings } from '@samugen/docx-engine'
 import { boundingPaper, paperSizesOf, printPageCss, printPageName } from '../src/renderer/print'
 import { createWebDocsPrintPort } from '../src/renderer/platform-web'
 

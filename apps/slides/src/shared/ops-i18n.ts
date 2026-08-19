@@ -14,7 +14,7 @@
  * import anything under `src/main/`. Keeping one dictionary is what stops the two hosts
  * from labelling the same shape differently.
  */
-import { createI18n, type Lang } from '@genoffice/i18n'
+import { createI18n, type Lang } from '@samugen/i18n'
 
 const tOpsIn = createI18n({
   zh: {

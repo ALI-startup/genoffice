@@ -7,14 +7,14 @@
  * declaration, so the two sides cannot drift.
  *
  * The defining property of `PublicAiSettings` is what it does *not* carry.
- * @genoffice/ai-electron's `toPublicAiSettings` strips the key down to a
+ * @samugen/ai-electron's `toPublicAiSettings` strips the key down to a
  * `••••1234` hint; this contract goes one step further and drops the hint too,
  * keeping only `credentialConfigured`. There is no settings UI in the browser
  * build to render a hint, and with the last four characters gone the guarantee
  * becomes absolute and testable: no fragment of any credential appears in any
  * response body.
  */
-import type { AiProviderId, AiStreamRequest } from '@genoffice/ai-provider'
+import type { AiProviderId, AiStreamRequest } from '@samugen/ai-provider'
 
 /** Route prefix the browser calls, and the path the dev server proxies to the BFF. */
 export const AI_BFF_BASE_PATH = '/v1/ai'

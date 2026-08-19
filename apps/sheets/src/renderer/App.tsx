@@ -106,8 +106,8 @@ import {
   sheetsWorkbook,
 } from './platform'
 
-import { AgentLoop, composeSkills, type AgentImage } from '@genoffice/agent-core'
-import type { AiSettings } from '@genoffice/ai-provider'
+import { AgentLoop, composeSkills, type AgentImage } from '@samugen/agent-core'
+import type { AiSettings } from '@samugen/ai-provider'
 import { type WorkbookOperation } from '../domain/workbook-dsl'
 import { columnIndex, columnLabel, parseAddress, parseRange } from '../domain/cell-address'
 import {
@@ -131,7 +131,7 @@ import {
   type AttachmentAddResult,
   type AttachmentMeta,
   type AttachmentRef,
-} from '@genoffice/platform'
+} from '@samugen/platform'
 import type { MenuAction, WorkbookFile, WorkbookVisualObject } from '../shared/desktop-api'
 import type { PageSetupJournalState } from './edit-journal'
 import {

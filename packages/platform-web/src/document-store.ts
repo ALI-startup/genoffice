@@ -21,7 +21,7 @@
  * a handle restored from IndexedDB carries *no* permission, so the first use
  * after a reload must query and, if needed, re-request it. See `handleFor`.
  */
-import type { PdfBytesIo } from '@genoffice/pdf-edit'
+import type { PdfBytesIo } from '@samugen/pdf-edit'
 import {
   ensurePermission,
   FilePermissionDeniedError,
@@ -75,7 +75,7 @@ export interface WebDocumentStoreOptions {
   fileTypes?: FilePickerAcceptType[]
   /**
    * Groups this store's dialogs so the browser reopens them in the last
-   * directory used *for this format*. Defaults to `genoffice-pdf`.
+   * directory used *for this format*. Defaults to `samugen-pdf`.
    */
   pickerId?: string
   /** Injected for tests; production uses `crypto.randomUUID`. */
@@ -113,7 +113,7 @@ export class WebDocumentStore {
     this.handles = options.handles
     this.pickers = options.pickers
     this.fileTypes = options.fileTypes ?? PDF_FILE_TYPES
-    this.pickerId = options.pickerId ?? 'genoffice-pdf'
+    this.pickerId = options.pickerId ?? 'samugen-pdf'
     this.newRef = options.newRef ?? (() => crypto.randomUUID())
     this.now = options.now ?? (() => Date.now())
   }
@@ -164,7 +164,7 @@ export class WebDocumentStore {
    * The document's current last-modified time and size — a browser's `fs.stat`.
    *
    * Together with a hash of the bytes the host last read or wrote, this is
-   * @genoffice/platform's `DiskFileState`, so a browser host can run the very same
+   * @samugen/platform's `DiskFileState`, so a browser host can run the very same
    * `isExternallyModified` check the Electron main process runs before it
    * overwrites a file. `getFile()` is a metadata snapshot and does not read the
    * contents, which is what keeps the no-conflict save path from rereading the
@@ -198,7 +198,7 @@ export class WebDocumentStore {
    *
    * `createWritable()` truncates by default, so the file is replaced rather
    * than patched; the bytes handed in are always a complete document (see
-   * `savePdf` in @genoffice/pdf-edit, which only writes after the whole edit
+   * `savePdf` in @samugen/pdf-edit, which only writes after the whole edit
    * applied cleanly).
    */
   async write(ref: string, bytes: Uint8Array, options: WriteOptions = {}): Promise<void> {
@@ -230,7 +230,7 @@ export class WebDocumentStore {
   /**
    * The `PdfBytesIo` for a document — the seam that makes save-in-place work.
    *
-   * @genoffice/pdf-edit's `savePdf` reads through this, applies the edits with
+   * @samugen/pdf-edit's `savePdf` reads through this, applies the edits with
    * pdf-lib and writes back, so the browser runs byte-for-byte the same editing
    * code as the Electron main process.
    */
@@ -315,7 +315,7 @@ export class WebDocumentStore {
   /** Pick an output folder (image export). `null` on cancel. */
   async pickDirectory(): Promise<WebDirectory | null> {
     const handle = await this.withDialog(() =>
-      this.pickers.directory({ mode: 'readwrite', id: 'genoffice-export' }),
+      this.pickers.directory({ mode: 'readwrite', id: 'samugen-export' }),
     ).catch(cancelToNull)
     if (!handle) return null
     await ensurePermission(handle, 'readwrite')

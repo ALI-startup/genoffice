@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { IpcRendererEvent } from 'electron'
-import type { Lang } from '@genoffice/i18n'
-import type { ProjectApi } from '@genoffice/project-store'
+import type { Lang } from '@samugen/i18n'
+import type { ProjectApi } from '@samugen/project-store'
 import type {
   AddChartOp,
   AddElementOp,

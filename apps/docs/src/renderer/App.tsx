@@ -20,7 +20,7 @@ import {
   type StyleUpsert,
   type ThemeColors,
   type ThemeFonts,
-} from '@genoffice/docx-engine'
+} from '@samugen/docx-engine'
 import type { AiSettings } from '../shared/ipc'
 import { AI_PROVIDERS } from '../shared/ipc'
 import { docsPlatform, type OpenOutcome, type RecentDocument } from './platform'
@@ -642,7 +642,7 @@ export function App() {
 
   // window title follows the document, so the OS window list and Switch Window show file names
   useEffect(() => {
-    document.title = doc ? doc.fileName : 'GenOffice Docs'
+    document.title = doc ? doc.fileName : 'SamuGen Docs'
   }, [doc])
 
   useEffect(() => docsPlatform().window.onTeardown(() => setTornDown(true)), [])

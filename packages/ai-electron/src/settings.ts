@@ -134,7 +134,7 @@ function normalizePersisted(
           // Checked against the *build's* providers, not the merged map: a
           // settings file keeps entries for providers it once had (that is
           // deliberate — see the legacy-credential migration), so the merged map
-          // would still answer for one this build dropped. Genspark is the first
+          // would still answer for one this build dropped. SamuGen is the first
           // such removal; honouring the stale selection would send every AI call
           // to a provider `streamForProvider` rejects as unknown. The default
           // takes the slot instead and the user picks again in Settings.

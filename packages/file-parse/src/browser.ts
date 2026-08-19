@@ -13,7 +13,7 @@
  *     graph.
  *
  * The docx / pptx / xlsx extractors have neither problem: they take bytes and use
- * jszip + fast-xml-parser (+ @genoffice/docx-engine, which already runs in the
+ * jszip + fast-xml-parser (+ @samugen/docx-engine, which already runs in the
  * docs renderer), all of which run unmodified in a browser. This entry point
  * exposes exactly those, so a web host reuses the same extraction the Electron
  * main process performs instead of growing a second implementation of it.

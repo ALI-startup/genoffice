@@ -4,7 +4,7 @@
  * Everything about an open deck that is not "which window is it in" lives here:
  * the deck itself, the snapshot undo/redo stacks, the AI rollback points, and the
  * RenderSlide rebuilds the renderer draws. All of it is plain TypeScript over
- * @genoffice/pptx-engine and @genoffice/pptx-render, both of which run in a browser
+ * @samugen/pptx-engine and @samugen/pptx-render, both of which run in a browser
  * (see pptx-engine's tests/browser-safety.test.ts), so this module does too.
  *
  * It was extracted from src/main/session-state.ts, which keeps the parts that are
@@ -18,13 +18,9 @@
  * the engine runs in the page those are local calls, so the session has to be
  * reachable from the page before any of them can be. See docs/web-migration.md §5.4.
  */
-import { materializeSlide, type OpenedPptx, type Slide } from '@genoffice/pptx-engine'
-import { bytesToBase64 } from '@genoffice/pptx-engine'
-import {
-  buildRenderSlide,
-  type FontMetricsProvider,
-  type RenderSlide,
-} from '@genoffice/pptx-render'
+import { materializeSlide, type OpenedPptx, type Slide } from '@samugen/pptx-engine'
+import { bytesToBase64 } from '@samugen/pptx-engine'
+import { buildRenderSlide, type FontMetricsProvider, type RenderSlide } from '@samugen/pptx-render'
 
 /** One open deck. Keyed per renderer by the host; nothing here knows how. */
 export interface Session {
@@ -218,7 +214,7 @@ let renderEnv: SlideRenderEnv | null = null
  * A slot rather than a parameter on every rebuild function, because the
  * alternative is threading `metrics` through some forty call sites in
  * slides-main.ts that have nothing to say about fonts. The same reasoning, and the
- * same fail-loudly-if-unset rule, as @genoffice/platform's `createPlatformSlot`.
+ * same fail-loudly-if-unset rule, as @samugen/platform's `createPlatformSlot`.
  */
 export function setSlideRenderEnv(env: SlideRenderEnv): void {
   renderEnv = env

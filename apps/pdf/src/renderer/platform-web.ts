@@ -2,7 +2,7 @@
  * Builds pdf's platform for a browser, from a `WebDocumentStore`.
  *
  * The mirror of platform-electron.ts, and it follows the same division: the
- * shared ports come from @genoffice/platform-web, and the two app-specific
+ * shared ports come from @samugen/platform-web, and the two app-specific
  * surfaces — the document operations and the Save As handshake — are adapted
  * here, next to the port declarations they satisfy. Nothing in this file touches
  * a browser global: the store, the pickers and the language/window environments
@@ -12,14 +12,14 @@
  * Where Electron's file port is a rename (its `DocumentRef` *is* a path, so it
  * forwards to IPC), this one does the work in the renderer: the document's bytes
  * come from a `FileSystemFileHandle` and the editing runs here, through
- * @genoffice/pdf-edit — byte-for-byte the same `savePdf` / `extractPagesBytes` /
+ * @samugen/pdf-edit — byte-for-byte the same `savePdf` / `extractPagesBytes` /
  * `insertPdfBytes` the Electron main process calls. That is the point of
  * pdf-edit being host-agnostic: the browser gets the same editing behaviour
  * rather than a second implementation of it.
  */
-import { extractPagesBytes, insertPdfBytes, savePdf } from '@genoffice/pdf-edit'
-import type { AiPort, LanguagePort } from '@genoffice/platform'
-import type { WebDocumentStore, WebWindowSlice } from '@genoffice/platform-web'
+import { extractPagesBytes, insertPdfBytes, savePdf } from '@samugen/pdf-edit'
+import type { AiPort, LanguagePort } from '@samugen/platform'
+import type { WebDocumentStore, WebWindowSlice } from '@samugen/platform-web'
 import type {
   ExportImagesResult,
   ExtractPagesResult,
@@ -117,7 +117,7 @@ export function createWebPdfFilePort(store: WebDocumentStore): PdfFilePort {
 /**
  * The window surface. Two of the three Save As members are event sources this
  * host never emits for, which is the same honest arrangement
- * @genoffice/platform-web's `createWebWindowPort` documents for the close guard:
+ * @samugen/platform-web's `createWebWindowPort` documents for the close guard:
  * the Save As request comes from the shell's menu, and there is no shell.
  *
  * `onSaveAsFlow` is different — it is wired to something real. Its contract is

@@ -1,4 +1,4 @@
-import { AI_PROVIDERS, type AiProviderId, type AiProviderMeta } from '@genoffice/ai-provider'
+import { AI_PROVIDERS, type AiProviderId, type AiProviderMeta } from '@samugen/ai-provider'
 
 /**
  * Public shell contract for the AI Providers settings screen.

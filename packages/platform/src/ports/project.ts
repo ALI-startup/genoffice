@@ -1,7 +1,7 @@
 /**
  * Project storage capability (projects, chat history, timeline).
  *
- * The canonical surface already lives in @genoffice/project-store as
+ * The canonical surface already lives in @samugen/project-store as
  * `ProjectApi` and is transport-agnostic (no Electron import), so the port is
  * an alias rather than a re-declaration — one definition, no drift.
  *
@@ -10,7 +10,7 @@
  * createProject({ name })). ProjectApi is the canonical one: it is the contract
  * the store itself implements, and the shell shape is a thin UI adapter.
  */
-import type { ProjectApi } from '@genoffice/project-store'
+import type { ProjectApi } from '@samugen/project-store'
 
 export type {
   AppendChatArgs,
@@ -21,6 +21,6 @@ export type {
   ResolveChatArgs,
   ResolveChatResult,
   TimelineEntry,
-} from '@genoffice/project-store'
+} from '@samugen/project-store'
 
 export type ProjectPort = ProjectApi

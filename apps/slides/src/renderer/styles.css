@@ -302,7 +302,7 @@ button {
    A segmented pill at the far end of the tab row. Small and quiet, because it
    is not a command: it sits past everything the row offers, in the same corner
    on every screen, so switching is one click from wherever the user is.
-   The markup is @genoffice/ui's LanguageToggle; only the paint is here. */
+   The markup is @samugen/ui's LanguageToggle; only the paint is here. */
 .lang-toggle {
   /* the tab row is the frameless window's drag region */
   -webkit-app-region: no-drag;
@@ -393,15 +393,15 @@ button {
   box-shadow: 0 2px 6px rgba(74, 92, 255, 0.25);
 }
 
-/* Genspark brand logo (Ribbon AI button / AI panel title / collapsed entry) */
-.genspark-badge {
+/* SamuGen brand logo (Ribbon AI button / AI panel title / collapsed entry) */
+.samugen-badge {
   display: block;
   width: 22px;
   height: 22px;
   border-radius: 50%;
 }
 
-.ai-panel-title .genspark-badge {
+.ai-panel-title .samugen-badge {
   width: 18px;
   height: 18px;
 }
@@ -497,7 +497,7 @@ button {
   color: #232425;
 }
 
-/* Home-tab Genspark AI entry: black circular "+" badge with a dropdown caret,
+/* Home-tab SamuGen AI entry: black circular "+" badge with a dropdown caret,
    brand label below (mirrors the sheets Home ribbon). */
 /* AI feature buttons next to the entry: purple glyphs, label below */
 .ai-feature-icon {
@@ -543,7 +543,7 @@ button {
   background: var(--active-bg);
 }
 
-/* The Genspark AI entry keeps a black label even while the panel is open. */
+/* The SamuGen AI entry keeps a black label even while the panel is open. */
 .rb-big.ai-entry.active {
   color: var(--text);
 }
@@ -3560,10 +3560,10 @@ body.vib .slide-list {
 }
 
 /* AI quick actions anchored right above the slide card (mirrors the Home-tab
-   Genspark AI group); absolute so it doesn't distort the zoom-box extent.
+   SamuGen AI group); absolute so it doesn't distort the zoom-box extent.
    z-index lifts it over the Konva stage's transparent 160px bleed, which
    otherwise swallows the clicks */
-/* Genspark SAS floating toolbar, matched to the reference stage-toolbar:
+/* SamuGen SAS floating toolbar, matched to the reference stage-toolbar:
    white bar (padding 3px 5px, ~35px tall); 24px borderless tool buttons
    with 12px #374151 labels; thin span dividers separate the groups; the
    assistant toggle shows a gray selected state while the panel is open */
@@ -3622,7 +3622,7 @@ body.vib .slide-list {
 
 .stage-ai-btn svg {
   flex-shrink: 0;
-  /* AI feature glyphs match the ribbon's blue; the Genspark brand mark
+  /* AI feature glyphs match the ribbon's blue; the SamuGen brand mark
      carries its own fills and ignores currentColor */
   color: #0f7fff;
 }

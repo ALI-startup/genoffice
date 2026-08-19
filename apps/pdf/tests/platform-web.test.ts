@@ -1,7 +1,7 @@
 /**
  * The browser host adapter (src/renderer/platform-web.ts).
  *
- * @genoffice/platform-web covers the document store and @genoffice/pdf-edit
+ * @samugen/platform-web covers the document store and @samugen/pdf-edit
  * covers the editing, so what is left to check here is the glue that turns those
  * into pdf's own port: which store call each channel makes, how a dismissed
  * dialog becomes `canceled: true` rather than a failure, how a thrown error
@@ -13,7 +13,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { PDFDocument } from 'pdf-lib'
-import type { WebDocumentStore } from '@genoffice/platform-web'
+import type { WebDocumentStore } from '@samugen/platform-web'
 import { createWebPdfFilePort, createWebPdfWindowPort } from '../src/renderer/platform-web'
 import type { PdfEditRequest } from '../src/shared/ipc'
 
@@ -26,7 +26,7 @@ const noEdits: PdfEditRequest = {
 }
 
 /**
- * A real two-page PDF. The adapter runs @genoffice/pdf-edit for real rather than
+ * A real two-page PDF. The adapter runs @samugen/pdf-edit for real rather than
  * against a mock, so the store's bytes have to be a document pdf-lib can load —
  * which also means the "nothing is written when the edit fails" test can use
  * deliberate garbage and mean it.

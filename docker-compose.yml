@@ -9,8 +9,8 @@
 #   http://localhost:9083   slides, standalone on its own origin
 #   http://localhost:9084   sheets, standalone on its own origin
 #
-# Each is overridable: GENOFFICE_SHELL_PORT, GENOFFICE_DOCS_PORT,
-# GENOFFICE_PDF_PORT, GENOFFICE_SLIDES_PORT, GENOFFICE_SHEETS_PORT.
+# Each is overridable: SAMUGEN_SHELL_PORT, SAMUGEN_DOCS_PORT,
+# SAMUGEN_PDF_PORT, SAMUGEN_SLIDES_PORT, SAMUGEN_SHEETS_PORT.
 #
 # The BFF is reachable only on the compose network. It holds the provider
 # credentials and applies no authentication of its own, so publishing it would
@@ -30,7 +30,7 @@
 # fetched over HTTPS by the build. See GIT_SSH_TO_HTTPS in the Dockerfile for
 # what to change if either repository becomes private.
 
-name: genoffice
+name: samugen
 
 x-web-build: &web-build
   context: .
@@ -38,18 +38,18 @@ x-web-build: &web-build
   target: web
 
 x-web-service: &web-service
-  image: genoffice/web:local
+  image: samugen/web:local
   build: *web-build
   depends_on:
     ai-bff:
       condition: service_healthy
   restart: unless-stopped
   networks:
-    - genoffice
+    - samugen
 
 services:
   ai-bff:
-    image: genoffice/ai-bff:local
+    image: samugen/ai-bff:local
     build:
       context: .
       dockerfile: Dockerfile
@@ -57,8 +57,8 @@ services:
     environment:
       # Inside a container, loopback is the container. The service is kept
       # private by having no `ports:` entry, not by its bind address.
-      GENOFFICE_AI_BFF_HOST: 0.0.0.0
-      GENOFFICE_AI_BFF_PORT: '8788'
+      SAMUGEN_AI_BFF_HOST: 0.0.0.0
+      SAMUGEN_AI_BFF_PORT: '8788'
     env_file:
       # Provider keys and models. Optional so the stack still starts without it.
       - path: .env
@@ -67,70 +67,70 @@ services:
       - '8788'
     restart: unless-stopped
     networks:
-      - genoffice
+      - samugen
 
   # The entry point.
   shell:
     <<: *web-service
-    container_name: genoffice-shell
+    container_name: samugen-shell
     environment:
-      GENOFFICE_WEB_ROOT: /srv/shell
-      GENOFFICE_WEB_PORT: '8080'
-      GENOFFICE_AI_BFF_UPSTREAM: http://ai-bff:8788
+      SAMUGEN_WEB_ROOT: /srv/shell
+      SAMUGEN_WEB_PORT: '8080'
+      SAMUGEN_AI_BFF_UPSTREAM: http://ai-bff:8788
       # Must match AI_BFF_BASE_PATH in packages/platform-web/src/ai-wire.ts.
       # ./docker/docker.sh check verifies that.
-      GENOFFICE_AI_BFF_PATH: /v1/ai
+      SAMUGEN_AI_BFF_PATH: /v1/ai
     ports:
-      - '${GENOFFICE_SHELL_PORT:-8080}:8080'
+      - '${SAMUGEN_SHELL_PORT:-8080}:8080'
 
   # Standalone docs, on its own origin rather than as a frame of the shell.
   docs:
     <<: *web-service
-    container_name: genoffice-docs
+    container_name: samugen-docs
     environment:
-      GENOFFICE_WEB_ROOT: /srv/docs
-      GENOFFICE_WEB_PORT: '8080'
-      GENOFFICE_AI_BFF_UPSTREAM: http://ai-bff:8788
-      GENOFFICE_AI_BFF_PATH: /v1/ai
+      SAMUGEN_WEB_ROOT: /srv/docs
+      SAMUGEN_WEB_PORT: '8080'
+      SAMUGEN_AI_BFF_UPSTREAM: http://ai-bff:8788
+      SAMUGEN_AI_BFF_PATH: /v1/ai
     ports:
-      - '${GENOFFICE_DOCS_PORT:-9081}:8080'
+      - '${SAMUGEN_DOCS_PORT:-9081}:8080'
 
   # Standalone pdf, likewise.
   pdf:
     <<: *web-service
-    container_name: genoffice-pdf
+    container_name: samugen-pdf
     environment:
-      GENOFFICE_WEB_ROOT: /srv/pdf
-      GENOFFICE_WEB_PORT: '8080'
-      GENOFFICE_AI_BFF_UPSTREAM: http://ai-bff:8788
-      GENOFFICE_AI_BFF_PATH: /v1/ai
+      SAMUGEN_WEB_ROOT: /srv/pdf
+      SAMUGEN_WEB_PORT: '8080'
+      SAMUGEN_AI_BFF_UPSTREAM: http://ai-bff:8788
+      SAMUGEN_AI_BFF_PATH: /v1/ai
     ports:
-      - '${GENOFFICE_PDF_PORT:-9082}:8080'
+      - '${SAMUGEN_PDF_PORT:-9082}:8080'
 
   # Standalone sheets, likewise.
   sheets:
     <<: *web-service
-    container_name: genoffice-sheets
+    container_name: samugen-sheets
     environment:
-      GENOFFICE_WEB_ROOT: /srv/sheets
-      GENOFFICE_WEB_PORT: '8080'
-      GENOFFICE_AI_BFF_UPSTREAM: http://ai-bff:8788
-      GENOFFICE_AI_BFF_PATH: /v1/ai
+      SAMUGEN_WEB_ROOT: /srv/sheets
+      SAMUGEN_WEB_PORT: '8080'
+      SAMUGEN_AI_BFF_UPSTREAM: http://ai-bff:8788
+      SAMUGEN_AI_BFF_PATH: /v1/ai
     ports:
-      - '${GENOFFICE_SHEETS_PORT:-9084}:8080'
+      - '${SAMUGEN_SHEETS_PORT:-9084}:8080'
 
   # Standalone slides, likewise.
   slides:
     <<: *web-service
-    container_name: genoffice-slides
+    container_name: samugen-slides
     environment:
-      GENOFFICE_WEB_ROOT: /srv/slides
-      GENOFFICE_WEB_PORT: '8080'
-      GENOFFICE_AI_BFF_UPSTREAM: http://ai-bff:8788
-      GENOFFICE_AI_BFF_PATH: /v1/ai
+      SAMUGEN_WEB_ROOT: /srv/slides
+      SAMUGEN_WEB_PORT: '8080'
+      SAMUGEN_AI_BFF_UPSTREAM: http://ai-bff:8788
+      SAMUGEN_AI_BFF_PATH: /v1/ai
     ports:
-      - '${GENOFFICE_SLIDES_PORT:-9083}:8080'
+      - '${SAMUGEN_SLIDES_PORT:-9083}:8080'
 
 networks:
-  genoffice:
+  samugen:
     driver: bridge
