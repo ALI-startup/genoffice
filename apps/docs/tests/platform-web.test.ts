@@ -633,9 +633,6 @@ describe('the members that must not pretend to work', () => {
 
 /** Independent sha256, so the port's hash is compared against something computed elsewhere. */
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest(
-    'SHA-256',
-    bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
-  )
+  const digest = await crypto.subtle.digest('SHA-256', bytes as unknown as BufferSource)
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }

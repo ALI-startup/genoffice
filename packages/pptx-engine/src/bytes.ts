@@ -102,12 +102,15 @@ export function bytesToBase64(bytes: Uint8Array): string {
  * — was already async, so the change stops there.
  */
 export async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest(
-    'SHA-256',
-    // A copy, and deliberately so: `bytes` may be a view onto a larger buffer
-    // (JSZip hands those out), and `digest` reads the whole backing buffer.
-    bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer,
-  )
+  // The view itself, not a copy of its bytes: `digest` hashes exactly the range the
+  // view covers, so a JSZip view onto a larger pooled buffer is already safe. Passing
+  // the view also keeps this working under jsdom, where a bare `ArrayBuffer` belongs to
+  // the page realm and Node 20's WebCrypto refuses it ("2nd argument is not instance of
+  // ArrayBuffer"); `ArrayBuffer.isView` does not care which realm made it.
+  // The cast is what `protection.ts` carries for the same call: TS types the argument
+  // as holding an `ArrayBuffer`, which a `Uint8Array<ArrayBufferLike>` does not satisfy,
+  // even though WebCrypto takes any view.
+  const digest = await crypto.subtle.digest('SHA-256', bytes as unknown as ArrayBuffer)
   let hex = ''
   for (const byte of new Uint8Array(digest)) hex += byte.toString(16).padStart(2, '0')
   return hex

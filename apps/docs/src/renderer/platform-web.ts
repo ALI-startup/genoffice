@@ -259,7 +259,7 @@ export function createWebDocsFilePort(
     }
     return isExternallyModified(disk.get(ref), current, async () => {
       try {
-        return await sha256Hex(toArrayBuffer(await store.read(ref)))
+        return await sha256Hex(await store.read(ref))
       } catch {
         return null
       }
@@ -363,7 +363,7 @@ export function createWebDocsFilePort(
         await store.write(ref, bytes, { prompt: auto !== true })
         // Re-baseline from what we just wrote, or the next save would flag our own
         // write as somebody else's.
-        await remember(ref, await sha256Hex(toArrayBuffer(bytes)))
+        await remember(ref, await sha256Hex(bytes))
         return { ok: true }
       } catch (error) {
         return { ok: false, error: messageOf(error) }
@@ -749,7 +749,7 @@ async function saveNamed(
     const bytes = new Uint8Array(data)
     const saved = await store.saveAsDocument(withDocxExtension(defaultName), bytes)
     if (saved === null) return { ok: false }
-    await remember(saved.ref, await sha256Hex(toArrayBuffer(bytes)))
+    await remember(saved.ref, await sha256Hex(bytes))
     return { ok: true, ref: saved.ref, name: saved.name }
   } catch (error) {
     return { ok: false, error: messageOf(error) }
@@ -790,9 +790,19 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
 }
 
-/** sha256 as lowercase hex, matching the main process's `sha256Hex`. */
-async function sha256Hex(data: ArrayBuffer): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', data)
+/**
+ * sha256 as lowercase hex, matching the main process's `sha256Hex`.
+ *
+ * WebCrypto is handed a view, never a bare `ArrayBuffer`: under jsdom the buffer
+ * belongs to the page realm, and Node 20's WebCrypto rejects a cross-realm buffer
+ * outright ("2nd argument is not instance of ArrayBuffer"). A view is accepted
+ * whichever realm made it, and browsers accept both, so the view is the portable form.
+ */
+async function sha256Hex(data: ArrayBuffer | Uint8Array): Promise<string> {
+  const view = ArrayBuffer.isView(data) ? data : new Uint8Array(data)
+  // The cast is the same one the other hosts' hashes carry: TS models BufferSource as
+  // holding an `ArrayBuffer`, and a `Uint8Array<ArrayBufferLike>` does not fit that.
+  const digest = await crypto.subtle.digest('SHA-256', view as unknown as BufferSource)
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
