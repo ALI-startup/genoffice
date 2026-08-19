@@ -16,7 +16,7 @@ interface Slide {
   subtitleKey: StringKey
   /** 16px muted paragraph below the title block */
   bodyKey?: StringKey
-  /** render the body in the dimmer footnote gray (slide 3's credits disclaimer) */
+  /** render the body in the dimmer footnote gray (slide 3's provider footnote) */
   bodyDim?: boolean
   art: 'logo' | 'gift' | 'check'
 }
@@ -96,9 +96,9 @@ export function Onboarding({ onDone }: OnboardingProps) {
     cardRef.current?.focus()
   }, [])
 
-  // slide changes can strip focus from the active control (leaving slide 2
-  // makes its GenTeam button inert, which blurs it) — pull focus back onto the
-  // card so it never drops to body
+  // a slide change can strip focus from the active control (the slide it was on
+  // becomes inert, which blurs it) — pull focus back onto the card so it never
+  // drops to body
   useEffect(() => {
     const card = cardRef.current
     const active = document.activeElement
