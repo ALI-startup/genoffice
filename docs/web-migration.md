@@ -256,12 +256,50 @@ build blocks the main thread instead, so it likely belongs in a Web Worker.
 web build depend on a server for core spreadsheet operations, and ships user
 documents to it. Not recommended.
 
+**Resolved: (a), but WASI rather than wasm-bindgen.** `npm run wasm:build -w
+@genoffice/sheets` produces a 4.5MB `wasm32-wasip1` reactor module from the same
+crate the desktop sidecar is built from — no `[lib]` surgery beyond adding
+`crate-type`, no wasm-bindgen, and no rewrite of the eleven commands.
+
+The reason for WASI is that the protocol is path-based all the way down: `open`
+takes a path, sessions extract parts to a scratch directory, `save_archive` reads
+one file and writes another. Under WASI all of that keeps working against a
+filesystem the host supplies, so the seven thousand lines above the boundary are
+untouched and cannot drift from the desktop's. A `wasm32-unknown-unknown` build
+would have meant a byte-oriented second implementation of that boundary — and it
+is not even available: ironcalc pulls `zip 0.6` with default features, whose
+bzip2 and zstd are C, which needs a libc for the target anyway.
+
+Three places needed a host-shaped answer, each one `#[cfg]`'d and documented where
+it is made:
+
+- `canonicalize` aborts on wasip1 (std has no current directory). `paths::resolve`
+  keeps the existence check, which is the half that still means something in a
+  virtual filesystem with no symlinks.
+- `std::env::temp_dir()` aborts for the same reason; `paths::temp_root()` answers
+  `/tmp`, which the host preopens.
+- `thread::spawn` answers "operation not supported", so worksheet indexing runs
+  inline instead of streaming behind a condvar. Same index, same results; the
+  first read of a sheet waits for the whole thing, and since the module runs in a
+  Worker that wait is off the page's main thread — which is what the desktop's
+  thread was buying.
+
+The dispatcher moved from `main.rs` into `protocol.rs` so both hosts share it: the
+desktop reads a line off stdin, the browser writes bytes into linear memory, and
+`handle_line` is the same function. `tests/wasm-engine.test.ts` runs the module
+under Node's WASI and asserts its responses are _identical_ to the desktop
+binary's for the same requests.
+
 ### 4.3 Suggested sub-phases
 
 1. **6a — seam only.** `platform.ts` / `host-electron.ts`, migrate the 12
    renderer files, Electron unchanged. Mirror Phase 4a exactly.
    Note `notifyPendingEdits(count)` is sheets' dirty signal, where pdf uses
    `setDirty(boolean)` — model it honestly rather than coercing to a boolean.
+   **Done.** Six required ports (`workbook`, `file`, `window`, `language`, `ai`,
+   `attachments`) and five nullable (`menu`, `pdfExport`, `genspark`, `search`,
+   `project`). The count stayed a count. This also completed §6.3: sheets was the
+   last app with its own path-based attachment surface.
 2. **6b — WASM build** of the Rust crate, with `XlsxSidecarClient`'s interface
    reimplemented over it. Independently testable against the same 11 commands.
 3. **6c — web host**: FSA for xlsx open/save, attachments, AI via BFF, and the

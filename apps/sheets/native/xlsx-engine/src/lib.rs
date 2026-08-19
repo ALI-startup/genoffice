@@ -15,7 +15,12 @@ use zip::ZipArchive;
 
 pub mod archive;
 pub mod convert;
+pub mod paths;
+pub mod protocol;
 pub mod recalc;
+/// The browser host's entry point. Only compiled for wasm, where it is the whole transport.
+#[cfg(target_family = "wasm")]
+pub mod wasm;
 mod shared_formulas;
 mod visuals;
 
@@ -417,7 +422,7 @@ impl WorkbookSessions {
     }
 
     pub fn open(&mut self, path: &Path) -> Result<WorkbookMetadata, SidecarError> {
-        let canonical_path = path.canonicalize()?;
+        let canonical_path = paths::resolve(path)?;
         let file = File::open(&canonical_path)?;
         let mut archive = ZipArchive::new(file)?;
         validate_archive(&mut archive)?;
@@ -515,7 +520,7 @@ impl WorkbookSessions {
 
         let session_id = Uuid::new_v4().to_string();
         let cache_directory =
-            std::env::temp_dir().join(format!("genspark-ai-excel-{session_id}"));
+            paths::temp_root().join(format!("genspark-ai-excel-{session_id}"));
         fs::create_dir(&cache_directory)?;
         let name = canonical_path
             .file_name()
@@ -664,30 +669,46 @@ impl WorkbookSession {
         let styled_xfs = Arc::clone(&self.styled_xfs);
         let color_context = Arc::clone(&self.color_context);
         let cancelled = Arc::clone(&self.cancelled);
-        let handle = thread::Builder::new()
-            .name(format!("xlsx-index-{sheet_index}"))
-            .spawn(move || {
-                let result = index_worksheet(
-                    &path,
-                    &worksheet_path,
-                    sheet_index,
-                    &cache_directory,
-                    &shared_strings,
-                    &styled_xfs,
-                    &color_context,
-                    &state,
-                    &cancelled,
-                );
-                let (lock, condition) = &*state;
-                if let Ok(mut index) = lock.lock() {
-                    match result {
-                        Ok(()) => index.complete = true,
-                        Err(error) => index.error = Some(error.to_string()),
-                    }
-                    condition.notify_all();
+        let index_now = move || {
+            let result = index_worksheet(
+                &path,
+                &worksheet_path,
+                sheet_index,
+                &cache_directory,
+                &shared_strings,
+                &styled_xfs,
+                &color_context,
+                &state,
+                &cancelled,
+            );
+            let (lock, condition) = &*state;
+            if let Ok(mut index) = lock.lock() {
+                match result {
+                    Ok(()) => index.complete = true,
+                    Err(error) => index.error = Some(error.to_string()),
                 }
-            })?;
-        runtime.handle = Some(handle);
+                condition.notify_all();
+            }
+        };
+        // A worksheet is indexed on its own thread so the first `read_range` can answer from
+        // the rows already scanned while the rest of a large sheet streams in behind it.
+        #[cfg(not(target_family = "wasm"))]
+        {
+            let handle = thread::Builder::new()
+                .name(format!("xlsx-index-{sheet_index}"))
+                .spawn(index_now)?;
+            runtime.handle = Some(handle);
+        }
+        // wasm32-wasip1 has no threads (`spawn` answers "operation not supported"), so the
+        // index is built here and now. The *results* are identical — the same function fills
+        // the same structure, and the reader below finds it already complete — and the cost
+        // lands in one place instead of streaming: the first read of a sheet waits for the
+        // whole index. The module runs in a Worker, so that wait is off the page's main
+        // thread, which is the property the desktop's thread was buying.
+        #[cfg(target_family = "wasm")]
+        {
+            index_now();
+        }
         Ok(())
     }
 

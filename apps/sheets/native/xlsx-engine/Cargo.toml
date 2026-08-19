@@ -5,6 +5,11 @@ edition = "2024"
 license = "Apache-2.0"
 publish = false
 
+# `cdylib` is the browser build (src/wasm.rs's C ABI); `rlib` is what the desktop binary and
+# the tests link against. Both come out of one `cargo build`, from one set of sources.
+[lib]
+crate-type = ["rlib", "cdylib"]
+
 [dependencies]
 base64 = "0.22.1"
 calamine = "0.36.0"
@@ -15,6 +20,17 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 uuid = { version = "1", features = ["v4"] }
 zip = { version = "4", default-features = false, features = ["deflate"] }
+
+# The browser build. Size matters there in a way it does not on disk, so this trades compile
+# time for bytes — but never unwinding: `recalc.rs` contains IronCalc's importer panics with
+# `catch_unwind`, and `panic = "abort"` would turn a recoverable "this workbook defeated the
+# formula engine" into a dead module holding the user's open document.
+[profile.wasm-release]
+inherits = "release"
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
 
 [dev-dependencies]
 tempfile = "3"

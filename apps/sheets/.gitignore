@@ -4,3 +4,6 @@ out/
 fixtures/generated/
 reports/
 native/xlsx-engine/target
+# The browser build of the engine: 4.7MB of generated binary, produced by
+# `npm run wasm:build` from the crate beside it. Built, never committed.
+src/renderer/wasm/*.wasm
