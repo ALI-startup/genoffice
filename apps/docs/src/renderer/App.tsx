@@ -22,7 +22,7 @@ import {
   type ThemeFonts,
 } from '@samugen/docx-engine'
 import type { AiSettings } from '../shared/ipc'
-import { AI_PROVIDERS } from '../shared/ipc'
+import { AI_PROVIDERS, DEFAULT_AI_PROVIDER } from '../shared/ipc'
 import { docsPlatform, type OpenOutcome, type RecentDocument } from './platform'
 import { AiPanel } from './ai/AiPanel'
 import { asianCharCount, countWords, nonAsianWordCount } from './word-count'
@@ -255,7 +255,7 @@ interface DocStats {
 }
 
 const DEFAULT_SETTINGS: AiSettings = {
-  provider: 'anthropic',
+  provider: DEFAULT_AI_PROVIDER,
   providers: Object.fromEntries(
     AI_PROVIDERS.map((p) => [
       p.id,

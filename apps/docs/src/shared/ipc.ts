@@ -64,7 +64,7 @@ export type {
   AiStreamChunk,
   AiStreamRequest,
 } from '@samugen/ai-provider'
-export { AI_PROVIDERS } from '@samugen/ai-provider'
+export { AI_PROVIDERS, DEFAULT_AI_PROVIDER } from '@samugen/ai-provider'
 
 // ---- agent protocol: canonical types live in @samugen/agent-core ----
 

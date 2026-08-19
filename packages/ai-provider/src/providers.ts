@@ -213,8 +213,8 @@ export const AI_PROVIDERS: AiProviderMeta[] = [
   {
     id: 'vllm',
     label: 'vLLM',
-    models: ['local-model'],
-    defaultModel: 'local-model',
+    models: ['qwen38-27b', 'qwen36-35b'],
+    defaultModel: 'qwen38-27b',
     keyPlaceholder: 'Not required',
     protocol: 'openai-compatible',
     defaultBaseUrl: 'http://localhost:8000/v1',
@@ -308,6 +308,13 @@ export const AI_PROVIDERS: AiProviderMeta[] = [
   },
 ]
 
+/**
+ * The provider a fresh install opens on. Named explicitly rather than taken
+ * from the head of `AI_PROVIDERS`, so the settings screen's display order and
+ * the default are free to change independently.
+ */
+export const DEFAULT_AI_PROVIDER: AiProviderId = 'vllm'
+
 export const AI_PROVIDER_BY_ID = Object.fromEntries(
   AI_PROVIDERS.map((provider) => [provider.id, provider]),
 ) as Readonly<Record<AiProviderId, AiProviderMeta>>
@@ -332,11 +339,9 @@ export function defaultAiSettings(
       baseUrl: meta.needsBaseUrl ? '' : undefined,
     }
   }
-  // The first preset in the list. Every provider now needs either a key or a
-  // local server, so there is no provider that works before the user has
-  // configured one — this picks the row the settings screen opens on, nothing
-  // more, and follows the list rather than naming a favourite that can go stale.
-  return { provider: AI_PROVIDERS[0]!.id, providers }
+  // Every provider still needs either a key or a reachable server before it
+  // answers, so this only picks the row the settings screen opens on.
+  return { provider: DEFAULT_AI_PROVIDER, providers }
 }
 
 /**

@@ -8,6 +8,7 @@ import {
   type SafeStorageAdapter,
 } from '@samugen/ai-electron'
 import {
+  DEFAULT_AI_PROVIDER,
   discoverFalImageModels,
   discoverModels,
   discoverOpenRouterImageModels,
@@ -42,16 +43,18 @@ function defaults(): PersistedAiSettings {
       },
     ]),
   )
+  // The chat default follows the runtime registry; the image slot cannot, since
+  // the chat default has no image models — it opens on the first definition that
+  // does.
+  const chat = definitionFor(DEFAULT_AI_PROVIDER)
+  const image = AI_PROVIDER_DEFINITIONS.find((definition) => definition.supportsImages)
   return {
     version: 1,
     active: {
-      chat: { providerId: 'samugen', model: AI_PROVIDER_DEFINITIONS[0]?.models[0] ?? '' },
+      chat: { providerId: DEFAULT_AI_PROVIDER, model: chat?.models[0] ?? '' },
       image: {
-        providerId: 'samugen',
-        model:
-          AI_PROVIDER_DEFINITIONS[0]?.imageModels?.[0] ??
-          AI_PROVIDER_DEFINITIONS[0]?.models[0] ??
-          '',
+        providerId: image?.id ?? DEFAULT_AI_PROVIDER,
+        model: image?.imageModels?.[0] ?? image?.models[0] ?? '',
       },
     },
     providers,

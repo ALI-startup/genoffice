@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { AI_PROVIDERS, defaultAiSettings, resolveAiSettings } from '../src/providers'
+import {
+  AI_PROVIDERS,
+  DEFAULT_AI_PROVIDER,
+  defaultAiSettings,
+  resolveAiSettings,
+} from '../src/providers'
 
 describe('defaultAiSettings', () => {
   it('gives every provider its default model and an empty key by default', () => {
     const settings = defaultAiSettings()
-    // Follows the list rather than naming one: nothing works before the user has
-    // configured a key or a local server, so the default only picks the row the
-    // settings screen opens on.
-    expect(settings.provider).toBe(AI_PROVIDERS[0].id)
+    // Named explicitly, not taken from the head of the list, so reordering the
+    // settings screen cannot move the default out from under a fresh install.
+    expect(settings.provider).toBe(DEFAULT_AI_PROVIDER)
+    expect(DEFAULT_AI_PROVIDER).toBe('vllm')
     for (const meta of AI_PROVIDERS) {
       expect(settings.providers[meta.id].apiKey).toBe('')
       expect(settings.providers[meta.id].model).toBe(meta.defaultModel)
@@ -49,6 +54,15 @@ describe('provider catalog', () => {
       defaultBaseUrl: 'http://localhost:11434/v1',
       endpointKind: 'local',
     })
+  })
+
+  it('opens vLLM on the gateway-served Qwen model', () => {
+    // The default provider's model has to be one the picker actually offers,
+    // otherwise the settings screen boots with a selection it cannot show.
+    const vllm = AI_PROVIDERS.find((meta) => meta.id === DEFAULT_AI_PROVIDER)
+    expect(vllm).toMatchObject({ defaultModel: 'qwen36-35b', endpointKind: 'local' })
+    expect(vllm!.models).toContain(vllm!.defaultModel)
+    expect(defaultAiSettings().providers.vllm.model).toBe('qwen36-35b')
   })
 })
 
