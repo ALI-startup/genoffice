@@ -31,6 +31,7 @@ import {
   isPickerCancel,
   type FilePickerAcceptType,
   type FilePickers,
+  type FrameChildLink,
   type WebDocumentStore,
 } from '@genoffice/platform-web'
 import { buildAllRenderSlides, type Session } from '../domain/session'
@@ -531,17 +532,19 @@ export function createWebSlidesFilePort(
 /**
  * The window integration for a browser.
  *
- * Three of the six members do real work and three are honest silences, which is worth being
- * exact about:
+ * What each member can honestly do depends on whether this page is standalone or a tab of
+ * the web shell, and the difference is the `frame` argument rather than a runtime guess:
  *
- *   - `isDirty` works, and does not go anywhere to find out: the deck is in this page, so the
- *     same predicate the main process runs (`slideOps.isDirty`) runs here.
- *   - `onCloseSaveRequest` / `reportCloseSaveResult` are the desktop's "save, then tell me how
- *     it went, and I will wait" handshake. `beforeunload` cannot express that — a page may not
- *     await anything before it goes away — so there is no moment at which this host could
- *     honestly make the request. The subscription is real and simply never fires, and the
- *     unload guard below is what actually protects unsaved work: it asks the browser to show
- *     its own "Leave site?" prompt while the deck is dirty. Same conclusion docs reached.
+ *   - `isDirty` works either way, and does not go anywhere to find out: the deck is in this
+ *     page, so the same predicate the main process runs (`slideOps.isDirty`) runs here.
+ *   - `onCloseSaveRequest` / `reportCloseSaveResult` are the desktop's "save, then tell me
+ *     how it went, and I will wait" handshake. Standalone, nothing can make that request:
+ *     `beforeunload` may not await anything, so the subscription is real and simply never
+ *     fires, and the unload prompt below is what protects unsaved work — the browser's own
+ *     "Leave site?" dialog, armed while the deck is dirty. In the shell there *is* someone
+ *     who can wait: closing a tab removes the iframe, which `beforeunload` never sees, so
+ *     the shell asks first and this port relays the question to the same subscriber the
+ *     desktop's close guard reaches. Same arrangement docs has.
  *   - `setAutoSavePref` is accepted and recorded. On the desktop it tells the main process to
  *     save silently while closing a window; here there is no other process to tell, and an
  *     unload handler cannot await a write anyway.
@@ -551,22 +554,45 @@ export function createWebSlidesFilePort(
 export function createWebSlidesWindowPort(
   session: () => Session | undefined,
   unloadPrompt: typeof createWebUnloadPrompt = createWebUnloadPrompt,
+  frame: FrameChildLink | null = null,
 ): SlidesWindowPort {
   let autoSave = false
-  // Installed once, for the life of the page: the browser's own leave-site prompt is the only
-  // close guard a page gets, and it must be armed before the first edit rather than at close.
-  unloadPrompt(() => {
+  const isDirty = (): boolean => {
     const current = session()
     return !!current && slideOps.isDirty(current) === true
-  })
+  }
+  const closeSaveListeners = new Set<() => void>()
+  // Installed once, for the life of the page: the browser's own leave-site prompt is the only
+  // close guard a standalone page gets, and it must be armed before the first edit rather
+  // than at close.
+  unloadPrompt(isDirty)
+
+  if (frame !== null) {
+    // The shell's close check asks the same question the unload guard does, of the same
+    // state, so a tab close and a window close cannot disagree.
+    frame.onCloseCheck(isDirty)
+    frame.onCloseSave(() => {
+      if (closeSaveListeners.size === 0) {
+        // Nobody is listening, so nothing will ever reply. Say so now rather than let the
+        // shell wait out its deadline and reach the same answer.
+        frame.reportCloseSave(false)
+        return
+      }
+      for (const listener of closeSaveListeners) listener()
+    })
+  }
+
   return {
-    isDirty: async () => slideOps.isDirty(session()) === true,
+    isDirty: async () => isDirty(),
     setAutoSavePref: (on) => {
       autoSave = on
       void autoSave
     },
-    onCloseSaveRequest: () => () => {},
-    reportCloseSaveResult: () => {},
+    onCloseSaveRequest: (handler) => {
+      closeSaveListeners.add(handler)
+      return () => void closeSaveListeners.delete(handler)
+    },
+    reportCloseSaveResult: (ok) => frame?.reportCloseSave(ok),
     onOpened: () => () => {},
     onRenamed: () => () => {},
   }
@@ -656,6 +682,12 @@ export interface WebSlidesPlatformDeps {
   download: WebFileServices['download']
   /** Print the given HTML from a frame; see `createWebSlidesPrintPort`. */
   printFrame: (html: string) => Promise<void>
+  /**
+   * The web shell's frame link when this page is a tab of its strip, `null` when it is a
+   * standalone browser tab. It is what makes the close guard real for a tab close, which
+   * `beforeunload` cannot see. Same argument docs' platform takes.
+   */
+  frame?: FrameChildLink | null
   /** Install a `beforeunload` guard; injected so tests can drive it. Defaults to the real one. */
   unloadPrompt?: typeof createWebUnloadPrompt
 }
@@ -683,7 +715,7 @@ export function createWebSlidesPlatform(deps: WebSlidesPlatformDeps): SlidesPlat
       download: deps.download,
     }),
     deckClipboard: createWebSlidesDeckClipboardPort(session),
-    window: createWebSlidesWindowPort(session, deps.unloadPrompt),
+    window: createWebSlidesWindowPort(session, deps.unloadPrompt, deps.frame ?? null),
     language: createWebSlidesLanguagePort(deps.language),
     ai: createWebSlidesAiPort(deps.ai, session),
     print: createWebSlidesPrintPort(deps.printFrame),

@@ -35,10 +35,11 @@ import type {
   ShellFilesPort,
   ShellLanguagePort,
   ShellLauncherPort,
-  ShellOfficeLauncherPort,
   ShellOnboardingPort,
   ShellPlatform,
   ShellProjectsPort,
+  ShellSheetsLauncherPort,
+  ShellSlidesLauncherPort,
   ShellTabMenusPort,
   ShellTabsPort,
   UpdateWindowPlatform,
@@ -108,12 +109,14 @@ export function createShellLauncherPort(bridge: HomeApi): ShellLauncherPort {
   }
 }
 
-/** Spreadsheets and presentations: non-null here, since both apps have an Electron build. */
-export function createShellOfficeLauncherPort(bridge: HomeApi): ShellOfficeLauncherPort {
-  return {
-    newSheet: (options) => bridge.newSheet(options),
-    newSlide: (options) => bridge.newSlide(options),
-  }
+/** Spreadsheets: non-null here, since apps/sheets has an Electron build. */
+export function createShellSheetsLauncherPort(bridge: HomeApi): ShellSheetsLauncherPort {
+  return { newSheet: (options) => bridge.newSheet(options) }
+}
+
+/** Presentations. Non-null on both hosts; this one routes through the main process. */
+export function createShellSlidesLauncherPort(bridge: HomeApi): ShellSlidesLauncherPort {
+  return { newSlide: (options) => bridge.newSlide(options) }
 }
 
 /** The native "open a file" dialog, which the main process shows. */
@@ -255,7 +258,8 @@ export function createElectronShellPlatform(bridges: ShellBridges): ShellPlatfor
     onboarding: createShellOnboardingPort(bridges.home),
     files: createShellFilesPort(bridges.home),
     launcher: createShellLauncherPort(bridges.home),
-    officeLauncher: createShellOfficeLauncherPort(bridges.home),
+    sheetsLauncher: createShellSheetsLauncherPort(bridges.home),
+    slidesLauncher: createShellSlidesLauncherPort(bridges.home),
     browse: createShellBrowsePort(bridges.home),
     pdfLauncher: null,
     frames: null,

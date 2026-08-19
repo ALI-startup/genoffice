@@ -20,7 +20,9 @@
  *     protocol plus a React dialog the renderer installs; see `closeTab`.
  *
  * Three capabilities are absent rather than approximated, and each is a `null`
- * port the UI already tests for: `projects`, `browse` and `officeLauncher`.
+ * port the UI already tests for: `projects`, `browse` and `sheetsLauncher`
+ * (apps/sheets is the last editor with no browser build; `slidesLauncher` gained
+ * one and became non-null here, which is why the two are separate ports).
  * `tabMenus` is null too, but for the opposite reason — the constraint that made
  * those menus native is an Electron artefact, so the tab strip renders its own
  * DOM menus when the port is absent.
@@ -55,6 +57,7 @@ import type {
   ShellLauncherPort,
   ShellOnboardingPort,
   ShellPdfLauncherPort,
+  ShellSlidesLauncherPort,
   ShellPlatform,
   ShellTabsPort,
 } from './platform'
@@ -72,9 +75,25 @@ const HOME_ID = 'home'
  * only a same-origin frame allows. One proxy rule per prefix covers both, in dev
  * (vite.web.config.ts) and in whatever fronts the static files in a deployment.
  */
-export const WEB_APP_PATHS: Record<'docs' | 'pdf', string> = {
+export const WEB_APP_PATHS: Record<WebFrameKind, string> = {
   docs: '/app/docs/',
   pdf: '/app/pdf/',
+  slides: '/app/slides/',
+}
+
+/**
+ * The tab kinds this host can actually show.
+ *
+ * A subset of `TabKind`, and the subset is the point: it is exactly the apps with a browser
+ * build. `sheets` is absent because apps/sheets has none yet, so nothing here can route to
+ * it — and because this is a type rather than a runtime check, adding one is a compile error
+ * everywhere it matters rather than a blank frame.
+ */
+export type WebFrameKind = 'docs' | 'pdf' | 'slides'
+
+/** Is this a tab kind this host can host a frame for? */
+export function isWebFrameKind(kind: TabKind): kind is WebFrameKind {
+  return kind === 'docs' || kind === 'pdf' || kind === 'slides'
 }
 
 /** How often the shell re-reads its frames' document titles. */
@@ -122,7 +141,7 @@ export function routeFor(tab: { id: string; kind: TabKind }): string {
  * document.
  */
 export function parseRoute(hash: string): { id: string; kind: TabKind } | null {
-  const match = /^#\/(docs|pdf)\/([A-Za-z0-9]+)$/.exec(hash)
+  const match = /^#\/(docs|pdf|slides)\/([A-Za-z0-9]+)$/.exec(hash)
   if (match === null) return null
   return { kind: match[1] as TabKind, id: match[2] }
 }
@@ -149,7 +168,7 @@ export function createWebShellTabs(deps: WebShellTabsDeps): {
   tabs: ShellTabsPort
   frames: ShellFramesPort
   /** Open a new frame tab of the given kind and activate it; returns its id. */
-  openTab(kind: 'docs' | 'pdf'): string
+  openTab(kind: WebFrameKind): string
   /** Stop the title poll and the route subscription. */
   dispose(): void
 } {
@@ -176,7 +195,7 @@ export function createWebShellTabs(deps: WebShellTabsDeps): {
   }
 
   const frameSrc = (tab: { id: string; kind: TabKind }): string | null => {
-    if (tab.kind !== 'docs' && tab.kind !== 'pdf') return null
+    if (!isWebFrameKind(tab.kind)) return null
     return `${WEB_APP_PATHS[tab.kind]}?${FRAME_ID_PARAM}=${encodeURIComponent(tab.id)}`
   }
 
@@ -189,7 +208,7 @@ export function createWebShellTabs(deps: WebShellTabsDeps): {
     broadcast()
   }
 
-  const openTab = (kind: 'docs' | 'pdf'): string => {
+  const openTab = (kind: WebFrameKind): string => {
     const id = `t${nextId++}`
     tabs.push({ id, kind, title: deps.titleFor(kind) })
     activate(id, 'push')
@@ -198,7 +217,7 @@ export function createWebShellTabs(deps: WebShellTabsDeps): {
 
   /** Adopt a tab id that came from the URL, so Back to it lands on the same tab. */
   const adoptTab = (id: string, kind: TabKind): void => {
-    if (kind !== 'docs' && kind !== 'pdf') return
+    if (!isWebFrameKind(kind)) return
     tabs.push({ id, kind, title: deps.titleFor(kind) })
     const numeric = /^t(\d+)$/.exec(id)
     if (numeric !== null) nextId = Math.max(nextId, Number(numeric[1]) + 1)
@@ -421,13 +440,13 @@ export interface WebShellPlatformDeps {
   aiSettings: ShellAiSettingsPort
   tabs: ShellTabsPort
   frames: ShellFramesPort
-  /** Opens a new blank docs tab / an empty pdf tab. */
-  openTab: (kind: 'docs' | 'pdf') => void
+  /** Opens a new tab of one of the kinds this host has a build for. */
+  openTab: (kind: WebFrameKind) => void
 }
 
 /** New documents, and the one ref-taking member this host cannot resolve. */
 export function createWebShellLauncherPort(
-  openTab: (kind: 'docs' | 'pdf') => void,
+  openTab: (kind: WebFrameKind) => void,
 ): ShellLauncherPort {
   return {
     open: async (ref) => {
@@ -442,9 +461,23 @@ export function createWebShellLauncherPort(
 
 /** The empty pdf surface — see `ShellPdfLauncherPort` for why this exists only here. */
 export function createWebShellPdfLauncherPort(
-  openTab: (kind: 'docs' | 'pdf') => void,
+  openTab: (kind: WebFrameKind) => void,
 ): ShellPdfLauncherPort {
   return { newPdfTab: async () => openTab('pdf') }
+}
+
+/**
+ * New presentations, in a frame.
+ *
+ * `options` is accepted and dropped: it carries the project a new document belongs to, and
+ * projects are a main-process store this host does not have (`projects` is null here for the
+ * same reason). Dropping it silently is right precisely because the UI that supplies it —
+ * Home's project sidebar — does not exist on this host either.
+ */
+export function createWebShellSlidesLauncherPort(
+  openTab: (kind: WebFrameKind) => void,
+): ShellSlidesLauncherPort {
+  return { newSlide: async () => openTab('slides') }
 }
 
 /**
@@ -527,6 +560,7 @@ export function createWebShellPlatform(deps: WebShellPlatformDeps): ShellPlatfor
     files: createWebShellFilesPort(),
     launcher: createWebShellLauncherPort(deps.openTab),
     pdfLauncher: createWebShellPdfLauncherPort(deps.openTab),
+    slidesLauncher: createWebShellSlidesLauncherPort(deps.openTab),
     frames: deps.frames,
     tabs: deps.tabs,
     account: createWebShellAccountPort(),
@@ -534,7 +568,10 @@ export function createWebShellPlatform(deps: WebShellPlatformDeps): ShellPlatfor
     // The capabilities this host does not have. Each is `null` rather than a
     // stub, so the UI that offers them is absent instead of inert — see
     // ShellPlatform in platform.ts for the reason behind each one.
-    officeLauncher: null,
+    // apps/sheets is the one editor with no browser build, so there is nothing for this
+    // host to route a new spreadsheet to. Its Home card and menu entry are absent rather
+    // than present and inert — see ShellSheetsLauncherPort.
+    sheetsLauncher: null,
     browse: null,
     projects: null,
     tabMenus: null,

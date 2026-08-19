@@ -480,6 +480,16 @@ with nothing mocked.
   goes through the in-page operations and the thumbnail pane follows, and the bundle contains
   no Node builtin, no `electron`, and no `window.slidesApi`.
 
+- **The shell tab.** Done too. `/app/slides/` is proxied like docs' and pdf's, `npm run
+shell:web` runs all four servers, and `npm run build:shell:web` composes the bundle. The
+  shell's `officeLauncher` split into `sheetsLauncher` and `slidesLauncher` on the way: the
+  two were a pair only while both were desktop-only, so Home now shows the presentation card
+  on the web host and still hides the spreadsheet one. slides' window port takes the frame
+  link, so closing a shell tab asks the deck whether it has unsaved work and can ask it to
+  save — which `beforeunload` cannot see, since closing a tab only removes the iframe.
+  Click-tested in Chromium: Home's card opens `/app/slides/?shellFrame=t1`, the editor boots
+  inside it, and the tab strip titles itself from the frame's own `document.title`.
+
 ### 5.6 The original notes on what 7d had to sort out
 
 The seam's `doc` port was split by a heuristic over member names, and it is slightly too
@@ -658,9 +668,10 @@ persisted.
 
 **shell:** Home is launcher-only — recents and starred always empty (§6.1);
 "Open Local File" from Home absent (user-activation constraint, §3.1); projects;
-updates; account sign-in (shells out to the `gsk` CLI); native tab menus; sheets
-and slides cards (no web build yet). A reload reopens an empty tab of the right
-kind, not the document.
+updates; account sign-in (shells out to the `gsk` CLI); native tab menus; the
+sheets card (apps/sheets is the last editor with no web build — the slides card
+is present since Phase 7d). A reload reopens an empty tab of the right kind, not
+the document.
 
 **Everywhere:** Chromium only, by decision — File System Access has no
 Safari/Firefox equivalent. A browser without it gets a loud failure, not a silent

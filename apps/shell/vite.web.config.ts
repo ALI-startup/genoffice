@@ -43,6 +43,7 @@ const bffTarget = process.env.AI_BFF_URL || 'http://127.0.0.1:8788'
 /** Where the editors' own web dev servers listen (see their vite.web.config.ts). */
 const docsTarget = process.env.DOCS_WEB_URL || 'http://127.0.0.1:5183'
 const pdfTarget = process.env.PDF_WEB_URL || 'http://127.0.0.1:5186'
+const slidesTarget = process.env.SLIDES_WEB_URL || 'http://127.0.0.1:5185'
 
 export default defineConfig({
   root: 'src/renderer',
@@ -70,6 +71,7 @@ export default defineConfig({
       // every asset URL they emit already carries the prefix.
       '/app/docs': { target: docsTarget, changeOrigin: true, ws: true },
       '/app/pdf': { target: pdfTarget, changeOrigin: true, ws: true },
+      '/app/slides': { target: slidesTarget, changeOrigin: true, ws: true },
     },
   },
 })

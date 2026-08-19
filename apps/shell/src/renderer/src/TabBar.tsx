@@ -168,7 +168,8 @@ export function TabBar() {
     tabs: tabsPort,
     tabMenus,
     launcher,
-    officeLauncher,
+    sheetsLauncher,
+    slidesLauncher,
     browse,
     pdfLauncher,
   } = shellPlatform()
@@ -271,22 +272,24 @@ export function TabBar() {
   }, [activeId])
 
   // The DOM menus' contents, built from the ports that are actually present.
-  // A host without `officeLauncher` gets no spreadsheet entry rather than an
+  // A host without `sheetsLauncher` gets no spreadsheet entry rather than an
   // entry that does nothing, which is the same rule the native menus follow.
   const newMenuItems = useMemo<MenuItem[]>(() => {
     const items: MenuItem[] = [
       { key: 'doc', label: t('newDoc'), run: () => void launcher.newDoc() },
     ]
-    if (officeLauncher) {
-      items.push({ key: 'sheet', label: t('newSheet'), run: () => void officeLauncher.newSheet() })
-      items.push({ key: 'slide', label: t('newSlide'), run: () => void officeLauncher.newSlide() })
+    if (sheetsLauncher) {
+      items.push({ key: 'sheet', label: t('newSheet'), run: () => void sheetsLauncher.newSheet() })
+    }
+    if (slidesLauncher) {
+      items.push({ key: 'slide', label: t('newSlide'), run: () => void slidesLauncher.newSlide() })
     }
     if (pdfLauncher) {
       items.push({ key: 'pdf', label: t('openPdf'), run: () => void pdfLauncher.newPdfTab() })
     }
     if (browse) items.push({ key: 'open', label: t('openLocal'), run: () => void browse.browse() })
     return items
-  }, [t, launcher, officeLauncher, pdfLauncher, browse])
+  }, [t, launcher, sheetsLauncher, slidesLauncher, pdfLauncher, browse])
 
   const tabMenuItems = useMemo<MenuItem[]>(
     () =>

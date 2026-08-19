@@ -844,7 +844,8 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
   const {
     files,
     launcher,
-    officeLauncher,
+    sheetsLauncher,
+    slidesLauncher,
     browse,
     projects: projectsPort,
     account,
@@ -1199,28 +1200,32 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
     void launcher.newDoc(selectedProjectId ? { projectId: selectedProjectId } : undefined)
   }
 
-  // Spreadsheets and presentations exist only on a host that has those editors;
-  // the cards below are built from this list, so on a host without them the
-  // cards are absent rather than present and inert (see ShellOfficeLauncherPort).
+  // Each card exists only on a host that has that editor, so a card is absent rather than
+  // present and inert. Two ports rather than one because the two answers differ: slides has
+  // a browser build and sheets does not (see ShellSheetsLauncherPort).
   const NEW_ITEMS = [
     { ext: 'docx', title: t('newDoc'), sub: '.docx', action: handleNewDoc },
-    ...(officeLauncher
+    ...(sheetsLauncher
       ? [
           {
             ext: 'xlsx',
             title: t('newSheet'),
             sub: '.xlsx',
             action: () =>
-              officeLauncher.newSheet(
+              sheetsLauncher.newSheet(
                 selectedProjectId ? { projectId: selectedProjectId } : undefined,
               ),
           },
+        ]
+      : []),
+    ...(slidesLauncher
+      ? [
           {
             ext: 'pptx',
             title: t('newSlide'),
             sub: '.pptx',
             action: () =>
-              officeLauncher.newSlide(
+              slidesLauncher.newSlide(
                 selectedProjectId ? { projectId: selectedProjectId } : undefined,
               ),
           },

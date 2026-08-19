@@ -146,8 +146,11 @@ export const createShellPlatform: CreateShellPlatform = async () => {
   // once against the language we just read.
   const translate = createI18n(strings)
   const lang = await language.getLanguage()
-  const titleFor = (kind: TabKind): string =>
-    kind === 'pdf' ? translate(lang, 'openPdf') : translate(lang, 'newDoc')
+  const titleFor = (kind: TabKind): string => {
+    if (kind === 'pdf') return translate(lang, 'openPdf')
+    if (kind === 'slides') return translate(lang, 'newSlide')
+    return translate(lang, 'newDoc')
+  }
 
   const { tabs, frames, openTab } = createWebShellTabs({
     route: browserRouteEnv(),

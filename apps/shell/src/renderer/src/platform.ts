@@ -204,17 +204,24 @@ export interface ShellLauncherPort {
 }
 
 /**
- * Creating spreadsheet and presentation documents.
+ * Creating spreadsheet documents.
  *
- * Split out of `ShellLauncherPort` because these two stand or fall together on a
- * host, and they fall on the web one: apps/sheets and apps/slides have no
- * browser build, so there is no surface for a web shell to route to. `X | null`
- * rather than an optional method, for the usual reason — the two Home quick
- * cards then exist exactly when the documents they promise can be created,
- * instead of being present and inert.
+ * Split out of `ShellLauncherPort` because apps/sheets has no browser build, so there is no
+ * surface for a web shell to route to. `X | null` rather than an optional method, for the
+ * usual reason — Home's quick card exists exactly when the document it promises can be
+ * created, instead of being present and inert.
+ *
+ * One port per editor rather than one "office" port for both: they were a pair while both
+ * were desktop-only, and stopped being one the moment slides gained a browser build. A
+ * capability that two hosts disagree about is a port; two capabilities that disagree
+ * separately are two ports.
  */
-export interface ShellOfficeLauncherPort {
+export interface ShellSheetsLauncherPort {
   newSheet(options?: NewDocumentOptions): Promise<void>
+}
+
+/** Creating presentations. Backed by both hosts: apps/slides has an Electron and a web build. */
+export interface ShellSlidesLauncherPort {
   newSlide(options?: NewDocumentOptions): Promise<void>
 }
 
@@ -445,7 +452,9 @@ export interface ShellFramesPort {
  *   - `aiSettingsEditor` — Electron: `safeStorage`-backed credential writes. See
  *     `ShellAiSettingsEditorPort`. Null on the web host: the BFF loads its
  *     credentials from the environment at boot and exposes no write route.
- *   - `officeLauncher`, `browse` — Electron only; see each port.
+ *   - `sheetsLauncher`, `browse` — Electron only; see each port.
+ *   - `slidesLauncher` — backed by both, and nullable only because a host without a
+ *     presentations build would have to say so; it is where `officeLauncher` split.
  *   - `pdfLauncher`, `frames` — web only; see each port. These two are the
  *     reason this is not simply a list of things a browser cannot do: a host
  *     may back capabilities the desktop one has no equivalent for, and the
@@ -460,7 +469,8 @@ export interface ShellPlatform {
   onboarding: ShellOnboardingPort
   files: ShellFilesPort
   launcher: ShellLauncherPort
-  officeLauncher: ShellOfficeLauncherPort | null
+  sheetsLauncher: ShellSheetsLauncherPort | null
+  slidesLauncher: ShellSlidesLauncherPort | null
   browse: ShellBrowsePort | null
   pdfLauncher: ShellPdfLauncherPort | null
   frames: ShellFramesPort | null

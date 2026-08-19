@@ -23,6 +23,7 @@ import {
   browserLanguageEnv,
   browserMultiFilePicker,
   createBrowserAttachmentExtractor,
+  createFrameChildLink,
   createIndexedDbHandleStore,
   createWebAiPort,
   createWebAttachmentsPort,
@@ -196,5 +197,11 @@ export const createSlidesPlatform: CreateSlidesPlatform = async () => {
     imageSize,
     download: (fileName, bytes) => downloadBytes(browserDownloadEnv(), fileName, bytes, PPTX_MIME),
     printFrame,
+    // Non-null only when the web shell hosts this page in its tab strip, which it signals
+    // with a query parameter. Closing a shell tab removes the iframe, and `beforeunload`
+    // does not fire for that, so this is what lets the shell ask the deck whether it has
+    // unsaved work — and ask it to save. Standalone there is no shell, this is null, and
+    // nothing about the page changes.
+    frame: createFrameChildLink(),
   })
 }

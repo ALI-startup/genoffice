@@ -6,6 +6,7 @@ import {
   createWebShellFilesPort,
   createWebShellLauncherPort,
   createWebShellPdfLauncherPort,
+  createWebShellSlidesLauncherPort,
   createWebShellTabs,
   parseRoute,
   routeFor,
@@ -111,7 +112,7 @@ function setup(initialHash = '#/') {
   const shell = createWebShellTabs({
     route: route.env,
     frames,
-    titleFor: (kind) => (kind === 'pdf' ? 'Open PDF' : 'AI Docs'),
+    titleFor: (kind) => (kind === 'pdf' ? 'Open PDF' : kind === 'slides' ? 'AI Slides' : 'AI Docs'),
     homeTitle: 'GenOffice',
     schedule: scheduler.schedule,
   })
@@ -126,8 +127,10 @@ describe('routes', () => {
     expect(routeFor({ id: 'home', kind: 'home' })).toBe('#/')
     expect(routeFor({ id: 't2', kind: 'pdf' })).toBe('#/pdf/t2')
     expect(parseRoute('#/pdf/t2')).toEqual({ id: 't2', kind: 'pdf' })
+    expect(routeFor({ id: 't3', kind: 'slides' })).toBe('#/slides/t3')
+    expect(parseRoute('#/slides/t3')).toEqual({ id: 't3', kind: 'slides' })
     expect(parseRoute('#/')).toBeNull()
-    // Only the two kinds with a browser build are routable.
+    // Only the kinds with a browser build are routable; sheets has none yet.
     expect(parseRoute('#/sheets/t2')).toBeNull()
     expect(parseRoute('#/docs/../etc')).toBeNull()
   })
@@ -162,6 +165,14 @@ describe('web shell tabs', () => {
     expect(src?.startsWith('/')).toBe(true)
     expect(shell.frames.srcFor({ ...tab, kind: 'home' })).toBeNull()
     expect(frames.registered.size).toBe(0)
+  })
+
+  it('hosts a slides frame under its own sub-path', async () => {
+    const { shell } = setup()
+    const id = shell.openTab('slides')
+    const [, tab] = await shell.tabs.list()
+    expect(tab.title).toBe('AI Slides')
+    expect(shell.frames.srcFor(tab)).toBe(`${WEB_APP_PATHS.slides}?shellFrame=${id}`)
   })
 
   it('broadcasts every change to subscribers', async () => {
@@ -360,9 +371,13 @@ describe('web shell launcher', () => {
     const opened: string[] = []
     const launcher = createWebShellLauncherPort((kind) => opened.push(kind))
     const pdf = createWebShellPdfLauncherPort((kind) => opened.push(kind))
+    const slides = createWebShellSlidesLauncherPort((kind) => opened.push(kind))
     await launcher.newDoc()
     await pdf.newPdfTab()
-    expect(opened).toEqual(['docs', 'pdf'])
+    // The project a new document belongs to has no meaning on this host, and is dropped
+    // rather than refused: `projects` is null here, so nothing can supply one.
+    await slides.newSlide({ projectId: 'p1' })
+    expect(opened).toEqual(['docs', 'pdf', 'slides'])
   })
 
   it('warns rather than pretending when handed a ref it never issued', async () => {

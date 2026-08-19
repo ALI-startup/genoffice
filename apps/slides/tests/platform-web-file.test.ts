@@ -12,7 +12,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createBlankPptx, openPptx, savePptx } from '@genoffice/pptx-engine'
-import type { WebDocumentStore } from '@genoffice/platform-web'
+import type { FrameChildLink, WebDocumentStore } from '@genoffice/platform-web'
 import { setSlideRenderEnv } from '../src/domain/session'
 import {
   createWebSlidesDocPort,
@@ -314,7 +314,7 @@ describe('the window port in a page', () => {
     expect(shouldPrompt!()).toBe(true)
   })
 
-  it('does not pretend the close handshake works, but stays subscribable', () => {
+  it('does not pretend the close handshake works standalone, but stays subscribable', () => {
     const win = createWebSlidesWindowPort(
       () => slot.get(),
       () => () => {},
@@ -326,7 +326,70 @@ describe('the window port in a page', () => {
     expect(() => win.reportCloseSaveResult(true)).not.toThrow()
     expect(typeof win.onOpened(() => {})).toBe('function')
   })
+
+  it('answers the shell close check from the same state the unload prompt reads', async () => {
+    const frame = fakeFrame()
+    const port = createWebSlidesFilePort(slot, services())
+    await port.openPptx(FIT)
+    createWebSlidesWindowPort(
+      () => slot.get(),
+      () => () => {},
+      frame.link,
+    )
+
+    expect(frame.check!()).toBe(false)
+    slot.get()!.metaDirty = true
+    expect(frame.check!()).toBe(true)
+  })
+
+  it('relays the shell save request to the renderer and reports what it answered', () => {
+    const frame = fakeFrame()
+    const win = createWebSlidesWindowPort(
+      () => slot.get(),
+      () => () => {},
+      frame.link,
+    )
+
+    const off = win.onCloseSaveRequest(() => win.reportCloseSaveResult(true))
+    frame.save!()
+    expect(frame.reported).toEqual([true])
+
+    // With nobody listening, the shell is told now rather than left to time out: an
+    // unanswered request would stall the tab close for the whole deadline.
+    off()
+    frame.save!()
+    expect(frame.reported).toEqual([true, false])
+  })
 })
+
+/**
+ * A stand-in for the shell's frame link: keeps whatever the port registers, so a test can
+ * play the shell and ask the questions a tab close asks.
+ */
+function fakeFrame() {
+  const state: {
+    check: (() => boolean) | null
+    save: (() => void) | null
+    reported: boolean[]
+    link: FrameChildLink
+  } = {
+    check: null,
+    save: null,
+    reported: [],
+    link: {
+      frameId: 't1',
+      onCloseCheck: (ask) => {
+        state.check = ask
+      },
+      onCloseSave: (run) => {
+        state.save = run
+      },
+      reportCloseSave: (ok) => state.reported.push(ok),
+      dispose: () => {},
+    },
+  }
+  return state
+}
 
 describe('the print port in a page', () => {
   it('prints the same html the desktop renders, from a frame', async () => {
