@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import type { ArchiveEntry } from '../src/gateway/xlsx-package-io'
 import { assertManifestPreserved, saveWorkbookViaSidecar } from '../src/gateway/xlsx-package-io'
+import { createNodeSaveFs } from '../src/main/save-fs-node'
 import { XlsxSidecarClient } from '../src/main/xlsx-sidecar-client'
 import { buildEditFixture } from './fixture-builder'
 
@@ -32,6 +33,7 @@ describe('saveWorkbookViaSidecar', () => {
     await writeFile(sourcePath, sourceBuffer)
 
     const result = await saveWorkbookViaSidecar({
+      fs: createNodeSaveFs(),
       client,
       sourcePath,
       targetPath,
@@ -76,12 +78,14 @@ describe('saveWorkbookViaSidecar', () => {
     await writeFile(firstPath, await buildEditFixture())
 
     await saveWorkbookViaSidecar({
+      fs: createNodeSaveFs(),
       client,
       sourcePath: firstPath,
       targetPath: secondPath,
       edits: [{ sheetName: 'Data', row: 4, column: 0, writeValue: true, cell: { value: 41 } }],
     })
     await saveWorkbookViaSidecar({
+      fs: createNodeSaveFs(),
       client,
       sourcePath: secondPath,
       targetPath: secondPath,

@@ -9,6 +9,7 @@ import { z } from 'zod'
 
 import { blankXlsxBuffer } from '../src/gateway/csv-import'
 import { saveWorkbookViaSidecar } from '../src/gateway/xlsx-package-io'
+import { createNodeSaveFs } from '../src/main/save-fs-node'
 import { XlsxSidecarClient } from '../src/main/xlsx-sidecar-client'
 import { workbookRangeResultSchema } from '../src/shared/desktop-api'
 import { buildCompatibilityFixture } from './fixture-builder'
@@ -82,6 +83,7 @@ describe('XLSX Rust sidecar', () => {
       expect(opened.sheets.map((sheet) => sheet.name)).toEqual(['Sheet1'])
 
       await saveWorkbookViaSidecar({
+        fs: createNodeSaveFs(),
         client,
         sourcePath,
         targetPath,

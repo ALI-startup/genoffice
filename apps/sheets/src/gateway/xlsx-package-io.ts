@@ -1,8 +1,3 @@
-import { randomUUID } from 'node:crypto'
-import { mkdir, mkdtemp, open, readFile, rename, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
-
 import { z } from 'zod'
 
 import type { WorkbookChartEdit, WorkbookVisualEdit } from '../shared/desktop-api'
@@ -75,8 +70,36 @@ export interface ArchiveClient {
   }): Promise<unknown>
 }
 
+/**
+ * The scratch filesystem a save works in.
+ *
+ * The save plans patched parts in memory and then hands the engine their *paths* to
+ * reassemble an archive from, so those parts have to exist somewhere the engine can read
+ * them. On the desktop that is a temp directory and `node:fs`; in a browser it is the wasm
+ * engine's own WASI filesystem, reached across the Worker link. Neither is this module's
+ * business, which is why it takes one rather than importing one — and why the pipeline
+ * itself, including the CRC manifest checks that make a save safe, is the same code on both.
+ */
+export interface SaveFs {
+  /** A fresh directory nothing else writes to. It exists when this resolves. */
+  mkdtemp(prefix: string): Promise<string>
+  /** Create a directory and any missing parents. The engine refuses to extract into one that is not there. */
+  mkdir(path: string): Promise<void>
+  /** Join path segments the way this host spells paths. */
+  join(...parts: string[]): string
+  /** A temporary sibling of `target`, to be promoted over it when the save succeeds. */
+  temporaryNear(target: string): string
+  writeFile(path: string, content: string | Uint8Array): Promise<void>
+  readText(path: string): Promise<string>
+  /** Replace `target` with `temporary`, atomically where the host can. */
+  promote(temporary: string, target: string): Promise<void>
+  /** Recursive, and never fails for a path that is not there. */
+  remove(path: string): Promise<void>
+}
+
 export interface StreamingSaveRequest {
   readonly client: ArchiveClient
+  readonly fs: SaveFs
   readonly sourcePath: string
   readonly targetPath: string
   readonly edits: readonly CellEdit[]
@@ -112,19 +135,20 @@ export interface StreamingSaveResult {
 /// temp dir, read, clean up).
 export async function readArchiveEntryText(
   client: ArchiveClient,
+  fs: SaveFs,
   sourcePath: string,
   entryName: string,
 ): Promise<string> {
-  const workDir = await mkdtemp(join(tmpdir(), 'ai-excel-read-'))
+  const workDir = await fs.mkdtemp('ai-excel-read-')
   try {
     const extracted = readEntriesResultSchema.parse(
       await client.readEntries({ path: sourcePath, entries: [entryName], outputDir: workDir }),
     )
     const filePath = extracted.entries[0]?.path
     if (!filePath) throw new Error(`Workbook is missing ${entryName}.`)
-    return await readFile(filePath, 'utf8')
+    return await fs.readText(filePath)
   } finally {
-    await rm(workDir, { recursive: true, force: true })
+    await fs.remove(workDir)
   }
 }
 
@@ -134,13 +158,20 @@ export async function readArchiveEntryText(
 export async function saveWorkbookViaSidecar(
   request: StreamingSaveRequest,
 ): Promise<StreamingSaveResult> {
-  const workDir = await mkdtemp(join(tmpdir(), 'ai-excel-save-'))
-  const temporaryTarget = join(dirname(request.targetPath), `.${randomUUID()}.tmp.xlsx`)
+  const fs = request.fs
+  const workDir = await fs.mkdtemp('ai-excel-save-')
+  const temporaryTarget = fs.temporaryNear(request.targetPath)
   try {
     const manifest = manifestResultSchema.parse(
       await request.client.archiveManifest(request.sourcePath),
     ).entries
-    const source = createSidecarEntrySource(request.client, request.sourcePath, manifest, workDir)
+    const source = createSidecarEntrySource(
+      request.client,
+      fs,
+      request.sourcePath,
+      manifest,
+      workDir,
+    )
     const plan = await planCellEditsToXlsx(
       source,
       request.edits,
@@ -165,10 +196,10 @@ export async function saveWorkbookViaSidecar(
       request.formulaValues ?? [],
     )
 
-    const replacements = await writePlanContents(workDir, 'replace', plan.replaced)
+    const replacements = await writePlanContents(fs, workDir, 'replace', plan.replaced)
     const additions = [
-      ...(await writePlanContents(workDir, 'add', plan.added)),
-      ...(await writePlanContents(workDir, 'add-bin', plan.addedBinary)),
+      ...(await writePlanContents(fs, workDir, 'add', plan.added)),
+      ...(await writePlanContents(fs, workDir, 'add-bin', plan.addedBinary)),
     ]
     const result = saveArchiveResultSchema.parse(
       await request.client.saveArchive({
@@ -187,22 +218,23 @@ export async function saveWorkbookViaSidecar(
     }
     assertManifestPreserved(plan, result.beforeEntries, result.afterEntries)
 
-    await promoteFileAtomically(temporaryTarget, request.targetPath)
+    await fs.promote(temporaryTarget, request.targetPath)
     return {
       touchedEntries: plan.touchedEntries,
       removedEntries: plan.removedEntries,
       addedEntries: plan.addedEntries,
     }
   } catch (error: unknown) {
-    await rm(temporaryTarget, { force: true })
+    await fs.remove(temporaryTarget)
     throw error
   } finally {
-    await rm(workDir, { recursive: true, force: true })
+    await fs.remove(workDir)
   }
 }
 
 function createSidecarEntrySource(
   client: ArchiveClient,
+  fs: SaveFs,
   sourcePath: string,
   manifest: readonly ArchiveEntry[],
   workDir: string,
@@ -232,15 +264,15 @@ function createSidecarEntrySource(
             'Entries above 256MB can be preserved but not patched.',
         )
       }
-      const extractDir = join(workDir, `extract-${extractionCount}`)
+      const extractDir = fs.join(workDir, `extract-${extractionCount}`)
       extractionCount += 1
-      await mkdir(extractDir, { recursive: true })
+      await fs.mkdir(extractDir)
       const extracted = readEntriesResultSchema.parse(
         await client.readEntries({ path: sourcePath, entries: [path], outputDir: extractDir }),
       )
       const filePath = extracted.entries[0]?.path
       if (!filePath) throw new Error(`Sidecar did not extract ${path}.`)
-      const content = await readFile(filePath, 'utf8')
+      const content = await fs.readText(filePath)
       cache.set(path, content)
       return content
     },
@@ -248,6 +280,7 @@ function createSidecarEntrySource(
 }
 
 async function writePlanContents(
+  fs: SaveFs,
   workDir: string,
   prefix: string,
   contents: ReadonlyMap<string, string | Uint8Array>,
@@ -255,10 +288,9 @@ async function writePlanContents(
   const written: { name: string; contentPath: string }[] = []
   let index = 0
   for (const [name, content] of contents) {
-    const contentPath = join(workDir, `${prefix}-${index}.bin`)
+    const contentPath = fs.join(workDir, `${prefix}-${index}.bin`)
     index += 1
-    if (typeof content === 'string') await writeFile(contentPath, content, 'utf8')
-    else await writeFile(contentPath, content)
+    await fs.writeFile(contentPath, content)
     written.push({ name, contentPath })
   }
   return written
@@ -317,14 +349,4 @@ export function assertManifestPreserved(
       throw new Error(`Saving would unexpectedly create ${entry.name} — aborted.`)
     }
   }
-}
-
-async function promoteFileAtomically(temporaryPath: string, path: string): Promise<void> {
-  const handle = await open(temporaryPath, 'r')
-  try {
-    await handle.sync()
-  } finally {
-    await handle.close()
-  }
-  await rename(temporaryPath, path)
 }

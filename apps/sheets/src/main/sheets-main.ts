@@ -73,6 +73,10 @@ import {
 import { parseFileToText } from '@genoffice/file-parse'
 import type { CellEdit, SheetStructuralOps } from '../gateway/xlsx-gateway'
 import { readArchiveEntryText, saveWorkbookViaSidecar } from '../gateway/xlsx-package-io'
+import { createNodeSaveFs } from './save-fs-node'
+
+/** The desktop's scratch filesystem for saves and one-shot entry reads. Stateless. */
+const saveFs = createNodeSaveFs()
 import { parsePivotDefinition } from '../gateway/xlsx-pivot'
 import type { SheetEditPlan } from '../gateway/xlsx-sheets'
 import type {
@@ -1801,8 +1805,8 @@ export function registerSheetsIpc(): void {
     const session = entry.sessions.get(request.sessionId)
     if (!session) throw new Error('Unknown workbook session.')
     const [pivotXml, cacheXml] = await Promise.all([
-      readArchiveEntryText(entry.client, session.path, request.path),
-      readArchiveEntryText(entry.client, session.path, request.cachePath),
+      readArchiveEntryText(entry.client, saveFs, session.path, request.path),
+      readArchiveEntryText(entry.client, saveFs, session.path, request.cachePath),
     ])
     return workbookPivotDefinitionSchema.parse(parsePivotDefinition(pivotXml, cacheXml))
   })
@@ -2507,6 +2511,7 @@ async function writeWorkbookTo(
     cells,
   }))
   const mutation = await saveWorkbookViaSidecar({
+    fs: saveFs,
     client,
     sourcePath: session.path,
     targetPath,

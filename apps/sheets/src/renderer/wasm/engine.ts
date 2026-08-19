@@ -107,9 +107,31 @@ export class XlsxEngine {
     return path
   }
 
+  /**
+   * Put bytes at a path the engine will be told to read.
+   *
+   * The save pipeline plans patched parts in memory and hands the engine their *paths* to
+   * reassemble from, so those parts have to exist in the engine's filesystem first. On the
+   * desktop they are files in a temp directory; here they are entries under /tmp.
+   */
+  writeScratch(path: EnginePath, bytes: Uint8Array): void {
+    this.host.fs.writeFile(path, bytes)
+  }
+
   /** The bytes of a file the engine wrote — a saved archive, a converted workbook. */
   readFile(path: EnginePath): Uint8Array {
     return this.host.fs.readFile(path)
+  }
+
+  /** Create a directory the engine will be asked to extract into. */
+  makeDirectory(path: EnginePath): void {
+    this.host.fs.mkdirp(path)
+  }
+
+  /** Drop a workbook's directory once its session is closed, freeing the bytes. */
+  removeWorkbook(path: EnginePath): void {
+    const directory = path.slice(0, path.lastIndexOf('/'))
+    this.host.fs.removeAll(directory)
   }
 
   /** Whether the engine produced a file at all; a cancelled save writes nothing. */

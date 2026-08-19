@@ -168,6 +168,12 @@ export class MemFs {
     parent.entries.delete(name)
   }
 
+  /** Remove a node and everything under it. `rm -rf`, for dropping a closed workbook. */
+  removeAll(path: string): void {
+    const { parent, name } = this.parentOf(path)
+    parent.entries.delete(name)
+  }
+
   rmdir(path: string): void {
     const { parent, name } = this.parentOf(path)
     const node = parent.entries.get(name)
