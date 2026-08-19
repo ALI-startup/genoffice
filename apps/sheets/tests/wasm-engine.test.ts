@@ -49,7 +49,11 @@ function startEngine(workDir: string, scratch: string) {
       preopens: { '/work': workDir, '/tmp': scratch },
     })
     const module = await WebAssembly.compile(await readFile(WASM))
-    const instance = await WebAssembly.instantiate(module, wasi.getImportObject())
+    const instance = await WebAssembly.instantiate(
+      module,
+      // Node types this as a plain object; it is the preview1 import namespace.
+      wasi.getImportObject() as unknown as WebAssembly.Imports,
+    )
     wasi.initialize(instance)
     const api = instance.exports as unknown as Exports
     const encoder = new TextEncoder()

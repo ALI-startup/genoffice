@@ -2,16 +2,14 @@
 #
 # Serving GenOffice on the web.
 #
-# Three of the five apps have a browser build today (docs, pdf, and the shell
-# that hosts them); sheets and slides do not yet — see docs/web-migration.md
-# phases 6 and 7. This file builds the three that exist and produces two runtime
-# images:
+# Four of the five apps have a browser build today (docs, pdf, slides, and the
+# shell that hosts them); sheets does not yet — see docs/web-migration.md phase
+# 6. This file builds the four that exist and produces two runtime images:
 #
-#   target `web`  — nginx over the static bundles. One image carrying all three
-#                   bundles; which one a container serves is chosen at run time
-#                   by GENOFFICE_WEB_ROOT, so the shell, standalone docs and
-#                   standalone pdf are three containers of the same image on
-#                   three ports.
+#   target `web`  — nginx over the static bundles. One image carrying every
+#                   bundle; which one a container serves is chosen at run time
+#                   by GENOFFICE_WEB_ROOT, so the shell and each standalone app
+#                   are containers of the same image on different ports.
 #   target `bff`  — the AI backend-for-frontend. It is the only process that
 #                   ever holds a provider credential, and it is not published to
 #                   the host; each web container reaches it over the compose
@@ -86,20 +84,20 @@ RUN --mount=type=ssh \
 
 
 # --- build -------------------------------------------------------------------
-# Three builds, three different shapes of the same sources:
-#   1. the composed shell — shell at the origin root, with docs and pdf rebuilt
-#      under /app/docs/ and /app/pdf/ of that same origin (their `base` set to
-#      match), which is what keeps the frames' AI calls same-origin and their
-#      document.title readable by the tab strip.
-#   2. standalone docs, base './', owning its own origin.
-#   3. standalone pdf, likewise.
+# Four builds, two different shapes of the same sources:
+#   1. the composed shell — shell at the origin root, with docs, pdf and slides
+#      rebuilt under /app/docs/, /app/pdf/ and /app/slides/ of that same origin
+#      (their `base` set to match), which is what keeps the frames' AI calls
+#      same-origin and their document.title readable by the tab strip.
+#   2. each app standalone, base './', owning its own origin.
 # Each writes to dist/web, never under out/ — apps/shell/electron-builder.cjs
 # packages out/** into every desktop installer.
 FROM deps AS build
 COPY . .
 RUN npm run build:shell:web \
   && npm run build:docs:web \
-  && npm run build:pdf:web
+  && npm run build:pdf:web \
+  && npm run build:slides:web
 
 
 # --- web ---------------------------------------------------------------------
@@ -132,6 +130,7 @@ RUN sed -i '/^}/i\    text/javascript                                  mjs;\n   
 COPY --from=build /app/apps/shell/dist/web /srv/shell
 COPY --from=build /app/apps/docs/dist/web  /srv/docs
 COPY --from=build /app/apps/pdf/dist/web   /srv/pdf
+COPY --from=build /app/apps/slides/dist/web /srv/slides
 # nginx's own entrypoint runs envsubst over /etc/nginx/templates/*.template. The
 # variables below are prefixed so they cannot collide with nginx's own $uri,
 # $host and friends, which envsubst leaves alone because they are not exported.

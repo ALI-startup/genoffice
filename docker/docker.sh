@@ -102,10 +102,13 @@ cmd_up() {
   check_env
   compose up -d --build "$@"
   printf '\n'
-  info "shell (entry point)  http://localhost:${GENOFFICE_SHELL_PORT:-8080}"
-  info "docs  (standalone)   http://localhost:${GENOFFICE_DOCS_PORT:-8081}"
-  info "pdf   (standalone)   http://localhost:${GENOFFICE_PDF_PORT:-8082}"
-  info "ai-bff               internal only, on the compose network"
+  # Defaults here must match docker-compose.yml's, or the lines below send people
+  # to a port nothing is listening on.
+  info "shell  (entry point)  http://localhost:${GENOFFICE_SHELL_PORT:-8080}"
+  info "docs   (standalone)   http://localhost:${GENOFFICE_DOCS_PORT:-9081}"
+  info "pdf    (standalone)   http://localhost:${GENOFFICE_PDF_PORT:-9082}"
+  info "slides (standalone)   http://localhost:${GENOFFICE_SLIDES_PORT:-9083}"
+  info "ai-bff                internal only, on the compose network"
 }
 
 usage() {
