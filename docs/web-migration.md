@@ -323,11 +323,17 @@ binary's for the same requests.
      browser build before it could reach anything real. `sha256` went from
      `node:crypto` to Web Crypto, which both hosts have.
 
-   Still to do: the sheets card and frame in the web shell, and the container
-   stack. Known gaps recorded in §8: no crash-recovery copy (nowhere durable to
-   put one without a second prompt), no rename-in-place (FSA writes through a
-   handle but cannot rename it), and no `.xls`/`.csv` import (the desktop converts
-   through a temp file and a Save As dialog).
+   The shell hosts it too: `/app/sheets/` is proxied like the others, Home's third
+   quick card is back, and `WebFrameKind` is now every kind but `home`. The
+   container stack builds the engine in a Rust stage of its own and copies the
+   module into the web build, so `docker/docker.sh up` serves sheets at 9084 and
+   inside the shell at 8080.
+
+   Known gaps, also in §8: no crash-recovery copy (nowhere durable to put one
+   without a second prompt every thirty seconds), no rename-in-place (FSA writes
+   through a handle but cannot rename it), no `.xls`/`.csv` import (the desktop
+   converts through a temp file and a Save As dialog), and `readLocalImage` throws
+   rather than reading a path off the user's machine.
 
 ---
 
@@ -734,6 +740,10 @@ updates; account sign-in (shells out to the `gsk` CLI); native tab menus; the
 sheets card (apps/sheets is the last editor with no web build — the slides card
 is present since Phase 7d). A reload reopens an empty tab of the right kind, not
 the document.
+
+**sheets on the web:** no crash-recovery copy, no rename-in-place, no `.xls`/`.csv`
+import, and the AI's `add_image` op (which names a file on the user's machine)
+fails loudly instead of silently.
 
 **Everywhere:** Chromium only, by decision — File System Access has no
 Safari/Firefox equivalent. A browser without it gets a loud failure, not a silent

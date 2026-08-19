@@ -2,9 +2,8 @@
 #
 # Serving GenOffice on the web.
 #
-# Four of the five apps have a browser build today (docs, pdf, slides, and the
-# shell that hosts them); sheets does not yet — see docs/web-migration.md phase
-# 6. This file builds the four that exist and produces two runtime images:
+# Every app has a browser build now — docs, pdf, slides, sheets, and the shell
+# that hosts them. This file builds all five and produces two runtime images:
 #
 #   target `web`  — nginx over the static bundles. One image carrying every
 #                   bundle; which one a container serves is chosen at run time
@@ -35,6 +34,7 @@
 # Node 22 strips types natively; Node 20 does not, and dies on the file's first
 # line with `SyntaxError: Unexpected token '{'` at its `import type { ... }`.
 ARG NODE_VERSION=22
+ARG RUST_VERSION=1.90
 ARG NGINX_VERSION=1.27-alpine
 
 
@@ -83,21 +83,54 @@ RUN --mount=type=ssh \
   && npm ci
 
 
+# --- engine ------------------------------------------------------------------
+# The spreadsheet engine, compiled to WebAssembly from the same Rust crate the desktop
+# sidecar is built from (apps/sheets/native/xlsx-engine). It is a stage of its own because
+# nothing else in this file needs a Rust toolchain, and because the C dependencies reached
+# through ironcalc (bzip2, zstd) need a WASI libc that the Node image has no reason to carry.
+#
+# The output is a single .wasm the web stage below copies in; `npm run wasm:build` does the
+# same thing on a developer's machine.
+FROM rust:${RUST_VERSION}-bookworm AS engine
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends clang wasi-libc \
+  && rm -rf /var/lib/apt/lists/* \
+  && rustup target add wasm32-wasip1
+WORKDIR /engine
+COPY apps/sheets/native/xlsx-engine ./
+# Debian splits the sysroot across /usr/include and /usr/lib; clang wants one root.
+RUN mkdir -p /wasi-sysroot/lib \
+  && ln -s /usr/include/wasm32-wasi /wasi-sysroot/include \
+  && ln -s /usr/lib/wasm32-wasi /wasi-sysroot/lib/wasm32-wasi \
+  && CFLAGS_wasm32_wasip1=--sysroot=/wasi-sysroot \
+     cargo build --profile wasm-release --target wasm32-wasip1 --lib
+
+
 # --- build -------------------------------------------------------------------
-# Four builds, two different shapes of the same sources:
-#   1. the composed shell — shell at the origin root, with docs, pdf and slides
-#      rebuilt under /app/docs/, /app/pdf/ and /app/slides/ of that same origin
-#      (their `base` set to match), which is what keeps the frames' AI calls
-#      same-origin and their document.title readable by the tab strip.
+# Five builds, two different shapes of the same sources:
+#   1. the composed shell — shell at the origin root, with docs, pdf, slides and
+#      sheets rebuilt under /app/docs/, /app/pdf/, /app/slides/ and /app/sheets/ of
+#      that same origin (their `base` set to match), which is what keeps the frames'
+#      AI calls same-origin and their document.title readable by the tab strip.
 #   2. each app standalone, base './', owning its own origin.
 # Each writes to dist/web, never under out/ — apps/shell/electron-builder.cjs
 # packages out/** into every desktop installer.
 FROM deps AS build
 COPY . .
-RUN npm run build:shell:web \
-  && npm run build:docs:web \
-  && npm run build:pdf:web \
-  && npm run build:slides:web
+# The engine, built in the stage above rather than here: `build:web` is a plain Vite build and
+# expects the module to be in place already, which is also how the shell's composed build gets
+# it (`npm run wasm:build` writes exactly this path).
+COPY --from=engine /engine/target/wasm32-wasip1/wasm-release/xlsx_sidecar.wasm \
+  /app/apps/sheets/src/renderer/wasm/xlsx-sidecar.wasm
+RUN npm run build:web -w @genoffice/shell \
+  && DOCS_WEB_BASE=/app/docs/ DOCS_WEB_OUT_DIR=../../../shell/dist/web/app/docs npm run build:web -w @genoffice/docs \
+  && PDF_WEB_BASE=/app/pdf/ PDF_WEB_OUT_DIR=../../../shell/dist/web/app/pdf npm run build:web -w @genoffice/pdf \
+  && SLIDES_WEB_BASE=/app/slides/ SLIDES_WEB_OUT_DIR=../../../shell/dist/web/app/slides npm run build:web -w @genoffice/slides \
+  && SHEETS_WEB_BASE=/app/sheets/ SHEETS_WEB_OUT_DIR=../../../shell/dist/web/app/sheets npm run build:web -w @genoffice/sheets \
+  && npm run build:web -w @genoffice/docs \
+  && npm run build:web -w @genoffice/pdf \
+  && npm run build:web -w @genoffice/slides \
+  && npm run build:web -w @genoffice/sheets
 
 
 # --- web ---------------------------------------------------------------------
@@ -131,6 +164,7 @@ COPY --from=build /app/apps/shell/dist/web /srv/shell
 COPY --from=build /app/apps/docs/dist/web  /srv/docs
 COPY --from=build /app/apps/pdf/dist/web   /srv/pdf
 COPY --from=build /app/apps/slides/dist/web /srv/slides
+COPY --from=build /app/apps/sheets/dist/web /srv/sheets
 # nginx's own entrypoint runs envsubst over /etc/nginx/templates/*.template. The
 # variables below are prefixed so they cannot collide with nginx's own $uri,
 # $host and friends, which envsubst leaves alone because they are not exported.

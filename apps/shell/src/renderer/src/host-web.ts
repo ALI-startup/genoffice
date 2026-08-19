@@ -149,6 +149,7 @@ export const createShellPlatform: CreateShellPlatform = async () => {
   const titleFor = (kind: TabKind): string => {
     if (kind === 'pdf') return translate(lang, 'openPdf')
     if (kind === 'slides') return translate(lang, 'newSlide')
+    if (kind === 'sheets') return translate(lang, 'newSheet')
     return translate(lang, 'newDoc')
   }
 

@@ -6,6 +6,7 @@ import {
   createWebShellFilesPort,
   createWebShellLauncherPort,
   createWebShellPdfLauncherPort,
+  createWebShellSheetsLauncherPort,
   createWebShellSlidesLauncherPort,
   createWebShellTabs,
   parseRoute,
@@ -112,7 +113,14 @@ function setup(initialHash = '#/') {
   const shell = createWebShellTabs({
     route: route.env,
     frames,
-    titleFor: (kind) => (kind === 'pdf' ? 'Open PDF' : kind === 'slides' ? 'AI Slides' : 'AI Docs'),
+    titleFor: (kind) =>
+      kind === 'pdf'
+        ? 'Open PDF'
+        : kind === 'slides'
+          ? 'AI Slides'
+          : kind === 'sheets'
+            ? 'AI Sheets'
+            : 'AI Docs',
     homeTitle: 'GenOffice',
     schedule: scheduler.schedule,
   })
@@ -129,9 +137,11 @@ describe('routes', () => {
     expect(parseRoute('#/pdf/t2')).toEqual({ id: 't2', kind: 'pdf' })
     expect(routeFor({ id: 't3', kind: 'slides' })).toBe('#/slides/t3')
     expect(parseRoute('#/slides/t3')).toEqual({ id: 't3', kind: 'slides' })
+    expect(routeFor({ id: 't4', kind: 'sheets' })).toBe('#/sheets/t4')
+    expect(parseRoute('#/sheets/t4')).toEqual({ id: 't4', kind: 'sheets' })
     expect(parseRoute('#/')).toBeNull()
-    // Only the kinds with a browser build are routable; sheets has none yet.
-    expect(parseRoute('#/sheets/t2')).toBeNull()
+    // Home is this shell's own page rather than a frame, so it is not routable as one.
+    expect(parseRoute('#/home/t2')).toBeNull()
     expect(parseRoute('#/docs/../etc')).toBeNull()
   })
 })
@@ -165,6 +175,14 @@ describe('web shell tabs', () => {
     expect(src?.startsWith('/')).toBe(true)
     expect(shell.frames.srcFor({ ...tab, kind: 'home' })).toBeNull()
     expect(frames.registered.size).toBe(0)
+  })
+
+  it('hosts a sheets frame under its own sub-path', async () => {
+    const { shell } = setup()
+    const id = shell.openTab('sheets')
+    const [, tab] = await shell.tabs.list()
+    expect(tab.title).toBe('AI Sheets')
+    expect(shell.frames.srcFor(tab)).toBe(`${WEB_APP_PATHS.sheets}?shellFrame=${id}`)
   })
 
   it('hosts a slides frame under its own sub-path', async () => {
@@ -372,12 +390,14 @@ describe('web shell launcher', () => {
     const launcher = createWebShellLauncherPort((kind) => opened.push(kind))
     const pdf = createWebShellPdfLauncherPort((kind) => opened.push(kind))
     const slides = createWebShellSlidesLauncherPort((kind) => opened.push(kind))
+    const sheets = createWebShellSheetsLauncherPort((kind) => opened.push(kind))
     await launcher.newDoc()
     await pdf.newPdfTab()
     // The project a new document belongs to has no meaning on this host, and is dropped
     // rather than refused: `projects` is null here, so nothing can supply one.
     await slides.newSlide({ projectId: 'p1' })
-    expect(opened).toEqual(['docs', 'pdf', 'slides'])
+    await sheets.newSheet()
+    expect(opened).toEqual(['docs', 'pdf', 'slides', 'sheets'])
   })
 
   it('warns rather than pretending when handed a ref it never issued', async () => {

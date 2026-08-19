@@ -19,10 +19,10 @@
  *     which then drives the editor's save over IPC. Here it is the frame
  *     protocol plus a React dialog the renderer installs; see `closeTab`.
  *
- * Three capabilities are absent rather than approximated, and each is a `null`
- * port the UI already tests for: `projects`, `browse` and `sheetsLauncher`
- * (apps/sheets is the last editor with no browser build; `slidesLauncher` gained
- * one and became non-null here, which is why the two are separate ports).
+ * Two capabilities are absent rather than approximated, and each is a `null` port
+ * the UI already tests for: `projects` and `browse`. `sheetsLauncher` and
+ * `slidesLauncher` were both null until their apps gained browser builds, which is
+ * why they are two ports and not one.
  * `tabMenus` is null too, but for the opposite reason — the constraint that made
  * those menus native is an Electron artefact, so the tab strip renders its own
  * DOM menus when the port is absent.
@@ -57,6 +57,7 @@ import type {
   ShellLauncherPort,
   ShellOnboardingPort,
   ShellPdfLauncherPort,
+  ShellSheetsLauncherPort,
   ShellSlidesLauncherPort,
   ShellPlatform,
   ShellTabsPort,
@@ -79,21 +80,22 @@ export const WEB_APP_PATHS: Record<WebFrameKind, string> = {
   docs: '/app/docs/',
   pdf: '/app/pdf/',
   slides: '/app/slides/',
+  sheets: '/app/sheets/',
 }
 
 /**
  * The tab kinds this host can actually show.
  *
  * A subset of `TabKind`, and the subset is the point: it is exactly the apps with a browser
- * build. `sheets` is absent because apps/sheets has none yet, so nothing here can route to
- * it — and because this is a type rather than a runtime check, adding one is a compile error
- * everywhere it matters rather than a blank frame.
+ * build, which as of Phase 6c is all four. `home` is the only kind left out, because it is
+ * this shell's own page rather than a frame — and because this is a type rather than a
+ * runtime check, a kind added without a build is a compile error rather than a blank frame.
  */
-export type WebFrameKind = 'docs' | 'pdf' | 'slides'
+export type WebFrameKind = 'docs' | 'pdf' | 'slides' | 'sheets'
 
 /** Is this a tab kind this host can host a frame for? */
 export function isWebFrameKind(kind: TabKind): kind is WebFrameKind {
-  return kind === 'docs' || kind === 'pdf' || kind === 'slides'
+  return kind === 'docs' || kind === 'pdf' || kind === 'slides' || kind === 'sheets'
 }
 
 /** How often the shell re-reads its frames' document titles. */
@@ -141,7 +143,7 @@ export function routeFor(tab: { id: string; kind: TabKind }): string {
  * document.
  */
 export function parseRoute(hash: string): { id: string; kind: TabKind } | null {
-  const match = /^#\/(docs|pdf|slides)\/([A-Za-z0-9]+)$/.exec(hash)
+  const match = /^#\/(docs|pdf|slides|sheets)\/([A-Za-z0-9]+)$/.exec(hash)
   if (match === null) return null
   return { kind: match[1] as TabKind, id: match[2] }
 }
@@ -467,6 +469,16 @@ export function createWebShellPdfLauncherPort(
 }
 
 /**
+ * New spreadsheets, in a frame. Non-null since 6c gave apps/sheets a browser build; `options`
+ * is dropped for the same reason `slidesLauncher` drops it — this host has no projects.
+ */
+export function createWebShellSheetsLauncherPort(
+  openTab: (kind: WebFrameKind) => void,
+): ShellSheetsLauncherPort {
+  return { newSheet: async () => openTab('sheets') }
+}
+
+/**
  * New presentations, in a frame.
  *
  * `options` is accepted and dropped: it carries the project a new document belongs to, and
@@ -561,6 +573,7 @@ export function createWebShellPlatform(deps: WebShellPlatformDeps): ShellPlatfor
     launcher: createWebShellLauncherPort(deps.openTab),
     pdfLauncher: createWebShellPdfLauncherPort(deps.openTab),
     slidesLauncher: createWebShellSlidesLauncherPort(deps.openTab),
+    sheetsLauncher: createWebShellSheetsLauncherPort(deps.openTab),
     frames: deps.frames,
     tabs: deps.tabs,
     account: createWebShellAccountPort(),
@@ -568,10 +581,6 @@ export function createWebShellPlatform(deps: WebShellPlatformDeps): ShellPlatfor
     // The capabilities this host does not have. Each is `null` rather than a
     // stub, so the UI that offers them is absent instead of inert — see
     // ShellPlatform in platform.ts for the reason behind each one.
-    // apps/sheets is the one editor with no browser build, so there is nothing for this
-    // host to route a new spreadsheet to. Its Home card and menu entry are absent rather
-    // than present and inert — see ShellSheetsLauncherPort.
-    sheetsLauncher: null,
     browse: null,
     projects: null,
     tabMenus: null,

@@ -44,6 +44,7 @@ const bffTarget = process.env.AI_BFF_URL || 'http://127.0.0.1:8788'
 const docsTarget = process.env.DOCS_WEB_URL || 'http://127.0.0.1:5183'
 const pdfTarget = process.env.PDF_WEB_URL || 'http://127.0.0.1:5186'
 const slidesTarget = process.env.SLIDES_WEB_URL || 'http://127.0.0.1:5185'
+const sheetsTarget = process.env.SHEETS_WEB_URL || 'http://127.0.0.1:5184'
 
 export default defineConfig({
   root: 'src/renderer',
@@ -72,6 +73,7 @@ export default defineConfig({
       '/app/docs': { target: docsTarget, changeOrigin: true, ws: true },
       '/app/pdf': { target: pdfTarget, changeOrigin: true, ws: true },
       '/app/slides': { target: slidesTarget, changeOrigin: true, ws: true },
+      '/app/sheets': { target: sheetsTarget, changeOrigin: true, ws: true },
     },
   },
 })

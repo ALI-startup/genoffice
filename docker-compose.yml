@@ -1,12 +1,13 @@
 # The web stack: the shell as the entry point, plus docs and pdf on their own
 # ports, plus the AI BFF that all three proxy to.
 #
-#   http://localhost:8080   shell — the entry point. Home, tab strip, and docs,
-#                           pdf and slides hosted as same-origin frames under
-#                           /app/docs/, /app/pdf/ and /app/slides/ of this origin.
+#   http://localhost:8080   shell — the entry point. Home, tab strip, and every
+#                           editor hosted as a same-origin frame under /app/docs/,
+#                           /app/pdf/, /app/slides/ and /app/sheets/ of this origin.
 #   http://localhost:9081   docs, standalone on its own origin
 #   http://localhost:9082   pdf, standalone on its own origin
 #   http://localhost:9083   slides, standalone on its own origin
+#   http://localhost:9084   sheets, standalone on its own origin
 #
 # The BFF is reachable only on the compose network. It holds the provider
 # credentials and applies no authentication of its own, so publishing it would
@@ -102,6 +103,18 @@ services:
       GENOFFICE_AI_BFF_PATH: /v1/ai
     ports:
       - '${GENOFFICE_PDF_PORT:-9082}:8080'
+
+  # Standalone sheets, likewise.
+  sheets:
+    <<: *web-service
+    container_name: genoffice-sheets
+    environment:
+      GENOFFICE_WEB_ROOT: /srv/sheets
+      GENOFFICE_WEB_PORT: '8080'
+      GENOFFICE_AI_BFF_UPSTREAM: http://ai-bff:8788
+      GENOFFICE_AI_BFF_PATH: /v1/ai
+    ports:
+      - '${GENOFFICE_SHEETS_PORT:-9084}:8080'
 
   # Standalone slides, likewise.
   slides:

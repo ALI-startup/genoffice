@@ -108,6 +108,7 @@ cmd_up() {
   info "docs   (standalone)   http://localhost:${GENOFFICE_DOCS_PORT:-9081}"
   info "pdf    (standalone)   http://localhost:${GENOFFICE_PDF_PORT:-9082}"
   info "slides (standalone)   http://localhost:${GENOFFICE_SLIDES_PORT:-9083}"
+  info "sheets (standalone)   http://localhost:${GENOFFICE_SHEETS_PORT:-9084}"
   info "ai-bff                internal only, on the compose network"
 }
 
