@@ -1,5 +1,5 @@
 /**
- * AI capabilities, split into four ports along host-capability lines.
+ * AI capabilities, split into three ports along host-capability lines.
  *
  * Every member of every port is required. The split exists because the AI
  * surface is *not* one capability: the channels behind it are registered by
@@ -15,8 +15,6 @@
  * | ai         | onAiStream     | yes | yes  | yes    | yes    |
  * | aiSettings | setAiSettings  | no  | yes  | yes    | yes    |
  * | aiChat     | aiChat         | no  | yes  | no     | yes    |
- * | genspark   | aiGskStatus    | no  | yes  | yes    | yes    |
- * | genspark   | aiGskLogin     | no  | yes  | yes    | yes    |
  *
  * The pdf column is a genuine host limitation, not just a preload omission.
  * `startPdfStandalone()` (apps/pdf/src/main/pdf-main.ts:549) calls only
@@ -27,10 +25,10 @@
  * not be enough; in standalone mode there is no handler on the other end.
  *
  * Consequence, and the reason `ai` is a separate port rather than a merged one:
- * a shell-hosted pdf backs `ai` in full and none of the other three, so it
+ * a shell-hosted pdf backs `ai` in full and neither of the other two, so it
  * installs `ai` alone. Standalone pdf backs no AI channel at all (registerAiIpc
  * covers 'ai:get-settings' and 'ai:stream' too) and must install none of the
- * four — which is a pre-existing product gap in standalone mode, surfaced by
+ * three — which is a pre-existing product gap in standalone mode, surfaced by
  * this modelling rather than caused by it.
  *
  * `SearchPort` is deliberately *not* split the same way: 'ai:image-search' is
@@ -47,7 +45,6 @@ import type {
   AiSettings,
   AiStreamChunk,
   AiStreamRequest,
-  GenSparkAccountStatus,
 } from '@genoffice/ai-provider'
 
 /** Reading AI settings plus the streaming call — every AI-capable host backs all four. */
@@ -68,12 +65,4 @@ export interface AiSettingsPort {
 /** One-shot (non-streaming) completion, used by the docs/sheets inline-AI surfaces. */
 export interface AiChatPort {
   aiChat(request: AiChatRequest): Promise<AiChatResponse>
-}
-
-/** Genspark account integration (status + browser sign-in). */
-export interface GensparkPort {
-  /** Genspark account status; withEmail also fetches the email (network call, slower). */
-  aiGskStatus(withEmail?: boolean): Promise<GenSparkAccountStatus>
-  /** Open the browser to sign in to Genspark (fire-and-forget). */
-  aiGskLogin(): Promise<void>
 }

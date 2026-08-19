@@ -469,7 +469,6 @@ export function createWebSheetsPlatform(deps: WebSheetsPlatformDeps): SheetsPlat
     attachments: deps.attachments,
     menu: null,
     pdfExport: null,
-    genspark: null,
     search: null,
     project: null,
   }

@@ -4,7 +4,10 @@ import { AI_PROVIDERS, defaultAiSettings, resolveAiSettings } from '../src/provi
 describe('defaultAiSettings', () => {
   it('gives every provider its default model and an empty key by default', () => {
     const settings = defaultAiSettings()
-    expect(settings.provider).toBe('genspark')
+    // Follows the list rather than naming one: nothing works before the user has
+    // configured a key or a local server, so the default only picks the row the
+    // settings screen opens on.
+    expect(settings.provider).toBe(AI_PROVIDERS[0].id)
     for (const meta of AI_PROVIDERS) {
       expect(settings.providers[meta.id].apiKey).toBe('')
       expect(settings.providers[meta.id].model).toBe(meta.defaultModel)

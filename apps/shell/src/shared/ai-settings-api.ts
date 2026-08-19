@@ -9,7 +9,7 @@ import { AI_PROVIDERS, type AiProviderId, type AiProviderMeta } from '@genoffice
  * changing this UI contract.
  */
 
-export type AiProviderProtocol = 'genspark' | 'native' | 'openai-compatible' | 'local'
+export type AiProviderProtocol = 'native' | 'openai-compatible' | 'local'
 
 export interface AiProviderDefinition {
   id: string
@@ -81,7 +81,6 @@ export interface AiProviderConnectionResult {
 export type AiProviderCapability = 'text' | 'image'
 
 const PROVIDER_DESCRIPTIONS: Record<AiProviderId, string> = {
-  genspark: 'Use the signed-in Genspark account.',
   openai: 'OpenAI models through the official API.',
   anthropic: 'Claude models through the Anthropic API.',
   gemini: 'Google Gemini models and image generation.',
@@ -111,7 +110,6 @@ const PROVIDER_ICONS: Partial<Record<AiProviderId, string>> = {
 }
 
 function shellProtocol(provider: AiProviderMeta): AiProviderProtocol {
-  if (provider.id === 'genspark') return 'genspark'
   if (provider.endpointKind === 'local') return 'local'
   if (provider.protocol === 'anthropic' || provider.protocol === 'gemini') return 'native'
   if (['runware', 'replicate', 'fal', 'stability'].includes(provider.id)) return 'native'
@@ -119,7 +117,7 @@ function shellProtocol(provider: AiProviderMeta): AiProviderProtocol {
 }
 
 function requiresApiKey(provider: AiProviderMeta): boolean {
-  return provider.id !== 'genspark' && provider.id !== 'custom' && provider.endpointKind !== 'local'
+  return provider.id !== 'custom' && provider.endpointKind !== 'local'
 }
 
 /**
@@ -139,7 +137,7 @@ export const AI_PROVIDER_DEFINITIONS: readonly AiProviderDefinition[] = AI_PROVI
       requiresApiKey: requiresApiKey(provider),
       needsBaseUrl:
         provider.id === 'nvidia' || provider.endpointKind === 'local' || provider.id === 'custom',
-      supportsModelDiscovery: provider.id !== 'genspark' && provider.id !== 'stability',
+      supportsModelDiscovery: provider.id !== 'stability',
       supportsText,
       supportsImages,
       ...(provider.defaultBaseUrl ? { defaultBaseUrl: provider.defaultBaseUrl } : {}),

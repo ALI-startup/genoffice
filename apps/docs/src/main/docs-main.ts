@@ -57,17 +57,9 @@ import {
   type AiSettings,
   type AiStreamChunk,
   type AiStreamRequest,
-  type GenSparkAccountStatus,
   type LegacyAiSettings,
 } from '@genoffice/ai-provider'
-import {
-  gskApiKey,
-  gskLogin,
-  gskLoginInfo,
-  hasGskAuth,
-  webSearch,
-  imageSearch,
-} from '@genoffice/ai-search'
+import { webSearch, imageSearch } from '@genoffice/ai-search'
 import type {
   AttachmentAddResult,
   AttachmentImageResult,
@@ -2607,25 +2599,10 @@ export function registerAiIpc(): void {
       return settings
     }
     const stored = readJson<Partial<AiSettings> & LegacyAiSettings>(SETTINGS_PATH(), {})
-    const settings = resolveAiSettings(stored, defaultAiSettings())
-    // AI features all go through Genspark (gsk login); legacy settings with another provider are reset
-    settings.provider = 'genspark'
-    return settings
-  })
-
-  // Genspark account (gsk login state): auth source for AI features; the frontend uses it to prompt login when logged out
-  ipcMain.handle(
-    'ai:gsk-status',
-    async (_event, withEmail?: boolean): Promise<GenSparkAccountStatus> => {
-      if (!hasGskAuth()) return { loggedIn: false }
-      if (!withEmail) return { loggedIn: true }
-      const info = await gskLoginInfo()
-      return info?.email ? { loggedIn: true, email: info.email } : { loggedIn: true }
-    },
-  )
-
-  ipcMain.handle('ai:gsk-login', () => {
-    gskLogin()
+    // The stored provider is honoured as stored. It used to be overwritten with
+    // 'genspark' on every read, because AI went through that one account — which
+    // silently undid whatever the settings screen had just saved.
+    return resolveAiSettings(stored, defaultAiSettings())
   })
 
   ipcMain.handle('ai:set-settings', (_event, settings: AiSettings) => {
@@ -2643,17 +2620,13 @@ export function registerAiIpc(): void {
     else if (request.task === 'slides-generation') task = 'slides-generation'
     const resolved = resolveConfiguredAiProvider(task)
     const provider = (resolved?.providerId ?? settings.provider) as AiProviderId
-    let config = resolved
+    const config = resolved
       ? {
           apiKey: resolved.apiKey ?? '',
           model: resolved.model,
           ...(resolved.baseUrl ? { baseUrl: resolved.baseUrl } : {}),
         }
       : settings.providers?.[provider]
-    // the genspark key never enters the settings file; requests take it from the gsk login state
-    if (provider === 'genspark' && config && !config.apiKey) {
-      config = { ...config, apiKey: gskApiKey() }
-    }
     const send = (chunk: AiStreamChunk) => {
       if (!event.sender.isDestroyed()) event.sender.send('ai:stream-chunk', chunk)
     }
@@ -2661,7 +2634,7 @@ export function registerAiIpc(): void {
       send({
         requestId,
         type: 'error',
-        error: provider === 'genspark' ? tm('errGskNotLoggedIn') : tm('errNoApiKey', { provider }),
+        error: tm('errNoApiKey', { provider }),
       })
       return
     }
@@ -2768,15 +2741,9 @@ export function registerAiIpc(): void {
   ipcMain.handle('ai:chat', async (_event, request: AiChatRequest) => {
     const { settings, system, user } = request
     const provider = settings.provider
-    let config = settings.providers?.[provider]
-    if (provider === 'genspark' && config && !config.apiKey) {
-      config = { ...config, apiKey: gskApiKey() }
-    }
+    const config = settings.providers?.[provider]
     if (!config?.apiKey) {
-      return {
-        ok: false,
-        error: provider === 'genspark' ? tm('errGskNotLoggedIn') : tm('errNoApiKey', { provider }),
-      }
+      return { ok: false, error: tm('errNoApiKey', { provider }) }
     }
     if (!config.model) return { ok: false, error: tm('errNoModel') }
     try {

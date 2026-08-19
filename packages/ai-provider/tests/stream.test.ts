@@ -231,7 +231,7 @@ describe('streamForProvider: anthropic', () => {
 
   it('replaces an HTML error body (e.g. a gateway block page) with a readable note', async () => {
     const html =
-      '<!doctype html>\n<html>\n<head><title>Genspark</title></head><body>app shell</body></html>'
+      '<!doctype html>\n<html>\n<head><title>Sign in</title></head><body>app shell</body></html>'
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(html, { status: 403 })))
     const { cb } = collector()
     await expect(
@@ -351,9 +351,7 @@ describe('streamForProvider: gemini', () => {
 
 describe('streamForProvider: openai-compatible', () => {
   it('sends operator-configured headers without displacing the credential', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(okResponse(sseStream(['data: [DONE]'])))
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(sseStream(['data: [DONE]'])))
     vi.stubGlobal('fetch', fetchMock)
     const { cb } = collector()
     await streamForProvider(
@@ -554,98 +552,9 @@ describe('streamForProvider: openai-compatible', () => {
   })
 })
 
-describe('streamForProvider: genspark', () => {
-  it('routes claude models to the Anthropic-compatible proxy endpoint', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(sseStream([])))
-    vi.stubGlobal('fetch', fetchMock)
-    const { cb } = collector()
-    await streamForProvider(
-      'genspark',
-      { apiKey: 'gsk-k', model: 'claude-opus-4-7' },
-      'sys',
-      [],
-      [],
-      100,
-      cb,
-    )
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://www.genspark.ai/api/anthropic/v1/messages',
-      expect.objectContaining({ headers: expect.objectContaining({ 'x-api-key': 'gsk-k' }) }),
-    )
-  })
-
-  it('routes gemini models to the Gemini proxy with header auth', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(sseStream([])))
-    vi.stubGlobal('fetch', fetchMock)
-    const { cb } = collector()
-    await streamForProvider(
-      'genspark',
-      { apiKey: 'gsk-k', model: 'gemini-3-flash-preview' },
-      'sys',
-      [],
-      [],
-      100,
-      cb,
-    )
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://www.genspark.ai/api/llm_proxy/gemini/v1beta/models/gemini-3-flash-preview:streamGenerateContent?alt=sse',
-      expect.objectContaining({ headers: expect.objectContaining({ 'x-goog-api-key': 'gsk-k' }) }),
-    )
-  })
-
-  it('routes other models to the OpenAI-compatible proxy', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(sseStream(['data: [DONE]'])))
-    vi.stubGlobal('fetch', fetchMock)
-    const { cb } = collector()
-    await streamForProvider(
-      'genspark',
-      { apiKey: 'gsk-k', model: 'gpt-5.2' },
-      'sys',
-      [],
-      [],
-      100,
-      cb,
-    )
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://www.genspark.ai/api/llm_proxy/v1/chat/completions',
-      expect.anything(),
-    )
-  })
-
-  it('stamps X-Agent-Type on all three proxy routes for billing attribution', async () => {
-    for (const model of ['claude-opus-4-7', 'gemini-3-flash-preview', 'gpt-5.2']) {
-      const fetchMock = vi.fn().mockResolvedValue(okResponse(sseStream([])))
-      vi.stubGlobal('fetch', fetchMock)
-      const { cb } = collector()
-      await streamForProvider('genspark', { apiKey: 'gsk-k', model }, 'sys', [], [], 100, cb)
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({
-          headers: expect.objectContaining({ 'X-Agent-Type': 'genoffice' }),
-        }),
-      )
-    }
-  })
-
-  it('never sends X-Agent-Type to direct vendor APIs', async () => {
-    for (const [provider, model] of [
-      ['anthropic', 'claude-opus-4-7'],
-      ['gemini', 'gemini-2.5-flash'],
-      ['openai', 'gpt-4.1-mini'],
-    ] as const) {
-      const fetchMock = vi.fn().mockResolvedValue(okResponse(sseStream([])))
-      vi.stubGlobal('fetch', fetchMock)
-      const { cb } = collector()
-      await streamForProvider(provider, { apiKey: 'k', model }, 'sys', [], [], 100, cb)
-      const headers = fetchMock.mock.calls[0]![1].headers as Record<string, string>
-      expect(headers['X-Agent-Type']).toBeUndefined()
-    }
-  })
-})
-
 describe('streamForProvider: 200 + non-stream JSON instead of SSE', () => {
   const creditsNotice =
-    'Your Genspark credits have been exhausted. Please visit https://www.genspark.ai/pricing to purchase more credits.'
+    'Your credits have been exhausted. Please visit the billing page to purchase more credits.'
   const json = (value: unknown) =>
     new Response(JSON.stringify(value), {
       status: 200,
@@ -680,7 +589,7 @@ describe('streamForProvider: 200 + non-stream JSON instead of SSE', () => {
           candidates: [
             {
               content: {
-                parts: [{ text: 'Out of quota, visit https://www.genspark.ai/pricing to top up.' }],
+                parts: [{ text: 'Out of quota, visit the billing page to top up.' }],
               },
             },
           ],

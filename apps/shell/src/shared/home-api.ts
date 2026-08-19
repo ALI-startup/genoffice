@@ -89,39 +89,12 @@ export interface HomeApi {
   setLanguage(lang: UiLanguage): Promise<void>
   /** the language switched somewhere else — an editor tab's own toggle; returns an unsubscribe */
   onLanguageChanged(handler: (lang: UiLanguage) => void): () => void
-  /** Genspark account status (gsk login state; to be upgraded to a signup/account system later) */
-  accountStatus(): Promise<AccountStatus>
-  /** start Genspark login (opens the browser; accountStatus flips to logged-in on completion); returns whether the launch succeeded */
-  accountLogin(): Promise<boolean>
-  /** progress events for the login started via accountLogin; returns an unsubscribe */
-  onAccountLogin(handler: (ev: AccountLoginEvent) => void): () => void
-  /** re-open the pending login auth URL in the default browser (rescue when auto-open failed) */
-  openLoginUrl(): Promise<void>
-  /** log out (clears the saved API key; the login state is shared globally with the gsk CLI) */
-  accountLogout(): Promise<void>
   /** app version (from package.json / electron app.getVersion) */
   getAppVersion(): Promise<string>
   /** whether the first-run onboarding has been completed or skipped (persisted in userData/app-settings.json) */
   onboardingSeen(): Promise<boolean>
   /** mark the first-run onboarding as done so it never shows again */
   setOnboardingSeen(): Promise<void>
-  /** open the GenTeam community page in the default browser */
-  openGenTeam(): Promise<void>
-}
-
-export interface AccountStatus {
-  /** gsk is installed and logged in */
-  loggedIn: boolean
-  email?: string
-}
-
-/** login flow progress pushed from main (gsk login CLI output) */
-export interface AccountLoginEvent {
-  phase: 'launched' | 'url' | 'success' | 'error'
-  url?: string
-  expiresInSec?: number
-  /** 'network' | 'expired' | raw CLI error text */
-  error?: string
 }
 
 export interface RenameResult {
@@ -192,15 +165,9 @@ export const HOME_CHANNELS = {
   // same channel every editor does, because a switch made in a tab has to
   // reach the tab strip and the home page too.
   languageChanged: 'app:language-changed',
-  accountStatus: 'home:account-status',
-  accountLogin: 'home:account-login',
-  accountLoginEvent: 'home:account-login-event',
-  accountLoginOpenUrl: 'home:account-login-open-url',
-  accountLogout: 'home:account-logout',
   getAppVersion: 'home:get-app-version',
   onboardingSeen: 'home:onboarding-seen',
   setOnboardingSeen: 'home:set-onboarding-seen',
-  openGenTeam: 'home:open-genteam',
 } as const
 
 export const PROJECT_CHANNELS = {

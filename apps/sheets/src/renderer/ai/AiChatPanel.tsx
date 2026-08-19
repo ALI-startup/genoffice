@@ -3,7 +3,7 @@ import { AiComposer, AiTypingIndicator } from '@genoffice/ui'
 import { GensparkMark } from '../ribbon-icons'
 import type { ChangePlan } from '../../domain/workbook.types'
 import { type AttachmentMeta, type AttachmentRef } from '@genoffice/platform'
-import { sheetsAttachments, sheetsPlatform } from '../platform'
+import { sheetsAttachments } from '../platform'
 import { useI18n, type TFunc } from '../i18n/locale'
 import { Markdown } from '@genoffice/ui'
 import sendEnterOn from '../assets/send-enter-on.png'
@@ -53,7 +53,6 @@ export interface AiChatMessage {
   /** the run failed and this user message was rolled back out of the model context */
   readonly undelivered?: boolean | undefined
   /** the run failed because Genspark is signed out — render an inline sign-in button */
-  readonly loginRequired?: boolean | undefined
   /** Set when this message reflects an auto-applied plan; renders an inline [Undo] button. */
   readonly autoApplied?: { readonly opCount: number } | undefined
 }
@@ -209,10 +208,6 @@ export function AiChatPanel({
 
   const canSend = prompt.trim().length > 0 && !aiBusy
 
-  // Null on a host with no Genspark sign-in to offer (it shells out to the `gsk` CLI), and
-  // the sign-in button is then absent rather than inert.
-  const genspark = sheetsPlatform().genspark
-
   const send = (): void => {
     if (!canSend) return
     stickToBottomRef.current = true
@@ -359,11 +354,6 @@ export function AiChatPanel({
                       {t('aiUndo')}
                     </button>
                   </div>
-                )}
-                {entry.loginRequired && genspark && (
-                  <button className="ai-login-btn" onClick={() => void genspark.aiGskLogin()}>
-                    {t('aiGskLoginBtn')}
-                  </button>
                 )}
               </>
             )}

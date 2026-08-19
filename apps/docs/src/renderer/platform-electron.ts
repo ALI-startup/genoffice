@@ -15,7 +15,6 @@
 import {
   createDocsAiPort,
   createDocsCloseSavePort,
-  createDocsGensparkPort,
   createDocsLanguagePort,
   createDocsSearchPort,
   createDocsTabsPort,
@@ -199,7 +198,6 @@ export function createElectronDocsPlatform(bridge: DesktopApi): DocsPlatform {
     file: createDocsFilePort(bridge),
     tabs: createDocsTabsPort(bridge),
     search: createDocsSearchPort(bridge),
-    genspark: createDocsGensparkPort(bridge),
     pdfExport: createDocsPdfExportPort(bridge),
     print: null,
     hwpx: createDocsHwpxPort(bridge),

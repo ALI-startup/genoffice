@@ -721,9 +721,7 @@ export function createWebSlidesPlatform(deps: WebSlidesPlatformDeps): SlidesPlat
     presenter: null,
     pdfExport: null,
     clipboard: null,
-    genspark: null,
     search: null,
-    cloud: null,
     styleTemplates: null,
     menu: null,
   }

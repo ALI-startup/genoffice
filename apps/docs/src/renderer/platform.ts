@@ -21,9 +21,6 @@
  *     tab strip.
  *   - `search` — web/image search and the image download behind the AI tools, or
  *     `null` on a host that cannot reach a search backend.
- *   - `genspark` — the sign-in surface in the AI panel (status probe on a failed
- *     run, plus the inline sign-in button), or `null` on a host with no Genspark
- *     integration.
  *   - `pdfExport` — PDF export/print, or `null` on a host that has none.
  *   - `print` — handing the current view to the host's print flow, or `null` on a
  *     host whose print flow the renderer does not drive.
@@ -55,7 +52,6 @@
  */
 import {
   createPlatformSlot,
-  type GensparkPort,
   type Platform,
   type SearchPort,
   type WindowPort,
@@ -553,12 +549,10 @@ export interface DocsDownloadPort {
  *
  *   - `tabs` — Electron: the shell's tab strip. Web: `null`; a page cannot
  *     enumerate or focus the browser's other tabs.
- *   - `search` — Electron: the main process's Serper/DuckDuckGo/gsk client, which
+ *   - `search` — Electron: the main process's Serper/DuckDuckGo client, which
  *     also sidesteps renderer CORS. Web: `null`; the search backends need a key
  *     the browser must never hold and an origin its CSP (`connect-src 'self'`)
  *     forbids, so this needs a server route the BFF does not yet have.
- *   - `genspark` — Electron: the gsk CLI (a local process) and a system browser
- *     sign-in. Web: `null`; a page can do neither.
  *   - `pdfExport` — Electron: the main process renders with `printToPDF` and
  *     merges with pdf-lib. Web: `null`, and it stays null. Phase 4c decided
  *     against a renderer-side exporter: rasterising pages to canvas or re-laying
@@ -580,11 +574,10 @@ export interface DocsDownloadPort {
  * desktop app changes.
  */
 export type DocsPlatform = Platform<'language' | 'ai' | 'attachments'> & {
+  search: SearchPort | null
   window: DocsWindowPort
   file: DocsFilePort
   tabs: DocsTabsPort | null
-  search: SearchPort | null
-  genspark: GensparkPort | null
   pdfExport: DocsPdfExportPort | null
   print: DocsPrintPort | null
   /**

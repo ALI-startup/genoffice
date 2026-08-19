@@ -59,12 +59,7 @@
  */
 import { createPlatformSlot, type LanguagePort } from '@genoffice/platform'
 import type { AiSettingsApi } from '../../shared/ai-settings-api'
-import type {
-  AccountLoginEvent,
-  AccountStatus,
-  ProjectSummaryEntry,
-  RecentQuery,
-} from '../../shared/home-api'
+import type { ProjectSummaryEntry, RecentQuery } from '../../shared/home-api'
 import type { TabsApi, TabSummary } from '../../shared/tabs-api'
 import type { UpdateWindowApi } from '../../shared/update-api'
 
@@ -282,28 +277,6 @@ export interface ShellProjectsPort {
 }
 
 /**
- * The signed-in account behind the sidebar entry.
- *
- * Modelled as a required port rather than a nullable one, unlike docs' shared
- * `genspark` port. That port is nullable because its two members *are* local CLI
- * calls (`aiGskStatus` / `aiGskLogin`) that a page cannot make. This one is a
- * generic account contract — status, sign in, progress, sign out — that today
- * happens to be implemented over the gsk CLI and that home-api.ts already
- * records as "to be upgraded to a signup/account system later". A browser host
- * backs it with a web sign-in instead of stubbing it.
- */
-export interface ShellAccountPort {
-  status(): Promise<AccountStatus>
-  /** Start sign-in. Resolves to whether the flow could be launched at all. */
-  login(): Promise<boolean>
-  /** Progress for the sign-in started by `login`; returns an unsubscribe. */
-  onLoginProgress(handler: (event: AccountLoginEvent) => void): () => void
-  /** Re-open the pending sign-in URL — the rescue path when auto-open failed. */
-  openLoginUrl(): Promise<void>
-  logout(): Promise<void>
-}
-
-/**
  * UI language: the shared `LanguagePort`, all three members.
  *
  * It used to be the write half alone, because the shell's home page was the
@@ -325,8 +298,6 @@ export interface ShellOnboardingPort {
 export interface ShellAppPort {
   /** Version string for the account menu's footer row. */
   version(): Promise<string>
-  /** Open the GenTeam community page outside the app. */
-  openGenTeam(): Promise<void>
 }
 
 /**
@@ -472,7 +443,6 @@ export interface ShellPlatform {
   pdfLauncher: ShellPdfLauncherPort | null
   frames: ShellFramesPort | null
   projects: ShellProjectsPort | null
-  account: ShellAccountPort
   tabs: ShellTabsPort
   tabMenus: ShellTabMenusPort | null
   aiSettings: ShellAiSettingsPort

@@ -19,16 +19,9 @@ export type {
   AiSettings,
   AiStreamChunk,
   AiStreamRequest,
-  GenSparkAccountStatus,
   LegacyAiSettings,
 } from './types'
-export {
-  AI_PROVIDERS,
-  AI_PROVIDER_BY_ID,
-  GENSPARK_LLM_BASE_URLS,
-  defaultAiSettings,
-  resolveAiSettings,
-} from './providers'
+export { AI_PROVIDERS, AI_PROVIDER_BY_ID, defaultAiSettings, resolveAiSettings } from './providers'
 export {
   DEFAULT_AI_ENDPOINT_POLICY,
   assertValidAiEndpoint,

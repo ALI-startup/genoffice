@@ -26,7 +26,6 @@ function makeAccess() {
     },
     applyDeck: () => {},
     fitWidthPx: 1280,
-    generateFromHtml: async () => ({ ok: true, pages: 1 }),
   }
   return { access, applied }
 }

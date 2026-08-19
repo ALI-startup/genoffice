@@ -23,20 +23,10 @@ import {
   type AiSettings,
   type AiStreamChunk,
   type AiStreamRequest,
-  type GenSparkAccountStatus,
   type LegacyAiSettings,
 } from '@genoffice/ai-provider'
 import { fetchWithSsrfGuard } from '@genoffice/electron-utils'
-import {
-  webSearch,
-  imageSearch,
-  gskApiKey,
-  gskGenerateImage,
-  gskAnalyzeMedia,
-  gskLogin,
-  gskLoginInfo,
-  hasGskAuth,
-} from '@genoffice/ai-search'
+import { webSearch, imageSearch } from '@genoffice/ai-search'
 import { addPicture } from '@genoffice/pptx-engine'
 import { EMU_PER_PX_96 } from '@genoffice/pptx-render'
 import { tm } from './i18n-main'
@@ -79,25 +69,10 @@ export function registerAiIpc(): void {
       return settings
     }
     const stored = readJson<Partial<AiSettings> & LegacyAiSettings>(AI_SETTINGS_PATH(), {})
-    const settings = resolveAiSettings(stored, defaultAiSettings())
-    // AI features all go through Genspark (gsk login); stored settings that chose another provider are normalized back
-    settings.provider = 'genspark'
-    return settings
-  })
-
-  // Genspark account (gsk login state): the auth source for AI features; when logged out the frontend uses this to guide login
-  ipcMain.handle(
-    'ai:gsk-status',
-    async (_event, withEmail?: boolean): Promise<GenSparkAccountStatus> => {
-      if (!hasGskAuth()) return { loggedIn: false }
-      if (!withEmail) return { loggedIn: true }
-      const info = await gskLoginInfo()
-      return info?.email ? { loggedIn: true, email: info.email } : { loggedIn: true }
-    },
-  )
-
-  ipcMain.handle('ai:gsk-login', () => {
-    gskLogin()
+    // The stored provider is honoured as stored. It used to be overwritten with
+    // 'genspark' on every read, which silently undid whatever the settings
+    // screen had just saved.
+    return resolveAiSettings(stored, defaultAiSettings())
   })
 
   ipcMain.handle('ai:set-settings', (_event, settings: AiSettings) => {
@@ -115,17 +90,13 @@ export function registerAiIpc(): void {
     else if (request.task === 'slides-generation') task = 'slides-generation'
     const resolved = resolveConfiguredAiProvider(task)
     const provider = (resolved?.providerId ?? settings.provider) as AiProviderId
-    let config = resolved
+    const config = resolved
       ? {
           apiKey: resolved.apiKey ?? '',
           model: resolved.model,
           ...(resolved.baseUrl ? { baseUrl: resolved.baseUrl } : {}),
         }
       : settings.providers?.[provider]
-    // The genspark key never enters the settings file; it is fetched from the gsk login state per request
-    if (provider === 'genspark' && config && !config.apiKey) {
-      config = { ...config, apiKey: gskApiKey() }
-    }
     const send = (chunk: AiStreamChunk) => {
       if (!event.sender.isDestroyed()) event.sender.send('ai:stream-chunk', chunk)
     }
@@ -133,7 +104,7 @@ export function registerAiIpc(): void {
       send({
         requestId,
         type: 'error',
-        error: provider === 'genspark' ? tm('errGskNotLoggedIn') : tm('errNoApiKey', { provider }),
+        error: tm('errNoApiKey', { provider }),
       })
       return
     }
@@ -223,7 +194,7 @@ export function registerSlidesOnlyAiIpc(): void {
       },
     ) => {
       const configured = resolveConfiguredAiProvider('image')
-      if (configured && configured.providerId !== 'genspark') {
+      if (configured) {
         try {
           if (!configured.apiKey)
             return { error: tm('errNoApiKey', { provider: configured.providerId }) }
@@ -251,37 +222,7 @@ export function registerSlidesOnlyAiIpc(): void {
           return { error: err instanceof Error ? err.message : String(err) }
         }
       }
-      if (!hasGskAuth()) return { error: tm('errGskCli') }
-      try {
-        const r = await gskGenerateImage({
-          prompt: String(op.prompt),
-          model: op.model ? String(op.model) : undefined,
-          referenceImageUrls: Array.isArray(op.referenceImageUrls)
-            ? op.referenceImageUrls.map(String)
-            : undefined,
-          aspectRatio: op.aspectRatio ? String(op.aspectRatio) : undefined,
-          imageSize: op.imageSize ? String(op.imageSize) : undefined,
-        })
-        return { url: r.url }
-      } catch (err) {
-        return { error: err instanceof Error ? err.message : String(err) }
-      }
-    },
-  )
-
-  ipcMain.handle(
-    'ai:analyze-media',
-    async (_event, op: { mediaUrls: string[]; requirements: string }) => {
-      if (!hasGskAuth()) return { error: tm('errGskCli') }
-      try {
-        const text = await gskAnalyzeMedia({
-          mediaUrls: (op.mediaUrls ?? []).map(String),
-          requirements: String(op.requirements ?? ''),
-        })
-        return { text }
-      } catch (err) {
-        return { error: err instanceof Error ? err.message : String(err) }
-      }
+      return { error: tm('errNoApiKey', { provider: 'image' }) }
     },
   )
 

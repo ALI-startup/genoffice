@@ -33,7 +33,6 @@ export type {
   DocsAiBridge,
   DocsCloseSaveBridge,
   DocsCloseSaveSlice,
-  DocsGensparkBridge,
   DocsLanguageBridge,
   DocsSearchBridge,
   DocsTabsBridge,
@@ -42,7 +41,6 @@ export type {
 export {
   createDocsAiPort,
   createDocsCloseSavePort,
-  createDocsGensparkPort,
   createDocsLanguagePort,
   createDocsSearchPort,
   createDocsTabsPort,

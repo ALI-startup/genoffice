@@ -46,9 +46,6 @@ function canonicalModel(providerId: string, model: string): string {
 }
 
 function canonicalTaskModel(task: AiTask, providerId: string, model: string): string {
-  if (task === 'image' && providerId === 'genspark' && model === 'claude-opus-4-7') {
-    return 'nano-banana-2'
-  }
   return canonicalModel(providerId, model)
 }
 
@@ -133,7 +130,15 @@ function normalizePersisted(
         if (
           isRecord(selection) &&
           typeof selection.providerId === 'string' &&
-          typeof selection.model === 'string'
+          typeof selection.model === 'string' &&
+          // Checked against the *build's* providers, not the merged map: a
+          // settings file keeps entries for providers it once had (that is
+          // deliberate — see the legacy-credential migration), so the merged map
+          // would still answer for one this build dropped. Genspark is the first
+          // such removal; honouring the stale selection would send every AI call
+          // to a provider `streamForProvider` rejects as unknown. The default
+          // takes the slot instead and the user picks again in Settings.
+          selection.providerId in defaults.providers
         ) {
           active[task] = {
             providerId: selection.providerId,

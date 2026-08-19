@@ -40,9 +40,7 @@ export function createElectronSlidesPlatform(
     presenter: api,
     pdfExport: api,
     clipboard: api,
-    genspark: api,
     search: api,
-    cloud: api,
     styleTemplates: api,
     menu: api,
   }

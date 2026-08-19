@@ -27,7 +27,6 @@ import type { UpdateWindowApi } from '../../shared/update-api'
 import type {
   FileEntry,
   FilePage,
-  ShellAccountPort,
   ShellAiSettingsEditorPort,
   ShellAiSettingsPort,
   ShellAppPort,
@@ -150,17 +149,6 @@ export function createShellProjectsPort(
   }
 }
 
-/** The account entry over the Electron bridge (Genspark sign-in via the gsk CLI). */
-export function createShellAccountPort(bridge: HomeApi): ShellAccountPort {
-  return {
-    status: () => bridge.accountStatus(),
-    login: () => bridge.accountLogin(),
-    onLoginProgress: (handler) => bridge.onAccountLogin(handler),
-    openLoginUrl: () => bridge.openLoginUrl(),
-    logout: () => bridge.accountLogout(),
-  }
-}
-
 /** UI language over the Electron bridge; the main process persists it and rebuilds its menus. */
 export function createShellLanguagePort(bridge: HomeApi): ShellLanguagePort {
   return {
@@ -184,7 +172,6 @@ export function createShellOnboardingPort(bridge: HomeApi): ShellOnboardingPort 
 export function createShellAppPort(bridge: HomeApi): ShellAppPort {
   return {
     version: () => bridge.getAppVersion(),
-    openGenTeam: () => bridge.openGenTeam(),
   }
 }
 
@@ -265,7 +252,6 @@ export function createElectronShellPlatform(bridges: ShellBridges): ShellPlatfor
     pdfLauncher: null,
     frames: null,
     projects: createShellProjectsPort(bridges.project),
-    account: createShellAccountPort(bridges.home),
     tabs: createShellTabsPort(bridges.tabs),
     tabMenus: createShellTabMenusPort(bridges.tabs),
     aiSettings: createShellAiSettingsPort(bridges.aiSettings),

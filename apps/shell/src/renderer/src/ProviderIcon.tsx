@@ -55,7 +55,6 @@ const SVG_BRANDS: Record<string, string[]> = {
 }
 
 const BRAND_COLORS: Record<string, string> = {
-  genspark: '#2367ec',
   openai: '#111827',
   groq: '#f55036',
   together: '#111827',
@@ -71,7 +70,6 @@ const BRAND_COLORS: Record<string, string> = {
 }
 
 const BRAND_MARKS: Record<string, string> = {
-  genspark: '✦',
   groq: 'G',
   together: 'TA',
   fireworks: '✺',

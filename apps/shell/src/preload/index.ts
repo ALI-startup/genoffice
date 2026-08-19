@@ -1,8 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { IpcRendererEvent } from 'electron'
 import type {
-  AccountLoginEvent,
-  AccountStatus,
   HomeApi,
   RecentEntry,
   RecentPage,
@@ -121,25 +119,6 @@ const homeApi: HomeApi = {
     ipcRenderer.on(HOME_CHANNELS.languageChanged, listener)
     return () => ipcRenderer.removeListener(HOME_CHANNELS.languageChanged, listener)
   },
-  async accountStatus() {
-    const result: unknown = await ipcRenderer.invoke(HOME_CHANNELS.accountStatus)
-    return (result ?? { loggedIn: false }) as AccountStatus
-  },
-  async accountLogin() {
-    const result: unknown = await ipcRenderer.invoke(HOME_CHANNELS.accountLogin)
-    return result === true
-  },
-  onAccountLogin(handler) {
-    const listener = (_event: IpcRendererEvent, ev: AccountLoginEvent) => handler(ev)
-    ipcRenderer.on(HOME_CHANNELS.accountLoginEvent, listener)
-    return () => ipcRenderer.removeListener(HOME_CHANNELS.accountLoginEvent, listener)
-  },
-  async openLoginUrl() {
-    await ipcRenderer.invoke(HOME_CHANNELS.accountLoginOpenUrl)
-  },
-  async accountLogout() {
-    await ipcRenderer.invoke(HOME_CHANNELS.accountLogout)
-  },
   async getAppVersion() {
     const result: unknown = await ipcRenderer.invoke(HOME_CHANNELS.getAppVersion)
     return typeof result === 'string' ? result : ''
@@ -150,9 +129,6 @@ const homeApi: HomeApi = {
   },
   async setOnboardingSeen() {
     await ipcRenderer.invoke(HOME_CHANNELS.setOnboardingSeen)
-  },
-  async openGenTeam() {
-    await ipcRenderer.invoke(HOME_CHANNELS.openGenTeam)
   },
 }
 

@@ -4,7 +4,7 @@ import iconDocx from './assets/file-docx.svg'
 import iconXlsx from './assets/file-xlsx.svg'
 import iconPptx from './assets/file-pptx.svg'
 import iconPdf from './assets/file-pdf.svg'
-import type { AccountStatus, ProjectSummaryEntry } from '../../shared/home-api'
+import type { ProjectSummaryEntry } from '../../shared/home-api'
 import { fileCountKey, visiblePageCount } from './counts'
 import { useI18n } from './locale'
 import type { I18n, StringKey } from './locale'
@@ -366,13 +366,8 @@ function ProjectPanel({ projects, selectedId, onSelect, onRefresh }: ProjectPane
   )
 }
 
-// ── Account entry (bottom-left) ──────────────────────────
-// Currently the Genspark (gsk) login entry; to be upgraded to a signup/account system later.
-// Language switching also lives in this popup menu.
-
-const LOGIN_POLL_MS = 2500
-/** fallback deadline when the CLI does not report expires_in (device codes live ~300s) */
-const LOGIN_MAX_WAIT_MS = 300_000
+// ── Settings entry (bottom-left) ─────────────────────────
+// The popup menu holding Settings, the full language list, and the version row.
 
 // sorted by ISO 639 language code — native-script labels have no natural
 // shared alphabet, so the code is the ordering key
@@ -400,181 +395,52 @@ const LANG_OPTIONS = [
 
 function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
   const { lang, setLang, t } = useI18n()
-  const { account, app } = shellPlatform()
-  const [status, setStatus] = useState<AccountStatus | null>(null)
-  const [waiting, setWaiting] = useState(false)
-  // incremented on login retry, resetting the polling timer
-  const [loginNonce, setLoginNonce] = useState(0)
-  const [loginError, setLoginError] = useState<
-    'timeout' | 'launch' | 'network' | 'expired' | 'failed' | null
-  >(null)
-  // auth URL reported by the login CLI — rescue entry when the browser did not open
-  const [authUrl, setAuthUrl] = useState<string | null>(null)
-  const [urlCopied, setUrlCopied] = useState(false)
-  const loginDeadline = useRef(0)
+  const { app } = shellPlatform()
   const [menuOpen, setMenuOpen] = useState(false)
-  // language flyout: opens on hover, fixed-position so it can escape the
-  // sidebar's scroll container (same trick as the project row menu)
-  const [langFly, setLangFly] = useState<{ left: number; bottom: number } | null>(null)
-  const langRowRef = useRef<HTMLDivElement>(null)
-  // grace period before the hover flyout closes: the pointer's diagonal path
-  // from the row to the options crosses ground outside both elements
-  const langCloseTimer = useRef<number | null>(null)
-  const [loggingOut, setLoggingOut] = useState(false)
   const [appVersion, setAppVersion] = useState('')
+  const [langFly, setLangFly] = useState<{ left: number; bottom: number } | null>(null)
+  const langRowRef = useRef<HTMLDivElement | null>(null)
+  const langCloseTimer = useRef<number | null>(null)
 
-  // query login state + app version once on mount
   useEffect(() => {
-    let alive = true
-    void account.status().then((s) => {
-      if (alive) setStatus(s)
-    })
-    void app.version().then((v) => {
-      if (alive && v) setAppVersion(v)
-    })
-    return () => {
-      alive = false
-    }
-  }, [account, app])
-
-  // login progress pushed from main (gsk login CLI output)
-  useEffect(() => {
-    const off = account.onLoginProgress((ev) => {
-      if (ev.phase === 'url') {
-        if (ev.url) setAuthUrl(ev.url)
-        if (ev.expiresInSec) loginDeadline.current = Date.now() + ev.expiresInSec * 1000
-      } else if (ev.phase === 'success') {
-        void account.status().then((s) => {
-          if (s.loggedIn) {
-            setStatus(s)
-            setWaiting(false)
-            setAuthUrl(null)
-          }
-        })
-      } else if (ev.phase === 'error') {
-        setWaiting(false)
-        setAuthUrl(null)
-        setLoginError(
-          ev.error === 'network' ? 'network' : ev.error === 'expired' ? 'expired' : 'failed',
-        )
-      }
-    })
-    return off
-  }, [account])
-
-  // config-file polling stays as the fallback success path (works even if progress events are lost)
-  useEffect(() => {
-    if (!waiting) return
-    const timer = setInterval(() => {
-      void account.status().then((s) => {
-        if (s.loggedIn) {
-          setStatus(s)
-          setWaiting(false)
-          setAuthUrl(null)
-        } else if (Date.now() > loginDeadline.current) {
-          setWaiting(false)
-          setAuthUrl(null)
-          setLoginError('timeout')
-        }
-      })
-    }, LOGIN_POLL_MS)
-    return () => clearInterval(timer)
-  }, [account, waiting, loginNonce])
-
-  // close the menu on outside click
-  useEffect(() => {
-    if (!menuOpen) return
-    const handler = (e: PointerEvent) => {
-      const target = e.target as Element | null
-      if (!target?.closest?.('.account-entry')) {
-        setMenuOpen(false)
-        setLangFly(null)
-      }
-    }
-    window.addEventListener('pointerdown', handler)
-    return () => window.removeEventListener('pointerdown', handler)
-  }, [menuOpen])
-
-  const loggedIn = status?.loggedIn ?? false
-  const email = status?.email ?? ''
-  const initial = email ? email[0].toUpperCase() : loggedIn ? 'G' : '?'
-  const errorText = loginError
-    ? {
-        timeout: t('loginTimeout'),
-        launch: t('loginLaunchFailed'),
-        network: t('loginNetworkError'),
-        expired: t('loginExpired'),
-        failed: t('loginFailed'),
-      }[loginError]
-    : null
+    void app.version().then(setAppVersion)
+  }, [app])
 
   const closeMenu = () => {
     setMenuOpen(false)
     setLangFly(null)
   }
 
-  const cancelLangFlyClose = () => {
+  // Close on any click outside the entry.
+  useEffect(() => {
+    if (!menuOpen) return
+    const onDown = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null
+      if (!target?.closest?.('.account-entry')) closeMenu()
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [menuOpen])
+
+  const openLangFly = () => {
     if (langCloseTimer.current !== null) {
       window.clearTimeout(langCloseTimer.current)
       langCloseTimer.current = null
     }
-  }
-
-  const openLangFly = () => {
-    cancelLangFlyClose()
     const rect = langRowRef.current?.getBoundingClientRect()
     if (rect) setLangFly({ left: rect.right - 2, bottom: window.innerHeight - rect.bottom })
   }
 
   const scheduleLangFlyClose = () => {
-    cancelLangFlyClose()
     langCloseTimer.current = window.setTimeout(() => setLangFly(null), 200)
   }
 
-  // the fixed-position flyout would detach from its row on scroll — close it
-  // (same rule as the project row menu); also drop any pending close timer
   useEffect(() => {
     if (!langFly) return
-    const close = (event: Event) => {
-      // the flyout scrolls its own options (max-height + overflow-y) — only
-      // outside scrolls detach it from its row
-      const target = event.target as Element | null
-      if (target instanceof Element && target.closest('.lang-flyout')) return
-      setLangFly(null)
-    }
-    window.addEventListener('scroll', close, true)
-    return () => {
-      window.removeEventListener('scroll', close, true)
-      cancelLangFlyClose()
-    }
+    const onScroll = () => setLangFly(null)
+    window.addEventListener('scroll', onScroll, true)
+    return () => window.removeEventListener('scroll', onScroll, true)
   }, [langFly])
-
-  const startLogin = () => {
-    // clicking again while waiting = relaunch the login (main kills the stale CLI, so the new device code is the live one)
-    setLoginError(null)
-    setWaiting(true)
-    setAuthUrl(null)
-    setUrlCopied(false)
-    loginDeadline.current = Date.now() + LOGIN_MAX_WAIT_MS
-    setLoginNonce((n) => n + 1)
-    closeMenu()
-    void account.login().then((launched) => {
-      if (!launched) {
-        setWaiting(false)
-        setLoginError('launch')
-      }
-    })
-  }
-
-  const openLoginUrl = () => void account.openLoginUrl()
-
-  const copyLoginUrl = () => {
-    if (!authUrl) return
-    void navigator.clipboard.writeText(authUrl).then(() => {
-      setUrlCopied(true)
-      window.setTimeout(() => setUrlCopied(false), 2000)
-    })
-  }
 
   const handleClick = () => {
     setMenuOpen((v) => !v)
@@ -585,42 +451,6 @@ function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
     <div className="account-entry">
       {menuOpen && (
         <div className="account-menu" role="menu">
-          {loggedIn ? (
-            <div className="account-menu-info">
-              <span className="account-menu-email" title={email}>
-                {email || t('loggedIn')}
-              </span>
-            </div>
-          ) : (
-            <>
-              <button
-                className="account-menu-item"
-                role="menuitem"
-                onClick={startLogin}
-                title={waiting ? t('waitingLogin') : undefined}
-              >
-                {waiting ? t('waitingShort') : t('loginGenspark')}
-              </button>
-              {waiting && authUrl && (
-                <>
-                  <button
-                    className="account-menu-item login-rescue"
-                    role="menuitem"
-                    onClick={openLoginUrl}
-                  >
-                    {t('loginOpenManually')}
-                  </button>
-                  <button
-                    className="account-menu-item login-rescue"
-                    role="menuitem"
-                    onClick={copyLoginUrl}
-                  >
-                    {urlCopied ? t('loginCopied') : t('loginCopyUrl')}
-                  </button>
-                </>
-              )}
-            </>
-          )}
           <div className="account-menu-divider" />
           <button
             className="account-menu-item"
@@ -730,106 +560,29 @@ function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
               <span className="version-row-value">{appVersion}</span>
             </div>
           )}
-          {loggedIn && (
-            <button
-              className="account-menu-item danger"
-              role="menuitem"
-              disabled={loggingOut}
-              onClick={() => {
-                setLoggingOut(true)
-                void account.logout().then(() => {
-                  setLoggingOut(false)
-                  closeMenu()
-                  setStatus({ loggedIn: false })
-                })
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <path
-                  d="M6.2 2H3.7A1.7 1.7 0 0 0 2 3.7v8.6A1.7 1.7 0 0 0 3.7 14h2.5"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M10.7 4.9 13.8 8l-3.1 3.1M13.4 8H6.4"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span>{loggingOut ? t('loggingOut') : t('logout')}</span>
-            </button>
-          )}
-        </div>
-      )}
-      {!menuOpen && waiting && authUrl && (
-        <div className="login-hint" role="status">
-          <button className="login-hint-open" onClick={openLoginUrl}>
-            {t('loginOpenManually')}
-          </button>
-          <button className="login-hint-copy" onClick={copyLoginUrl}>
-            {urlCopied ? t('loginCopied') : t('loginCopyUrl')}
-          </button>
         </div>
       )}
       <button
         className="account-btn"
         onClick={handleClick}
         aria-expanded={menuOpen}
-        title={
-          loggedIn
-            ? email || t('loggedInGenspark')
-            : waiting
-              ? t('waitingLogin')
-              : (errorText ?? t('loginGenspark'))
-        }
-        aria-label={loggedIn ? t('account') : t('login')}
+        title={t('settingsTitle')}
+        aria-label={t('settingsTitle')}
       >
-        <span
-          className={`account-avatar${loggedIn ? ' logged-in' : ''}${waiting ? ' waiting' : ''}`}
-        >
-          {waiting ? (
-            <svg
-              className="account-spinner"
-              width="14"
-              height="14"
-              viewBox="0 0 16 16"
-              aria-hidden="true"
-            >
-              <circle
-                cx="8"
-                cy="8"
-                r="6"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                fill="none"
-                strokeDasharray="26"
-                strokeDashoffset="18"
-                strokeLinecap="round"
-              />
-            </svg>
-          ) : (
-            initial
-          )}
+        <span className="account-avatar">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path
+              d="M6.6 2.4h2.8l.4 1.6c.35.13.68.32.98.57l1.55-.55 1.4 2.43-1.17 1.1c.03.2.04.4.04.6s-.01.4-.04.6l1.17 1.1-1.4 2.43-1.55-.55c-.3.25-.63.44-.98.57l-.4 1.6H6.6l-.4-1.6a4.2 4.2 0 0 1-.98-.57l-1.55.55-1.4-2.43 1.17-1.1a4.6 4.6 0 0 1 0-1.2l-1.17-1.1 1.4-2.43 1.55.55c.3-.25.63-.44.98-.57l.4-1.6Z"
+              stroke="currentColor"
+              strokeWidth="1.1"
+              strokeLinejoin="round"
+            />
+            <circle cx="8" cy="8.15" r="1.8" stroke="currentColor" strokeWidth="1.1" />
+          </svg>
         </span>
         <span className="account-text">
-          {loggedIn ? (
-            <>
-              <span className="account-name">{email ? email.split('@')[0] : t('loggedIn')}</span>
-              <span className="account-sub" title={email}>
-                {email || 'Genspark'}
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="account-name">{waiting ? t('waitingShort') : t('login')}</span>
-              <span className={`account-sub${!waiting && errorText ? ' error' : ''}`}>
-                {!waiting && errorText ? errorText : t('accountGenspark')}
-              </span>
-            </>
-          )}
+          <span className="account-name">{t('settingsTitle')}</span>
+          <span className="account-sub">{t('language')}</span>
         </span>
       </button>
     </div>
@@ -848,7 +601,6 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
     slidesLauncher,
     browse,
     projects: projectsPort,
-    account,
   } = shellPlatform()
   // ── Paged list state (rows loaded for the current view + filter) ──
   const [entries, setEntries] = useState<FileEntry[]>([])
@@ -865,18 +617,9 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
   // Holds the rows themselves, not their refs: the dialog lists the files by
   // name, and a name is not something a ref can be turned into.
   const [confirmDelete, setConfirmDelete] = useState<FileEntry[] | null>(null)
-  // name in the greeting; omitted when logged out
-  const [accountName, setAccountName] = useState('')
   const [greetAskKey] = useState(
     () => GREET_ASK_KEYS[Math.floor(Math.random() * GREET_ASK_KEYS.length)]!,
   )
-
-  useEffect(() => {
-    void account.status().then((s) => {
-      const name = s?.loggedIn ? (s.email ?? '').split('@')[0] : ''
-      if (name) setAccountName(name[0].toUpperCase() + name.slice(1))
-    })
-  }, [account])
 
   // ── Project state ──
   const [projects, setProjects] = useState<ProjectSummaryEntry[]>([])
@@ -1631,7 +1374,7 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
             ? 'greetAfternoon'
             : 'greetEvening'
     const cjk = lang === 'zh' || lang === 'zh-TW' || lang === 'ja'
-    const greeting = `${t(greetKey)}${accountName ? (cjk ? '，' : ', ') + accountName : ''}${cjk ? '。' : '. '}`
+    const greeting = `${t(greetKey)}${cjk ? '。' : '. '}`
     return (
       <main className="content">
         <section className="quick-start" aria-label={t('secQuickStart')}>

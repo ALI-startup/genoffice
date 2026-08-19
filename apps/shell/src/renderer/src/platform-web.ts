@@ -46,7 +46,6 @@ import type { TabKind, TabSummary } from '../../shared/tabs-api'
 import type {
   FilePage,
   FileRef,
-  ShellAccountPort,
   ShellAiSettingsPort,
   ShellAppPort,
   ShellCloseDecision,
@@ -412,29 +411,6 @@ export function createWebShellFilesPort(): ShellFilesPort {
   }
 }
 
-/**
- * The account entry.
- *
- * Genspark sign-in runs the `gsk` CLI out of the Electron main process. A page
- * cannot run a CLI, and there is no web sign-in to put in its place, so the
- * status is reported as signed out — which is true — and `login` answers `false`
- * to its own contract's question, "could the flow be launched at all?". Nothing
- * here pretends a sign-in happened.
- */
-export function createWebShellAccountPort(): ShellAccountPort {
-  return {
-    status: async () => ({ loggedIn: false }),
-    login: async () => false,
-    // A real subscription with no emissions: no flow is ever launched, so there
-    // is no progress to report.
-    onLoginProgress: () => () => {},
-    openLoginUrl: async () => {
-      console.warn('[shell] openLoginUrl called, but this host never starts a sign-in flow.')
-    },
-    logout: async () => {},
-  }
-}
-
 export interface WebShellPlatformDeps {
   language: ShellLanguagePort
   onboarding: ShellOnboardingPort
@@ -575,7 +551,6 @@ export function createWebShellPlatform(deps: WebShellPlatformDeps): ShellPlatfor
     sheetsLauncher: createWebShellSheetsLauncherPort(deps.openTab),
     frames: deps.frames,
     tabs: deps.tabs,
-    account: createWebShellAccountPort(),
     aiSettings: deps.aiSettings,
     // The capabilities this host does not have. Each is `null` rather than a
     // stub, so the UI that offers them is absent instead of inert — see

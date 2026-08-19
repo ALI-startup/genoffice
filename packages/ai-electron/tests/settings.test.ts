@@ -17,9 +17,15 @@ function defaults(): PersistedAiSettings {
       chat: { providerId: 'openai', model: 'gpt-test' },
       image: { providerId: 'openai', model: 'image-test' },
     },
+    // The providers this "build" knows. Wider than the two the early tests
+    // needed, because the store now drops a task selection naming a provider
+    // absent from here — production defaults list all of them, and a fixture
+    // narrower than production made real providers look retired.
     providers: {
       openai: { providerId: 'openai', model: 'gpt-test', enabled: true },
       custom: { providerId: 'custom', model: 'local-test', enabled: true },
+      deepseek: { providerId: 'deepseek', model: 'deepseek-v4-flash', enabled: true },
+      runware: { providerId: 'runware', model: 'runware-test', enabled: true },
     },
     updatedAt: new Date(0).toISOString(),
   }
@@ -181,7 +187,7 @@ describe('VersionedAiSettingsStore', () => {
     expect(settings.providers.deepseek.model).toBe('deepseek-v4-flash')
   })
 
-  it('migrates the legacy Genspark text model out of the image selection', () => {
+  it('drops a task selection naming a provider this build no longer has', () => {
     const { dir, store } = makeStore()
     writeFileSync(
       join(dir, 'ai-settings.json'),
@@ -198,10 +204,13 @@ describe('VersionedAiSettingsStore', () => {
       }),
     )
 
-    expect(store.load().active.image).toEqual({
-      providerId: 'genspark',
-      model: 'nano-banana-2',
-    })
+    // `resolve()` throws on a selection it cannot find, so a settings file left
+    // over from a build that still had Genspark would break every AI call
+    // rather than fall back. The default takes the slot instead.
+    const loaded = store.load()
+    expect(loaded.active.image).toEqual(defaults().active.image)
+    // A selection the build still has is untouched.
+    expect(loaded.active.chat).toEqual({ providerId: 'openai', model: 'gpt-current' })
   })
 
   it('migrates every legacy provider credential, including providers absent from defaults', () => {

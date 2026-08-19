@@ -16,9 +16,9 @@ import { ProviderIcon } from './ProviderIcon'
 const CUSTOM_MODEL_VALUE = '__genoffice_custom_model__'
 
 const FALLBACK_SNAPSHOT: AiSettingsSnapshot = {
-  activeProvider: 'genspark',
+  activeProvider: AI_PROVIDER_DEFINITIONS[0]?.id ?? '',
   activeModel: AI_PROVIDER_DEFINITIONS[0]?.models[0] ?? '',
-  imageProvider: 'genspark',
+  imageProvider: AI_PROVIDER_DEFINITIONS[0]?.id ?? '',
   imageModel:
     AI_PROVIDER_DEFINITIONS[0]?.imageModels?.[0] ?? AI_PROVIDER_DEFINITIONS[0]?.models[0] ?? '',
   providers: AI_PROVIDER_DEFINITIONS.map((definition) => ({
@@ -75,7 +75,7 @@ export function AiProvidersPage() {
   const { aiSettings, aiSettingsEditor: editor } = shellPlatform()
   const [snapshot, setSnapshot] = useState<AiSettingsSnapshot>(FALLBACK_SNAPSHOT)
   const [capability, setCapability] = useState<AiProviderCapability>('text')
-  const [selectedId, setSelectedId] = useState('genspark')
+  const [selectedId, setSelectedId] = useState(AI_PROVIDER_DEFINITIONS[0]?.id ?? '')
   const [model, setModel] = useState('')
   const [customModelEnabled, setCustomModelEnabled] = useState(false)
   const [customModel, setCustomModel] = useState('')

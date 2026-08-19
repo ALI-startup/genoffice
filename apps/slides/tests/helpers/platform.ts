@@ -28,9 +28,7 @@ export function installTestPlatform<T extends object>(api: T): T {
     presenter: api,
     pdfExport: api,
     clipboard: api,
-    genspark: api,
     search: api,
-    cloud: api,
     menu: api,
   } as unknown as SlidesPlatform)
   return api

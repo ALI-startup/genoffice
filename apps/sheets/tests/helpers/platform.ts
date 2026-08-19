@@ -20,7 +20,6 @@ export function installTestPlatform<T extends object>(api: T): T {
     project: null,
     menu: api,
     pdfExport: api,
-    genspark: api,
     search: api,
   } as unknown as SheetsPlatform)
   return api

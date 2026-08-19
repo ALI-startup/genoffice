@@ -45,15 +45,6 @@ import { strings } from './strings'
 /** Injected by Vite from the shell's package.json; see vite.web.config.ts. */
 declare const __SHELL_VERSION__: string
 
-/**
- * The GenTeam community page from the onboarding's second slide.
- *
- * The same stable short link the Electron main process opens, repeated here
- * rather than shared because the main process is not in this bundle. It 302s to
- * the tokened invite, which stays out of the repo.
- */
-const GENTEAM_URL = 'https://www.genspark.ai/genoffice/join'
-
 /** Where the first-run tour's "seen" flag lives, in place of app-settings.json. */
 const ONBOARDING_STORAGE_KEY = 'genoffice.shell.onboardingSeen'
 
@@ -120,12 +111,6 @@ function createWebOnboardingPort(
 function createWebAppPort(): ShellAppPort {
   return {
     version: async () => __SHELL_VERSION__,
-    openGenTeam: async () => {
-      // `noopener` because the opened page must not get a handle on this window:
-      // it could otherwise post into the frame protocol, which validates its
-      // sender but has no reason to be reachable from an external page at all.
-      window.open(GENTEAM_URL, '_blank', 'noopener,noreferrer')
-    },
   }
 }
 

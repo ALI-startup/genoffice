@@ -322,7 +322,7 @@ describe('discoverModels', () => {
   })
 
   it('returns static fallback models for providers without discovery', () => {
-    const fallback = fallbackModelCatalog('genspark')
+    const fallback = fallbackModelCatalog('stability')
     expect(fallback.source).toBe('fallback')
     expect(fallback.models.every((model) => model.capabilities.chat)).toBe(true)
   })

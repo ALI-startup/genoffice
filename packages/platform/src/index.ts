@@ -30,14 +30,14 @@
  * `WindowPort` (the dirty-state and close-guard handshake) but none of the tab
  * channels, so it narrows that one too rather than claiming the whole port.
  */
-import type { AiChatPort, AiPort, AiSettingsPort, GensparkPort } from './ports/ai.js'
+import type { AiChatPort, AiPort, AiSettingsPort } from './ports/ai.js'
 import type { AttachmentsPort } from './ports/attachments.js'
 import type { LanguagePort } from './ports/language.js'
 import type { ProjectPort } from './ports/project.js'
 import type { SearchPort } from './ports/search.js'
 import type { WindowPort } from './ports/window.js'
 
-export type { AiChatPort, AiPort, AiSettingsPort, GensparkPort } from './ports/ai.js'
+export type { AiChatPort, AiPort, AiSettingsPort } from './ports/ai.js'
 export type {
   AttachmentAddResult,
   AttachmentImageResult,
@@ -84,7 +84,6 @@ export interface PlatformPorts {
   ai: AiPort
   aiSettings: AiSettingsPort
   aiChat: AiChatPort
-  genspark: GensparkPort
   search: SearchPort
   attachments: AttachmentsPort
   project: ProjectPort

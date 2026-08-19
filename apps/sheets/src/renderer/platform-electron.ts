@@ -36,7 +36,6 @@ export function createElectronSheetsPlatform(
     // renderer's capability checks always pass here and the desktop app is unchanged.
     menu: api,
     pdfExport: api,
-    genspark: api,
     search: api,
   }
 }

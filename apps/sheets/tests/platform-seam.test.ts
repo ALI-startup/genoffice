@@ -95,7 +95,6 @@ describe('the Electron composition', () => {
       'attachments',
       'menu',
       'pdfExport',
-      'genspark',
       'search',
     ] as const) {
       expect(platform[port], port).toBeTruthy()

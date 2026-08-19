@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { PublicAiSettings, ShellFrameLink } from '@genoffice/platform-web'
 import {
-  createWebShellAccountPort,
   createWebShellAiSettingsPort,
   createWebShellFilesPort,
   createWebShellLauncherPort,
@@ -371,16 +370,6 @@ describe('web shell files port', () => {
     await files.removeRecent(['x'])
     expect(warn).toHaveBeenCalledTimes(6)
     warn.mockRestore()
-  })
-})
-
-describe('web shell account port', () => {
-  it('reports signed out and cannot launch a sign-in', async () => {
-    const account = createWebShellAccountPort()
-    expect(await account.status()).toEqual({ loggedIn: false })
-    expect(await account.login()).toBe(false)
-    // A real subscription with no emissions; unsubscribing is still valid.
-    expect(typeof account.onLoginProgress(() => {})).toBe('function')
   })
 })
 

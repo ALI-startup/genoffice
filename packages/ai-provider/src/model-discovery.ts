@@ -338,7 +338,7 @@ export async function discoverModels(
   options?: AiModelDiscoveryOptions,
 ): Promise<AiModelCatalog> {
   const meta = metaFor(provider)
-  if (!meta || provider === 'genspark') return fallbackModelCatalog(provider)
+  if (!meta) return fallbackModelCatalog(provider)
   const baseUrl = endpointFor(provider, config, options)
   const path = meta.modelListPath ?? '/models'
   const rawModels = await fetchAllModelPages(

@@ -116,9 +116,6 @@ export type SheetsMenuPort = Pick<DesktopApi, 'onMenuAction'>
 /** Printing the workbook to a PDF file. */
 export type SheetsPdfExportPort = Pick<DesktopApi, 'exportPdf'>
 
-/** Genspark account status and sign-in. */
-export type SheetsGensparkPort = Pick<DesktopApi, 'aiGskStatus' | 'aiGskLogin'>
-
 /** Web search, for the AI panel's search skill. */
 export type SheetsSearchPort = Pick<DesktopApi, 'webSearch'>
 
@@ -141,7 +138,6 @@ export interface SheetsPlatform {
   attachments: AttachmentsPort
   menu: SheetsMenuPort | null
   pdfExport: SheetsPdfExportPort | null
-  genspark: SheetsGensparkPort | null
   search: SheetsSearchPort | null
   project: ProjectApi | null
 }

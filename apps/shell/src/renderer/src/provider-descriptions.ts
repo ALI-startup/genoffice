@@ -17,7 +17,6 @@
 import type { Lang } from '@genoffice/i18n'
 
 const KO: Record<string, string> = {
-  genspark: '로그인한 Genspark 계정을 사용합니다.',
   openai: '공식 API를 통해 OpenAI 모델을 사용합니다.',
   anthropic: 'Anthropic API를 통해 Claude 모델을 사용합니다.',
   gemini: 'Google Gemini 모델과 이미지 생성을 사용합니다.',

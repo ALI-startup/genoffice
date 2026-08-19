@@ -74,8 +74,6 @@ interface ChatEntry {
   turnLimit?: boolean
   /** the run failed and this user message was rolled back out of the model context */
   undelivered?: boolean
-  /** the run failed because Genspark is signed out — render an inline sign-in button */
-  loginRequired?: boolean
   /** tool executions performed during this assistant turn */
   tools?: ToolActivity[]
 }
@@ -478,25 +476,6 @@ export function AiPanel({
             }
             return next
           })
-          // Signed-out failures get an inline sign-in button; detected via
-          // gsk status rather than matching the localized error text.
-          // Null on a host with no Genspark integration (the browser build,
-          // where signing in means running a local CLI): there is no account
-          // state to probe, so the failure is reported without a sign-in offer.
-          void docsPlatform()
-            .genspark?.aiGskStatus()
-            .then((status) => {
-              if (status.loggedIn) return
-              setChat((prev) => {
-                const next = [...prev]
-                const last = next.at(-1)
-                if (last?.role === 'assistant' && last.error) {
-                  next[next.length - 1] = { ...last, loginRequired: true }
-                }
-                return next
-              })
-            })
-            .catch(() => {})
           setBusy(false)
         },
       },
@@ -849,18 +828,6 @@ export function AiPanel({
               {entry.tools && entry.tools.length > 0 && <ToolChipList tools={entry.tools} />}
               {entry.error && (
                 <div className="ai-msg-error">{t('aiErrorPrefix', { error: entry.error })}</div>
-              )}
-              {/* `loginRequired` is only ever set by the status probe above,
-                  which no-ops without the port — so the platform read here is
-                  reached only on a host that has Genspark, and short-circuits
-                  before it on one that does not. */}
-              {entry.loginRequired && docsPlatform().genspark && (
-                <button
-                  className="ai-login-btn"
-                  onClick={() => void docsPlatform().genspark?.aiGskLogin()}
-                >
-                  {t('aiGskLoginBtn')}
-                </button>
               )}
               {showToolbar && (
                 <div className="ai-msg-toolbar">

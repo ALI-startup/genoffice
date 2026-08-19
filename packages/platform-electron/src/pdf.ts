@@ -51,7 +51,7 @@ export type PdfWindowSlice = Pick<
 /**
  * AiPort over the pdf bridge.
  *
- * Only `AiPort` — not AiSettingsPort / AiChatPort / GensparkPort. Those
+ * Only `AiPort` — not AiSettingsPort or AiChatPort. Those
  * channels have no ipcMain handler when pdf runs standalone
  * (apps/pdf/src/main/pdf-main.ts:549 registers only `registerPdfIpc()`), so
  * claiming them here would be a stub by another name.

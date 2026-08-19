@@ -20,16 +20,10 @@
  * sheets all expose the same six path-based attachment methods, so that adapter is
  * app-independent and lives in attachments.ts.
  */
-import type {
-  AiSettings,
-  AiStreamChunk,
-  AiStreamRequest,
-  GenSparkAccountStatus,
-} from '@genoffice/ai-provider'
+import type { AiSettings, AiStreamChunk, AiStreamRequest } from '@genoffice/ai-provider'
 import type { Lang } from '@genoffice/i18n'
 import type {
   AiPort,
-  GensparkPort,
   ImageSearchResult,
   LanguagePort,
   SearchPort,
@@ -50,12 +44,6 @@ export interface DocsAiBridge {
   aiStream(request: AiStreamRequest): Promise<void>
   aiStreamCancel(requestId: string): Promise<void>
   onAiStream(handler: (chunk: AiStreamChunk) => void): () => void
-}
-
-/** The Genspark members of DesktopApi. */
-export interface DocsGensparkBridge {
-  aiGskStatus(withEmail?: boolean): Promise<GenSparkAccountStatus>
-  aiGskLogin(): Promise<void>
 }
 
 /** The search members of DesktopApi. */
@@ -114,14 +102,6 @@ export function createDocsAiPort(bridge: DocsAiBridge): AiPort {
     aiStream: (request) => bridge.aiStream(request),
     aiStreamCancel: (requestId) => bridge.aiStreamCancel(requestId),
     onAiStream: (handler) => bridge.onAiStream(handler),
-  }
-}
-
-/** GensparkPort over the docs bridge. */
-export function createDocsGensparkPort(bridge: DocsGensparkBridge): GensparkPort {
-  return {
-    aiGskStatus: (withEmail) => bridge.aiGskStatus(withEmail),
-    aiGskLogin: () => bridge.aiGskLogin(),
   }
 }
 

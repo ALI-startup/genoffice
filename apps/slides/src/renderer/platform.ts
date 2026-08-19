@@ -21,10 +21,8 @@
  *     *different* document under one command name, so the browser prints instead.
  *   - `clipboard` — reading what another application put on the system clipboard. The
  *     in-app deck clipboard is a separate, required port; see `SlidesDeckClipboardPort`.
- *   - `genspark` — sign-in shells out to the `gsk` CLI, a local process.
  *   - `search` — needs a key the browser must never hold and an origin its CSP forbids, so
  *     it needs a BFF route that does not exist yet.
- *   - `cloud` — server-side generation, gated on the same account plumbing.
  *   - `styleTemplates` — read off the host's filesystem today.
  *   - `menu` — the native application menu; a page has no menu bar.
  *
@@ -229,7 +227,7 @@ export type SlidesPrintPort = Pick<SlidesApi, 'printSlides'>
  * with a credential the browser must never hold. The streaming channel above has a route and
  * so stays required.
  */
-export type SlidesAiMediaPort = Pick<SlidesApi, 'analyzeMedia' | 'generateImage'>
+export type SlidesAiMediaPort = Pick<SlidesApi, 'generateImage'>
 
 /** Presenter view, the audience window, and the ink and sync channels between them. */
 export type SlidesPresenterPort = Pick<
@@ -255,14 +253,8 @@ export type SlidesPdfExportPort = Pick<
 /** The *system* clipboard: images and text arriving from other applications. */
 export type SlidesClipboardPort = Pick<SlidesApi, 'clipboardExternal' | 'nativeClipboard'>
 
-/** Genspark sign-in status and the sign-in flow itself. */
-export type SlidesGensparkPort = Pick<SlidesApi, 'aiGskLogin' | 'aiGskStatus' | 'gskStatus'>
-
 /** Web and image search behind the AI tools. */
 export type SlidesSearchPort = Pick<SlidesApi, 'imageSearch' | 'webSearch'>
-
-/** Server-side deck generation, and landing the pages it returns. */
-export type SlidesCloudPort = Pick<SlidesApi, 'cloudGenStatus' | 'cloudGeneratePage' | 'htmlToPptx'>
 
 /** The style templates the AI can generate against, read from the host's own files. */
 export type SlidesStyleTemplatePort = Pick<
@@ -304,9 +296,7 @@ export interface SlidesPlatform {
   aiMedia: SlidesAiMediaPort | null
   pdfExport: SlidesPdfExportPort | null
   clipboard: SlidesClipboardPort | null
-  genspark: SlidesGensparkPort | null
   search: SlidesSearchPort | null
-  cloud: SlidesCloudPort | null
   styleTemplates: SlidesStyleTemplatePort | null
   menu: SlidesMenuPort | null
 }

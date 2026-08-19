@@ -21,7 +21,6 @@ describe('AI settings public contract', () => {
     const imageProviders = AI_PROVIDER_DEFINITIONS.filter((provider) => provider.supportsImages)
     expect(imageProviders.map((provider) => provider.id)).toEqual(
       expect.arrayContaining([
-        'genspark',
         'openai',
         'gemini',
         'openrouter',

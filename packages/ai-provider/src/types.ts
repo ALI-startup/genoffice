@@ -2,7 +2,6 @@ import type { AgentMessage, AgentToolCall, AgentToolDef } from '@genoffice/agent
 
 /** Built-in provider presets. `custom` accepts any OpenAI-compatible endpoint. */
 export type AiProviderId =
-  | 'genspark'
   | 'anthropic'
   | 'gemini'
   | 'deepseek'
@@ -25,17 +24,11 @@ export type AiProviderId =
   | 'stability'
   | 'custom'
 
-export type AiProviderProtocol = 'genspark' | 'anthropic' | 'gemini' | 'openai-compatible'
+export type AiProviderProtocol = 'anthropic' | 'gemini' | 'openai-compatible'
 
 export type AiEndpointKind = 'cloud' | 'local' | 'custom'
 
 export type AiCapability = 'chat' | 'tools' | 'vision' | 'image-generation' | 'image-editing'
-
-/** Genspark account status (gsk login state; the sole auth source for AI features) */
-export interface GenSparkAccountStatus {
-  loggedIn: boolean
-  email?: string
-}
 
 export interface AiProviderConfig {
   apiKey: string

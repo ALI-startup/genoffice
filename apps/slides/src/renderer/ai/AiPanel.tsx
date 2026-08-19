@@ -21,7 +21,7 @@ import { extractJsonObject, parseOutlineJson } from './outline-json'
 import { createFilesSkill } from './files-skill'
 import { createElectronTransport } from './transport'
 import { renderSlidesToPngBase64 } from '../export-render'
-import { isQcEnabled, mergeQcPages, qcSlidePage, QC_MAX_PAGES } from './slide-qc'
+import { isQcEnabled, qcSlidePage, QC_MAX_PAGES } from './slide-qc'
 import { useI18n, t as tGlobal, aiLangDirective, type TFunc } from '../i18n/locale'
 import { Markdown } from '@genoffice/ui'
 import { GensparkMark } from '../components/icons'
@@ -120,7 +120,6 @@ interface ChatEntry {
   /** the run failed and this user message was rolled back out of the model context */
   undelivered?: boolean
   /** the run failed because Genspark is signed out — render an inline sign-in button */
-  loginRequired?: boolean
   tools?: ToolActivity[]
   /** Generation progress card (only one per turn, replaced in real time) */
   deckProgress?: DeckProgressSnapshot
@@ -605,139 +604,14 @@ export function AiPanel({
       getSelectedIds: () => selectedRef.current,
       applySlide: (i, updated) => applySlideRef.current(i, updated),
       applyDeck: (all, goTo) => applyDeckRef.current(all, goTo),
-      generateFromHtml: async (
-        pagesHtml: string[],
-        mode?: 'replace' | 'append' | 'insert_at',
-        deckName?: string,
-        insertAt?: number,
-      ) => {
-        try {
-          const res = await slidesPlatform().cloud?.htmlToPptx(
-            pagesHtml,
-            fitWidthPx,
-            mode,
-            insertAt,
-            deckName,
-          )
-          if (res && 'slides' in res && Array.isArray(res.slides)) {
-            const appendedFrom =
-              'appendedFrom' in res && typeof res.appendedFrom === 'number' ? res.appendedFrom : 0
-            const insertedIndex =
-              'insertedIndex' in res && typeof res.insertedIndex === 'number'
-                ? res.insertedIndex
-                : undefined
-            const fallbackReason =
-              'fallbackReason' in res && typeof res.fallbackReason === 'string'
-                ? res.fallbackReason
-                : undefined
-            const imageFailures =
-              'imageFailures' in res && Array.isArray(res.imageFailures)
-                ? res.imageFailures
-                : undefined
-            applyDeckRef.current(res.slides, insertedIndex ?? appendedFrom)
-            // When the draft lands successfully, path is the real path; notify App to update the title bar
-            if (res.path) onPathChangeRef.current?.(res.path)
-            qcPagesRef.current = mergeQcPages(qcPagesRef.current, mode ?? 'replace', {
-              pages: res.slides.length,
-              appendedFrom,
-              ...(insertedIndex !== undefined ? { insertedIndex } : {}),
-            })
-            return {
-              ok: true,
-              pages: res.slides.length,
-              appendedFrom,
-              insertedIndex,
-              fallbackReason,
-              imageFailures,
-            }
-          }
-          return {
-            ok: false,
-            error:
-              'error' in (res || {})
-                ? (res as { error: string }).error
-                : tGlobal('aiErrGenerateFailed'),
-          }
-        } catch (e) {
-          return { ok: false, error: e instanceof Error ? e.message : String(e) }
-        }
-      },
-      regenerateSlide: async (slideIndex: number, html: string) => {
-        try {
-          const res = await slidesPlatform().cloud?.htmlToPptx(
-            [html],
-            fitWidthPx,
-            'replace_at',
-            slideIndex,
-          )
-          if (res && 'slides' in res && Array.isArray(res.slides)) {
-            applyDeckRef.current(res.slides, slideIndex)
-            if (res.path) onPathChangeRef.current?.(res.path)
-            qcPagesRef.current = mergeQcPages(qcPagesRef.current, 'replace_at', {
-              pages: res.slides.length,
-              insertedIndex: slideIndex,
-            })
-            return {
-              ok: true,
-              imageFailures:
-                'imageFailures' in res && Array.isArray(res.imageFailures)
-                  ? res.imageFailures
-                  : undefined,
-            }
-          }
-          return {
-            ok: false,
-            error:
-              'error' in (res || {})
-                ? (res as { error: string }).error
-                : tGlobal('aiErrRegenFailed'),
-          }
-        } catch (e) {
-          return { ok: false, error: e instanceof Error ? e.message : String(e) }
-        }
-      },
       askClarification: (questions: ClarifyQuestion[]) => {
         return new Promise<{ answers: string; cancelled?: boolean }>((resolve) => {
           clarifyResolverRef.current = resolve
           setActiveClarify(questions)
         })
       },
-      isCloudPageGenEnabled: async () => {
-        try {
-          return !!(await slidesPlatform().cloud?.cloudGenStatus())?.enabled
-        } catch {
-          return false
-        }
-      },
       // Cloud single-page generation (gsk slide_generate): the cloud service owns HTML writing +
       // pptx conversion; the deck-level style/outline stay local.
-      generatePageCloud: async (args) => {
-        try {
-          const briefParts = [args.brief]
-          if (args.layout) briefParts.push(`Layout intent: ${args.layout}`)
-          if (args.context)
-            briefParts.push(
-              `Reference material (all real names/figures/facts come from here; do not invent):\n${args.context.slice(0, 4000)}`,
-            )
-          const res = await slidesPlatform().cloud?.cloudGeneratePage({
-            brief: briefParts.join('\n\n'),
-            title: args.title,
-            styleSkill: args.style,
-            deckContext: {
-              ...(args.topic ? { topic: args.topic } : {}),
-              core_hook: args.coreHook,
-              page_index: args.pageIndex,
-              total_pages: args.totalPages,
-            },
-            images: args.images.map((u) => ({ url: u })),
-            width: args.canvasW,
-            height: args.canvasH,
-          })
-          return res ?? { ok: false, error: tGlobal('aiErrUnknown') }
-        } catch (e) {
-          return { ok: false, error: e instanceof Error ? e.message : String(e) }
-        }
-      },
       // ── In-tool planning: given topic+page count, the LLM produces a structured outline (batched recursion scheduled by the skill).
       // Fixes "missing pages at the input side" at the root: the main agent doesn't hand-write dozens of pages of pages JSON.
       // In-tool independent Style Skill generation: one focused LLM call thinking only about the design system.
@@ -1037,21 +911,6 @@ export function AiPanel({
             return next
           })
           // Signed-out failures get an inline sign-in button; detected via
-          // gsk status rather than matching the localized error text
-          void slidesPlatform()
-            .genspark?.aiGskStatus()
-            .then((status) => {
-              if (status.loggedIn) return
-              setChat((prev) => {
-                const next = [...prev]
-                const last = next.at(-1)
-                if (last?.role === 'assistant' && last.error) {
-                  next[next.length - 1] = { ...last, loginRequired: true }
-                }
-                return next
-              })
-            })
-            .catch(() => {})
           void finishHistoryBatch().finally(() => setBusy(false))
         },
       },
@@ -1535,14 +1394,6 @@ export function AiPanel({
               {entry.tools && entry.tools.length > 0 && <ToolChipList tools={entry.tools} />}
               {entry.error && (
                 <div className="ai-msg-error">{t('aiMsgError', { error: entry.error })}</div>
-              )}
-              {entry.loginRequired && (
-                <button
-                  className="ai-login-btn"
-                  onClick={() => void slidesPlatform().genspark?.aiGskLogin()}
-                >
-                  {t('aiGskLoginBtn')}
-                </button>
               )}
               {entry.deckProgress && <DeckProgressCard progress={entry.deckProgress} />}
               {showToolbar && (

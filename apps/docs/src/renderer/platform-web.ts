@@ -645,7 +645,6 @@ export function createWebDocsPlatform(deps: WebDocsPlatformDeps): DocsPlatform {
     // DocsPlatform in platform.ts for the reason behind each one.
     tabs: null,
     search: null,
-    genspark: null,
     // Still null after Phase 4c, and permanently: PDF *export* writes a file the
     // renderer would have to draw itself, and a rasterised or re-laid-out
     // approximation under the same command name would misreport what happened.
