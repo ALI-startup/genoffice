@@ -16,6 +16,7 @@
     // types go through a local shim (src/types/file-parse.d.ts) while the runtime bundle still uses the real source
     "paths": {
       "@genoffice/file-parse": ["./src/types/file-parse.d.ts"],
+      "@genoffice/file-parse/browser": ["./src/types/file-parse-browser.d.ts"],
       "@host": ["./src/renderer/host-electron.ts"]
     }
   },

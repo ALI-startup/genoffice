@@ -1,7 +1,3 @@
-import { createHash } from 'node:crypto'
-import { open, readFile, rename, rm, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
-
 import JSZip from 'jszip'
 
 import type {
@@ -98,7 +94,7 @@ import {
 import { StylesheetEditor } from './xlsx-styles'
 
 const MAX_ENTRY_COUNT = 10_000
-const MAX_UNCOMPRESSED_BYTES = 256 * 1024 * 1024
+export const MAX_UNCOMPRESSED_BYTES = 256 * 1024 * 1024
 
 export interface PackageEntry {
   readonly path: string
@@ -407,7 +403,7 @@ export async function inventoryXlsx(buffer: Buffer): Promise<readonly PackageEnt
     if (totalSize > MAX_UNCOMPRESSED_BYTES) {
       throw new Error('Workbook exceeds the uncompressed size limit.')
     }
-    entries.push({ path, size: bytes.length, sha256: sha256(bytes) })
+    entries.push({ path, size: bytes.length, sha256: await sha256(bytes) })
   }
   return entries.sort((left, right) => left.path.localeCompare(right.path))
 }
@@ -1350,43 +1346,21 @@ export function toA1Address(row: number, column: number): string {
   return `${letters}${row + 1}`
 }
 
-export async function writeXlsxAtomically(path: string, buffer: Buffer): Promise<void> {
-  const temporaryPath = join(dirname(path), `.${crypto.randomUUID()}.tmp.xlsx`)
-  try {
-    await writeFile(temporaryPath, buffer, { flag: 'wx' })
-    const handle = await open(temporaryPath, 'r')
-    try {
-      await handle.sync()
-    } finally {
-      await handle.close()
-    }
-    await rename(temporaryPath, path)
-  } catch (error: unknown) {
-    await rm(temporaryPath, { force: true })
-    throw error
-  }
+/**
+ * sha256 as hex, through Web Crypto rather than `node:crypto`.
+ *
+ * The gateway is imported by both hosts now, so it may not reach for a Node built-in — and
+ * `crypto.subtle` is present in every browser and in Node since 19. Async where the old one
+ * was synchronous, which cost nothing: its only caller was already async.
+ */
+export async function sha256(input: Uint8Array | string): Promise<string> {
+  const bytes = typeof input === 'string' ? new TextEncoder().encode(input) : input
+  const digest = await crypto.subtle.digest('SHA-256', bytes as unknown as BufferSource)
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
-export async function mutateXlsxFile(
-  path: string,
-  expectedSha256: string,
-  plan: ChangePlan,
-  sheetNamesById: Readonly<Record<string, string>>,
-): Promise<XlsxMutation> {
-  const source = await readFile(path)
-  if (sha256(source) !== expectedSha256) {
-    throw new Error('The workbook changed on disk after preview.')
-  }
-  const mutation = await applyPlanToXlsx(source, plan, sheetNamesById)
-  await writeXlsxAtomically(path, mutation.buffer)
-  return mutation
-}
-
-export function sha256(input: Buffer | string): string {
-  return createHash('sha256').update(input).digest('hex')
-}
-
-async function loadSafeZip(buffer: Buffer): Promise<JSZip> {
+/** CRC-checked JSZip load. Exported for src/main/xlsx-file-io.ts, which mutates a whole file. */
+export async function loadSafeZip(buffer: Buffer): Promise<JSZip> {
   const zip = await JSZip.loadAsync(buffer, { checkCRC32: true })
   const paths = Object.keys(zip.files)
   if (paths.length > MAX_ENTRY_COUNT) throw new Error('Workbook contains too many ZIP entries.')

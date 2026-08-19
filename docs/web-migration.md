@@ -303,7 +303,31 @@ binary's for the same requests.
 2. **6b — WASM build** of the Rust crate, with `XlsxSidecarClient`'s interface
    reimplemented over it. Independently testable against the same 11 commands.
 3. **6c — web host**: FSA for xlsx open/save, attachments, AI via BFF, and the
-   sheets frame added to the web shell.
+   sheets frame added to the web shell. **Mostly done.** The engine runs behind a
+   Worker (`src/renderer/wasm/`: an in-memory filesystem, the twenty-one preview1
+   functions the module imports, and a client with `XlsxSidecarClient`'s methods),
+   and `platform-web.ts` backs all six required ports — including a save that runs
+   the desktop's own pipeline and then writes through the granted file handle.
+   `npm run sheets:web` serves it at :5184; `npm run build:sheets:web` builds the
+   module and the bundle together.
+
+   Two relocations were needed on the way, both pure moves:
+
+   - `writeWorkbookTo` (241 lines translating a renderer's save request into the
+     streaming save's shape) was in `sheets-main.ts` and is now
+     `gateway/workbook-save.ts`, taking its client, filesystem and target as
+     parameters. Two copies of that translation would have meant two readings of
+     the same request.
+   - The gateway's file-shaped functions (`writeXlsxAtomically`, `mutateXlsxFile`)
+     moved to `src/main/xlsx-file-io.ts`, because their `node:fs` import failed the
+     browser build before it could reach anything real. `sha256` went from
+     `node:crypto` to Web Crypto, which both hosts have.
+
+   Still to do: the sheets card and frame in the web shell, and the container
+   stack. Known gaps recorded in §8: no crash-recovery copy (nowhere durable to
+   put one without a second prompt), no rename-in-place (FSA writes through a
+   handle but cannot rename it), and no `.xls`/`.csv` import (the desktop converts
+   through a temp file and a Save As dialog).
 
 ---
 

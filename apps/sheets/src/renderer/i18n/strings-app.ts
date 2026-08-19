@@ -3,6 +3,9 @@ import { defineStrings } from '@genoffice/i18n'
 /** Copy for App.tsx / ExcelShell / chart panels / non-dialog components */
 export const appStrings = defineStrings({
   zh: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm: '工作簿在打开后被磁盘上的改动覆盖——请改用另存为。',
     // Number-format category dropdown
     appNumFmtAccounting: '会计专用',
     appNumFmtShortDate: '短日期',
@@ -930,6 +933,10 @@ export const appStrings = defineStrings({
     appGoTo: '定位',
   },
   en: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm:
+      'The workbook changed on disk after it was opened — use Save As instead.',
     appNumFmtAccounting: 'Accounting',
     appNumFmtShortDate: 'Short Date',
     appNumFmtLongDate: 'Long Date',
@@ -1873,6 +1880,10 @@ export const appStrings = defineStrings({
     appGoTo: 'Go To',
   },
   ja: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm:
+      'ブックを開いた後にディスク上で変更されています — 名前を付けて保存を使用してください。',
     // Number-format category dropdown
     appNumFmtAccounting: '会計',
     appNumFmtShortDate: '短い日付形式',
@@ -2883,6 +2894,10 @@ export const appStrings = defineStrings({
     appGoTo: 'ジャンプ',
   },
   ko: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm:
+      '통합 문서가 열린 후 디스크에서 변경되었습니다. 다른 이름으로 저장을 사용하세요.',
     // Number-format category dropdown
     appNumFmtAccounting: '회계',
     appNumFmtShortDate: '간단한 날짜',
@@ -3864,6 +3879,10 @@ export const appStrings = defineStrings({
     appGoTo: '이동',
   },
   fr: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm:
+      'Le classeur a été modifié sur le disque après son ouverture — utilisez Enregistrer sous.',
     appNumFmtAccounting: 'Comptabilité',
     appNumFmtShortDate: 'Date courte',
     appNumFmtLongDate: 'Date longue',
@@ -4877,6 +4896,10 @@ export const appStrings = defineStrings({
     appGoTo: 'Atteindre',
   },
   de: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm:
+      'Die Arbeitsmappe wurde nach dem Öffnen auf dem Datenträger geändert — verwenden Sie stattdessen „Speichern unter“.',
     appNumFmtAccounting: 'Buchhaltung',
     appNumFmtShortDate: 'Datum kurz',
     appNumFmtLongDate: 'Datum lang',
@@ -5878,6 +5901,10 @@ export const appStrings = defineStrings({
     appGoTo: 'Gehe zu',
   },
   es: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm:
+      'El libro cambió en el disco después de abrirse; usa Guardar como en su lugar.',
     appNumFmtAccounting: 'Contabilidad',
     appNumFmtShortDate: 'Fecha corta',
     appNumFmtLongDate: 'Fecha larga',
@@ -6866,6 +6893,9 @@ export const appStrings = defineStrings({
     appGoTo: 'Ir a',
   },
   th: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm: 'เวิร์กบุ๊กถูกเปลี่ยนแปลงบนดิสก์หลังจากเปิด — โปรดใช้บันทึกเป็นแทน',
     appNumFmtAccounting: 'บัญชี',
     appNumFmtShortDate: 'วันที่แบบสั้น',
     appNumFmtLongDate: 'วันที่แบบยาว',
@@ -7798,6 +7828,9 @@ export const appStrings = defineStrings({
     appGoTo: 'ไปที่',
   },
   id: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm: 'Buku kerja berubah di disk setelah dibuka — gunakan Simpan Sebagai.',
     appNumFmtAccounting: 'Akuntansi',
     appNumFmtShortDate: 'Tanggal Pendek',
     appNumFmtLongDate: 'Tanggal Panjang',
@@ -8752,6 +8785,10 @@ export const appStrings = defineStrings({
     appGoTo: 'Buka',
   },
   ru: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm:
+      'Книга была изменена на диске после открытия — используйте «Сохранить как».',
     appNumFmtAccounting: 'Финансовый',
     appNumFmtShortDate: 'Краткий формат даты',
     appNumFmtLongDate: 'Длинный формат даты',
@@ -9727,6 +9764,9 @@ export const appStrings = defineStrings({
     appGoTo: 'Перейти',
   },
   ar: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm: 'تم تغيير المصنف على القرص بعد فتحه — استخدم «حفظ باسم» بدلاً من ذلك.',
     appNumFmtAccounting: 'محاسبة',
     appNumFmtShortDate: 'تاريخ قصير',
     appNumFmtLongDate: 'تاريخ طويل',
@@ -10662,6 +10702,10 @@ export const appStrings = defineStrings({
     appGoTo: 'الانتقال إلى',
   },
   pt: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm:
+      'A pasta de trabalho foi alterada no disco após ser aberta — use Salvar Como.',
     appNumFmtAccounting: 'Contábil',
     appNumFmtShortDate: 'Data abreviada',
     appNumFmtLongDate: 'Data completa',
@@ -11647,6 +11691,10 @@ export const appStrings = defineStrings({
     appGoTo: 'Ir para',
   },
   it: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm:
+      "La cartella di lavoro è stata modificata sul disco dopo l'apertura — usa Salva con nome.",
     appNumFmtAccounting: 'Contabilità',
     appNumFmtShortDate: 'Data in cifre',
     appNumFmtLongDate: 'Data estesa',
@@ -12632,6 +12680,10 @@ export const appStrings = defineStrings({
     appGoTo: 'Vai a',
   },
   pl: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm:
+      'Skoroszyt został zmieniony na dysku po otwarciu — użyj polecenia Zapisz jako.',
     appNumFmtAccounting: 'Księgowy',
     appNumFmtShortDate: 'Data krótka',
     appNumFmtLongDate: 'Data długa',
@@ -13616,6 +13668,10 @@ export const appStrings = defineStrings({
     appGoTo: 'Przejdź do',
   },
   nl: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm:
+      'De werkmap is op de schijf gewijzigd nadat deze was geopend — gebruik Opslaan als.',
     appNumFmtAccounting: 'Financieel',
     appNumFmtShortDate: 'Korte datumnotatie',
     appNumFmtLongDate: 'Lange datumnotatie',
@@ -14608,6 +14664,10 @@ export const appStrings = defineStrings({
     appGoTo: 'Ga naar',
   },
   ms: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm:
+      'Buku kerja telah diubah pada cakera selepas dibuka — gunakan Simpan Sebagai.',
     appNumFmtAccounting: 'Perakaunan',
     appNumFmtShortDate: 'Tarikh Pendek',
     appNumFmtLongDate: 'Tarikh Panjang',
@@ -15564,6 +15624,9 @@ export const appStrings = defineStrings({
     appGoTo: 'Pergi Ke',
   },
   he: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm: 'חוברת העבודה השתנתה בדיסק לאחר פתיחתה — השתמש בשמירה בשם.',
     appNumFmtAccounting: 'חשבונאות',
     appNumFmtShortDate: 'תאריך קצר',
     appNumFmtLongDate: 'תאריך ארוך',
@@ -16482,6 +16545,10 @@ export const appStrings = defineStrings({
     appGoTo: 'עבור אל',
   },
   hi: {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm:
+      'खोले जाने के बाद कार्यपुस्तिका डिस्क पर बदल गई — इसके बजाय इस रूप में सहेजें का उपयोग करें।',
     appNumFmtAccounting: 'लेखांकन',
     appNumFmtShortDate: 'छोटा दिनांक',
     appNumFmtLongDate: 'लंबा दिनांक',
@@ -17440,6 +17507,9 @@ export const appStrings = defineStrings({
     appGoTo: 'इस पर जाएँ',
   },
   'zh-TW': {
+    // Shown before overwriting a file another program changed since it was opened.
+    // Same condition the desktop reports as an error; a browser can offer the choice.
+    appDiskChangedConfirm: '活頁簿在開啟後被磁碟上的變更覆蓋——請改用另存新檔。',
     appNumFmtAccounting: '會計專用',
     appNumFmtShortDate: '簡短日期',
     appNumFmtLongDate: '詳細日期',

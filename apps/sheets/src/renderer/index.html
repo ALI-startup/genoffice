@@ -2,9 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- script-src 'wasm-unsafe-eval': the xlsx engine is WebAssembly, which Chrome refuses to
+         compile under a restrictive script-src without it (the desktop build never compiles
+         one, but the two hosts share this file) -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self' blob:; connect-src 'self' ws://localhost:*"
+      content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self' blob:; connect-src 'self' ws://localhost:*"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GenOffice Sheets</title>
