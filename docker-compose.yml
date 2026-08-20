@@ -4,10 +4,10 @@
 #   http://localhost:8080   shell — the landing page. Home, tab strip, and every
 #                           editor hosted as a same-origin frame under /app/docs/,
 #                           /app/pdf/, /app/slides/ and /app/sheets/ of this origin.
-#   http://localhost:9081   docs, standalone on its own origin
-#   http://localhost:9082   pdf, standalone on its own origin
-#   http://localhost:9083   slides, standalone on its own origin
-#   http://localhost:9084   sheets, standalone on its own origin
+#   http://localhost:9041   docs, standalone on its own origin
+#   http://localhost:9042   pdf, standalone on its own origin
+#   http://localhost:9043   slides, standalone on its own origin
+#   http://localhost:9044   sheets, standalone on its own origin
 #
 # Each is overridable: SAMUGEN_SHELL_PORT, SAMUGEN_DOCS_PORT,
 # SAMUGEN_PDF_PORT, SAMUGEN_SLIDES_PORT, SAMUGEN_SHEETS_PORT.
@@ -93,7 +93,7 @@ services:
       SAMUGEN_AI_BFF_UPSTREAM: http://ai-bff:8788
       SAMUGEN_AI_BFF_PATH: /v1/ai
     ports:
-      - '${SAMUGEN_DOCS_PORT:-9081}:8080'
+      - '${SAMUGEN_DOCS_PORT:-9041}:8080'
 
   # Standalone pdf, likewise.
   pdf:
@@ -105,7 +105,7 @@ services:
       SAMUGEN_AI_BFF_UPSTREAM: http://ai-bff:8788
       SAMUGEN_AI_BFF_PATH: /v1/ai
     ports:
-      - '${SAMUGEN_PDF_PORT:-9082}:8080'
+      - '${SAMUGEN_PDF_PORT:-9042}:8080'
 
   # Standalone sheets, likewise.
   sheets:
@@ -117,7 +117,7 @@ services:
       SAMUGEN_AI_BFF_UPSTREAM: http://ai-bff:8788
       SAMUGEN_AI_BFF_PATH: /v1/ai
     ports:
-      - '${SAMUGEN_SHEETS_PORT:-9084}:8080'
+      - '${SAMUGEN_SHEETS_PORT:-9044}:8080'
 
   # Standalone slides, likewise.
   slides:
@@ -129,7 +129,7 @@ services:
       SAMUGEN_AI_BFF_UPSTREAM: http://ai-bff:8788
       SAMUGEN_AI_BFF_PATH: /v1/ai
     ports:
-      - '${SAMUGEN_SLIDES_PORT:-9083}:8080'
+      - '${SAMUGEN_SLIDES_PORT:-9043}:8080'
 
 networks:
   samugen:
