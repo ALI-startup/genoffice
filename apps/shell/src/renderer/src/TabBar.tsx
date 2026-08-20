@@ -97,8 +97,19 @@ interface MenuItem {
  * with a z-index, so a DOM menu simply works — which is why `tabMenus` is null
  * there rather than backed by something that would have to fake a native menu.
  *
- * Anchored to its button, dismissed on outside click, Escape, or a choice.
+ * Anchored to its button in *viewport* coordinates, and `position: fixed` for that
+ * reason: the new-tab button sits inside `.tab-strip`, which scrolls horizontally
+ * (`overflow-x: auto`) once the tabs stop fitting — and an overflow ancestor clips an
+ * absolutely positioned descendant. The menu used to be clipped to the height of the
+ * strip, which read as the button doing nothing at all.
+ *
+ * Dismissed on outside click, Escape, a choice, or anything that moves the button out
+ * from under it: a resize, or a scroll that did not come from inside the menu.
  */
+/** Keep a menu inside the window; the same 180px `.tab-menu` declares as its minimum. */
+const TAB_MENU_MIN_WIDTH = 180
+const TAB_MENU_EDGE_GAP = 8
+
 function DomMenu({
   label,
   items,
@@ -110,22 +121,35 @@ function DomMenu({
   className: string
   children: ReactElement
 }) {
-  const [open, setOpen] = useState(false)
+  const [anchor, setAnchor] = useState<{ left: number; top: number } | null>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const open = anchor !== null
 
   useEffect(() => {
     if (!open) return
+    const close = () => setAnchor(null)
     const onPointerDown = (event: PointerEvent) => {
-      if (!wrapRef.current?.contains(event.target as Node)) setOpen(false)
+      if (!wrapRef.current?.contains(event.target as Node)) close()
     }
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
+      if (event.key === 'Escape') close()
+    }
+    // Capture, so the strip's own scroll is seen — it is the one that moves the button.
+    // A scroll inside the menu is not the ground moving, so it is left alone.
+    const onScroll = (event: Event) => {
+      if (menuRef.current?.contains(event.target as Node)) return
+      close()
     }
     document.addEventListener('pointerdown', onPointerDown)
     document.addEventListener('keydown', onKeyDown)
+    window.addEventListener('scroll', onScroll, true)
+    window.addEventListener('resize', close)
     return () => {
       document.removeEventListener('pointerdown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('resize', close)
     }
   }, [open])
 
@@ -137,19 +161,35 @@ function DomMenu({
         title={label}
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={(event) => {
+          if (open) {
+            setAnchor(null)
+            return
+          }
+          const rect = event.currentTarget.getBoundingClientRect()
+          const room = window.innerWidth - TAB_MENU_MIN_WIDTH - TAB_MENU_EDGE_GAP
+          setAnchor({
+            left: Math.max(TAB_MENU_EDGE_GAP, Math.min(Math.round(rect.left), room)),
+            top: Math.round(rect.bottom + 4),
+          })
+        }}
       >
         {children}
       </button>
-      {open && (
-        <div className="tab-menu" role="menu">
+      {anchor && (
+        <div
+          className="tab-menu"
+          role="menu"
+          ref={menuRef}
+          style={{ left: anchor.left, top: anchor.top }}
+        >
           {items.map((item) => (
             <button
               key={item.key}
               className="tab-menu-item"
               role="menuitem"
               onClick={() => {
-                setOpen(false)
+                setAnchor(null)
                 item.run()
               }}
             >

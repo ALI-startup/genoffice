@@ -287,9 +287,10 @@
 }
 
 .tab-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
+  /* fixed, not absolute: the new-tab button lives inside .tab-strip, whose
+     overflow-x: auto clips an absolutely positioned descendant to the strip's own
+     height. TabBar.tsx sets left/top from the button's viewport rect. */
+  position: fixed;
   min-width: 180px;
   padding: 4px;
   border-radius: 8px;
