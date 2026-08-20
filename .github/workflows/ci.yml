@@ -3,7 +3,8 @@ name: CI
 # Test gate for every PR and push: changed-file formatting, lint, typecheck across
 # all workspaces, the full unit-test suite (engine packages and app tests; the sheets
 # suite also runs the Rust engine's tests), and an end-to-end run in Chromium against
-# the composed web bundle — the same artifact the container image serves.
+# the composed web bundle — the same artifact the container image serves, with the
+# `.hwp` conversion service running behind it so the Hangul path is covered too.
 
 on:
   push:
@@ -144,7 +145,25 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
+      # The `.hwp` → `.hwpx` converter, started for the Hangul specs. Without it
+      # they skip rather than fail, so this is what decides whether that path is
+      # covered at all — and it is the one path with a JVM behind it. The runner
+      # ships a JDK, so nothing is installed here; the readiness loop fails the
+      # job if the service comes up without a usable converter.
+      - name: Start the HWP conversion service
+        run: |
+          npm run start -w @samugen/hwp-convert > /tmp/hwp-convert.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8789/health | grep -q '"converter":true'; then
+              echo "converter ready"; exit 0
+            fi
+            sleep 1
+          done
+          echo "the conversion service did not become ready"; cat /tmp/hwp-convert.log; exit 1
+
       - name: E2E (Chromium)
+        env:
+          E2E_CONVERT_URL: http://127.0.0.1:8789
         run: npm run test:e2e
 
       - name: Upload E2E artifacts on failure

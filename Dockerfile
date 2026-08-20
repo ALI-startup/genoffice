@@ -3,7 +3,7 @@
 # Serving SamuGen on the web.
 #
 # Every app has a browser build now — docs, pdf, slides, sheets, and the shell
-# that hosts them. This file builds all five and produces two runtime images:
+# that hosts them. This file builds all five and produces three runtime images:
 #
 #   target `web`  — nginx over the static bundles. One image carrying every
 #                   bundle; which one a container serves is chosen at run time
@@ -13,6 +13,12 @@
 #                   ever holds a provider credential, and it is not published to
 #                   the host; each web container reaches it over the compose
 #                   network and re-exposes it same-origin under /v1/ai.
+#   target `hwpconvert`
+#                 — the `.hwp` → `.hwpx` converter. The one thing in this stack a
+#                   browser cannot do for itself: the legacy Hangul binary needs
+#                   hwplib, which is Java. Same shape as the bff — unpublished,
+#                   reached over the compose network, re-exposed same-origin
+#                   under /v1/convert.
 #
 # Why same-origin matters: every app's index.html sets `connect-src 'self'`, so
 # a browser refuses a cross-origin AI request outright. The dev servers proxy
@@ -168,7 +174,9 @@ COPY docker/nginx/app.conf.template /etc/nginx/templates/app.conf.template
 ENV SAMUGEN_WEB_ROOT=/srv/shell \
     SAMUGEN_WEB_PORT=8080 \
     SAMUGEN_AI_BFF_UPSTREAM=http://ai-bff:8788 \
-    SAMUGEN_AI_BFF_PATH=/v1/ai
+    SAMUGEN_AI_BFF_PATH=/v1/ai \
+    SAMUGEN_CONVERT_UPSTREAM=http://hwp-convert:8789 \
+    SAMUGEN_CONVERT_PATH=/v1/convert
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget -qO- "http://127.0.0.1:${SAMUGEN_WEB_PORT}/healthz" >/dev/null || exit 1
@@ -200,3 +208,40 @@ EXPOSE 8788
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+process.env.SAMUGEN_AI_BFF_PORT+'/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
 CMD ["npm", "run", "start", "-w", "@samugen/ai-bff"]
+
+
+# --- hwpconvert --------------------------------------------------------------
+# The `.hwp` → `.hwpx` converter, and the only image here that needs a JVM.
+#
+# Runs from TypeScript via tsx like the bff, for the same reason: no separate
+# build step to keep in step with `npm run start -w @samugen/hwp-convert`. A
+# headless JRE is enough — the converter is a command-line program that reads one
+# file and writes another, with no AWT, no fonts and no display.
+#
+# The vendored JAR travels with the service directory (services/hwp-convert/
+# vendor), so nothing is downloaded at build time and the image needs no Maven.
+FROM node:${NODE_VERSION}-bookworm-slim AS hwpconvert
+WORKDIR /app
+ENV NODE_ENV=production
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends default-jre-headless \
+  && rm -rf /var/lib/apt/lists/* \
+  && java -version
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json package-lock.json ./
+# Workspace symlinks under node_modules/@samugen point back at these trees.
+COPY packages packages
+COPY services services
+USER node
+# Bind on all interfaces for the reason the bff does: inside a container the
+# service's own loopback default would be unreachable from the web containers. It
+# stays unpublished at the compose level. Unlike the bff it holds no credential —
+# what bounds it is the body limit and the conversion timeout.
+ENV SAMUGEN_HWP_CONVERT_HOST=0.0.0.0 \
+    SAMUGEN_HWP_CONVERT_PORT=8789
+EXPOSE 8789
+# `converter` in the body, not just a 200: the process answers happily with no
+# JVM, and an image whose whole purpose is the JVM should report unhealthy then.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+process.env.SAMUGEN_HWP_CONVERT_PORT+'/health').then(r=>r.json()).then(b=>process.exit(b.converter?0:1),()=>process.exit(1))"
+CMD ["npm", "run", "start", "-w", "@samugen/hwp-convert"]

@@ -19,6 +19,7 @@ export const appStrings = defineStrings({
     // File / save status
     appUntitledDocx: '未命名文档.docx',
     appOpenedFile: '已打开 {name}',
+    appOpenedWithoutImages: '已打开 {name}({n} 张图片未能保留)',
     appOpenFailed: '打开失败: {error}',
     appFontsMissing: '文档字体未安装：{names}（已用替代字体显示）',
     appVerticalTextNotice: '文档包含竖排文字（暂以横排显示，保存不受影响）',
@@ -71,8 +72,8 @@ export const appStrings = defineStrings({
     appDownloading: '正在准备下载…',
     appDownloaded: '已下载: {name}',
     appDownloadFailed: '下载失败: {error}',
-    appImported: '已导入 {name}(另存为 .docx)',
-    appImportedWithoutImages: '已导入 {name}(另存为 .docx;{n} 张图片未能保留)',
+    appImported: '已导入 {name}(另存为 .hwpx)',
+    appImportedWithoutImages: '已导入 {name}(另存为 .hwpx;{n} 张图片未能保留)',
     appImportFailed: '导入失败: {error}',
     appMixedExportOpening: '混合纸张文档:正在打开分页预览并按页合并导出…',
     // Comments
@@ -324,6 +325,7 @@ export const appStrings = defineStrings({
     appCharacter: 'Character',
     appUntitledDocx: 'Untitled.docx',
     appOpenedFile: 'Opened {name}',
+    appOpenedWithoutImages: 'Opened {name} — {n} picture(s) could not be carried over',
     appOpenFailed: 'Open failed: {error}',
     appFontsMissing: 'Missing document fonts: {names} (substitutes shown)',
     appVerticalTextNotice:
@@ -376,9 +378,9 @@ export const appStrings = defineStrings({
     appDownloading: 'Preparing download…',
     appDownloaded: 'Downloaded: {name}',
     appDownloadFailed: 'Download failed: {error}',
-    appImported: 'Imported {name} — saves as .docx',
+    appImported: 'Imported {name} — saves as .hwpx',
     appImportedWithoutImages:
-      'Imported {name} — saves as .docx; {n} picture(s) could not be carried over',
+      'Imported {name} — saves as .hwpx; {n} picture(s) could not be carried over',
     appImportFailed: 'Import failed: {error}',
     appMixedExportOpening: 'Mixed paper sizes: opening pagination preview to export pages merged…',
     appSelectTextToComment: 'Select the text to comment on first',
@@ -617,6 +619,7 @@ export const appStrings = defineStrings({
     // File / save status
     appUntitledDocx: '無題の文書.docx',
     appOpenedFile: '{name} を開きました',
+    appOpenedWithoutImages: '{name} を開きました(画像 {n} 点は引き継げませんでした)',
     appOpenFailed: '開けませんでした: {error}',
     appFontsMissing: '文書のフォントが未インストールです: {names}（代替フォントで表示）',
     appVerticalTextNotice:
@@ -677,9 +680,9 @@ export const appStrings = defineStrings({
     appDownloading: 'ダウンロードを準備中…',
     appDownloaded: 'ダウンロードしました: {name}',
     appDownloadFailed: 'ダウンロードに失敗しました: {error}',
-    appImported: '{name} を読み込みました(.docx として保存されます)',
+    appImported: '{name} を読み込みました(.hwpx として保存されます)',
     appImportedWithoutImages:
-      '{name} を読み込みました(.docx として保存されます。画像 {n} 点は引き継げませんでした)',
+      '{name} を読み込みました(.hwpx として保存されます。画像 {n} 点は引き継げませんでした)',
     appImportFailed: '読み込みに失敗しました: {error}',
     appMixedExportOpening:
       '用紙サイズが混在する文書:ページ プレビューを開き、ページごとに結合してエクスポートしています…',
@@ -941,6 +944,7 @@ export const appStrings = defineStrings({
     // File / save status
     appUntitledDocx: '제목 없는 문서.docx',
     appOpenedFile: '{name}을(를) 열었습니다',
+    appOpenedWithoutImages: '{name}을(를) 열었습니다 — 그림 {n}개는 옮기지 못했습니다',
     appOpenFailed: '열기 실패: {error}',
     appFontsMissing: '문서 글꼴이 설치되어 있지 않습니다: {names} (대체 글꼴로 표시)',
     appVerticalTextNotice:
@@ -1000,8 +1004,8 @@ export const appStrings = defineStrings({
     appDownloading: '다운로드 준비 중…',
     appDownloaded: '다운로드함: {name}',
     appDownloadFailed: '다운로드 실패: {error}',
-    appImported: '{name} 가져옴 — .docx로 저장됩니다',
-    appImportedWithoutImages: '{name} 가져옴 — .docx로 저장됩니다. 그림 {n}개는 옮기지 못했습니다',
+    appImported: '{name} 가져옴 — .hwpx로 저장됩니다',
+    appImportedWithoutImages: '{name} 가져옴 — .hwpx로 저장됩니다. 그림 {n}개는 옮기지 못했습니다',
     appImportFailed: '가져오기 실패: {error}',
     appMixedExportOpening:
       '용지 크기가 혼합된 문서: 페이지 미리 보기를 열어 페이지별로 병합하여 내보내는 중…',
@@ -1261,6 +1265,7 @@ export const appStrings = defineStrings({
     appCharacter: 'Caractère',
     appUntitledDocx: 'Document sans titre.docx',
     appOpenedFile: '{name} ouvert',
+    appOpenedWithoutImages: '{name} ouvert — {n} image(s) non conservée(s)',
     appOpenFailed: "Échec de l'ouverture : {error}",
     appFontsMissing: 'Polices du document manquantes : {names} (polices de substitution affichées)',
     appVerticalTextNotice:
@@ -1318,9 +1323,9 @@ export const appStrings = defineStrings({
     appDownloading: 'Préparation du téléchargement…',
     appDownloaded: 'Téléchargé : {name}',
     appDownloadFailed: 'Échec du téléchargement : {error}',
-    appImported: '{name} importé — sera enregistré en .docx',
+    appImported: '{name} importé — sera enregistré en .hwpx',
     appImportedWithoutImages:
-      '{name} importé — sera enregistré en .docx ; {n} image(s) non conservée(s)',
+      '{name} importé — sera enregistré en .hwpx ; {n} image(s) non conservée(s)',
     appImportFailed: "Échec de l'importation : {error}",
     appMixedExportOpening:
       "Formats de papier mixtes : ouverture de l'aperçu de pagination pour exporter les pages fusionnées…",
@@ -1564,6 +1569,7 @@ export const appStrings = defineStrings({
     appCharacter: 'Zeichen',
     appUntitledDocx: 'Unbenanntes Dokument.docx',
     appOpenedFile: '{name} geöffnet',
+    appOpenedWithoutImages: '{name} geöffnet — {n} Bild(er) konnten nicht übernommen werden',
     appOpenFailed: 'Öffnen fehlgeschlagen: {error}',
     appFontsMissing: 'Fehlende Dokumentschriftarten: {names} (Ersatzschriften werden angezeigt)',
     appVerticalTextNotice:
@@ -1620,9 +1626,9 @@ export const appStrings = defineStrings({
     appDownloading: 'Download wird vorbereitet…',
     appDownloaded: 'Heruntergeladen: {name}',
     appDownloadFailed: 'Download fehlgeschlagen: {error}',
-    appImported: '{name} importiert — wird als .docx gespeichert',
+    appImported: '{name} importiert — wird als .hwpx gespeichert',
     appImportedWithoutImages:
-      '{name} importiert — wird als .docx gespeichert; {n} Bild(er) konnten nicht übernommen werden',
+      '{name} importiert — wird als .hwpx gespeichert; {n} Bild(er) konnten nicht übernommen werden',
     appImportFailed: 'Import fehlgeschlagen: {error}',
     appMixedExportOpening:
       'Gemischte Papierformate: Seitenvorschau wird geöffnet, um die Seiten zusammengeführt zu exportieren…',
@@ -1868,6 +1874,7 @@ export const appStrings = defineStrings({
     appCharacter: 'Carácter',
     appUntitledDocx: 'Documento sin título.docx',
     appOpenedFile: 'Se abrió {name}',
+    appOpenedWithoutImages: 'Se abrió {name}: no se pudieron conservar {n} imagen(es)',
     appOpenFailed: 'Error al abrir: {error}',
     appFontsMissing: 'Faltan fuentes del documento: {names} (se muestran sustitutas)',
     appVerticalTextNotice:
@@ -1924,9 +1931,9 @@ export const appStrings = defineStrings({
     appDownloading: 'Preparando la descarga…',
     appDownloaded: 'Descargado: {name}',
     appDownloadFailed: 'Error al descargar: {error}',
-    appImported: '{name} importado: se guardará como .docx',
+    appImported: '{name} importado: se guardará como .hwpx',
     appImportedWithoutImages:
-      '{name} importado: se guardará como .docx; no se pudieron conservar {n} imagen(es)',
+      '{name} importado: se guardará como .hwpx; no se pudieron conservar {n} imagen(es)',
     appImportFailed: 'Error al importar: {error}',
     appMixedExportOpening:
       'Tamaños de papel mixtos: abriendo la vista previa de paginación para exportar las páginas combinadas…',
@@ -2169,6 +2176,7 @@ export const appStrings = defineStrings({
     appCharacter: 'อักขระ',
     appUntitledDocx: 'เอกสารไม่มีชื่อ.docx',
     appOpenedFile: 'เปิด {name} แล้ว',
+    appOpenedWithoutImages: 'เปิด {name} แล้ว — ไม่สามารถเก็บรูปภาพ {n} รูป',
     appOpenFailed: 'เปิดไม่สำเร็จ: {error}',
     appFontsMissing: 'ไม่มีแบบอักษรของเอกสาร: {names} (แสดงด้วยแบบอักษรทดแทน)',
     appVerticalTextNotice: 'เอกสารนี้มีข้อความแนวตั้ง (แสดงเป็นแนวนอนชั่วคราว ไม่มีผลต่อการบันทึก)',
@@ -2221,9 +2229,9 @@ export const appStrings = defineStrings({
     appDownloading: 'กำลังเตรียมดาวน์โหลด…',
     appDownloaded: 'ดาวน์โหลดแล้ว: {name}',
     appDownloadFailed: 'ดาวน์โหลดไม่สำเร็จ: {error}',
-    appImported: 'นำเข้า {name} แล้ว — จะบันทึกเป็น .docx',
+    appImported: 'นำเข้า {name} แล้ว — จะบันทึกเป็น .hwpx',
     appImportedWithoutImages:
-      'นำเข้า {name} แล้ว — จะบันทึกเป็น .docx; ไม่สามารถเก็บรูปภาพ {n} รูป',
+      'นำเข้า {name} แล้ว — จะบันทึกเป็น .hwpx; ไม่สามารถเก็บรูปภาพ {n} รูป',
     appImportFailed: 'นำเข้าไม่สำเร็จ: {error}',
     appMixedExportOpening:
       'เอกสารมีขนาดกระดาษผสม: กำลังเปิดตัวอย่างการแบ่งหน้าเพื่อส่งออกแบบรวมทีละหน้า…',
@@ -2462,6 +2470,7 @@ export const appStrings = defineStrings({
     appCharacter: 'Karakter',
     appUntitledDocx: 'Dokumen tanpa judul.docx',
     appOpenedFile: '{name} dibuka',
+    appOpenedWithoutImages: '{name} dibuka — {n} gambar tidak dapat dipertahankan',
     appOpenFailed: 'Gagal membuka: {error}',
     appFontsMissing: 'Font dokumen tidak tersedia: {names} (ditampilkan dengan font pengganti)',
     appVerticalTextNotice:
@@ -2517,9 +2526,9 @@ export const appStrings = defineStrings({
     appDownloading: 'Menyiapkan unduhan…',
     appDownloaded: 'Diunduh: {name}',
     appDownloadFailed: 'Gagal mengunduh: {error}',
-    appImported: '{name} diimpor — disimpan sebagai .docx',
+    appImported: '{name} diimpor — disimpan sebagai .hwpx',
     appImportedWithoutImages:
-      '{name} diimpor — disimpan sebagai .docx; {n} gambar tidak dapat dipertahankan',
+      '{name} diimpor — disimpan sebagai .hwpx; {n} gambar tidak dapat dipertahankan',
     appImportFailed: 'Impor gagal: {error}',
     appMixedExportOpening:
       'Ukuran kertas campuran: membuka pratinjau paginasi untuk mengekspor halaman yang digabungkan…',
@@ -2759,6 +2768,7 @@ export const appStrings = defineStrings({
     appCharacter: 'Знак',
     appUntitledDocx: 'Документ без названия.docx',
     appOpenedFile: 'Открыт файл {name}',
+    appOpenedWithoutImages: 'Открыт файл {name} — изображений не перенесено: {n}',
     appOpenFailed: 'Не удалось открыть: {error}',
     appFontsMissing: 'Отсутствуют шрифты документа: {names} (показаны заменители)',
     appVerticalTextNotice:
@@ -2814,9 +2824,9 @@ export const appStrings = defineStrings({
     appDownloading: 'Подготовка загрузки…',
     appDownloaded: 'Загружено: {name}',
     appDownloadFailed: 'Не удалось загрузить: {error}',
-    appImported: '{name} импортирован — сохранится как .docx',
+    appImported: '{name} импортирован — сохранится как .hwpx',
     appImportedWithoutImages:
-      '{name} импортирован — сохранится как .docx; изображений не перенесено: {n}',
+      '{name} импортирован — сохранится как .hwpx; изображений не перенесено: {n}',
     appImportFailed: 'Не удалось импортировать: {error}',
     appMixedExportOpening:
       'Смешанные форматы бумаги: открывается предварительный просмотр страниц для постраничного объединения при экспорте…',
@@ -3058,6 +3068,7 @@ export const appStrings = defineStrings({
     appCharacter: 'حرف',
     appUntitledDocx: 'مستند بلا عنوان.docx',
     appOpenedFile: 'تم فتح {name}',
+    appOpenedWithoutImages: 'تم فتح {name} — تعذّر نقل {n} صورة',
     appOpenFailed: 'فشل الفتح: {error}',
     appFontsMissing: 'خطوط المستند غير مثبتة: {names} (تُعرض بخطوط بديلة)',
     appVerticalTextNotice:
@@ -3111,8 +3122,8 @@ export const appStrings = defineStrings({
     appDownloading: 'جارٍ تحضير التنزيل…',
     appDownloaded: 'تم التنزيل: {name}',
     appDownloadFailed: 'فشل التنزيل: {error}',
-    appImported: 'تم استيراد {name} — سيُحفظ بصيغة .docx',
-    appImportedWithoutImages: 'تم استيراد {name} — سيُحفظ بصيغة .docx؛ تعذّر نقل {n} صورة',
+    appImported: 'تم استيراد {name} — سيُحفظ بصيغة .hwpx',
+    appImportedWithoutImages: 'تم استيراد {name} — سيُحفظ بصيغة .hwpx؛ تعذّر نقل {n} صورة',
     appImportFailed: 'فشل الاستيراد: {error}',
     appMixedExportOpening:
       'أحجام ورق مختلطة: جارٍ فتح معاينة ترقيم الصفحات للتصدير مع الدمج حسب الصفحات…',
@@ -3349,6 +3360,7 @@ export const appStrings = defineStrings({
     appCharacter: 'Caractere',
     appUntitledDocx: 'Sem título.docx',
     appOpenedFile: '{name} aberto',
+    appOpenedWithoutImages: '{name} aberto — {n} imagem(ns) não puderam ser mantidas',
     appOpenFailed: 'Falha ao abrir: {error}',
     appFontsMissing: 'Fontes do documento ausentes: {names} (substitutas exibidas)',
     appVerticalTextNotice:
@@ -3403,9 +3415,9 @@ export const appStrings = defineStrings({
     appDownloading: 'Preparando o download…',
     appDownloaded: 'Baixado: {name}',
     appDownloadFailed: 'Falha no download: {error}',
-    appImported: '{name} importado — será salvo como .docx',
+    appImported: '{name} importado — será salvo como .hwpx',
     appImportedWithoutImages:
-      '{name} importado — será salvo como .docx; {n} imagem(ns) não puderam ser mantidas',
+      '{name} importado — será salvo como .hwpx; {n} imagem(ns) não puderam ser mantidas',
     appImportFailed: 'Falha na importação: {error}',
     appMixedExportOpening:
       'Tamanhos de papel mistos: abrindo a visualização de paginação para exportar mesclando por página…',
@@ -3646,6 +3658,7 @@ export const appStrings = defineStrings({
     appCharacter: 'Carattere',
     appUntitledDocx: 'Senza titolo.docx',
     appOpenedFile: '{name} aperto',
+    appOpenedWithoutImages: '{name} aperto — {n} immagine/i non conservate',
     appOpenFailed: 'Apertura non riuscita: {error}',
     appFontsMissing: 'Font del documento mancanti: {names} (mostrati sostituti)',
     appVerticalTextNotice:
@@ -3700,9 +3713,9 @@ export const appStrings = defineStrings({
     appDownloading: 'Preparazione del download…',
     appDownloaded: 'Scaricato: {name}',
     appDownloadFailed: 'Download non riuscito: {error}',
-    appImported: '{name} importato — verrà salvato come .docx',
+    appImported: '{name} importato — verrà salvato come .hwpx',
     appImportedWithoutImages:
-      '{name} importato — verrà salvato come .docx; {n} immagine/i non conservate',
+      '{name} importato — verrà salvato come .hwpx; {n} immagine/i non conservate',
     appImportFailed: 'Importazione non riuscita: {error}',
     appMixedExportOpening:
       "Formati carta misti: apertura dell'anteprima di impaginazione per esportare unendo per pagina…",
@@ -3943,6 +3956,7 @@ export const appStrings = defineStrings({
     appCharacter: 'Znak',
     appUntitledDocx: 'Bez tytułu.docx',
     appOpenedFile: 'Otwarto {name}',
+    appOpenedWithoutImages: 'Otwarto {name} — nie udało się przenieść obrazów: {n}',
     appOpenFailed: 'Otwieranie nie powiodło się: {error}',
     appFontsMissing: 'Brak czcionek dokumentu: {names} (wyświetlane zamienniki)',
     appVerticalTextNotice:
@@ -3998,9 +4012,9 @@ export const appStrings = defineStrings({
     appDownloading: 'Przygotowywanie pobierania…',
     appDownloaded: 'Pobrano: {name}',
     appDownloadFailed: 'Pobieranie nie powiodło się: {error}',
-    appImported: 'Zaimportowano {name} — zostanie zapisany jako .docx',
+    appImported: 'Zaimportowano {name} — zostanie zapisany jako .hwpx',
     appImportedWithoutImages:
-      'Zaimportowano {name} — zostanie zapisany jako .docx; nie udało się przenieść obrazów: {n}',
+      'Zaimportowano {name} — zostanie zapisany jako .hwpx; nie udało się przenieść obrazów: {n}',
     appImportFailed: 'Import nie powiódł się: {error}',
     appMixedExportOpening:
       'Mieszane rozmiary papieru: otwieranie podglądu podziału na strony w celu eksportu ze scaleniem według stron…',
@@ -4242,6 +4256,7 @@ export const appStrings = defineStrings({
     appCharacter: 'Teken',
     appUntitledDocx: 'Naamloos.docx',
     appOpenedFile: '{name} geopend',
+    appOpenedWithoutImages: '{name} geopend — {n} afbeelding(en) konden niet worden overgenomen',
     appOpenFailed: 'Openen mislukt: {error}',
     appFontsMissing: 'Ontbrekende documentlettertypen: {names} (vervangingen weergegeven)',
     appVerticalTextNotice:
@@ -4298,9 +4313,9 @@ export const appStrings = defineStrings({
     appDownloading: 'Download voorbereiden…',
     appDownloaded: 'Gedownload: {name}',
     appDownloadFailed: 'Downloaden mislukt: {error}',
-    appImported: '{name} geïmporteerd — wordt opgeslagen als .docx',
+    appImported: '{name} geïmporteerd — wordt opgeslagen als .hwpx',
     appImportedWithoutImages:
-      '{name} geïmporteerd — wordt opgeslagen als .docx; {n} afbeelding(en) konden niet worden overgenomen',
+      '{name} geïmporteerd — wordt opgeslagen als .hwpx; {n} afbeelding(en) konden niet worden overgenomen',
     appImportFailed: 'Importeren mislukt: {error}',
     appMixedExportOpening:
       'Gemengde papierformaten: pagineringsvoorbeeld wordt geopend om per pagina samengevoegd te exporteren…',
@@ -4545,6 +4560,7 @@ export const appStrings = defineStrings({
     appCharacter: 'Aksara',
     appUntitledDocx: 'Tanpa tajuk.docx',
     appOpenedFile: '{name} dibuka',
+    appOpenedWithoutImages: '{name} dibuka — {n} imej tidak dapat dikekalkan',
     appOpenFailed: 'Gagal membuka: {error}',
     appFontsMissing: 'Fon dokumen tiada: {names} (dipaparkan dengan fon ganti)',
     appVerticalTextNotice:
@@ -4601,9 +4617,9 @@ export const appStrings = defineStrings({
     appDownloading: 'Menyediakan muat turun…',
     appDownloaded: 'Dimuat turun: {name}',
     appDownloadFailed: 'Muat turun gagal: {error}',
-    appImported: '{name} diimport — akan disimpan sebagai .docx',
+    appImported: '{name} diimport — akan disimpan sebagai .hwpx',
     appImportedWithoutImages:
-      '{name} diimport — akan disimpan sebagai .docx; {n} imej tidak dapat dikekalkan',
+      '{name} diimport — akan disimpan sebagai .hwpx; {n} imej tidak dapat dikekalkan',
     appImportFailed: 'Import gagal: {error}',
     appMixedExportOpening:
       'Saiz kertas bercampur: membuka pratonton penomboran halaman untuk eksport dengan gabungan mengikut halaman…',
@@ -4842,6 +4858,7 @@ export const appStrings = defineStrings({
     appCharacter: 'תו',
     appUntitledDocx: 'ללא שם.docx',
     appOpenedFile: '{name} נפתח',
+    appOpenedWithoutImages: '{name} נפתח — {n} תמונות לא הועברו',
     appOpenFailed: 'הפתיחה נכשלה: {error}',
     appFontsMissing: 'גופני המסמך חסרים: {names} (מוצגים גופנים חלופיים)',
     appVerticalTextNotice: 'המסמך מכיל טקסט אנכי (מוצג אופקית בינתיים; השמירה אינה מושפעת)',
@@ -4891,8 +4908,8 @@ export const appStrings = defineStrings({
     appDownloading: 'מכין הורדה…',
     appDownloaded: 'הורד: {name}',
     appDownloadFailed: 'ההורדה נכשלה: {error}',
-    appImported: '{name} יובא — יישמר כ-.docx',
-    appImportedWithoutImages: '{name} יובא — יישמר כ-.docx; {n} תמונות לא הועברו',
+    appImported: '{name} יובא — יישמר כ-.hwpx',
+    appImportedWithoutImages: '{name} יובא — יישמר כ-.hwpx; {n} תמונות לא הועברו',
     appImportFailed: 'הייבוא נכשל: {error}',
     appMixedExportOpening:
       'גודלי נייר מעורבים: נפתחת תצוגה מקדימה של עימוד לייצוא עם איחוד לפי עמודים…',
@@ -5129,6 +5146,7 @@ export const appStrings = defineStrings({
     appCharacter: 'वर्ण',
     appUntitledDocx: 'शीर्षकहीन.docx',
     appOpenedFile: '{name} खोला गया',
+    appOpenedWithoutImages: '{name} खोला गया — {n} चित्र नहीं रखे जा सके',
     appOpenFailed: 'खोलने में विफल: {error}',
     appFontsMissing: 'दस्तावेज़ के फ़ॉन्ट इंस्टॉल नहीं हैं: {names} (विकल्प फ़ॉन्ट दिखाए गए)',
     appVerticalTextNotice:
@@ -5183,9 +5201,9 @@ export const appStrings = defineStrings({
     appDownloading: 'डाउनलोड तैयार किया जा रहा है…',
     appDownloaded: 'डाउनलोड हो गया: {name}',
     appDownloadFailed: 'डाउनलोड विफल: {error}',
-    appImported: '{name} आयात किया गया — .docx के रूप में सहेजा जाएगा',
+    appImported: '{name} आयात किया गया — .hwpx के रूप में सहेजा जाएगा',
     appImportedWithoutImages:
-      '{name} आयात किया गया — .docx के रूप में सहेजा जाएगा; {n} चित्र नहीं रखे जा सके',
+      '{name} आयात किया गया — .hwpx के रूप में सहेजा जाएगा; {n} चित्र नहीं रखे जा सके',
     appImportFailed: 'आयात विफल: {error}',
     appMixedExportOpening:
       'मिश्रित कागज़ आकार: पृष्ठ अनुसार मर्ज करके निर्यात के लिए पृष्ठांकन पूर्वावलोकन खोला जा रहा है…',
@@ -5423,6 +5441,7 @@ export const appStrings = defineStrings({
     appCharacter: '字元',
     appUntitledDocx: '未命名文件.docx',
     appOpenedFile: '已開啟 {name}',
+    appOpenedWithoutImages: '已開啟 {name}({n} 張圖片未能保留)',
     appOpenFailed: '開啟失敗: {error}',
     appFontsMissing: '文件字型未安裝：{names}（已以替代字型顯示）',
     appVerticalTextNotice: '文件包含直排文字（暫以橫排顯示，儲存不受影響）',
@@ -5470,8 +5489,8 @@ export const appStrings = defineStrings({
     appDownloading: '正在準備下載…',
     appDownloaded: '已下載: {name}',
     appDownloadFailed: '下載失敗: {error}',
-    appImported: '已匯入 {name}(另存為 .docx)',
-    appImportedWithoutImages: '已匯入 {name}(另存為 .docx;{n} 張圖片未能保留)',
+    appImported: '已匯入 {name}(另存為 .hwpx)',
+    appImportedWithoutImages: '已匯入 {name}(另存為 .hwpx;{n} 張圖片未能保留)',
     appImportFailed: '匯入失敗: {error}',
     appMixedExportOpening: '混合紙張文件:正在開啟分頁預覽並按頁合併匯出…',
     appSelectTextToComment: '請先選取要加註解的文字',

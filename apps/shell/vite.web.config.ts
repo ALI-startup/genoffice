@@ -33,6 +33,7 @@ import { createRequire } from 'node:module'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { AI_BFF_BASE_PATH } from '@samugen/platform-web/wire'
+import { CONVERT_BASE_PATH } from '@samugen/platform-web/convert-wire'
 import { hostAlias } from './vite.shared'
 
 const require = createRequire(import.meta.url)
@@ -40,6 +41,8 @@ const { version } = require('./package.json') as { version: string }
 
 /** Where `npm run start -w @samugen/ai-bff` listens by default. */
 const bffTarget = process.env.AI_BFF_URL || 'http://127.0.0.1:8788'
+/** The `.hwp` converter; unset means nothing is running and `.hwp` reports so. */
+const convertTarget = process.env.HWP_CONVERT_URL || 'http://127.0.0.1:8789'
 /** Where the editors' own web dev servers listen (see their vite.web.config.ts). */
 const docsTarget = process.env.DOCS_WEB_URL || 'http://127.0.0.1:5183'
 const pdfTarget = process.env.PDF_WEB_URL || 'http://127.0.0.1:5186'
@@ -67,6 +70,8 @@ export default defineConfig({
       // Prefix match: covers /settings, /stream, /stream/cancel and /chat. The
       // stream route is SSE and passes through unbuffered.
       [AI_BFF_BASE_PATH]: { target: bffTarget, changeOrigin: true },
+      // One document up, one back — no streaming, so nothing to unbuffer.
+      [CONVERT_BASE_PATH]: { target: convertTarget, changeOrigin: true },
       // The editors, served under this origin. `ws: true` carries their HMR
       // socket; the apps run with a matching `base`, so nothing is rewritten and
       // every asset URL they emit already carries the prefix.

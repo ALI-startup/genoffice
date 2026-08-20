@@ -115,7 +115,13 @@ export const DOCX_FILE_TYPES: FilePickerAcceptType[] = [
   },
 ]
 
-/** Hangul Word Processor documents, which docs imports and exports. */
+/**
+ * The OWPML package, which docs reads, writes and exports.
+ *
+ * `.hwpx` only, deliberately: this is the *save* filter, and the legacy `.hwp`
+ * binary is a format nothing here writes. Offering it in a save dialog would let
+ * the user name a file that would then be written as something else.
+ */
 export const HWPX_FILE_TYPES: FilePickerAcceptType[] = [
   { description: 'Hangul Document', accept: { 'application/hwp+zip': ['.hwpx'] } },
 ]
@@ -123,9 +129,16 @@ export const HWPX_FILE_TYPES: FilePickerAcceptType[] = [
 /**
  * Everything docs can open.
  *
- * One entry rather than two, so a single choice in the dialog shows both kinds
- * side by side — which matters because the two are opened the same way from the
- * user's side even though `.hwpx` arrives as an import rather than a document.
+ * One entry rather than three, so a single choice in the dialog shows every kind
+ * side by side — which matters because they are all opened the same way from the
+ * user's side, whatever happens to them after the pick.
+ *
+ * `.hwp` is here even though it needs a server-side conversion (see
+ * services/hwp-convert), and that is a deliberate trade. Whether a deployment
+ * runs the converter is only knowable by asking it, and asking is an `await`
+ * before `showOpenFilePicker` — which spends the user activation the dialog
+ * needs. So the format is always offered, and a `.hwp` picked where there is no
+ * converter is reported with the fix rather than silently ignored.
  */
 export const DOCUMENT_FILE_TYPES: FilePickerAcceptType[] = [
   {
@@ -133,6 +146,7 @@ export const DOCUMENT_FILE_TYPES: FilePickerAcceptType[] = [
     accept: {
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
       'application/hwp+zip': ['.hwpx'],
+      'application/x-hwp': ['.hwp'],
     },
   },
 ]

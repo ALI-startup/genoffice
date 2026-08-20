@@ -8,7 +8,11 @@
  */
 import { createServer, type Server } from 'node:http'
 import { afterEach, describe, expect, it } from 'vitest'
-import { CONVERT_ROUTES, HWPX_MIME } from '@samugen/platform-web/convert-wire'
+import {
+  CONVERT_ROUTES,
+  HWPX_MIME,
+  type ConvertErrorBody,
+} from '@samugen/platform-web/convert-wire'
 import { createHwpConvertHandler, type HwpConvertOptions } from '../src/server'
 import type { JavaRun, RunJava } from '../src/convert'
 import { writeFile } from 'node:fs/promises'
@@ -162,6 +166,7 @@ describe('anything else', () => {
     const response = await fetch(base + '/v1/convert/pdf-to-hwpx', { method: 'POST' })
 
     expect(response.status).toBe(404)
-    expect((await response.json()).error).toContain('/v1/convert/pdf-to-hwpx')
+    const body = (await response.json()) as ConvertErrorBody
+    expect(body.error).toContain('/v1/convert/pdf-to-hwpx')
   })
 })

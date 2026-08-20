@@ -6,6 +6,8 @@
 #   - the /v1/ai route prefix nginx proxies must equal AI_BFF_BASE_PATH in
 #     packages/platform-web/src/ai-wire.ts. If they drift, the pages still load
 #     and every AI call 404s.
+#   - the same for /v1/convert and CONVERT_BASE_PATH in convert-wire.ts, whose
+#     drift is quieter still: only `.hwp` files stop working.
 #   - the two git dependencies in package-lock.json must be fetchable, since the
 #     build rewrites their git+ssh URLs to HTTPS.
 #   - a provider credential must be present, or the AI panel reports none.
@@ -16,6 +18,7 @@ set -euo pipefail
 
 readonly ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly WIRE="$ROOT/packages/platform-web/src/ai-wire.ts"
+readonly CONVERT_WIRE="$ROOT/packages/platform-web/src/convert-wire.ts"
 readonly COMPOSE_FILE="$ROOT/docker-compose.yml"
 
 # BuildKit is required, not preferred: the Dockerfile uses `RUN --mount=type=ssh`
@@ -56,6 +59,24 @@ check_route_prefix() {
   info "route prefix ok: $declared"
 }
 
+# The same contract for the conversion service. Split from the check above so a
+# failure names which prefix drifted.
+check_convert_prefix() {
+  local declared configured
+  declared="$(sed -n "s/^export const CONVERT_BASE_PATH = '\([^']*\)'.*/\1/p" "$CONVERT_WIRE")"
+  [ -n "$declared" ] || die "could not read CONVERT_BASE_PATH from $CONVERT_WIRE"
+
+  configured="$(sed -n 's/.*SAMUGEN_CONVERT_PATH:[[:space:]]*\(.*\)/\1/p' "$COMPOSE_FILE" \
+    | tr -d '"'"'"' \r' | sort -u)"
+  [ -n "$configured" ] || die "no SAMUGEN_CONVERT_PATH set in $COMPOSE_FILE"
+
+  if [ "$configured" != "$declared" ]; then
+    die "convert prefix drift: convert-wire.ts declares '$declared', docker-compose.yml sets '$configured'.
+      Opening a .hwp would 404 while everything else kept working. Update SAMUGEN_CONVERT_PATH in docker-compose.yml."
+  fi
+  info "convert prefix ok: $declared"
+}
+
 # The build rewrites the git+ssh dependency URLs to HTTPS so it needs no key.
 # That only holds while the repositories are public; if one goes private the
 # failure lands deep inside `npm ci`, so name it here instead.
@@ -88,17 +109,20 @@ check_env() {
 
 cmd_check() {
   check_route_prefix
+  check_convert_prefix
   check_git_deps
   check_env
 }
 
 cmd_build() {
   check_route_prefix
+  check_convert_prefix
   compose build "$@"
 }
 
 cmd_up() {
   check_route_prefix
+  check_convert_prefix
   check_env
   compose up -d --build "$@"
   printf '\n'
@@ -123,7 +147,7 @@ SamuGen web stack.
   docker/docker.sh logs [service...]    follow logs
   docker/docker.sh ps                   show status
   docker/docker.sh sh <service>         shell into a running container
-  docker/docker.sh check                verify route prefix, git deps and .env
+  docker/docker.sh check                verify route prefixes, git deps and .env
   docker/docker.sh clean                down, and drop the built images
 
 Services and the ports they publish:

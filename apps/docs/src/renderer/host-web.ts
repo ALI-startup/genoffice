@@ -58,6 +58,9 @@ function hasUserActivation(): boolean {
 
 export const createDocsPlatform: CreateDocsPlatform = async () => {
   const pickers = browserFilePickers()
+  // One instance for the page: the port caches its availability probe, and that
+  // answer is a property of the deployment rather than of who asked.
+  const hwp = createWebHwpConvertPort()
   const store = new WebDocumentStore({
     // Handles are structured-cloneable, so IndexedDB stores the handle itself
     // and a document survives a reload without copying bytes or inventing a path.
@@ -66,9 +69,11 @@ export const createDocsPlatform: CreateDocsPlatform = async () => {
     // in another app's recent list when both run on the same origin.
     handles: createIndexedDbHandleStore(indexedDB, `${DOCUMENT_DB_NAME}-docs`),
     pickers,
-    // Both formats docs opens. A .hwpx is converted on the way in and becomes
-    // an unsaved .docx, so the store never saves back to one — see the import
-    // branch in platform-web.ts.
+    // Every format docs opens. A `.hwpx` is a document the store saves back to
+    // like a `.docx` — it is re-encoded rather than patched, which is the save
+    // path's business, not the store's. A `.hwp` is converted on the way in and
+    // becomes an unsaved `.hwpx`, because the conversion runs one way only. See
+    // the import branches in platform-web.ts.
     fileTypes: DOCUMENT_FILE_TYPES,
     pickerId: 'samugen-docx',
   })
@@ -83,7 +88,7 @@ export const createDocsPlatform: CreateDocsPlatform = async () => {
       // the service is not knowable synchronously, and the port answers a
       // missing one with a message naming the fix (save it as .hwpx) rather
       // than a failure. See platform-web's hwp-convert.ts.
-      extractor: createBrowserAttachmentExtractor({ hwp: createWebHwpConvertPort() }),
+      extractor: createBrowserAttachmentExtractor({ hwp }),
     }),
     hasUserActivation,
     // The browser's own dialog, standing in for the native warning box the
@@ -98,6 +103,8 @@ export const createDocsPlatform: CreateDocsPlatform = async () => {
     // globals; the DOM work is in @samugen/platform-web's download.ts.
     deliverDownload: (fileName, data, mimeType) =>
       downloadBytes(browserDownloadEnv(), fileName, data, mimeType),
+    // Opening a `.hwp` goes through the same service the attachment path uses.
+    hwp,
     // Non-null only when the web shell hosts this page in its tab strip, which
     // it signals with a query parameter. It is what lets the shell's close guard
     // ask this document whether it has unsaved work, and ask it to save: closing

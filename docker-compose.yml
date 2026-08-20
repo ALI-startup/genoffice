@@ -19,6 +19,14 @@
 # each app's CSP is `connect-src 'self'`, so nginx re-exposes it same-origin
 # under /v1/ai.
 #
+# The hwp-convert service is unpublished for the second half of that reason
+# rather than the first: it holds no credential, but the pages cannot address it
+# cross-origin either, so nginx re-exposes it under /v1/convert. It turns legacy
+# `.hwp` documents into `.hwpx` — the one format conversion this stack cannot do
+# in the browser, because the only complete reader of HWP 5.0 is a Java library.
+# Stop the service and `.hwpx` still works everywhere; `.hwp` reports that
+# conversion is unavailable.
+#
 #   ./docker/docker.sh up          build and start everything
 #   ./docker/docker.sh logs shell  follow one service
 #   ./docker/docker.sh down        stop
@@ -43,9 +51,25 @@ x-web-service: &web-service
   depends_on:
     ai-bff:
       condition: service_healthy
+    hwp-convert:
+      # `service_started`, not `service_healthy`: the converter's health check
+      # asks the JVM, and a stack whose Hangul conversion is unavailable should
+      # still serve every other format rather than refusing to come up.
+      condition: service_started
   restart: unless-stopped
   networks:
     - samugen
+
+# Every web container proxies the same two upstreams on its own origin. The
+# paths must match the constants the browser calls (AI_BFF_BASE_PATH and
+# CONVERT_BASE_PATH in packages/platform-web); `./docker/docker.sh check`
+# verifies that.
+x-web-upstreams: &web-upstreams
+  SAMUGEN_WEB_PORT: '8080'
+  SAMUGEN_AI_BFF_UPSTREAM: http://ai-bff:8788
+  SAMUGEN_AI_BFF_PATH: /v1/ai
+  SAMUGEN_CONVERT_UPSTREAM: http://hwp-convert:8789
+  SAMUGEN_CONVERT_PATH: /v1/convert
 
 services:
   ai-bff:
@@ -69,17 +93,30 @@ services:
     networks:
       - samugen
 
+  # `.hwp` → `.hwpx`. The only image in this stack with a JVM in it.
+  hwp-convert:
+    image: samugen/hwp-convert:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: hwpconvert
+    environment:
+      # Loopback is the container; kept private by having no `ports:` entry.
+      SAMUGEN_HWP_CONVERT_HOST: 0.0.0.0
+      SAMUGEN_HWP_CONVERT_PORT: '8789'
+    expose:
+      - '8789'
+    restart: unless-stopped
+    networks:
+      - samugen
+
   # The entry point.
   shell:
     <<: *web-service
     container_name: samugen-shell
     environment:
+      <<: *web-upstreams
       SAMUGEN_WEB_ROOT: /srv/shell
-      SAMUGEN_WEB_PORT: '8080'
-      SAMUGEN_AI_BFF_UPSTREAM: http://ai-bff:8788
-      # Must match AI_BFF_BASE_PATH in packages/platform-web/src/ai-wire.ts.
-      # ./docker/docker.sh check verifies that.
-      SAMUGEN_AI_BFF_PATH: /v1/ai
     ports:
       - '${SAMUGEN_SHELL_PORT:-8080}:8080'
 
@@ -88,10 +125,8 @@ services:
     <<: *web-service
     container_name: samugen-docs
     environment:
+      <<: *web-upstreams
       SAMUGEN_WEB_ROOT: /srv/docs
-      SAMUGEN_WEB_PORT: '8080'
-      SAMUGEN_AI_BFF_UPSTREAM: http://ai-bff:8788
-      SAMUGEN_AI_BFF_PATH: /v1/ai
     ports:
       - '${SAMUGEN_DOCS_PORT:-9041}:8080'
 
@@ -100,10 +135,8 @@ services:
     <<: *web-service
     container_name: samugen-pdf
     environment:
+      <<: *web-upstreams
       SAMUGEN_WEB_ROOT: /srv/pdf
-      SAMUGEN_WEB_PORT: '8080'
-      SAMUGEN_AI_BFF_UPSTREAM: http://ai-bff:8788
-      SAMUGEN_AI_BFF_PATH: /v1/ai
     ports:
       - '${SAMUGEN_PDF_PORT:-9042}:8080'
 
@@ -112,10 +145,8 @@ services:
     <<: *web-service
     container_name: samugen-sheets
     environment:
+      <<: *web-upstreams
       SAMUGEN_WEB_ROOT: /srv/sheets
-      SAMUGEN_WEB_PORT: '8080'
-      SAMUGEN_AI_BFF_UPSTREAM: http://ai-bff:8788
-      SAMUGEN_AI_BFF_PATH: /v1/ai
     ports:
       - '${SAMUGEN_SHEETS_PORT:-9044}:8080'
 
@@ -124,10 +155,8 @@ services:
     <<: *web-service
     container_name: samugen-slides
     environment:
+      <<: *web-upstreams
       SAMUGEN_WEB_ROOT: /srv/slides
-      SAMUGEN_WEB_PORT: '8080'
-      SAMUGEN_AI_BFF_UPSTREAM: http://ai-bff:8788
-      SAMUGEN_AI_BFF_PATH: /v1/ai
     ports:
       - '${SAMUGEN_SLIDES_PORT:-9043}:8080'
 

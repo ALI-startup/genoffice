@@ -43,7 +43,12 @@
  */
 import type { AiPort, AttachmentsPort, DiskFileState, LanguagePort } from '@samugen/platform'
 import { isExternallyModified } from '@samugen/platform'
-import type { FilePickers, FrameChildLink, WebDocumentStore } from '@samugen/platform-web'
+import type {
+  FilePickers,
+  FrameChildLink,
+  WebDocumentStore,
+  WebHwpConvertPort,
+} from '@samugen/platform-web'
 import {
   HWPX_FILE_TYPES,
   IMAGE_FILE_TYPES,
@@ -68,15 +73,11 @@ import type {
   SaveDocumentResult,
   SaveNamedDocumentResult,
 } from './platform'
-
-/**
- * Recognises a `.hwpx` by its display name.
- *
- * The name is all there is to go on: a `DocumentRef` is opaque and the picker
- * hands back a handle, not a type. That is enough — the name is what the user
- * picked, from a dialog filtered to these extensions.
- */
-const HWPX_NAME = /\.hwpx$/i
+// The name tests belong to the codec that reads and writes the format; see its
+// `formats.ts` for why a name is the right discriminant here — a `DocumentRef`
+// is opaque and a picker hands back a handle rather than a type, so the name the
+// user chose from a filtered dialog is all there is, and it is enough.
+import { hwpxNameFor, isHwpName, isHwpxName } from '@samugen/hwpx-convert/formats'
 
 /**
  * The one browser rule that shapes this host: `showSaveFilePicker` may only be
@@ -98,6 +99,15 @@ const HWPX_NAME = /\.hwpx$/i
 export interface UserActivationProbe {
   (): boolean
 }
+
+/**
+ * Said when a `.hwp` is picked and there is no converter behind it.
+ *
+ * Deliberately the same sentence the attachment extractor uses for the same
+ * condition: it is the same fix, and a user who meets it twice should not have
+ * to work out that they are the same problem.
+ */
+const HWP_UNAVAILABLE = 'HWP conversion is not available here; save it as .hwpx'
 
 /**
  * Ask the user whether to overwrite a document another program has changed since
@@ -139,6 +149,12 @@ export interface WebDocsPlatformDeps {
    * @samugen/platform-web's `downloadBytes`.
    */
   deliverDownload: DownloadDelivery
+  /**
+   * Reaches the `.hwp` → `.hwpx` service, for the one format this page cannot
+   * read itself. Omitted or null is a deployment without the service; a picked
+   * `.hwp` then fails with a message naming the fix.
+   */
+  hwp?: WebHwpConvertPort | null
 }
 
 /**
@@ -163,6 +179,12 @@ export function createWebDocsFilePort(
   pickers: FilePickers,
   hasUserActivation: UserActivationProbe,
   confirmOverwrite: ConfirmOverwrite,
+  /**
+   * Reaches the `.hwp` → `.hwpx` service. Null is a deployment that does not run
+   * it, and then a picked `.hwp` fails with a message naming the fix rather than
+   * being quietly skipped.
+   */
+  hwp: WebHwpConvertPort | null = null,
 ): DocsFilePort {
   /**
    * What the file looked like the last time this host read or wrote it, per ref.
@@ -196,7 +218,8 @@ export function createWebDocsFilePort(
    */
   const load = async (ref: DocumentRef, name: string): Promise<OpenOutcome> => {
     const bytes = await store.read(ref)
-    if (HWPX_NAME.test(name)) return importHwpx(ref, name, bytes)
+    if (isHwpxName(name)) return importHwpx(ref, name, bytes)
+    if (isHwpName(name)) return importHwp(ref, name, bytes)
     const data = toArrayBuffer(bytes)
     const hash = await sha256Hex(data)
     await remember(ref, hash)
@@ -204,13 +227,17 @@ export function createWebDocsFilePort(
   }
 
   /**
-   * Convert a picked `.hwpx` and hand it over as an import.
+   * Read a picked `.hwpx` into the editor, still bound to its file.
    *
-   * The handle is released rather than kept. Everything the store remembers a
-   * handle *for* — saving in place, conflict detection, the recent list — is
-   * about a file this app can write back to, and this one it cannot: the import
-   * becomes an unsaved `.docx`. Leaving the handle behind would put a document
-   * in the recent list that reopening would silently re-import.
+   * The handle is kept, which is the whole difference from an export: everything
+   * the store remembers a handle *for* — saving in place, conflict detection,
+   * the recent list — applies to this file, because Save writes it again as
+   * `.hwpx`. The document is one the app can write; it simply re-encodes rather
+   * than patching bytes.
+   *
+   * On failure the handle is released. A file that would not convert is not a
+   * document, and leaving it in the recent list would offer the user a reopen
+   * that fails the same way.
    */
   const importHwpx = async (
     ref: DocumentRef,
@@ -222,17 +249,60 @@ export function createWebDocsFilePort(
     const { hwpxToHtml } = await import('@samugen/hwpx-convert')
     try {
       const imported = await hwpxToHtml(bytes)
+      // The baseline a later in-place save compares against. Recorded from the
+      // bytes as opened, exactly as the docx path does, so an edit made in
+      // Hangul Word Processor while the tab was open is still caught.
+      await remember(ref, await sha256Hex(toArrayBuffer(bytes)))
+      return {
+        kind: 'import',
+        imported: { ...imported, sourceName: name, name, ref, format: 'hwpx' },
+      }
+    } catch (error) {
+      await store.forget(ref).catch(() => {})
+      throw error
+    }
+  }
+
+  /**
+   * Convert a picked `.hwp` and hand the result over as an unsaved document.
+   *
+   * The handle *is* released here, and for the reason the `.hwpx` one is not:
+   * conversion runs one way only. Nothing in this codebase writes the HWP 5.0
+   * binary, so saving over the original would replace it with an OWPML package
+   * under a name claiming otherwise. The document becomes `report.hwpx`, unsaved,
+   * and the first save asks where it goes.
+   *
+   * Null `hwp` is a deployment without the converter service. Reported as an
+   * error rather than silently, because the user picked this file.
+   */
+  const importHwp = async (
+    ref: DocumentRef,
+    name: string,
+    bytes: Uint8Array,
+  ): Promise<OpenOutcome> => {
+    try {
+      if (!hwp) throw new Error(HWP_UNAVAILABLE)
+      const converted = await hwp.toHwpx(bytes)
+      if (!converted.ok) {
+        throw new Error(
+          converted.reason === 'unsupported' || converted.reason === 'unreachable'
+            ? HWP_UNAVAILABLE
+            : converted.error,
+        )
+      }
+      const { hwpxToHtml } = await import('@samugen/hwpx-convert')
+      const imported = await hwpxToHtml(converted.bytes)
       return {
         kind: 'import',
         imported: {
           ...imported,
           sourceName: name,
-          name: `${name.replace(HWPX_NAME, '')}.docx`,
+          name: hwpxNameFor(name),
+          ref: null,
+          format: 'hwpx',
         },
       }
     } finally {
-      // Released whether or not the conversion worked: a file that failed to
-      // convert is not a document either.
       await store.forget(ref).catch(() => {})
     }
   }
@@ -639,6 +709,7 @@ export function createWebDocsPlatform(deps: WebDocsPlatformDeps): DocsPlatform {
       deps.pickers,
       deps.hasUserActivation,
       deps.confirmOverwrite,
+      deps.hwp ?? null,
     ),
     // The four capabilities a browser cannot back. Each is `null` rather than a
     // stub, so the UI that offers them is hidden instead of inert — see
@@ -662,9 +733,11 @@ export function createWebDocsPlatform(deps: WebDocsPlatformDeps): DocsPlatform {
 
 /** The docx media type, for the Blob a download is delivered as. */
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+/** The OWPML media type, for the same reason. */
+const HWPX_DOWNLOAD_MIME = 'application/hwp+zip'
 
 /**
- * Download the open document as `.docx`.
+ * Download the open document, in the format it is in.
  *
  * Deliberately does not go near the store: no handle, no ref, no permission
  * grant, no entry in the recent list. It is a copy of the bytes the editor would
@@ -679,14 +752,16 @@ const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingm
 export function createWebDocsDownloadPort(deliver: DownloadDelivery): DocsDownloadPort {
   return {
     download: async (defaultName, data): Promise<DownloadResult> => {
-      // A document opened from a `.hwpx` is a `.docx` from here on (the import
-      // becomes an unsaved docx), and a name is all this port has to go on, so the
-      // extension is corrected rather than trusted.
-      const name = /\.docx$/i.test(defaultName)
-        ? defaultName
-        : `${defaultName.replace(/\.[^./\\]*$/, '')}.docx`
+      // The caller serializes to whichever format the document is in, and a name
+      // is all this port has to go on — so the name decides the media type, and
+      // anything that is neither is corrected to `.docx` rather than trusted.
+      const hangul = isHwpxName(defaultName)
+      const name =
+        hangul || /\.docx$/i.test(defaultName)
+          ? defaultName
+          : `${defaultName.replace(/\.[^./\\]*$/, '')}.docx`
       try {
-        deliver(name, data, DOCX_MIME)
+        deliver(name, data, hangul ? HWPX_DOWNLOAD_MIME : DOCX_MIME)
         return { ok: true, name }
       } catch (error) {
         return { ok: false, error: messageOf(error) }
@@ -711,13 +786,26 @@ export function createWebDocsDownloadPort(deliver: DownloadDelivery): DocsDownlo
  */
 export function createWebDocsHwpxPort(store: WebDocumentStore): DocsHwpxPort {
   return {
+    /**
+     * The bytes an in-place save writes, and nothing else — no dialog, no ref, no
+     * recent-list entry, because the caller already has all three.
+     */
+    convert: async (html): Promise<ArrayBuffer> => {
+      const { htmlToHwpx } = await import('@samugen/hwpx-convert')
+      const bytes = await htmlToHwpx(html)
+      return bytes.buffer.slice(
+        bytes.byteOffset,
+        bytes.byteOffset + bytes.byteLength,
+      ) as ArrayBuffer
+    },
+
     exportDocument: async (defaultName, html): Promise<HwpxExportResult> => {
       try {
         // On demand: the converter is the heaviest thing in this bundle, and a
         // session that never exports should not download it.
         const { htmlToHwpx } = await import('@samugen/hwpx-convert')
         const bytes = await htmlToHwpx(html)
-        const suggested = `${defaultName.replace(/\.docx$/i, '')}.hwpx`
+        const suggested = hwpxNameFor(defaultName)
         const written = await store.saveBytesAs(suggested, bytes, HWPX_FILE_TYPES)
         // A dismissed dialog is `ok: false` with no error, matching the PDF
         // export port's convention; the caller reports it as a cancellation.
@@ -747,7 +835,7 @@ async function saveNamed(
 ): Promise<SaveNamedDocumentResult> {
   try {
     const bytes = new Uint8Array(data)
-    const saved = await store.saveAsDocument(withDocxExtension(defaultName), bytes)
+    const saved = await store.saveAsDocument(withDocumentExtension(defaultName), bytes)
     if (saved === null) return { ok: false }
     await remember(saved.ref, await sha256Hex(bytes))
     return { ok: true, ref: saved.ref, name: saved.name }
@@ -763,8 +851,15 @@ async function saveNamed(
  * one from the first heading), and a browser save dialog uses the suggested name
  * verbatim — so without this the user would be offered an extension-less file
  * that Word will not open.
+ *
+ * A `.hwpx` keeps its extension. This is where an open Hangul document stays one
+ * through Save As: the dialog is filtered to both formats (the store's
+ * `DOCUMENT_FILE_TYPES`), so the name is what decides which the user is offered,
+ * and forcing `.docx` here would silently convert the document on the one
+ * command whose whole purpose is choosing where it goes.
  */
-function withDocxExtension(name: string): string {
+function withDocumentExtension(name: string): string {
+  if (isHwpxName(name)) return name
   return /\.docx$/i.test(name) ? name : `${name}.docx`
 }
 

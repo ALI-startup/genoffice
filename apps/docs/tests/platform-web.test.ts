@@ -18,8 +18,10 @@ import type { FilePickers, WebFileHandle } from '@samugen/platform-web'
 import {
   createWebDocsDownloadPort,
   createWebDocsFilePort,
+  createWebDocsHwpxPort,
   createWebDocsWindowPort,
 } from '../src/renderer/platform-web'
+import type { HwpConvertResult } from '@samugen/platform-web'
 
 const DOCX_BYTES = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 1, 2, 3])
 
@@ -32,6 +34,8 @@ interface FakeStore {
   saveAsCalls: string[]
   /** How many times the adapter re-read a file to hash it (the expensive branch). */
   reads: string[]
+  /** Refs the adapter released — the difference between opening a file and converting one. */
+  forgotten: string[]
 }
 
 function fakeStore(
@@ -43,6 +47,7 @@ function fakeStore(
   const writes: FakeStore['writes'] = []
   const saveAsCalls: string[] = []
   const reads: string[] = []
+  const forgotten: string[] = []
   const base = {
     open: () => Promise.resolve(null),
     reopen: (ref: string) => Promise.resolve({ ref, name: 'reopened.docx' }),
@@ -76,9 +81,21 @@ function fakeStore(
       stamps.set('doc-2', 5_000)
       return Promise.resolve({ ref: 'doc-2', name: suggestedName })
     },
+    forget: (ref: string) => {
+      forgotten.push(ref)
+      return Promise.resolve()
+    },
     ...overrides,
   } as Record<string, unknown>
-  return { store: base as unknown as WebDocumentStore, files, stamps, writes, saveAsCalls, reads }
+  return {
+    store: base as unknown as WebDocumentStore,
+    files,
+    stamps,
+    writes,
+    saveAsCalls,
+    reads,
+    forgotten,
+  }
 }
 
 /** Model another program writing the file while it is open here. */
@@ -460,6 +477,126 @@ describe('writeRecoveryCopy', () => {
   })
 })
 
+describe('opening a Hangul document', () => {
+  /** A real OWPML package, written by the same codec that reads it. */
+  const hwpxBytes = async (fragment = '<h1>보고서</h1><p>본문</p>'): Promise<Uint8Array> => {
+    const { htmlToHwpx } = await import('@samugen/hwpx-convert')
+    return htmlToHwpx(fragment)
+  }
+
+  /** The eight bytes of an OLE compound document, which is what a `.hwp` is. */
+  const HWP_BYTES = new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0, 0])
+
+  const convertPort = (result: HwpConvertResult) => ({
+    available: () => Promise.resolve(result.ok),
+    toHwpx: () => Promise.resolve(result),
+  })
+
+  it('opens a .hwpx as a document still bound to its file', async () => {
+    // The whole point of the format being first-class: the handle is kept, so
+    // Save writes this file again rather than turning it into a .docx.
+    const fake = fakeStore({ open: () => Promise.resolve({ ref: 'doc-1', name: 'report.hwpx' }) }, [
+      ['doc-1', await hwpxBytes()],
+    ])
+
+    const outcome = await withPort(fake.store).openDocument()
+
+    expect(outcome?.kind).toBe('import')
+    const imported = outcome?.kind === 'import' ? outcome.imported : null
+    expect(imported?.ref).toBe('doc-1')
+    expect(imported?.format).toBe('hwpx')
+    expect(imported?.name).toBe('report.hwpx')
+    expect(imported?.sourceName).toBe('report.hwpx')
+    expect(imported?.html).toContain('보고서')
+    expect(fake.forgotten).toEqual([])
+  })
+
+  it('releases the handle when the package will not convert', async () => {
+    // Not a document, so not something to offer in the recent list either.
+    const fake = fakeStore({ open: () => Promise.resolve({ ref: 'doc-1', name: 'broken.hwpx' }) }, [
+      ['doc-1', new Uint8Array([1, 2, 3, 4])],
+    ])
+
+    await expect(withPort(fake.store).openDocument()).rejects.toThrow()
+    expect(fake.forgotten).toEqual(['doc-1'])
+  })
+
+  it('converts a .hwp and opens the result unsaved, under a .hwpx name', async () => {
+    // The conversion runs one way, so there is nothing to save back over: no ref,
+    // and a name that says what the document now is.
+    const fake = fakeStore({ open: () => Promise.resolve({ ref: 'doc-1', name: 'report.hwp' }) }, [
+      ['doc-1', HWP_BYTES],
+    ])
+    const port = createWebDocsFilePort(
+      fake.store,
+      fakePickers(),
+      granted,
+      overwriteYes,
+      convertPort({ ok: true, bytes: await hwpxBytes() }),
+    )
+
+    const outcome = await port.openDocument()
+
+    const imported = outcome?.kind === 'import' ? outcome.imported : null
+    expect(imported?.ref).toBeNull()
+    expect(imported?.format).toBe('hwpx')
+    expect(imported?.name).toBe('report.hwpx')
+    expect(imported?.sourceName).toBe('report.hwp')
+    expect(imported?.html).toContain('보고서')
+    expect(fake.forgotten).toEqual(['doc-1'])
+  })
+
+  it('names the fix when a .hwp is picked on a host with no converter', async () => {
+    const fake = fakeStore({ open: () => Promise.resolve({ ref: 'doc-1', name: 'report.hwp' }) }, [
+      ['doc-1', HWP_BYTES],
+    ])
+
+    await expect(withPort(fake.store).openDocument()).rejects.toThrow(/save it as \.hwpx/)
+    expect(fake.forgotten).toEqual(['doc-1'])
+  })
+
+  it("reports a refused conversion with the converter's own message", async () => {
+    const fake = fakeStore({ open: () => Promise.resolve({ ref: 'doc-1', name: 'report.hwp' }) }, [
+      ['doc-1', HWP_BYTES],
+    ])
+    const port = createWebDocsFilePort(
+      fake.store,
+      fakePickers(),
+      granted,
+      overwriteYes,
+      convertPort({ ok: false, reason: 'failed', error: 'Conversion failed: bad record' }),
+    )
+
+    await expect(port.openDocument()).rejects.toThrow('Conversion failed: bad record')
+  })
+
+  it('keeps the .hwpx extension through Save As', async () => {
+    // The dialog is filtered to every format docs opens, so the suggested name is
+    // what decides which one the user gets — forcing .docx here would convert the
+    // document on the one command whose job is choosing where it goes.
+    const fake = fakeStore()
+
+    await withPort(fake.store).saveAs('report.hwpx', new Uint8Array([1]).buffer)
+    await withPort(fake.store).saveAs('notes', new Uint8Array([1]).buffer)
+
+    expect(fake.saveAsCalls).toEqual(['report.hwpx', 'notes.docx'])
+  })
+})
+
+describe('the hwpx port', () => {
+  it('converts a fragment to package bytes and writes nothing', async () => {
+    const fake = fakeStore()
+    const port = createWebDocsHwpxPort(fake.store)
+
+    const bytes = new Uint8Array(await port.convert('<h1>보고서</h1>'))
+
+    // "PK" — a real package, and the store was never asked for a dialog.
+    expect([bytes[0], bytes[1]]).toEqual([0x50, 0x4b])
+    expect(fake.saveAsCalls).toEqual([])
+    expect(fake.writes).toEqual([])
+  })
+})
+
 describe('download', () => {
   const delivered: Array<{ name: string; bytes: number[]; mime: string }> = []
   const deliver = (name: string, data: ArrayBuffer, mime: string) => {
@@ -483,14 +620,27 @@ describe('download', () => {
     ])
   })
 
-  it('corrects the extension, because an imported .hwpx is a .docx from then on', async () => {
+  it('keeps a .hwpx name, and labels it as the package it is', async () => {
+    // An open `.hwpx` saves as `.hwpx`, so its download is one too — the caller
+    // serialized it that way. Renaming it here would hand the user a file whose
+    // extension promised Word could open it.
     const port = createWebDocsDownloadPort(deliver)
 
     await expect(port.download('report.hwpx', new Uint8Array([1]).buffer)).resolves.toEqual({
       ok: true,
-      name: 'report.docx',
+      name: 'report.hwpx',
     })
+    expect(delivered.at(-1)?.mime).toBe('application/hwp+zip')
+  })
+
+  it('corrects an extension it does not recognise to .docx', async () => {
+    const port = createWebDocsDownloadPort(deliver)
+
     await expect(port.download('notes', new Uint8Array([1]).buffer)).resolves.toEqual({
+      ok: true,
+      name: 'notes.docx',
+    })
+    await expect(port.download('notes.rtf', new Uint8Array([1]).buffer)).resolves.toEqual({
       ok: true,
       name: 'notes.docx',
     })

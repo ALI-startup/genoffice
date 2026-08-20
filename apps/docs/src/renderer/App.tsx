@@ -871,9 +871,27 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, loadFile])
 
+  /**
+   * Report a host-side open failure.
+   *
+   * `loadFile` has its own catch, but it only covers what happens *after* the
+   * host hands a document over. A host can fail before that — an unreadable
+   * package, a revoked permission, a `.hwp` on a deployment with no converter —
+   * and both call sites below are invoked as `void`, so without this the promise
+   * rejects into nothing and the user is left looking at the previous document
+   * wondering whether the click registered.
+   */
+  const openFailed = useCallback((error: unknown) => {
+    setStatus(t('appOpenFailed', { error: error instanceof Error ? error.message : String(error) }))
+  }, [])
+
   const openFile = useCallback(async () => {
-    await loadFile(await docsPlatform().file.openDocument())
-  }, [loadFile])
+    try {
+      await loadFile(await docsPlatform().file.openDocument())
+    } catch (error) {
+      openFailed(error)
+    }
+  }, [loadFile, openFailed])
 
   /** new document from the built-in blank template (AI can then generate into it) */
   const newFile = useCallback(() => newFileImpl(fileCtxRef.current), [])
@@ -881,9 +899,13 @@ export function App() {
   /** Re-open a handle the host issued earlier (a recent entry, or the menu's open-path payload). */
   const openRecent = useCallback(
     async (ref: string) => {
-      await loadFile(await docsPlatform().file.openDocumentByRef(ref))
+      try {
+        await loadFile(await docsPlatform().file.openDocumentByRef(ref))
+      } catch (error) {
+        openFailed(error)
+      }
     },
-    [loadFile],
+    [loadFile, openFailed],
   )
 
   const save = useCallback(

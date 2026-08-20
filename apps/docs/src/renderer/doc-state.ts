@@ -33,6 +33,18 @@ export interface DocState {
   /** Display name, supplied by the host; the renderer never derives it from filePath. */
   fileName: string
   hash: string
+  /**
+   * What a save writes.
+   *
+   * `docx` for everything the editor models directly — the parsed document above
+   * *is* a docx, whatever the file on disk is. `hwpx` for a document opened from
+   * a Hangul package: the editing model is still the docx one, and only the
+   * encoding on the way out differs, which is exactly why this is a field on the
+   * document rather than a different kind of document.
+   *
+   * Absent means `docx`, so every existing caller keeps its meaning.
+   */
+  format?: 'docx' | 'hwpx'
   /** created from the built-in blank template (its numbering ids are known) */
   isBlank?: boolean
 }

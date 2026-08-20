@@ -86,16 +86,25 @@ export interface OpenedDocument {
 }
 
 /**
- * A foreign-format file the host converted on the way in.
+ * A file that reached the editor as content rather than as bytes.
  *
- * Deliberately not an `OpenedDocument` with some fields left null. An import has
- * no `ref` and no bytes to save back to, because it is not a document this app
- * can write: `.hwpx` reaches the editor as content only, and the result is an
- * unsaved document that the normal save path will write as `.docx`. Modelling it
- * as its own variant is what stops a caller from handing an import to `save()`
- * and discovering at runtime that there was nothing behind it.
+ * Deliberately not an `OpenedDocument`. That variant carries the document's own
+ * bytes, which the save path patches and writes back; this one carries a parsed
+ * *fragment*, because a `.hwpx` has no docx bytes to patch — it is re-encoded
+ * from the editor on every save. Modelling them as one type would mean a `data`
+ * field that is null for half its values, and a save path that discovers which
+ * kind it has at runtime.
  *
- * Round-tripping back out is a separate, explicit command — see `DocsHwpxPort`.
+ * `ref` is what makes this a document rather than a paste. When the host kept
+ * the handle, the file is the document's own: Save writes `.hwpx` over it,
+ * through the same conflict detection and recents bookkeeping a `.docx` gets.
+ * When it is null, the source cannot be written back — a converted `.hwp`, whose
+ * binary format nothing here produces — and the result is an unsaved document
+ * that saves as the `.hwpx` it was converted into.
+ *
+ * The re-encoding is lossy in both directions: the fragment's tag set carries
+ * headings, lists, marks and tables and nothing else. That is why `align` rides
+ * alongside and `droppedImages` is reported rather than swallowed.
  */
 export interface ImportedDocument {
   /**
@@ -119,8 +128,23 @@ export interface ImportedDocument {
   droppedImages: number
   /** Name of the source file, e.g. `report.hwpx`, for the status message. */
   sourceName: string
-  /** What to call the imported document, e.g. `report.docx`. */
+  /** What to call the document, e.g. `report.hwpx`. */
   name: string
+  /**
+   * The file this document saves over, or null when there is none to save over.
+   *
+   * Non-null for a `.hwpx`, which the host opened through the ordinary picker
+   * and can write again. Null for a converted `.hwp`: the conversion is one-way,
+   * so writing the result back over the original would replace an HWP 5.0 binary
+   * with an OWPML package under a name that lies about its contents.
+   */
+  ref: DocumentRef | null
+  /**
+   * What an in-place save encodes. Only `hwpx` today, and named rather than
+   * implied so the save path branches on a value instead of on a file extension
+   * it re-derives.
+   */
+  format: 'hwpx'
 }
 
 /**
@@ -467,12 +491,18 @@ export interface HwpxExportResult {
 }
 
 /**
- * Writing the document back out as `.hwpx`.
+ * Turning the document into `.hwpx` bytes — to write elsewhere, or to save.
  *
- * Export only. Import arrives through `DocsFilePort` because it is reached from
- * the ordinary Open dialog, but there is no matching "save as hwpx over the open
- * file": the format is lossy in both directions, so writing one is always an
- * explicit, separately-named command and never something the Save key does.
+ * Two operations because there are two situations. A `.docx` being exported is a
+ * copy in another format, and gets a dialog (`exportDocument`). A `.hwpx` that
+ * was *opened* is the document, and its Save writes the file it came from, using
+ * the same path a `.docx` save uses — so all that is needed there is the bytes
+ * (`convert`).
+ *
+ * The conversion is lossy in both directions: only what the restricted fragment
+ * can carry survives. For an export that is a copy the user asked for, and for a
+ * save it is the format the user chose to work in, so both are honest — but it
+ * is why opening a `.hwpx` reports what it dropped.
  *
  * Behind the host rather than called directly, because *where* the conversion
  * runs differs: the Electron adapter forwards to the main process, and the web
@@ -491,6 +521,19 @@ export interface DocsHwpxPort {
    * the PDF export port's convention.
    */
   exportDocument(defaultName: string, html: string): Promise<HwpxExportResult>
+  /**
+   * Convert a restricted HTML fragment to `.hwpx` bytes, and write nothing.
+   *
+   * What makes an open `.hwpx` save like a `.docx` instead of turning into one.
+   * The save path needs bytes and already owns everything that happens to them —
+   * the ref, the conflict check, the dialog for a document with no ref yet — so
+   * the only format-specific step is producing them, and this is it.
+   *
+   * Throws rather than returning a result: a conversion failure here is the same
+   * kind of event as the docx serializer throwing, and `save()` already reports
+   * that path.
+   */
+  convert(html: string): Promise<ArrayBuffer>
 }
 
 /** Outcome of handing the document to the user as a download. */
