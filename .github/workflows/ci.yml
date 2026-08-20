@@ -29,10 +29,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      # 22 is the floor package.json declares and the version the container build uses.
+      # It is a hard floor, not a preference: Vite loads each app's TypeScript config
+      # through `require(esm)`, which Node 20 cannot do at all.
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: package-lock.json
 
@@ -108,7 +111,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: package-lock.json
 

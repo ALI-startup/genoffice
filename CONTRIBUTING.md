@@ -22,25 +22,36 @@ directly on this repository as usual.
 
 ## Repository layout
 
-- `apps/*` — the five Electron apps (docs, sheets, slides, pdf, shell).
-  Each app is an npm workspace with its own `src/main` (Electron main
-  process), `src/renderer` (React UI), and `tests/`.
-- `packages/*` — pure TypeScript engine and shared packages (no Electron
-  dependency, unit-tested): docx/pptx engines, AI agent core, providers,
-  i18n, UI kit.
-- `apps/sheets/native/xlsx-engine` — Rust xlsx engine (runs as a sidecar process) for xlsx import/export.
+- `apps/*` — the five browser apps (docs, sheets, slides, pdf, shell). Each is
+  an npm workspace with `src/renderer` (the React UI), `src/renderer/host-web.ts`
+  (the one module that touches a browser API, filled into the app's platform
+  slot at boot), and `tests/`.
+- `packages/*` — host-agnostic engine and shared packages, unit-tested:
+  docx/pptx engines, AI agent core, providers, the platform ports and their web
+  adapter, i18n, UI kit.
+- `services/ai-bff` — the only server piece: it holds the provider credentials
+  and proxies streaming AI calls, so no key reaches the page.
+- `apps/sheets/native/xlsx-engine` — the Rust xlsx engine, compiled to
+  WebAssembly for the browser and to a native binary the engine's reference
+  tests and benchmarks drive.
 
 ## Getting started
 
-Prerequisites: Node 20+, npm 10+, and a Rust toolchain (`cargo` on PATH,
-needed only for the sheets xlsx sidecar).
+Prerequisites: Node 22+ (the floor is real — Vite loads each app's TypeScript
+config through `require(esm)`, which Node 20 cannot do), npm 10+, and a Rust
+toolchain for the sheets engine (`cargo` on PATH, plus `clang` and `wasi-libc`
+for its WebAssembly build).
 
 ```bash
 npm install
 npm run fixtures     # generate test .docx fixtures (one-time, and after docx-engine changes)
-npm run dev          # all editors + shell against Vite dev servers
-npm run dev:docs     # or run a single app
+npm run dev          # everything: the four editors, the shell and the AI BFF
+npm run docs:web     # or one app on its own
 ```
+
+Open the shell at `localhost:5190`: the editors are reached through its origin,
+which is what keeps their AI calls same-origin. **Chromium 86+** — the apps open
+and save real files through the File System Access API.
 
 ## Checks every change must pass
 
@@ -50,8 +61,15 @@ CI runs these on every PR; please run them locally first:
 npm run format:check # Prettier check for uncommitted changed/new files
 npm run lint         # ESLint across the repo (0 errors required; warnings allowed)
 npm run typecheck    # tsc --noEmit across every workspace
-npm test             # engine + app unit tests (also runs the Rust sidecar tests)
+npm test             # engine + app unit tests (also runs the Rust engine's tests)
 npm run licenses     # production dependency licenses within the permissive allowlist
+```
+
+The end-to-end suite is separate because it needs the built bundle:
+
+```bash
+npm run build:shell:web  # the composed bundle, shell plus the editors under /app/*
+npm run test:e2e         # Chromium against it, served the way nginx serves it
 ```
 
 Formatting is intentionally incremental: existing files are not reformatted
@@ -67,30 +85,13 @@ CI supplies the PR or push base automatically and checks only files changed from
 that base. This keeps the formatter gate useful without creating a repository-wide
 formatting diff.
 
-## Building installers
+## Deploying
 
-Run these from the repository root — they regenerate the third-party
-notices and build all five apps before packaging:
-
-```bash
-npm run dist:mac   # dmg + zip
-npm run dist:win   # nsis installer
-```
-
-Without Apple or Windows signing credentials in the environment these produce
-unsigned artifacts: code signing and notarization are skipped with a warning
-rather than failing. That is the expected result for a contributor build.
-
-`dist:win` additionally expects the xlsx sidecar at the MinGW cross-compilation
-path. Building on Windows leaves it under the MSVC target instead, so stage it
-first:
-
-```bash
-cargo build --release --target x86_64-pc-windows-gnu   # from apps/sheets/native/xlsx-engine
-```
-
-or copy an existing `target/release/xlsx-sidecar.exe` to
-`target/x86_64-pc-windows-gnu/release/`.
+There is nothing to package: `npm run build:shell:web` produces static files, and
+`docker/docker.sh up` builds the two images that serve them — nginx over the
+bundle, and the AI BFF, which is deliberately unpublished. `docker/nginx/app.conf.template`
+is the reference configuration, including the one route that must be proxied
+(`AI_BFF_BASE_PATH`) for the apps' `connect-src 'self'` to hold.
 
 ## Environment variables
 
@@ -99,12 +100,12 @@ testing and local overrides:
 
 | Variable                                                 | Effect                                                                 |
 | -------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `SAMUGEN_USER_DATA`                                      | Override the Electron userData directory (test isolation)              |
-| `SAMUGEN_LANG`                                           | Force the UI language instead of following the OS locale               |
-| `SAMUGEN_FAKE_UPDATE`                                    | Exercise the updater UI without a real release feed                    |
+| `*_WEB_PORT`, `*_WEB_BASE`, `*_WEB_OUT_DIR`              | Per-app dev port, base path and build output (set by the web scripts)  |
+| `AI_BFF_URL`                                             | Where the dev servers proxy the AI route (default `127.0.0.1:8788`)    |
 | `SERPER_API_KEY`                                         | Serper key for web/image search (DuckDuckGo is the keyless fallback)   |
-| `XLSX_SIDECAR_PATH`, `XLSX_OPEN_PATH`, `XLSX_DEBUG_PORT` | Point at a locally built xlsx sidecar and its debug port               |
-| `*_DEV_PORT`, `*_RENDERER_URL`                           | Per-app Vite dev server ports and renderer URLs (set by `npm run dev`) |
+| `WASI_SYSROOT`                                           | A wasi-sdk sysroot for the sheets WebAssembly build, if not on the box |
+| `XLSX_SIDECAR_PATH`, `XLSX_OPEN_PATH`, `XLSX_DEBUG_PORT` | Point the engine's reference tests at a locally built native binary    |
+| `E2E_WEB_PORT`, `E2E_CHROMIUM_PATH`                      | The E2E server's port, and a Chromium outside Playwright's own cache   |
 
 AI features degrade rather than break without credentials: a request with no
 configured provider reports that plainly, and web search falls back to a keyless
@@ -113,19 +114,16 @@ backend.
 ## Coding conventions
 
 - **English only** in code, comments, commit messages, and docs. User-facing
-  strings go through the i18n resources (`src/renderer/i18n/`, plus the inline
-  main-process dictionaries in `src/main/`), which are the only places
-  non-English text belongs (plus test fixture text).
+  strings go through the i18n resources (`src/renderer/i18n/`), which are the
+  only place non-English text belongs (plus test fixture text).
 - TypeScript everywhere; avoid adding new `any` surfaces where a precise type
   is cheap.
 - Tests live in `apps/*/tests` and `packages/*/tests` (vitest). New engine
   behavior needs a unit test; renderer-only UI tweaks generally don't.
-- Local Playwright/Electron acceptance drivers belong in `scripts/drivers/`
-  (gitignored, excluded from CI) — see `scripts/drivers/README.md`.
-- The Word-fidelity scripts (`scripts/docs-word-fidelity.mjs`,
-  `scripts/pagination-baseline-word.mjs`) need macOS with Microsoft Word
-  installed and AppleScript automation permission granted; they are optional
-  local tools and never run in CI.
+- The pagination-fidelity baselines (`scripts/pagination-baseline-word.mjs`,
+  which needs macOS with Microsoft Word and AppleScript permission, and
+  `scripts/pagination-baseline.mjs`, which uses headless LibreOffice) are
+  optional local tools and never run in CI.
 - Keep files from growing without bound: if you are adding a substantial new
   concern to an already-large file, prefer a new module.
 
