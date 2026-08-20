@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import appMark from './assets/samugen-mark.svg'
 import iconDocx from './assets/file-docx.svg'
 import iconXlsx from './assets/file-xlsx.svg'
@@ -393,23 +393,86 @@ const LANG_OPTIONS = [
   { value: 'zh-TW', label: '繁體中文' },
 ] as const
 
+/**
+ * How tall the language flyout may get before it scrolls its own list, and the
+ * floor it keeps in a window with less room than that above the row. Nineteen
+ * languages do not fit either way, so this list is always a scrolling one.
+ */
+const LANG_FLYOUT_MAX_HEIGHT = 320
+const LANG_FLYOUT_MIN_HEIGHT = 140
+/** Gap the flyout keeps from the viewport edge it grows toward. */
+const LANG_FLYOUT_MARGIN = 12
+/** How long the flyout survives the pointer leaving it, so a diagonal move to it lands. */
+const LANG_FLYOUT_CLOSE_DELAY = 200
+
+/** Viewport coordinates for the fixed-position flyout, computed from its row. */
+interface LangFlyoutAnchor {
+  left: number
+  bottom: number
+  maxHeight: number
+}
+
 function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
   const { lang, setLang, t } = useI18n()
   const { app } = shellPlatform()
   const [menuOpen, setMenuOpen] = useState(false)
   const [appVersion, setAppVersion] = useState('')
-  const [langFly, setLangFly] = useState<{ left: number; bottom: number } | null>(null)
+  const [langFly, setLangFly] = useState<LangFlyoutAnchor | null>(null)
   const langRowRef = useRef<HTMLDivElement | null>(null)
   const langCloseTimer = useRef<number | null>(null)
+  // A pointer held down inside the flyout is a drag of its scrollbar. That drag
+  // pulls the pointer clear of the row's hover area almost immediately, so
+  // without this the list is taken away mid-scroll by the hover-out timer.
+  const langDragging = useRef(false)
 
   useEffect(() => {
     void app.version().then(setAppVersion)
   }, [app])
 
-  const closeMenu = () => {
-    setMenuOpen(false)
+  // The flyout's helpers are stable so its own effect can list them as
+  // dependencies: none of them reads anything but refs and the setter.
+  const cancelLangFlyClose = useCallback(() => {
+    if (langCloseTimer.current !== null) {
+      window.clearTimeout(langCloseTimer.current)
+      langCloseTimer.current = null
+    }
+  }, [])
+
+  const closeLangFly = useCallback(() => {
+    cancelLangFlyClose()
+    langDragging.current = false
     setLangFly(null)
-  }
+  }, [cancelLangFlyClose])
+
+  /**
+   * Anchor the flyout to the language row, in viewport coordinates.
+   *
+   * `position: fixed` is what keeps the list from being clipped by the sidebar's
+   * own scroll container, and the price is coordinates this has to compute. The
+   * height is clamped to the room above the row it grows from: a fixed element
+   * is out of the page scroll's reach, so a list running off the top of the
+   * viewport is unreachable rather than merely out of sight.
+   */
+  const positionLangFly = useCallback(() => {
+    const rect = langRowRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const room = Math.max(0, rect.bottom - LANG_FLYOUT_MARGIN)
+    const maxHeight = Math.max(LANG_FLYOUT_MIN_HEIGHT, Math.min(LANG_FLYOUT_MAX_HEIGHT, room))
+    setLangFly({
+      left: rect.right - 2,
+      // Rises from the row's bottom edge, but never past the top of the viewport.
+      bottom: Math.min(
+        window.innerHeight - rect.bottom,
+        window.innerHeight - LANG_FLYOUT_MARGIN - maxHeight,
+      ),
+      maxHeight,
+    })
+  }, [])
+
+  const closeMenu = useCallback(() => {
+    setMenuOpen(false)
+    closeLangFly()
+  }, [closeLangFly])
 
   // Close on any click outside the entry.
   useEffect(() => {
@@ -420,31 +483,65 @@ function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
     }
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
-  }, [menuOpen])
+  }, [menuOpen, closeMenu])
+
+  // Drop the pending close if this component goes away first.
+  useEffect(() => cancelLangFlyClose, [cancelLangFlyClose])
 
   const openLangFly = () => {
-    if (langCloseTimer.current !== null) {
-      window.clearTimeout(langCloseTimer.current)
-      langCloseTimer.current = null
-    }
-    const rect = langRowRef.current?.getBoundingClientRect()
-    if (rect) setLangFly({ left: rect.right - 2, bottom: window.innerHeight - rect.bottom })
+    cancelLangFlyClose()
+    positionLangFly()
   }
 
-  const scheduleLangFlyClose = () => {
-    langCloseTimer.current = window.setTimeout(() => setLangFly(null), 200)
-  }
+  const scheduleLangFlyClose = useCallback(() => {
+    // Mid-drag the pointer is allowed to be anywhere at all; the release decides.
+    if (langDragging.current) return
+    cancelLangFlyClose()
+    langCloseTimer.current = window.setTimeout(() => {
+      langCloseTimer.current = null
+      setLangFly(null)
+    }, LANG_FLYOUT_CLOSE_DELAY)
+  }, [cancelLangFlyClose])
 
   useEffect(() => {
     if (!langFly) return
-    const onScroll = () => setLangFly(null)
+    // The flyout is anchored in viewport coordinates, so a scroll that moves the
+    // row it points at strands it — hence the close. Its own list is the one
+    // scroll that must not: nineteen languages in a 320px box means reaching for
+    // one *is* a scroll, and a capture-phase listener here sees that scroll too
+    // (capture runs from the window down to the target, bubbling or not). So the
+    // test is where the scroll came from: inside the account entry it is the
+    // popup scrolling itself, anywhere else it is the ground moving underneath.
+    const onScroll = (event: Event) => {
+      const target = event.target
+      if (target instanceof Element && target.closest('.account-entry')) return
+      setLangFly(null)
+    }
+    // A resize is repositioned rather than closed: nothing the pointer was doing
+    // has ended, only the box it is doing it in has changed shape.
+    const onResize = () => positionLangFly()
+    // A scrollbar drag ends wherever the pointer happens to be; only once it is
+    // released does hover get to decide the flyout's fate again.
+    const onPointerUp = (event: PointerEvent) => {
+      if (!langDragging.current) return
+      langDragging.current = false
+      const target = event.target
+      const inside = target instanceof Element && target.closest('.lang-row-wrap')
+      if (!inside) scheduleLangFlyClose()
+    }
     window.addEventListener('scroll', onScroll, true)
-    return () => window.removeEventListener('scroll', onScroll, true)
-  }, [langFly])
+    window.addEventListener('resize', onResize)
+    window.addEventListener('pointerup', onPointerUp)
+    return () => {
+      window.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('resize', onResize)
+      window.removeEventListener('pointerup', onPointerUp)
+    }
+  }, [langFly, positionLangFly, scheduleLangFlyClose])
 
   const handleClick = () => {
     setMenuOpen((v) => !v)
-    setLangFly(null)
+    closeLangFly()
   }
 
   return (
@@ -513,7 +610,15 @@ function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
               <div
                 className="lang-flyout"
                 role="menu"
-                style={{ left: langFly.left, bottom: langFly.bottom }}
+                style={{
+                  left: langFly.left,
+                  bottom: langFly.bottom,
+                  maxHeight: langFly.maxHeight,
+                }}
+                // Grabbing the scrollbar counts as staying in the flyout until released.
+                onPointerDown={() => {
+                  langDragging.current = true
+                }}
               >
                 {LANG_OPTIONS.map((opt) => (
                   <button

@@ -47,3 +47,64 @@ test.describe('home screen', () => {
     await expect(page.locator('.lang-toggle-option.active')).toHaveText('한국어')
   })
 })
+
+/**
+ * The language list in the bottom-left Settings menu.
+ *
+ * This one is a browser test and not a component one because every part of the
+ * bug was the browser's: the flyout is `position: fixed`, and it is scroll
+ * events, scroll chaining and pointer capture — not React state — that decide
+ * whether it is still on screen when the reader arrives at the language they
+ * were reaching for. A jsdom render has no scrolling to speak of.
+ */
+test.describe('the language list in the settings menu', () => {
+  test('stays open while its list is scrolled, and switches to one at the end of it', async ({
+    page,
+  }) => {
+    await openShell(page, { onboardingSeen: true })
+    await expect(page.locator('.quick-card', { hasText: 'AI Docs' })).toBeVisible()
+
+    await page.locator('.account-btn').click()
+    await page.locator('.lang-row').hover()
+
+    const flyout = page.locator('.lang-flyout')
+    await expect(flyout).toBeVisible()
+
+    // Nineteen languages in a box that holds a handful: reaching the end of this
+    // list means scrolling it, which is what everything below is about.
+    const overflow = await flyout.evaluate((el) => el.scrollHeight - el.clientHeight)
+    expect(overflow).toBeGreaterThan(0)
+    // It also has to be on screen in full. The page scroll cannot reach a fixed
+    // element, so any part of it above the viewport is unreachable, not just
+    // out of sight.
+    const top = await flyout.evaluate((el) => el.getBoundingClientRect().top)
+    expect(top).toBeGreaterThanOrEqual(0)
+
+    // A wheel over the list scrolls the list. The flyout's own scroll event
+    // reaches the shell's capture-phase listener too, which used to read it as
+    // the page moving under the popup and close it on the first notch.
+    await flyout.hover()
+    await page.mouse.wheel(0, 240)
+    await expect.poll(() => flyout.evaluate((el) => el.scrollTop)).toBeGreaterThan(0)
+    await expect(flyout).toBeVisible()
+
+    // Again at the bottom of the list, where a wheel with nowhere left to go
+    // chains into the sidebar behind it and moves the row this is anchored to.
+    await flyout.evaluate((el) => {
+      el.scrollTop = el.scrollHeight
+    })
+    await page.mouse.wheel(0, 240)
+    await expect(flyout).toBeVisible()
+
+    // And the last language is selectable, not merely visible: clicking it
+    // scrolls it into view first, which is another scroll of the same list.
+    const last = flyout.locator('.lang-menu-item').last()
+    await expect(last).toHaveText('繁體中文')
+    await last.click()
+
+    await expect(page.locator('.nav-label', { hasText: '最近' }).first()).toBeVisible()
+    await expect
+      .poll(() => page.evaluate((key) => localStorage.getItem(key), LANGUAGE_KEY))
+      .toBe('zh-TW')
+  })
+})
