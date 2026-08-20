@@ -1,17 +1,20 @@
 /**
- * The English ⇄ Korean switch, end to end through the locale context.
+ * Changing the UI language, end to end through the locale context.
  *
- * The point of the test is the second half: a click has to repaint the UI in the
- * language just chosen, and it cannot wait for the host to say so — no host
+ * The point of the test is the second half: a switch has to repaint the UI in
+ * the language just chosen, and it cannot wait for the host to say so — no host
  * echoes a switch back to the window that asked (see LanguagePort). A version of
  * this that only asserted `setLanguage` was called would pass while the UI stayed
  * in English, which is the bug worth catching.
+ *
+ * It drives `useI18n().setLang` rather than a control in the chrome: the editor
+ * has none any more, and the language it shows is the shell's choice arriving
+ * through the host — the last two cases here.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { act, createElement, type ReactElement } from 'react'
+import { act, createElement, useRef, type ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { Lang } from '@samugen/i18n'
-import { LangSwitch } from '../src/renderer/components/LangSwitch'
 import { LocaleProvider, useI18n } from '../src/renderer/i18n/locale'
 import { setDocsPlatform, type DocsPlatform } from '../src/renderer/platform'
 
@@ -43,6 +46,18 @@ function installHost(): FakeHost {
   }
 }
 
+/** Set by <Probe/> on every render, so a test can switch from outside React. */
+let switchTo: ((lang: Lang) => void) | null = null
+
+/** Renders a translated string and exposes the switch, so both halves are observable. */
+function Probe() {
+  const { t, setLang } = useI18n()
+  const ref = useRef(setLang)
+  ref.current = setLang
+  switchTo = (lang) => act(() => ref.current(lang))
+  return createElement('span', { className: 'probe' }, t('appSave'))
+}
+
 function mount(element: ReactElement) {
   const container = document.createElement('div')
   document.body.appendChild(container)
@@ -50,62 +65,37 @@ function mount(element: ReactElement) {
   act(() => root.render(element))
   return {
     container,
-    options: () => [...container.querySelectorAll<HTMLButtonElement>('.lang-toggle-option')],
-    click: (label: string) => {
-      const button = [...container.querySelectorAll<HTMLButtonElement>('.lang-toggle-option')].find(
-        (option) => option.textContent === label,
-      )
-      if (!button) throw new Error(`no ${label} option`)
-      act(() => button.click())
-    },
+    probe: () => container.querySelector('.probe')?.textContent,
     cleanup: () => {
       act(() => root.unmount())
       container.remove()
+      switchTo = null
     },
   }
 }
 
-/** Renders a translated string alongside the switch, so a switch is observable. */
-function Probe() {
-  const { t } = useI18n()
-  return createElement('span', { className: 'probe' }, t('appSave'))
+function tree(initial: Lang) {
+  return createElement(LocaleProvider, { initial, children: createElement(Probe) })
 }
 
-function tree(initial: Lang) {
-  return createElement(LocaleProvider, {
-    initial,
-    children: [
-      createElement(LangSwitch, { key: 'switch' }),
-      createElement(Probe, { key: 'probe' }),
-    ],
-  })
+/** The switch, once the tree that owns it is mounted. */
+function setLang(lang: Lang) {
+  if (!switchTo) throw new Error('nothing mounted')
+  switchTo(lang)
 }
 
 afterEach(() => vi.restoreAllMocks())
 
-describe('the language switch', () => {
-  it('offers exactly the two languages, marking the current one', () => {
-    installHost()
-    const ui = mount(tree('en'))
-
-    expect(ui.options().map((option) => option.textContent)).toEqual(['EN', '한국어'])
-    expect(ui.options().map((option) => option.getAttribute('aria-checked'))).toEqual([
-      'true',
-      'false',
-    ])
-    ui.cleanup()
-  })
-
-  it('repaints the UI in Korean and tells the host, on one click', () => {
+describe('changing the UI language', () => {
+  it('repaints the UI in Korean and tells the host, in one call', () => {
     const host = installHost()
     const ui = mount(tree('en'))
-    expect(ui.container.querySelector('.probe')?.textContent).toBe('Save')
+    expect(ui.probe()).toBe('Save')
 
-    ui.click('한국어')
+    setLang('ko')
 
     // Applied locally — not awaited back from the host, which never echoes.
-    expect(ui.container.querySelector('.probe')?.textContent).toBe('저장')
-    expect(ui.options()[1]?.getAttribute('aria-checked')).toBe('true')
+    expect(ui.probe()).toBe('저장')
     // And persisted for every other window/tab.
     expect(host.set).toEqual(['ko'])
     // The lang attribute drives CSS :lang() and Chromium's font fallback, which
@@ -114,11 +104,23 @@ describe('the language switch', () => {
     ui.cleanup()
   })
 
-  it('ignores a click on the language already showing', () => {
+  it('reaches any of the nineteen, not just the two the old switch offered', () => {
+    const host = installHost()
+    const ui = mount(tree('en'))
+
+    setLang('zh-TW')
+
+    expect(ui.probe()).toBe('儲存')
+    expect(host.set).toEqual(['zh-TW'])
+    expect(document.documentElement.lang).toBe('zh-TW')
+    ui.cleanup()
+  })
+
+  it('ignores a switch to the language already showing', () => {
     const host = installHost()
     const ui = mount(tree('ko'))
 
-    ui.click('한국어')
+    setLang('ko')
     expect(host.set).toEqual([])
     ui.cleanup()
   })
@@ -129,23 +131,11 @@ describe('the language switch', () => {
     expect(host.subscribers).toBe(1)
 
     host.emit('ko')
-    expect(ui.container.querySelector('.probe')?.textContent).toBe('저장')
+    expect(ui.probe()).toBe('저장')
     // Nothing was sent back: this window was told, it did not ask.
     expect(host.set).toEqual([])
 
     ui.cleanup()
     expect(host.subscribers).toBe(0)
-  })
-
-  it('marks neither option when a third language is showing', () => {
-    installHost()
-    // The app has nineteen languages and this control offers two of them. With
-    // Japanese current it reports what it can rather than claiming one is on.
-    const ui = mount(tree('ja'))
-    expect(ui.options().map((option) => option.getAttribute('aria-checked'))).toEqual([
-      'false',
-      'false',
-    ])
-    ui.cleanup()
   })
 })

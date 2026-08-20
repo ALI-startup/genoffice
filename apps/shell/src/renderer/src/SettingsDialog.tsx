@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from './locale'
 import { AiProvidersPage } from './AiProvidersPage'
-import { LangSwitch } from './LangSwitch'
 import './settings.css'
 
 interface SettingsDialogProps {
@@ -120,18 +119,6 @@ export function SettingsDialog({ onClose }: SettingsDialogProps) {
               <section className="settings-general">
                 <h2>{t('generalSettings')}</h2>
                 <p>{t('generalSettingsDescription')}</p>
-                {/* Settings is where a language control is looked for first, and
-                    this page had nothing else on it. It is also the one screen
-                    reachable from home where the tab strip's copy is behind a
-                    modal, so without this the dialog would be the one place in
-                    the app the language cannot be changed. */}
-                <div className="settings-row">
-                  <div className="settings-row-text">
-                    <span className="settings-row-label">{t('language')}</span>
-                    <span className="settings-row-hint">{t('languageSettingHint')}</span>
-                  </div>
-                  <LangSwitch className="lang-toggle-settings" />
-                </div>
               </section>
             )}
           </main>

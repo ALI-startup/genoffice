@@ -12,7 +12,6 @@ import {
 import { FormatCellsDialog } from './FormatCellsDialog'
 import { GoToDialog } from './GoToDialog'
 import { useI18n, type StringKey } from './i18n/locale'
-import { LangSwitch } from './LangSwitch'
 import { NameManagerDialog, type DefinedNameAction, type DefinedNameRow } from './NameManagerDialog'
 import { categoryOptionForPattern, NUMBER_FORMAT_CATEGORIES } from './number-format'
 import { type SelectionFormat } from './selection-format'
@@ -382,9 +381,6 @@ export function ExcelShell({
           <span className="workbook-status" role="status" aria-live="polite">
             {statusMessage ?? t('appReadyInitial')}
           </span>
-          {/* The far end of the tab row: past every command, so it never competes
-              with them, and on screen whatever tab or workbook is open. */}
-          <LangSwitch />
         </nav>
 
         <Ribbon

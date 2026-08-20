@@ -53,9 +53,10 @@ export function t(key: StringKey, params?: Params): string {
 export function LocaleProvider({ initial, children }: { initial: Lang; children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(initial)
   moduleLang = lang
-  // One place applies a language, whether it came from this window's switcher or
-  // from another one: the document's lang attribute (CSS :lang() and Chromium's
-  // per-language font fallback read it) and React state.
+  // One place applies a language, whether this window asked for it or the shell
+  // did — the editors have no switcher of their own: the document's lang
+  // attribute (CSS :lang() and Chromium's per-language font fallback read it)
+  // and React state.
   const apply = useCallback((next: Lang) => {
     document.documentElement.lang = htmlLang(next)
     setLangState(next)

@@ -19,7 +19,6 @@ const SETTINGS_KEYS = [
   'settingsNavigationLabel',
   'generalSettings',
   'generalSettingsDescription',
-  'languageSettingHint',
   'aiProvidersTitle',
   'aiProvidersDescription',
   'aiSaveProvider',

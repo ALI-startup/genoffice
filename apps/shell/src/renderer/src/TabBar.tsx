@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
 import type { TabSummary } from '../../shared/tabs-api'
-import { LangSwitch } from './LangSwitch'
 import { useI18n } from './locale'
 import { shellPlatform } from './platform'
 
@@ -514,11 +513,6 @@ export function TabBar() {
           </svg>
         </button>
       )}
-      {/* The tab strip is the one piece of chrome on screen whatever tab is
-          active, so the switch lives at its end — the same corner every editor
-          puts its own copy in, one row down. The full nineteen-language list
-          stays on the home page's account menu. */}
-      <LangSwitch className="lang-toggle-tabbar" />
     </div>
   )
 }

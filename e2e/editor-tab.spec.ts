@@ -8,7 +8,7 @@
  * unsaved — so this whole flow runs headless.
  */
 import { test, expect } from '@playwright/test'
-import { openShell } from './helpers'
+import { chooseLanguage, openShell } from './helpers'
 
 test.describe('opening an editor', () => {
   test('a quick-create card opens an editor tab whose own UI loads', async ({ page }) => {
@@ -25,13 +25,18 @@ test.describe('opening an editor', () => {
     expect(page.frames().some((f) => f.url().includes('/app/slides/'))).toBe(true)
   })
 
-  test('the language switch reaches inside the editor frame', async ({ page }) => {
+  test('a language chosen on the home tab reaches inside the editor frame', async ({ page }) => {
     await openShell(page, { onboardingSeen: true })
     await page.locator('.quick-card', { hasText: 'AI Slides' }).click()
     const frame = page.frameLocator('iframe')
     await expect(frame.locator('.ribbon-tab', { hasText: 'Home' })).toBeVisible()
 
-    await page.locator('.lang-toggle-option', { hasText: '한국어' }).click()
+    // The editor's ribbon has no language control of its own: the choice is made
+    // once, on the home tab, and every open frame follows it. Which makes the
+    // trip across the frame boundary the only thing holding this up.
+    await page.locator('.tab-item.tab-home').click()
+    await chooseLanguage(page, '한국어')
+    await page.locator('.tab-item', { hasText: 'SamuGen Slides' }).click()
 
     // The editor is a separate document: it learns about the switch through storage,
     // not through a prop, and its whole ribbon has to follow.

@@ -2243,7 +2243,6 @@ const aiSettingsZh = {
   settingsNavigationLabel: '设置类别',
   generalSettings: '常规',
   generalSettingsDescription: '管理应用的常规偏好设置。',
-  languageSettingHint: '对所有窗口和标签页生效。完整语言列表位于账户菜单中。',
   aiProvidersTitle: 'AI 提供商',
   aiProvidersDescription: '选择聊天和图像生成使用的模型提供商。密钥只会写入受保护的运行时存储。',
   aiProviderModeLabel: 'AI 模型类型',
@@ -2304,8 +2303,6 @@ const aiSettingsEn = {
   settingsNavigationLabel: 'Settings sections',
   generalSettings: 'General',
   generalSettingsDescription: 'Manage general application preferences.',
-  languageSettingHint:
-    'Applies to every window and tab. The full language list is in the account menu.',
   aiProvidersTitle: 'AI providers',
   aiProvidersDescription:
     'Choose the providers used for chat and image generation. Keys are write-only and handled by the protected runtime store.',
@@ -2370,7 +2367,6 @@ const aiSettingsKo = {
   settingsNavigationLabel: '설정 범주',
   generalSettings: '일반',
   generalSettingsDescription: '앱의 일반 환경 설정을 관리합니다.',
-  languageSettingHint: '모든 창과 탭에 적용됩니다. 전체 언어 목록은 계정 메뉴에 있습니다.',
   aiProvidersTitle: 'AI 공급자',
   aiProvidersDescription:
     '채팅과 이미지 생성에 사용할 공급자를 선택하세요. 키는 쓰기 전용이며 보호된 런타임 저장소에서 관리됩니다.',

@@ -1,5 +1,4 @@
 export { AiComposer } from './AiComposer'
 export { AiTypingIndicator } from './AiTypingIndicator'
 export { IconSend, IconStop, type IconProps } from './icons'
-export { LANGUAGE_TOGGLE_OPTIONS, LanguageToggle, type LanguageToggleProps } from './LanguageToggle'
 export { Markdown } from './Markdown'

@@ -78,9 +78,10 @@ const LocaleContext = createContext<LocaleValue>({ lang: 'zh', setLang: () => {}
 
 export function LocaleProvider({ initial, children }: { initial: Lang; children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(initial)
-  // One place applies a language, whether it came from this window's switcher or
-  // from another one: the module mirror, the document's lang attribute (CSS
-  // :lang() and Chromium's per-language font fallback read it) and React state.
+  // One place applies a language, whether this window asked for it or the shell
+  // did — the editors have no switcher of their own: the module mirror, the
+  // document's lang attribute (CSS :lang() and Chromium's per-language font
+  // fallback read it) and React state.
   const apply = useCallback((next: Lang) => {
     setModuleLang(next)
     document.documentElement.lang = htmlLang(next)

@@ -36,7 +36,6 @@ import type { InkTool } from '../editor/ink'
 import type { RibbonFormatState } from './ribbon-format-state'
 import { setSelectedColumnWidth } from '../editor/table-sizing'
 import { useI18n, type StringKey } from '../i18n/locale'
-import { LangSwitch } from './LangSwitch'
 import { fontFamiliesFor } from '../font-list'
 import {
   DesignTab,
@@ -1257,9 +1256,6 @@ function RibbonInner({
           ))}
         <span className="ribbon-tabs-spacer" />
         {trailingActions}
-        {/* The far end of the tab row: past every command, so it never competes
-            with them, and on screen whatever tab or document is open. */}
-        <LangSwitch />
       </div>
 
       <div className="ribbon-body">
