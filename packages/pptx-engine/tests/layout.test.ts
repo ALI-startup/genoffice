@@ -1,9 +1,4 @@
-/**
- * Layout selection tests:
- *  1. listSlideLayouts enumerates the slideLayouts in the pptx
- *  2. insertSlideWithLayout inserts a new slide → rels point to the chosen layout, placeholder count correct
- *  3. save → reopen roundtrip does not break existing slides
- */
+/** Layout selection tests: 1. */
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'

@@ -1,10 +1,4 @@
-/**
- * Shared context for action modules extracted from App.tsx.
- *
- * App builds this bundle fresh on every render (`ctxRef.current = {...}`), and
- * exposes each extracted action as a stable `useCallback(() => impl(ctxRef.current, ...))`
- * wrapper, so module functions always see the latest state without stale closures.
- */
+/** Shared context for action modules extracted from App.tsx. */
 import type React from 'react'
 import type { GroupRenderNode, RenderNode, RenderSlide } from '@samugen/pptx-render'
 import type {

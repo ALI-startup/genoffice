@@ -2231,12 +2231,10 @@ const baseStrings = {
   },
 } as const
 
-/** Settings copy is kept in one small overlay so adding a settings page does
- * not require duplicating the same keys in every locale table. Locales without
- * a translated settings string use the English wording until the translation
- * is added; the key set remains stable for the renderer. zh, en and ko are
- * translated — ko because the settings dialog is opened from the home page and
- * was the last screen there still in English whatever the UI language said. */
+/**
+ * Settings copy is kept in one small overlay so adding a settings page does not require duplicating
+ * the same keys in every locale table.
+ */
 const aiSettingsZh = {
   settingsTitle: '设置',
   closeSettings: '关闭设置',

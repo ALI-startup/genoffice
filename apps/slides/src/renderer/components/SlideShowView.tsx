@@ -1,14 +1,4 @@
-/**
- * Slide show — the full-screen playback view.
- *
- * - A black show layer covering the whole window, attempting system full screen (restored on exit)
- * - The playback sequence skips hidden slides (starting from a hidden slide still plays it)
- * - Moving forward plays the target page's transition effect (CSS approximations of fade/push/wipe/split/circle/random)
- * - In-page shape animations (Animations tab): moving forward plays animations step by step, turning the page only when done;
- *   going back/jumping shows the all-animations-finished state
- * - →/space/enter/PgDn/click next step/page; ←/PgUp/right-click previous page; Home/End first/last page;
- *   Esc exits; advancing past the last page shows the "end of show" black screen
- */
+/** Slide show — the full-screen playback view. */
 import { openExternalUrl } from '@samugen/platform-web'
 import { slidesDoc } from '../platform'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -378,11 +368,7 @@ export function SlideShowView({
   )
 }
 
-/**
- * Topmost linked element at a point (slide-model px). Scans nodes back-to-front (z-order),
- * descends into groups (children boxes are group-local); unlinked overlapping nodes don't block
- * links underneath (lenient, matches the show's forgiving click behavior).
- */
+/** Topmost linked element at a point (slide-model px). */
 function hitLink(
   nodes: RenderNode[],
   x: number,
@@ -423,8 +409,7 @@ function hitLink(
 
 /**
  * Audio/video layer during the show: DOM players stacked over video/audio nodes (click to
- * play/pause, auto-stop on page turn). In the editor media only has poster frames; a show must
- * be able to play, or decks with video are crippled.
+ * play/pause, auto-stop on page turn).
  */
 function ShowMediaLayer({
   slide,

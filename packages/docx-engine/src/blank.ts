@@ -1,13 +1,6 @@
 import JSZip from 'jszip'
 
-/**
- * Blank document template for "new document" and AI from-scratch generation.
- *
- * The generate layer only references styles / numbering that already exist in
- * the package, so a fresh document must ship with the standard set: Normal,
- * Heading1-6, ListParagraph, Hyperlink, TOC1-9 (for generated TOC fields),
- * plus bullet (numId 1) and decimal (numId 2) numbering definitions.
- */
+/** Blank document template for "new document" and AI from-scratch generation. */
 
 const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'
 
@@ -141,12 +134,7 @@ export const BLANK_NUMBERING_XML =
 const NUMBERING_XML = BLANK_NUMBERING_XML
 
 export interface BlankDocxOptions {
-  /**
-   * docDefaults East Asian font (w:eastAsia); pick per UI language so e.g.
-   * Japanese/Korean users don't start with a Simplified-Chinese face.
-   * When omitted no w:eastAsia is written — like an en-US Word document,
-   * Word/our renderer then substitute per script when CJK text appears.
-   */
+  /** docDefaults East Asian font (w:eastAsia); pick per UI language so e.g. */
   eastAsiaFont?: string
 }
 

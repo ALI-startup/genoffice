@@ -4,10 +4,9 @@ import { sheetsAttachments } from '../platform'
 import { t } from '../i18n/locale'
 
 /**
- * Chat-attachment capability as an AgentSkill (same structure as the files-skill
- * in apps/docs and apps/slides): each turn's context lists the attached local
- * files, and read_attachment reads their extracted text in pages (parsing
- * happens in the main process; files never leave the machine).
+ * Chat-attachment capability as an AgentSkill (same structure as the files-skill in apps/docs and
+ * apps/slides): each turn's context lists the attached local files, and read_attachment reads their
+ * extracted text in pages (parsing happens in the main process; files never leave the machine).
  */
 
 const READ_CHUNK_CHARS = 24_000

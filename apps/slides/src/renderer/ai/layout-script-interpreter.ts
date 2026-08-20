@@ -148,12 +148,7 @@ export interface LayoutInterpreterGlobals {
   log: HostCall
 }
 
-/**
- * Parse and execute the layout DSL without invoking JavaScript. The evaluator implements a
- * deliberately small JavaScript-shaped language; every property read and call is dispatched by an
- * explicit allowlist, so host prototypes, constructors, globals, modules, and network APIs are not
- * representable in the execution model.
- */
+/** Parse and execute the layout DSL without invoking JavaScript. */
 export function interpretLayoutScript(
   code: string,
   globals: LayoutInterpreterGlobals,

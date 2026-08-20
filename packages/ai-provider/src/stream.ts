@@ -37,10 +37,7 @@ export interface StreamCallbacks {
   signal: AbortSignal
 }
 
-/**
- * Models occasionally emit unescaped " inside string values (e.g. English quotes in Chinese copy).
- * Single-pass scan: a " inside a string whose next non-whitespace char is not structural gets escaped.
- */
+/** Models occasionally emit unescaped " inside string values (e.g. */
 function repairUnescapedQuotes(json: string): string {
   let out = ''
   let inStr = false
@@ -73,10 +70,8 @@ function repairUnescapedQuotes(json: string): string {
 }
 
 /**
- * Gateways can report failures (quota exhausted, moderation, upstream errors) inside a
- * 200 SSE stream, in shapes that don't match the provider protocol (e.g. an OpenAI-style
- * `{"error": ...}` event on the Anthropic route). Extract a readable message so these
- * surface as real errors instead of dissolving into an empty "successful" turn.
+ * Gateways can report failures (quota exhausted, moderation, upstream errors) inside a 200 SSE
+ * stream, in shapes that don't match the provider protocol (e.g.
  */
 function sseErrorText(error: unknown, fallback: string): string {
   if (typeof error === 'string' && error) return error
@@ -93,11 +88,9 @@ function sseErrorText(error: unknown, fallback: string): string {
 }
 
 /**
- * Gateways can answer a `stream: true` request with a complete non-SSE JSON body —
- * first seen on a proxy's Anthropic route when credits were exhausted (HTTP 200,
- * Content-Type: application/json, the notice text inside a regular message). The SSE
- * parser would find no `data:` lines in such a body and dissolve it into an empty
- * "successful" turn. Returns the body text when that happens, else null.
+ * Gateways can answer a `stream: true` request with a complete non-SSE JSON body — first seen on a
+ * proxy's Anthropic route when credits were exhausted (HTTP 200, Content-Type: application/json,
+ * the notice text inside a regular message).
  */
 async function jsonBodyInsteadOfSse(response: Response): Promise<string | null> {
   const contentType = response.headers.get('content-type') ?? ''
@@ -120,9 +113,8 @@ export class AiCreditsError extends Error {
 function creditsNoticeText(value: unknown): string | null {
   if (typeof value === 'string') {
     const t = value.toLowerCase()
-    // Vendor-neutral: this used to short-circuit on one proxy's pricing URL, and
-    // every provider phrases it differently. Both halves must match, so an
-    // ordinary sentence about credits or quotas is not mistaken for a refusal.
+    // Vendor-neutral: this used to short-circuit on one proxy's pricing URL, and every provider
+    // phrases it differently.
     const credits =
       (t.includes('credit') || t.includes('quota')) &&
       (t.includes('exhausted') ||
@@ -280,16 +272,14 @@ async function anthropicTurn(
       method: 'POST',
       signal: wd.signal,
       headers: {
-        // Operator-configured extras (tracking/attribution) come first so a
-        // stray entry can never displace the credential or protocol headers
-        // below — the built-ins always win the spread.
+        // Operator-configured extras (tracking/attribution) come first so a stray entry can never
+        // displace the credential or protocol headers below — the built-ins always win the spread.
         ...config.headers,
         'Content-Type': 'application/json',
         'x-api-key': config.apiKey,
         'anthropic-version': '2023-06-01',
         // Fetch in the Electron main process goes through Chromium's network stack, which adds
-        // browser-semantics headers; Anthropic rejects those with 403 "Request not allowed". This
-        // header is the official opt-in for direct access from browser/Electron environments.
+        // browser-semantics headers; Anthropic rejects those with 403 "Request not allowed".
         'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
@@ -410,11 +400,7 @@ function geminiContents(messages: AgentMessage[]): unknown[] {
   })
 }
 
-/**
- * Emits a complete (non-streamed) Gemini response delivered as a plain JSON body.
- * `streamGenerateContent` without SSE framing yields an array of chunks; a gateway
- * may also send a single `generateContent`-shaped object — handle both.
- */
+/** Emits a complete (non-streamed) Gemini response delivered as a plain JSON body. */
 function emitGeminiJsonMessage(bodyText: string, cb: StreamCallbacks): void {
   let parsed: unknown
   try {

@@ -1,15 +1,7 @@
-/**
- * Word-parity text statistics.
- *
- * Word's CJK rule: Words = Asian characters (counted one by one, punctuation
- * included) + non-Asian words (whitespace/punct-delimited). The dialog also
- * reports the two addends separately — Chinese users care about the
- * Asian-character figure.
- */
+/** Word-parity text statistics. */
 
-// Han (incl. radicals/compat/ext-B+), kana, hangul, bopomofo, CJK symbols
-// and punctuation (U+3001 up: the ideographic space stays whitespace),
-// fullwidth forms
+// Han (incl. radicals/compat/ext-B+), kana, hangul, bopomofo, CJK symbols and punctuation (U+3001
+// up: the ideographic space stays whitespace), fullwidth forms
 const ASIAN_RE =
   /[ᄀ-ᇿ⺀-⿟、-〿぀-ヿ㄀-ㄯ㄰-㆏㇀-ㇿ㐀-䶿一-鿿가-힯豈-﫿！-｠￠-￦]|[\uD840-\uD87F][\uDC00-\uDFFF]/g
 

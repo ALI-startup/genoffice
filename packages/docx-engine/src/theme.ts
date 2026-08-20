@@ -1,11 +1,7 @@
 import type { ThemeColors, ThemeFonts } from './types'
 import { escapeXmlAttr } from './xml-utils'
 
-/**
- * Theme part support (word/theme/theme1.xml). Theme fonts rewrite the
- * major/minor font pair; theme colors rewrite the a:clrScheme entries. Documents
- * whose styles reference theme fonts/colors re-render in Word accordingly.
- */
+/** Theme part support (word/theme/theme1.xml). */
 
 export const THEME_PART_PATH = 'word/theme/theme1.xml'
 
@@ -53,7 +49,16 @@ export function applyThemeFonts(themeXml: string, fonts: ThemeFonts): string {
   return xml
 }
 
-const COLOR_TAGS = ['dk2', 'lt2', 'accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6'] as const
+const COLOR_TAGS = [
+  'dk2',
+  'lt2',
+  'accent1',
+  'accent2',
+  'accent3',
+  'accent4',
+  'accent5',
+  'accent6',
+] as const
 
 /** all clrScheme slots, including read-only ones (dk1/lt1 may be sysClr) */
 const READ_TAGS = ['dk1', 'lt1', ...COLOR_TAGS, 'hlink', 'folHlink'] as const
@@ -96,9 +101,8 @@ const THEME_COLOR_SLOTS: Record<string, keyof ThemeColors> = {
 const SLOT_FALLBACK: Partial<Record<keyof ThemeColors, string>> = { dk1: '000000', lt1: 'FFFFFF' }
 
 /**
- * Resolve a w:themeColor reference (+ optional w:themeTint / w:themeShade,
- * hex 00-FF) against the palette. sRGB per-channel approximation of Word's
- * tint/shade math — close enough for display; w:val stays authoritative on save.
+ * Resolve a w:themeColor reference (+ optional w:themeTint / w:themeShade, hex 00-FF) against the
+ * palette.
  */
 export function resolveThemeColor(
   themeColor: string,
@@ -142,11 +146,7 @@ export function applyThemeColors(themeXml: string, colors: ThemeColors): string 
   return xml
 }
 
-/**
- * Minimal but complete theme part for documents that have none (e.g. the
- * blank template). Word requires fmtScheme; this ships the standard Office
- * format scheme skeleton.
- */
+/** Minimal but complete theme part for documents that have none (e.g. */
 export function buildThemeXml(fonts: ThemeFonts, colors: ThemeColors): string {
   const c = (tag: (typeof COLOR_TAGS)[number], fallback: string) =>
     `<a:${tag}><a:srgbClr val="${colors[tag] ?? fallback}"/></a:${tag}>`

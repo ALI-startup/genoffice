@@ -1,12 +1,4 @@
-/**
- * Opening an editor from the home screen.
- *
- * In a browser each editor is a same-origin iframe of the shell's own origin
- * (`/app/slides/`), which is the part that has no unit-test equivalent: the tab
- * strip, the frame's own bundle, and the language broadcast that has to cross the
- * frame boundary. A quick-create card needs no file picker — the document starts
- * unsaved — so this whole flow runs headless.
- */
+/** Opening an editor from the home screen. */
 import { test, expect } from '@playwright/test'
 import { chooseLanguage, openShell } from './helpers'
 
@@ -45,9 +37,8 @@ test.describe('opening an editor', () => {
     const frame = page.frameLocator('iframe')
     await expect(frame.locator('.ribbon-tab', { hasText: 'Home' })).toBeVisible()
 
-    // The editor's ribbon has no language control of its own: the choice is made
-    // once, on the home tab, and every open frame follows it. Which makes the
-    // trip across the frame boundary the only thing holding this up.
+    // The editor's ribbon has no language control of its own: the choice is made once, on the home
+    // tab, and every open frame follows it.
     await page.locator('.tab-item.tab-home').click()
     await chooseLanguage(page, '한국어')
     await page.locator('.tab-item', { hasText: 'SamuGen Slides' }).click()
@@ -68,11 +59,9 @@ test.describe('opening an editor', () => {
     const menu = page.locator('.tab-menu')
     await expect(menu).toBeVisible()
 
-    // What the bug looked like: the menu was in the DOM, "visible", and at the right
-    // coordinates — but `.tab-strip`'s overflow meant the part below the strip was not
-    // painted, so a click where the item appears to be hit the page behind it. Playwright
-    // would scroll the strip to reach it and pass regardless, so the check is what the
-    // browser itself hit-tests at the item's own centre.
+    // What the bug looked like: the menu was in the DOM, "visible", and at the right coordinates —
+    // but `.tab-strip`'s overflow meant the part below the strip was not painted, so a click where
+    // the item appears to be hit the page behind it.
     const item = menu.getByRole('menuitem', { name: 'AI Docs' })
     const box = await item.boundingBox()
     if (!box) throw new Error('the AI Docs item has no box')

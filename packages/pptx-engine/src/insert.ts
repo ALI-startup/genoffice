@@ -1,13 +1,4 @@
-/**
- * Element insertion — synthesizes a raw <p:sp> fragment and hangs it on
- * slide.elements.
- *
- * Naturally compatible with patch-based saving: a new element's
- * anchor.originalXml is the generated XML, which patchSlideXml includes when
- * splicing elements together; deletion is removal from the array.
- * Both change the spTree structure, driving a full-slide rebuild via
- * slide.structureDirty.
- */
+/** Element insertion — synthesizes a raw <p:sp> fragment and hangs it on slide.elements. */
 import { utf8Bytes } from './bytes'
 import type { EmuRect, Paragraph, PictureElement, Slide, SlideElement, TextElement } from './types'
 import { generateParagraphXml, generateXfrmXml } from './generate'
@@ -16,10 +7,8 @@ import { relsPathFor } from './zip'
 import type { OpenedPptx } from './index'
 
 /**
- * 'textbox' is a special value (plain text box without prstGeom); anything else is
- * an OOXML preset geometry name (rect/roundRect/ellipse/triangle/star5/rightArrow/
- * chevron…). Presets whose polygon approximation the render layer hasn't
- * implemented fall back to a rectangle; always correct in PowerPoint.
+ * 'textbox' is a special value (plain text box without prstGeom); anything else is an OOXML preset
+ * geometry name (rect/roundRect/ellipse/triangle/star5/rightArrow/ chevron…).
  */
 export type NewShapeKind = 'textbox' | (string & {})
 
@@ -183,9 +172,8 @@ export interface NewTableOptions {
 const DEFAULT_TABLE_STYLE_ID = '{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}'
 
 /**
- * Build the table graphicFrame fragment (equal-width columns / equal-height rows,
- * default built-in style, empty cells). Insertion goes through appendRawElements
- * (materialize+reparse), reusing the existing table parsing/rendering pipeline.
+ * Build the table graphicFrame fragment (equal-width columns / equal-height rows, default built-in
+ * style, empty cells).
  */
 export function buildTableXml(slide: Slide, opts: NewTableOptions): string {
   const id = nextCNvPrId(slide)
@@ -237,15 +225,10 @@ export interface NewPictureOptions {
 }
 
 /**
- * Insert a picture: media bytes into the package + [Content_Types] Default +
- * slide rels registration + synthesized <p:pic> fragment hung on slide.elements.
- * The dataUrl is generated on demand by the caller (media resolver).
+ * Insert a picture: media bytes into the package + [Content_Types] Default + slide rels
+ * registration + synthesized <p:pic> fragment hung on slide.elements.
  */
-/**
- * Land an image into the package: media part + Content_Types Default + slide rels.
- * Returns the new relationship id and media path (shared by picture insertion /
- * shape picture fill).
- */
+/** Land an image into the package: media part + Content_Types Default + slide rels. */
 export function addImageMediaAndRel(
   opened: OpenedPptx,
   slide: Slide,
@@ -335,11 +318,7 @@ export function deleteElement(slide: Slide, elementId: string): boolean {
 
 // ── Grouping (p:grpSp) ──────────────────────────────────────────────────────
 
-/**
- * Compute the bounding box of a set of elements (slide coordinates, EMU).
- * Ignores rotation: uses the axis-aligned bounding box of each element's offset
- * rect.
- */
+/** Compute the bounding box of a set of elements (slide coordinates, EMU). */
 export function calcBoundingBox(elements: SlideElement[]): EmuRect {
   let minX = Infinity,
     minY = Infinity,
@@ -355,18 +334,7 @@ export function calcBoundingBox(elements: SlideElement[]): EmuRect {
   return { x: minX, y: minY, cx: maxX - minX, cy: maxY - minY }
 }
 
-/**
- * Build the <p:grpSp> XML fragment.
- *
- * OOXML conventions (ECMA 376 §19.3.1.22):
- *  - grpSpPr/xfrm describes the group's position and size on the slide (<a:off>/<a:ext>)
- *  - grpSpPr/xfrm/chOff + chExt define the child coordinate system's origin and size
- *  - This implementation sets chOff == bbox.xy and chExt == bbox.cxcy, i.e. the child
- *    coordinate system is 1:1 with the slide's → child elements can reuse their
- *    original slide coordinates inside the group with no transform
- *  - childrenXml: concatenation of each child's raw XML fragment (passthrough
- *    children keep their original bytes)
- */
+/** Build the <p:grpSp> XML fragment. */
 export function buildGrpSpXml(slide: Slide, bbox: EmuRect, childrenXml: string): string {
   const id = nextCNvPrId(slide)
   const name = `Group ${id}`

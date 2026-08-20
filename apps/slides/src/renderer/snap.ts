@@ -107,11 +107,8 @@ interface SpacingCandidate {
 }
 
 /**
- * Equal-spacing snapping (smart guides):
- * - Centering: the dragged element sits between two neighbors (left/right or top/bottom); snap when both gaps are equal.
- * - Continuation: one side already has two elements with gap g; snap when the dragged element's gap to the nearest neighbor equals g.
- * Neighbor = element in the same band as the dragged box (projection overlap on the other axis).
- * Returns the snapped x/y and a double-headed arrow indicator for each gap.
+ * Equal-spacing snapping (smart guides): - Centering: the dragged element sits between two
+ * neighbors (left/right or top/bottom); snap when both gaps are equal.
  */
 export function computeSpacingSnap(
   box: DragBox,

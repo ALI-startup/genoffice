@@ -77,8 +77,7 @@ export function quadToRect(q: number[]): [number, number, number, number] {
 
 /**
  * Current selection → PDF-coordinate quads grouped by visible page (y up; each quad
- * [x1,yMax,x2,yMax,x1,yMin,x2,yMin]). Returns null when the selection is empty.
- * geoms map 1:1 to .pdf-page elements and include rotation conversion.
+ * [x1,yMax,x2,yMax,x1,yMin,x2,yMin]).
  */
 export function selectionQuadsByPage(
   scrollEl: HTMLElement,

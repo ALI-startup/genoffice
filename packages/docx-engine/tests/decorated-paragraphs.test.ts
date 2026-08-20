@@ -3,13 +3,11 @@ import { parseDocx } from '../src/parse'
 import { buildDocx } from './helpers/build-docx'
 
 /**
- * Documents produced by design tools (and Word itself) pair every DrawingML
- * shape with a legacy VML fallback:
- *   <mc:AlternateContent><mc:Choice><w:drawing>…</mc:Choice>
- *   <mc:Fallback><w:pict>…</mc:Fallback></mc:AlternateContent>
- * The raw bytes therefore contain <w:pict> even for a plain decorated text
- * paragraph — classification must ignore fallback content or whole documents
- * degrade into embedded-object chips.
+ * Documents produced by design tools (and Word itself) pair every DrawingML shape with a legacy VML
+ * fallback: <mc:AlternateContent><mc:Choice><w:drawing>…</mc:Choice>
+ * <mc:Fallback><w:pict>…</mc:Fallback></mc:AlternateContent> The raw bytes therefore contain
+ * <w:pict> even for a plain decorated text paragraph — classification must ignore fallback content
+ * or whole documents degrade into embedded-object chips.
  */
 
 const THIN_RULE_DRAWING =

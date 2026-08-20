@@ -9,10 +9,9 @@ export default defineConfig({
   // Pin resolution to this repo's workspace sources (matches tsconfig paths)
   resolve: {
     alias: {
-      // Subpath before the bare name: string aliases are prefix replacements
-      // Kept in step with electron.vite.config.ts: a bare-name alias is a prefix
-      // replacement, so every declared subpath needs its own entry or it resolves
-      // to a path under index.ts.
+      // Subpath before the bare name: string aliases are prefix replacements Kept in step with
+      // electron.vite.config.ts: a bare-name alias is a prefix replacement, so every declared
+      // subpath needs its own entry or it resolves to a path under index.ts.
       '@samugen/pptx-engine/node': resolve(here, '../../packages/pptx-engine/src/save-node.ts'),
       '@samugen/pptx-engine/table-grid': resolve(
         here,

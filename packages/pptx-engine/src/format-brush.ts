@@ -1,15 +1,4 @@
-/**
- * Format Painter — pure functions with no side effects, easy to unit test.
- *
- * Format scope:
- *  - Shapes/text boxes: the modelable part of spPr (fill / stroke / presetGeometry / adjust)
- *  - Text: default run format (fontFamily/fontSize/bold/italic/underline/color of the
- *          first run of the first paragraph) + paragraph alignment (first paragraph's align)
- *  - Cross-type: text→shape applies only the spPr part; shape→text applies only the text part
- *
- * Uses the existing editFill / editStroke / editText IPC channels; the caller takes the
- * CopiedFormat to the target element and calls each patch function field by field.
- */
+/** Format Painter — pure functions with no side effects, easy to unit test. */
 
 import type { Fill, Stroke, TextElement } from './types'
 
@@ -49,10 +38,7 @@ export interface CopiedFormat {
 
 // ── Extraction (source element → CopiedFormat) ─────────────────────────
 
-/**
- * Extract format from a TextElement (type='text'|'shape').
- * Only extracts the "write-back-able" parts; ignores passthrough/group/picture.
- */
+/** Extract format from a TextElement (type='text'|'shape'). */
 export function extractFormat(el: TextElement): CopiedFormat {
   const shape: ShapeFormat = {}
   if (el.fill) shape.fill = el.fill
@@ -97,13 +83,7 @@ export interface FormatPatchResult {
   align?: 'left' | 'center' | 'right' | 'justify'
 }
 
-/**
- * Apply a CopiedFormat to the target element and compute the delta to modify.
- * Cross-type application takes the intersection:
- *   - target is picture: apply stroke only (no fill/text)
- *   - target is shape: apply spPr + text run + alignment
- *   - target is text: apply spPr + text run + alignment
- */
+/** Apply a CopiedFormat to the target element and compute the delta to modify. */
 export function applyFormat(
   fmt: CopiedFormat,
   targetType: 'text' | 'shape' | 'picture',

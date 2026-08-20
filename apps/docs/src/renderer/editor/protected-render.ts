@@ -12,11 +12,7 @@ import {
   type TextboxDisplay,
 } from '@samugen/docx-engine'
 
-/**
- * Custom schema mirroring the docx-engine Block model 1:1.
- * Every top-level node carries `docxIndex` (patch anchor, null = new) and
- * `aiChanged` (diff highlighting for AI edits).
- */
+/** Custom schema mirroring the docx-engine Block model 1:1. */
 
 import {
   DomSpec,
@@ -90,11 +86,7 @@ const CHART_PALETTE = ['4472C4', 'ED7D31', 'A5A5A5', 'FFC000', '5B9BD5', '70AD47
 
 const chartColor = (i: number) => `#${CHART_PALETTE[i % CHART_PALETTE.length]}`
 
-/**
- * Chart preview + data grid. The grid is a chart data sheet
- * (rows = series, columns = categories); its cells and the title become
- * editable on double-click, everything else stays protected.
- */
+/** Chart preview + data grid. */
 export function renderChartSpec(chart: ChartDisplay): DomSpec {
   const children: DomSpec[] = []
   if (chart.title !== undefined) {
@@ -408,10 +400,7 @@ const PRST_CSS: Record<string, { clipPath?: string; borderRadius?: string }> = {
   },
 }
 
-/**
- * WordArt preset CSS approximation applied to the entire textbox container.
- * color: used as -webkit-text-fill-color; stroke: optional -webkit-text-stroke.
- */
+/** WordArt preset CSS approximation applied to the entire textbox container. */
 const WORDART_CSS: Record<string, { color: string; stroke?: string; textShadow?: string }> = {
   'wordArt-1': { color: '#4472C4' },
   'wordArt-2': { color: '#7B2FBE', stroke: '1px #4472C4' },

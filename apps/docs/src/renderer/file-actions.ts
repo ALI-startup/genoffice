@@ -1,9 +1,6 @@
 /**
- * Document lifecycle: open/new (full state reset from a parsed docx), the
- * save pipeline (PM doc → save plan → docx bytes → reparse), and PDF export.
- * Extracted from App.tsx; the App component passes a FileActionContext built
- * fresh per call (wrapped in useCallback with the original dependency lists)
- * so state never goes stale.
+ * Document lifecycle: open/new (full state reset from a parsed docx), the save pipeline (PM doc →
+ * save plan → docx bytes → reparse), and PDF export.
  */
 import type { Editor } from '@tiptap/core'
 import { history } from '@tiptap/pm/history'
@@ -166,13 +163,7 @@ export interface FileActionContext {
   setProtection: (value: DocProtection | null) => void
   setProtectionDirty: (dirty: boolean) => void
   setCompareResult: (value: { otherName: string; entries: CompareEntry[] } | null) => void
-  /**
-   * Allocate a numbering id for a new list, or null when none can be made.
-   *
-   * Needed by the import, whose list items have to join real docx numbering:
-   * the blank template it lands on has no list of its own to borrow an id from.
-   * Same allocator the ribbon's list buttons use.
-   */
+  /** Allocate a numbering id for a new list, or null when none can be made. */
   allocateNumId: (kind: 'bullet' | 'ordered') => string | null
 }
 
@@ -273,14 +264,7 @@ export async function loadFile(ctx: FileActionContext, outcome: OpenOutcome | nu
   }
 }
 
-/**
- * Clear every per-document state slot to what a blank document implies.
- *
- * A blank template carries no comments, notes, ink, sources, watermark or
- * header/footer, and nothing in it is dirty yet. Shared by "New" and by an
- * import so the two cannot drift — a slot cleared in one and forgotten in the
- * other would leak the previous document's comments or footnotes into the next.
- */
+/** Clear every per-document state slot to what a blank document implies. */
 function applyBlankDocumentState(ctx: FileActionContext, parsed: ParsedDocFull): void {
   ctx.setDocCss(docStyleCss(parsed))
   ctx.setSection(readSectionSettings(parsed))
@@ -317,34 +301,15 @@ function applyBlankDocumentState(ctx: FileActionContext, parsed: ParsedDocFull):
   ctx.dirtyRef.current = false
 }
 
-/**
- * Reset every piece of document state onto a freshly-built blank document.
- *
- * Shared by "New" and by an import, which are the same operation apart from what
- * ends up in the editor and what the result is called: both start from the blank
- * template, so both have no path, no comments, no notes and no header/footer,
- * and both must clear the same dirty flags. `content` is null for New (the blank
- * template's own blocks are used) and the parsed nodes for an import.
- */
+/** Reset every piece of document state onto a freshly-built blank document. */
 async function resetToBlankDocument(
   ctx: FileActionContext,
   options: {
     fileName: string
     isBlank: boolean
-    /**
-     * Body of the new document, built from the freshly-parsed blank template.
-     *
-     * A factory rather than a ready-made array because an import needs the
-     * template's own numbering definitions to build its list items, and the
-     * template is parsed here — passing nodes in would mean building and parsing
-     * a second blank document just to read them.
-     */
+    /** Body of the new document, built from the freshly-parsed blank template. */
     content?: (blank: ParsedDocFull) => PmNode[]
-    /**
-     * The file this document saves over, when it has one. An imported `.hwpx` is
-     * still bound to the file it came from, and this is where that binding
-     * survives being loaded onto a blank docx template.
-     */
+    /** The file this document saves over, when it has one. */
     ref?: string | null
     /** What a save encodes; see `DocState.format`. */
     format?: 'docx' | 'hwpx'
@@ -390,28 +355,7 @@ export async function newFile(ctx: FileActionContext): Promise<boolean | undefin
   }
 }
 
-/**
- * Load a converted file as the open document.
- *
- * The editing model is a .docx either way: the blank template underneath is what
- * gives pagination, save and PDF export something real to work with, and the
- * imported content is simply what is in the editor. What the import carries
- * beyond content is where a save goes — `imported.ref`, the file it came from,
- * and `imported.format`, the encoding to write there.
- *
- * So a `.hwpx` opens as an ordinary document: Ctrl+S writes the same file, as
- * `.hwpx`, through the same conflict detection a `.docx` gets. A converted
- * `.hwp` has no ref (nothing here writes that format) and opens unsaved, so its
- * first save asks where the `.hwpx` should go.
- *
- * The document starts clean when it has a file and dirty when it does not, which
- * is the truth in both cases: the `.hwpx` on disk is untouched and can be
- * reopened, and the converted `.hwp` exists only here.
- *
- * The re-encoding is lossy — the restricted fragment carries headings, lists,
- * marks and tables and nothing else — which is why the status line reports what
- * the import dropped rather than opening silently.
- */
+/** Load a converted file as the open document. */
 export async function importDocument(
   ctx: FileActionContext,
   imported: ImportedDocument,
@@ -424,17 +368,13 @@ export async function importDocument(
       ref: imported.ref,
       format: imported.format,
       content: (blank) => {
-        // List items need a numbering id to join real docx numbering. The blank
-        // template has no list of its own to borrow one from, so it is allocated
-        // on demand — the same path the ribbon's list buttons take.
+        // List items need a numbering id to join real docx numbering.
         const numIds = {
           bullet: findNumId(blank.blocks, 'bullet') ?? ctx.allocateNumId('bullet'),
           ordered: findNumId(blank.blocks, 'ordered') ?? ctx.allocateNumId('ordered'),
         }
         const nodes = parseHtmlFragment(imported.html, numIds).map(clearAiChanged)
-        // Alignment rides alongside the fragment because its tag set cannot
-        // carry it. Applied only when it describes exactly the blocks that were
-        // parsed: formatting on the wrong paragraphs is worse than none at all.
+        // Alignment rides alongside the fragment because its tag set cannot carry it.
         if (imported.align.length !== nodes.length) return nodes
         return nodes.map((node, i) =>
           imported.align[i]
@@ -445,14 +385,9 @@ export async function importDocument(
     })
     ctx.setAiPanelKey((k) => k + 1)
     applyBlankDocumentState(ctx, parsed)
-    // Dirty only when there is nothing behind the document. With a ref the file
-    // is on disk and unmodified, so marking it dirty would prompt on close over
-    // work that is already saved; without one the content exists only here.
+    // Dirty only when there is nothing behind the document.
     ctx.dirtyRef.current = imported.ref === null
-    // Two vocabularies, because two things happened. A `.hwpx` was *opened* —
-    // it reads like any other document, which is the point — and a `.hwp` was
-    // *converted*, so the message says what it became and that saving will name
-    // it. Either way the dropped pictures are reported when there are any.
+    // Two vocabularies, because two things happened.
     const opened = imported.ref !== null
     ctx.setStatus(
       imported.droppedImages > 0
@@ -467,33 +402,16 @@ export async function importDocument(
   }
 }
 
-/**
- * Strip the AI-changed highlight from imported nodes.
- *
- * `parseHtmlFragment` exists for the AI panel, so everything it builds is marked
- * as an AI edit and renders with the yellow "changed" background. An import is
- * not an AI edit, and arriving pre-highlighted would tell the user something
- * untrue about the document.
- */
+/** Strip the AI-changed highlight from imported nodes. */
 function clearAiChanged(node: PmNode): PmNode {
   return { ...node, attrs: { ...node.attrs, aiChanged: false } }
 }
 
-/**
- * Write the document out as .hwpx.
- *
- * Serialized through the same restricted fragment the import arrives as, which
- * is what makes the two halves symmetric — and equally limited. The converter
- * drops alignment, hyperlink targets, font families and line breaks, so this is
- * offered as its own command rather than wired into Save; nothing here touches
- * the .docx the document is saved to.
- */
+/** Write the document out as .hwpx. */
 export async function exportHwpx(ctx: FileActionContext): Promise<void> {
   const { doc, editor } = ctx
   if (!doc || !editor) return
-  // Null on a host that cannot convert. Both hosts can today, and the ribbon
-  // hides the command where the port is null, so this is the type's guard rather
-  // than a silent no-op.
+  // Null on a host that cannot convert.
   const hwpx = docsPlatform().hwpx
   if (!hwpx) return
   ctx.setStatus(t('appExportingHwpx'))
@@ -520,25 +438,11 @@ export async function exportHwpx(ctx: FileActionContext): Promise<void> {
   }
 }
 
-/**
- * Hand the document to the user's downloads.
- *
- * The browser's counterpart to Save As, and offered only where the port is
- * non-null — on the desktop Save As already writes a real file the app keeps
- * editing, so there is nothing for this to add there.
- *
- * Serialized exactly as a save would be, through the same `buildSaveBytes`, so the
- * downloaded file is the file a save would have written — including its format. What it deliberately does
- * *not* do is any of a save's bookkeeping: no ref is adopted, the parsed document
- * is not rebased on the written bytes, and the dirty flag is left alone. A copy in
- * the downloads folder is not the open document — claiming otherwise would let the
- * close guard wave through a page whose only copy of the work is in memory.
- */
+/** Hand the document to the user's downloads. */
 export async function downloadDocument(ctx: FileActionContext): Promise<void> {
   const { doc, editor } = ctx
   if (!doc || !editor) return
-  // Null on a host that writes real files instead. The ribbon hides the command
-  // there, so this is the type's guard rather than a silent no-op.
+  // Null on a host that writes real files instead.
   const port = docsPlatform().download
   if (!port) return
   ctx.setStatus(t('appDownloading'))
@@ -600,25 +504,13 @@ function deriveAutoFileName(editor: Editor): string | null {
   return null
 }
 
-/**
- * The bytes a save writes, in whichever format the document is in.
- *
- * The one format-specific step in the whole save path. A `.docx` is patched from
- * the parsed original (`buildDocBytes`); a `.hwpx` is re-encoded from the editor
- * through the same restricted fragment the import arrived as, because there are
- * no Hangul bytes to patch — the editing model is the docx one either way.
- *
- * Null means there is nothing to write and the caller should stop: no document,
- * no editor, or a host with no converter for a format that needs one.
- */
+/** The bytes a save writes, in whichever format the document is in. */
 async function buildSaveBytes(ctx: FileActionContext): Promise<Uint8Array | null> {
   const { doc, editor } = ctx
   if (!doc || !editor) return null
   if (doc.format !== 'hwpx') return buildDocBytes(ctx)
 
-  // Null on a host that cannot convert. A document can only *be* in this format
-  // because that host opened it, so this is the type's guard rather than a case
-  // the UI can reach.
+  // Null on a host that cannot convert.
   const hwpx = docsPlatform().hwpx
   if (!hwpx) {
     ctx.setStatus(t('appSaveFailed', { error: t('appExportHwpxFailed', { error: '' }) }))
@@ -626,8 +518,7 @@ async function buildSaveBytes(ctx: FileActionContext): Promise<Uint8Array | null
   }
   const blockCount = (editor.getJSON() as PmNode).content?.length ?? 0
   if (blockCount === 0) {
-    // The converter has nothing to build a section from, and an empty package is
-    // not a document. Reported rather than written, matching the export command.
+    // The converter has nothing to build a section from, and an empty package is not a document.
     ctx.setStatus(t('appExportHwpxEmpty'))
     return null
   }
@@ -636,9 +527,8 @@ async function buildSaveBytes(ctx: FileActionContext): Promise<Uint8Array | null
 }
 
 /**
- * Serialize the current editor/document state to .docx bytes — the shared
- * serialization half of save(); no dialogs, no state changes. Also used for
- * crash-recovery copies.
+ * Serialize the current editor/document state to .docx bytes — the shared serialization half of
+ * save(); no dialogs, no state changes.
  */
 export async function buildDocBytes(ctx: FileActionContext): Promise<Uint8Array | null> {
   const { doc, editor } = ctx
@@ -674,9 +564,8 @@ export async function buildDocBytes(ctx: FileActionContext): Promise<Uint8Array 
       }
     }
   }
-  // Ink must be passed whenever any annotation exists (not only when
-  // dirty): a regenerated anchor paragraph loses its ink run, and the
-  // engine re-injects the full layer from this list.
+  // Ink must be passed whenever any annotation exists (not only when dirty): a regenerated anchor
+  // paragraph loses its ink run, and the engine re-injects the full layer from this list.
   const inks =
     ctx.inksDirty || ctx.inkAnnotations.length > 0
       ? buildInkImages(ctx.inkAnnotations, plan.saveBlockIndexByDocx)
@@ -755,22 +644,14 @@ export async function buildDocBytes(ctx: FileActionContext): Promise<Uint8Array 
 }
 
 /**
- * Crash-recovery copy: serialize the dirty document and hand the
- * bytes to the main process, which stores them under userData. Best-effort —
- * a failure only means this tick's copy is skipped.
- *
- * A dirty document that never got a path can't have a recovery copy (the main
- * process only accepts allowlisted paths), so it is silently persisted into the
- * default folder first (same save-new path as the first manual save); every
- * later tick then covers it like any opened file.
+ * Crash-recovery copy: serialize the dirty document and hand the bytes to the main process, which
+ * stores them under userData.
  */
 export async function writeRecoveryCopy(ctx: FileActionContext): Promise<void> {
   const { doc, editor } = ctx
   if (!doc || !editor || ctx.saveInFlightRef.current || !isDocDirty(ctx)) return
-  // A host with no recovery state has nothing for either branch below: no location
-  // to keep a copy in, and no way to name a never-saved document without asking.
-  // Returning here rather than at the two branches is what keeps the browser from
-  // re-serialising the whole document every 30 seconds to discard the bytes.
+  // A host with no recovery state has nothing for either branch below: no location to keep a copy
+  // in, and no way to name a never-saved document without asking.
   if (!docsPlatform().file.crashRecovery) return
   if (!doc.filePath) {
     if (isBlankDocument(editor)) return
@@ -795,12 +676,7 @@ export async function writeRecoveryCopy(ctx: FileActionContext): Promise<void> {
 
 const runSerializedSave = createSaveSerializer()
 
-/**
- * Path assigned by the first save of a still-pathless document (silent save-new
- * or Save As). A queued save whose ctx snapshot predates that first save still
- * sees `doc.filePath === null`; without this it would re-run the save-new path
- * and create a duplicate file. Reset whenever a different document is loaded.
- */
+/** Path assigned by the first save of a still-pathless document (silent save-new or Save As). */
 let pathlessDocSavedPath: string | null = null
 
 export function noteDocumentSwapped(): void {
@@ -809,11 +685,6 @@ export function noteDocumentSwapped(): void {
 
 export function save(ctx: FileActionContext, saveAs: boolean, auto = false): Promise<boolean> {
   // A save arriving mid-flight waits for the current one instead of failing.
-  // Reuse the finished pass only when it left nothing behind — judged by the
-  // composite dirty check (header/section/theme edits do not set dirtyRef), plus
-  // the raced-with-typing flag. A pass that left anything runs its own pass;
-  // saveOnce resolves a stale pathless snapshot via pathlessDocSavedPath, so
-  // the retry can no longer create a duplicate file.
   return runSerializedSave(
     () => saveOnce(ctx, saveAs, auto),
     () => !saveAs && !ctx.saveIncompleteRef.current && !isDocDirty(ctx),
@@ -851,22 +722,19 @@ async function saveOnce(ctx: FileActionContext, saveAs: boolean, auto: boolean):
       const result = saveAs
         ? await docsPlatform().file.saveAs(autoName ?? doc.fileName, buffer)
         : // `auto` travels with the call: a host that can only name a document
-          // through a dialog must be able to tell a save the user asked for from
-          // one a timer asked for, and decline the second without opening
-          // anything. Electron ignores it and writes silently either way.
+          // through a dialog must be able to tell a save the user asked for from one a timer asked
+          // for, and decline the second without opening anything.
           await docsPlatform().file.saveNew(autoName ?? doc.fileName, buffer, auto)
       if (!result.ok) {
         if (result.error) ctx.setStatus(t('appSaveFailed', { error: result.error }))
-        // Not a failure and not a cancellation: the host can only name a document
-        // through a dialog it may not open without a user gesture, so a save from
-        // the autosave/recovery timer could not run. Reported, because a document
-        // the user believes is being autosaved and is not must not be silent.
+        // Not a failure and not a cancellation: the host can only name a document through a dialog
+        // it may not open without a user gesture, so a save from the autosave/recovery timer could
+        // not run.
         else if (result.reason === 'needs-user-gesture') ctx.setStatus(t('appSaveNeedsLocation'))
         return false
       }
       savedPath = result.ref!
-      // The host names the destination. The renderer used to split the returned
-      // path on separators, which only works while a ref happens to be a path.
+      // The host names the destination.
       savedName = result.name
       if (!doc.filePath) pathlessDocSavedPath = savedPath
     } else {
@@ -875,9 +743,7 @@ async function saveOnce(ctx: FileActionContext, saveAs: boolean, auto: boolean):
         // external-modified: the main process already prompted (or the autosave
         // deferred to a manual save) — stay dirty, no second dialog/error banner
         if (result.reason === 'needs-permission') {
-          // The host declined to write rather than raise a permission dialog out of
-          // a timer. Not a failure, and not silent either: a user who switched
-          // autosave on has to learn that this document is not being saved yet.
+          // The host declined to write rather than raise a permission dialog out of a timer.
           ctx.setStatus(t('appSaveNeedsPermission'))
         } else if (result.reason !== 'external-modified') {
           ctx.setStatus(t('appSaveFailed', { error: result.error ?? '' }))
@@ -886,10 +752,7 @@ async function saveOnce(ctx: FileActionContext, saveAs: boolean, auto: boolean):
       }
     }
     if (editor.state.doc !== docSnapshot) {
-      // The user kept editing while the save was in flight. Replacing the
-      // editor content with the reparsed (pre-edit) snapshot would silently
-      // drop those keystrokes, so keep the live editor + parsed state as-is
-      // and leave the document dirty; the next save persists the newer edits.
+      // The user kept editing while the save was in flight.
       ctx.saveIncompleteRef.current = true
       ctx.setDoc((prev) =>
         prev
@@ -905,12 +768,7 @@ async function saveOnce(ctx: FileActionContext, saveAs: boolean, auto: boolean):
       )
       return true
     }
-    // A Hangul document stops here. The rebase below re-reads the bytes just
-    // written so the parsed document's docxIndex anchors match the file; for a
-    // `.hwpx` those bytes are not a docx, and the parsed document they would
-    // rebase onto is the blank template the editor is still working against —
-    // unchanged by this save, and still correct. So the file is adopted, the
-    // document is clean, and nothing is reparsed.
+    // A Hangul document stops here.
     if (doc.format === 'hwpx') {
       ctx.setDoc((prev) =>
         prev ? { ...prev, filePath: savedPath, fileName: savedName ?? prev.fileName } : prev,
@@ -1019,17 +877,11 @@ async function saveOnce(ctx: FileActionContext, saveAs: boolean, auto: boolean):
 export async function exportPdf(ctx: FileActionContext, outPath?: string): Promise<void> {
   const { doc } = ctx
   if (!doc) return
-  // Null on a host with no PDF pipeline at all. Electron always has one (the main
-  // process renders with printToPDF and merges with pdf-lib), so this branch is
-  // unreachable today; it exists so a host that cannot export says so in its type
-  // instead of installing a stub that silently does nothing, and so the UI that
-  // offers the command can be gated on it when a web host arrives.
+  // Null on a host with no PDF pipeline at all.
   const pdfExport = docsPlatform().pdfExport
   if (!pdfExport) return
   ctx.setStatus(t('appExportingPdf'))
-  // with the pagination preview open: group by actual pv-page size. Mixed paper →
-  // print group by group (other pages hidden for printing), then merge in page order
-  // with pdf-lib; each page keeps its section's paper size
+  // with the pagination preview open: group by actual pv-page size.
   const pvPages = [...document.querySelectorAll('.pv-page')] as HTMLElement[]
   if (pvPages.length > 0) {
     const pxToTwips = (px: number) => Math.round((px / 96) * 1440)

@@ -1,12 +1,4 @@
-/**
- * slides main-process <-> renderer IPC contract (Phase 3: open/save/edit, AI not included yet).
- *
- * Architecture: pptx parsing/saving needs node:crypto/Buffer and can only run in the main
- * process (Node). The main process holds the parsed deck (with originalXml/archive) and sends
- * the renderer only plain-data RenderSlide (built by pptx-render, no Node dependency); the
- * renderer sends edit intents (text/geometry changes) back to the main process, which applies
- * them to the model and rebuilds the RenderSlide.
- */
+/** slides main-process <-> renderer IPC contract (Phase 3: open/save/edit, AI not included yet). */
 import type { Lang } from '@samugen/i18n'
 import type { RenderSlide } from '@samugen/pptx-render'
 import type { SlideComment, SectionInfo } from '@samugen/pptx-engine'
@@ -47,10 +39,8 @@ export interface OpenResult {
 
 // ---- Chat attachments (local files fed to the agent via tools; structure copied from apps/docs) ----
 //
-// These declare the *preload bridge* (`window.desktop`) and are path-based on purpose: the
-// main process addresses attachments by path and always will. The renderer no longer speaks
-// this shape — it holds the ref-based `AttachmentsPort` from @samugen/platform, and the
-// ref↔path mapping happens in the Electron adapter (§6.3). Same split apps/docs has.
+// These declare the *preload bridge* (`window.desktop`) and are path-based on purpose: the main
+// process addresses attachments by path and always will.
 //
 // The image-extension set below is the main process's copy and must stay identical to
 // `ATTACHMENT_IMAGE_EXTS` in @samugen/platform, which is the one the renderer reads: the
@@ -152,7 +142,6 @@ export interface EditParagraph {
 
 /**
  * Text edit intent (run-level rich text): replace the element's text by paragraph/run structure.
- * The editor preserves each run's independent formatting (no longer flattens the whole box to one format).
  */
 export interface EditTextOp {
   slideIndex: number
@@ -378,11 +367,7 @@ export interface DuplicateElementsOp {
   fitWidthPx: number
 }
 
-/**
- * Freehand ink stroke commit: one transparent PNG picture element per stroke. The pixel box is
- * the stroke's bounding box relative to the fitWidth viewport; payload is the editor's vector
- * points as JSON (written into cNvPr descr, erasable after reopening).
- */
+/** Freehand ink stroke commit: one transparent PNG picture element per stroke. */
 export interface AddInkOp {
   slideIndex: number
   /** base64 of the transparent PNG (without the data: prefix) */
@@ -545,10 +530,9 @@ export interface AddSlideOp {
 }
 
 /**
- * Slide paste modes, mirroring PowerPoint's paste options:
- * 'theme' (default) re-binds the slide to a destination layout, 'source' imports
- * the source layout→master→theme chain, 'picture' drops a rendering of the page
- * onto the anchor slide as a picture element.
+ * Slide paste modes, mirroring PowerPoint's paste options: 'theme' (default) re-binds the slide to
+ * a destination layout, 'source' imports the source layout→master→theme chain, 'picture' drops a
+ * rendering of the page onto the anchor slide as a picture element.
  */
 export type PasteSlideMode = 'theme' | 'source' | 'picture'
 
@@ -682,10 +666,7 @@ export interface UngroupElementOp {
   sourceId: string
 }
 
-/**
- * Batch geometry transform (multi-element position ops like align/distribute).
- * Each item is equivalent to an independent editTransform; only positions update, size/rotation unchanged.
- */
+/** Batch geometry transform (multi-element position ops like align/distribute). */
 export interface BatchEditTransformOp {
   slideIndex: number
   fitWidthPx: number
@@ -721,10 +702,9 @@ export interface EditTransformOp {
 }
 
 /**
- * Connector endpoint edit: new endpoint positions in viewport px,
- * plus optional attachment changes for either end (undefined = keep the current
- * attachment, null = detach, object = attach to targetId's connection point idx
- * — 0 top, 1 left, 2 bottom, 3 right).
+ * Connector endpoint edit: new endpoint positions in viewport px, plus optional attachment changes
+ * for either end (undefined = keep the current attachment, null = detach, object = attach to
+ * targetId's connection point idx — 0 top, 1 left, 2 bottom, 3 right).
  */
 export interface EditConnectorEndpointsOp {
   slideIndex: number
@@ -1195,8 +1175,7 @@ export interface SlidesApi {
   deleteComment: (op: DeleteCommentOp) => Promise<SlideComment[] | null>
   /** System clipboard while text-editing (webContents.cut/copy/paste, for menu command echo) */
   nativeClipboard: (op: 'cut' | 'copy' | 'paste') => Promise<void>
-  /** Nestable history transaction; all edits between begin/end become one undo step.
-      The outermost end registers an AI rollback point and returns its id (null when nothing changed). */
+  /** Nestable history transaction; all edits between begin/end become one undo step. */
   beginHistoryBatch: () => Promise<boolean>
   endHistoryBatch: () => Promise<number | null>
   /** Roll the deck back to an AI rollback point; returns the restored full RenderSlide array, null when the id is unknown */
@@ -1243,15 +1222,7 @@ export interface SlidesApi {
   exportPdf: (op: ExportPdfOp) => Promise<ExportPdfResult>
   /** Print (system dialog; cancel counts as ok=false without an error) */
   printSlides: (op: PrintSlidesOp) => Promise<{ ok: boolean; error?: string }>
-  /**
-   * Write the deck to wherever it already lives.
-   *
-   * `auto` marks a save the user did not ask for — the 30-second autosave tick. It is
-   * required because the answer is always known at the call site and a forgotten `true` is
-   * the bug it exists to prevent: on a host that can only write through a permission the
-   * user must grant, an unattended save would raise that prompt from a timer. Electron
-   * ignores the flag and writes either way.
-   */
+  /** Write the deck to wherever it already lives. */
   save: (auto: boolean) => Promise<{
     ok: boolean
     path?: string

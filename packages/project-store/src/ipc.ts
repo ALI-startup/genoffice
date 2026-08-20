@@ -1,8 +1,12 @@
-/**
- * IPC interface type definitions (shared by the renderer and main processes).
- * No Electron dependency; importable from the renderer.
- */
-import type { ChatAttachment, ChatMessage, ChatMeta, ProjectSummary, TimelineEntry, ToolActivity } from './types.js'
+/** IPC interface type definitions (shared by the renderer and main processes). */
+import type {
+  ChatAttachment,
+  ChatMessage,
+  ChatMeta,
+  ProjectSummary,
+  TimelineEntry,
+  ToolActivity,
+} from './types.js'
 
 export type { ChatAttachment, ChatMessage, ChatMeta, ProjectSummary, TimelineEntry, ToolActivity }
 
@@ -73,10 +77,7 @@ export interface GetTimelineArgs {
 
 /** Project storage API the main process exposes to the renderer */
 export interface ProjectApi {
-  /**
-   * Resolves projectId and chatId from a file path.
-   * When filePath is null, returns the default project + tempChatId (if provided).
-   */
+  /** Resolves projectId and chatId from a file path. */
   resolveChat(args: ResolveChatArgs): Promise<ResolveChatResult>
   /** Appends one message to the JSONL */
   appendChat(args: AppendChatArgs): Promise<void>

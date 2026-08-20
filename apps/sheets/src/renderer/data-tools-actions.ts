@@ -1,8 +1,6 @@
 /**
- * Cell navigation (Name Box / Go To / formula / symbol) and data tools
- * (advanced filter, subtotal, consolidate, outline, format-as-table).
- * Extracted from App.tsx; the App component passes a DataToolsContext built
- * fresh per call so refs and state never go stale.
+ * Cell navigation (Name Box / Go To / formula / symbol) and data tools (advanced filter, subtotal,
+ * consolidate, outline, format-as-table).
  */
 import { ILayoutService } from '@univerjs/preset-sheets-core'
 
@@ -396,8 +394,7 @@ export function handleOutline(
     return
   }
 
-  // Group/Ungroup shifts each contiguous run of equal levels by ±1
-  // (levels clamp to 0-7). Runs already at the boundary are skipped.
+  // Group/Ungroup shifts each contiguous run of equal levels by ±1 (levels clamp to 0-7).
   const delta = action === 'group' ? 1 : -1
   const ops: { start: number; end: number; level: number }[] = []
   let runStart = start

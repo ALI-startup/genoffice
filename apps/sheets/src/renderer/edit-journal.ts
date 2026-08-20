@@ -968,10 +968,8 @@ export function recordStructuralOp(
   sheetName?: string,
 ): void {
   const ops = journal.structuralOps.get(sheetId) ?? []
-  // Undo of a just-recorded insert arrives as its exact inverse remove: cancel the
-  // pair instead of stacking two shifting ops. Otherwise a refused insert (e.g. the
-  // structural-shift guard) could never be cleared from the journal and every later
-  // save would keep hitting the same guard.
+  // Undo of a just-recorded insert arrives as its exact inverse remove: cancel the pair instead of
+  // stacking two shifting ops.
   const last = ops[ops.length - 1]
   const cancels =
     'index' in op &&
@@ -991,7 +989,6 @@ export function recordStructuralOp(
   }
 
   // Merges don't move cells; covered-cell clears arrive as value mutations.
-  // (`in` narrowing: TS doesn't compose `||` checks on multi-literal kinds.)
   if (!('index' in op)) return
   const rowColumnOp = op
   const axis = op.kind === 'insert-rows' || op.kind === 'remove-rows' ? 'row' : 'column'
@@ -1028,9 +1025,8 @@ export function recordStructuralOp(
     }
     journal.hyperlinks.set(sheetId, shiftedLinks)
   }
-  // Session visuals and pending chart edits follow the same shift: the save
-  // appends/applies them after the file's own structural pass, so they must
-  // already live in post-operation coordinates.
+  // Session visuals and pending chart edits follow the same shift: the save appends/applies them
+  // after the file's own structural pass, so they must already live in post-operation coordinates.
   const shift = toRowColumnShift(rowColumnOp)
   journal.visualAdds.forEach((visual, at) => {
     journal.visualAdds[at] = shiftVisualForStructuralOp(visual, sheetId, sheetName, op)

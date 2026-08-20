@@ -83,9 +83,8 @@ describe('drop cap roundtrip', () => {
     // dropCap undefined means it's not managed; framePr is preserved
     expect(merged).toContain('w:framePr')
     // explicitly set dropCap: undefined won't remove because undefined fields skip the managed set
-    // To actually clear it, you'd set dropCap to a falsy value; test that null clears it:
-    // NOTE: the format type has dropCap?: {...}, so passing null would need to be cast.
-    // Instead test that passing a new dropCap replaces the old framePr:
+    // To actually clear it, you'd set dropCap to a falsy value; test that null clears it: NOTE: the
+    // format type has dropCap?: {...}, so passing null would need to be cast.
     const replaced = mergePPrFormat(rawPPr, { dropCap: { type: 'margin', lines: 2 } })
     expect(replaced).toContain('w:dropCap="margin"')
     expect(replaced).toContain('w:lines="2"')

@@ -1,11 +1,4 @@
-/**
- * The routing and streaming behaviour of the BFF, over a real socket.
- *
- * The property under test throughout is that the SSE body carries exactly the
- * `AiStreamChunk` objects the Electron IPC channel would have carried, in the
- * same order — that equivalence is what lets `createIpcTransport` drive both
- * hosts unchanged.
- */
+/** The routing and streaming behaviour of the BFF, over a real socket. */
 import { describe, expect, it } from 'vitest'
 import { AI_BFF_ROUTES } from '@samugen/platform-web/wire'
 import { DEFAULT_MAX_TOKENS } from '../src/server.js'

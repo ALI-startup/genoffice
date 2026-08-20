@@ -1,9 +1,4 @@
-/**
- * Find/replace floating panel (⌘F) — modeled on PowerPoint "Home → Find/Replace".
- * Find works on render-tree text (element-granularity hits, page jump + select); replace goes
- * through the main-process model layer (in-run matching, byte-faithful patches), and on success
- * the whole RenderSlide set refreshes.
- */
+/** Find/replace floating panel (⌘F) — modeled on PowerPoint "Home → Find/Replace". */
 import { slidesDoc } from '../platform'
 import React, { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../i18n/locale'

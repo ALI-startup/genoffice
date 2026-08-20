@@ -1,11 +1,4 @@
-/**
- * Copy materializes its selection first. On streamed workbooks the
- * clipboard serializes whatever the lazy loader has put in the cell matrix:
- * rows the viewport never passed lose their text constants entirely and
- * numbers lose their number format. Loading the selection into the lazy
- * window before Univer's copy runs makes one-shot big-range copies match
- * what the screen would show.
- */
+/** Copy materializes its selection first. */
 import { ISheetClipboardService } from '@univerjs/sheets-ui'
 
 import { formatAddress } from '../domain/cell-address'

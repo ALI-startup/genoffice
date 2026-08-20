@@ -1,11 +1,6 @@
 /**
  * Pure mapping logic for slides:edit-text: paragraph/run structures sent by the editor -> model
- * paragraphs. Paragraphs/runs trace back to the original paragraph/run via the source indices the
- * editor returns (srcPara/srcRun) — splitting, inserting, or deleting paragraphs no longer shifts
- * by position (when the browser splits a div on Enter, the data attributes are copied along, so
- * both halves inherit from the same source); the ...oldRun
- * spread preserves fields the editor cannot express
- * (letterSpacing/field/outline, and hyperlinks whose rId didn't resolve).
+ * paragraphs.
  */
 import { encodeRunLink, type Paragraph, type ParagraphFormatPatch } from '@samugen/pptx-engine'
 import type { EditParagraph } from '../shared/ipc'
@@ -76,17 +71,15 @@ export function applyEditParagraphs(oldParas: Paragraph[], edited: EditParagraph
           delete merged.eaFont
           delete merged.fontImplicit
         }
-        // After removing underline, re-enabling starts fresh with sng;
-        // do not revive the old style
+        // After removing underline, re-enabling starts fresh with sng; do not revive the old style
         if (merged.underline === false) delete merged.underlineStyle
         // Explicit underline toggle beats hlink-derived styling
         if (r.underline != null && r.underline !== oldRun?.underline) {
           delete merged.underlineImplicit
         }
         // Hyperlink (r.link === undefined keeps the old link — see EditRun.link): the DOM
-        // round-trips resolvable links, so compare against the resolved old value; a link the
-        // DOM couldn't express (unresolvable/action-only rId, i.e. no oldRun.hyperlink) is
-        // preserved verbatim by the ...oldRun spread instead
+        // round-trips resolvable links, so compare against the resolved old value; a link the DOM
+        // couldn't express (unresolvable/action-only rId, i.e.
         const newLink = r.link ? encodeRunLink(r.link) : undefined
         if (
           r.link !== undefined &&
@@ -120,10 +113,8 @@ export function applyEditParagraphs(oldParas: Paragraph[], edited: EditParagraph
         return merged
       }),
       align: p.align ?? oldPara?.align,
-      // Indent level: returned by the editor after Tab adjustment; 0 resets to the default
-      // (lvl attribute removed). For a paragraph with its own bullet (explicit marL + hanging
-      // indent), the left indent steps with the level; inherited indents are re-resolved by
-      // materialize
+      // Indent level: returned by the editor after Tab adjustment; 0 resets to the default (lvl
+      // attribute removed).
       ...(p.level != null && p.level !== (oldPara?.level ?? 0)
         ? {
             level: p.level || undefined,
@@ -144,8 +135,6 @@ export function applyEditParagraphs(oldParas: Paragraph[], edited: EditParagraph
 /**
  * Per-paragraph format marks set by the editor (bullets/line spacing/paragraph spacing on the
  * selection) → engine paragraph-format patches, keyed by the edited paragraph index.
- * The caller applies each through setElementParagraphFormat(…, [index]) so the pPr surgery only
- * touches the marked paragraphs.
  */
 export function collectParagraphFormatPatches(
   edited: EditParagraph[],

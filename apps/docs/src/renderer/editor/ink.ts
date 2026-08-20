@@ -1,16 +1,6 @@
 import type { InkInfo, NewInkImage } from '@samugen/docx-engine'
 
-/**
- * Ink annotations (freehand drawing strokes) — editor-side model.
- *
- * Strokes live on a transparent overlay above the page. Each stroke is
- * anchored to a body paragraph: its points are stored relative to that
- * paragraph's top-left corner at 100% zoom, which maps 1:1 onto the engine's
- * wp:anchor offsets (positionH from column, positionV from paragraph). At
- * save time every stroke is rasterized into a transparent PNG floating
- * picture; the vector points travel along in wp:docPr descr so reopening the
- * file in our editor restores live, erasable strokes.
- */
+/** Ink annotations (freehand drawing strokes) — editor-side model. */
 
 export type InkTool = 'select' | 'pen' | 'highlighter' | 'eraser'
 
@@ -29,11 +19,7 @@ export interface InkStroke {
   points: InkPoint[]
 }
 
-/**
- * One annotation on the overlay. Editor-drawn annotations carry `stroke`
- * (editable vectors); annotations restored from a document without a
- * readable payload carry `image` instead (movable/erasable as a whole).
- */
+/** One annotation on the overlay. */
 export interface InkAnnotation {
   id: string
   /** docxIndex of the anchor paragraph in the current parsed doc */
@@ -214,10 +200,7 @@ export function rasterizeStroke(stroke: InkStroke): InkRaster {
   }
 }
 
-/**
- * Build the engine's ink list for a save. Annotations whose anchor paragraph
- * no longer exists in the save plan are dropped (their paragraph was deleted).
- */
+/** Build the engine's ink list for a save. */
 export function buildInkImages(
   annotations: InkAnnotation[],
   saveBlockIndexByDocx: Map<number, number>,

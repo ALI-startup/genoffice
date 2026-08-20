@@ -256,9 +256,8 @@ export function parsePivotDefinition(
     .filter((_, index) => !formulaByField.has(index))
     .map((field) => field.name)
   for (const [index, formula] of formulaByField) {
-    // The refresh engine assumes cache-field index == source column index:
-    // calculated fields must come after all source fields (Excel also appends
-    // them at the end); otherwise fail closed.
+    // The refresh engine assumes cache-field index == source column index: calculated fields must
+    // come after all source fields (Excel also appends them at the end); otherwise fail closed.
     if (index < sourceFieldNames.length) {
       unsupported.push(
         `calculated field "${fields[index]?.name}" does not come after the source fields, recompute not supported`,
@@ -323,8 +322,7 @@ export function parsePivotDefinition(
       ...(showDataAs !== null && SUPPORTED_SHOW_DATA_AS.has(showDataAs)
         ? { showDataAs: showDataAs as PivotShowDataAs }
         : {}),
-      // Data fields pointing at a calculated field carry the formula; refresh
-      // evaluates it.
+      // Data fields pointing at a calculated field carry the formula; refresh evaluates it.
       ...(formulaByField.has(field) ? { formula: formulaByField.get(field)! } : {}),
     }
   })
@@ -360,10 +358,8 @@ export function parsePivotDefinition(
     }
   }
 
-  // Value/label filters (pivotFilters): supports label equals/contains/begins-with
-  // plus top N (top10)/greater-than/between; other types (date filters, bottom N,
-  // percent…) still fail closed. Filtered-out members are also hidden entries, and
-  // refresh drops them via the hidden semantics.
+  // Value/label filters (pivotFilters): supports label equals/contains/begins-with plus top N
+  // (top10)/greater-than/between; other types (date filters, bottom N, percent…) still fail closed.
   const LABEL_FILTER_OPS: Record<string, 'equal' | 'contains' | 'beginsWith'> = {
     captionEqual: 'equal',
     captionContains: 'contains',

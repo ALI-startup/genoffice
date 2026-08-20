@@ -98,9 +98,8 @@ describe('read and write', () => {
     pickers.openQueue.push(handle)
     const doc = await store.open()
 
-    // savePdf is read → apply edits → write; assert both halves are bound to
-    // the same handle, which is what makes the edited bytes land in the
-    // original file instead of a download.
+    // savePdf is read → apply edits → write; assert both halves are bound to the same handle, which
+    // is what makes the edited bytes land in the original file instead of a download.
     const io = store.bytesIo(doc!.ref)
     await expect(io.read()).resolves.toEqual(new Uint8Array([1, 2, 3]))
     await io.write(new Uint8Array([7]))
@@ -117,11 +116,8 @@ describe('read and write', () => {
 
 describe('a write nobody asked for', () => {
   /**
-   * `prompt: false` is what an autosave writes through, and the point of it is a
-   * dialog that does not appear. `requestPermission` is the call that opens one, so
-   * these assertions are about `permissions.requested` staying empty — a store that
-   * asked anyway would still write the bytes and still pass a test that only
-   * checked the file contents.
+   * `prompt: false` is what an autosave writes through, and the point of it is a dialog that does
+   * not appear.
    */
   it('writes on a standing grant, without asking again', async () => {
     const store = newStore()

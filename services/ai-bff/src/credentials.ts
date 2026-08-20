@@ -1,36 +1,4 @@
-/**
- * Where the keys live: the server's environment, and nowhere else.
- *
- * Electron keeps credentials in an OS-encrypted store next to the app
- * (@samugen/ai-electron). A browser has no equivalent — anything the page can
- * read, an extension or an XSS can read — so on the web the credential must
- * never leave the server. This module is the only place in the web stack that
- * ever holds one.
- *
- * The env shape mirrors the provider ids in @samugen/ai-provider:
- *
- *   SAMUGEN_AI_PROVIDER              active provider id (default: whatever
- *                                      @samugen/ai-provider's
- *                                      `defaultAiSettings` selects)
- *   SAMUGEN_AI_KEY_<PROVIDER>        credential, e.g. SAMUGEN_AI_KEY_ANTHROPIC
- *   SAMUGEN_AI_MODEL_<PROVIDER>      model override
- *   SAMUGEN_AI_BASE_URL_<PROVIDER>   endpoint override (custom / local providers)
- *   SAMUGEN_AI_HEADERS_<PROVIDER>    extra request headers, as a JSON object
- *                                      e.g. {"X-Caller":"my-service"}
- *
- * `<PROVIDER>` is the provider id upper-cased with `-` → `_`.
- *
- * Extra headers exist for gateways that require caller attribution for billing
- * or tracking. They are merged *under* the transport's own headers in
- * @samugen/ai-provider, so they can add to a request but never rewrite its
- * credential, content type or protocol version. A malformed value throws rather
- * than being skipped: a tracking header that silently failed to load is worse
- * than a service that refuses to start.
- *
- * The resulting `AiSettings` is built with @samugen/ai-provider's own
- * `defaultAiSettings` + `resolveAiSettings`, so model defaults and the legacy
- * migration behave exactly as they do in the Electron main process.
- */
+/** Where the keys live: the server's environment, and nowhere else. */
 import {
   AI_PROVIDERS,
   defaultAiSettings,
@@ -68,26 +36,11 @@ export function loadAiSettings(env: Env = process.env): AiSettings {
     defaultAiSettings(),
   )
   // The active provider is applied *after* the merge rather than inside it.
-  // `resolveAiSettings` ignores every other field when `providers` is absent
-  // (that branch exists for the legacy single-endpoint migration), so passing
-  // `provider` in alongside would silently drop it whenever the operator set
-  // SAMUGEN_AI_PROVIDER without also setting a key, model or base URL for it
-  // — and `resolveProvider` would then name the wrong env var in its error.
   const active = env.SAMUGEN_AI_PROVIDER?.trim()
   return isProviderId(active) ? { ...merged, provider: active } : merged
 }
 
-/**
- * Parse a `SAMUGEN_AI_HEADERS_*` value into request headers.
- *
- * JSON rather than a `Name: value, Name: value` list, because header values
- * legitimately contain both commas and colons and no delimiter convention
- * survives that without an escaping scheme nobody wants to write in a .env file.
- *
- * Every rejection throws with the offending variable named. The caller runs at
- * boot, so a typo surfaces as a startup failure the operator reads once, rather
- * than as a header that is quietly missing from every request thereafter.
- */
+/** Parse a `SAMUGEN_AI_HEADERS_*` value into request headers. */
 function parseHeaders(
   raw: string | undefined,
   envName: string,
@@ -126,16 +79,7 @@ export function isProviderId(value: string | undefined): value is AiProviderId {
   return AI_PROVIDERS.some((meta) => meta.id === value)
 }
 
-/**
- * The only view of the settings the browser is allowed to see.
- *
- * @samugen/ai-electron's `toPublicAiSettings` keeps a `••••1234` hint of the
- * credential for its settings UI. This one drops the hint: the browser build
- * has no settings UI to render it, and without it "no credential material
- * appears in any response body" becomes an absolute, testable property rather
- * than one with a four-character exception. `credentialConfigured` carries the
- * only fact a client actually needs.
- */
+/** The only view of the settings the browser is allowed to see. */
 export function toPublicSettings(settings: AiSettings): PublicAiSettings {
   const providers: PublicAiSettings['providers'] = {}
   for (const meta of AI_PROVIDERS) {
@@ -164,13 +108,7 @@ export interface ResolvedProvider {
   config: AiProviderConfig
 }
 
-/**
- * Pick the provider for a request. The client names a task, never a provider —
- * so a page cannot aim the server's credentials at an endpoint it chose.
- *
- * Returns a reason string instead of throwing when nothing is usable, so the
- * caller can report it as a normal stream error chunk.
- */
+/** Pick the provider for a request. */
 export function resolveProvider(
   settings: AiSettings,
 ): { ok: true; resolved: ResolvedProvider } | { ok: false; error: string } {

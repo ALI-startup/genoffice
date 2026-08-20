@@ -1,15 +1,4 @@
-/**
- * Persistence for the ref → handle mapping.
- *
- * `FileSystemFileHandle` is structured-cloneable, so IndexedDB can store the
- * handle itself — that is what makes "recent files" survive a reload without
- * copying the document's bytes anywhere. localStorage cannot do this (strings
- * only), which is why this is IndexedDB and not the simpler store.
- *
- * The interface is separated from the IndexedDB implementation so the document
- * store can be unit-tested against an in-memory fake; nothing above this module
- * knows which one it is talking to.
- */
+/** Persistence for the ref → handle mapping. */
 import type { WebFileHandle } from './fs-access.js'
 
 export interface StoredDocumentHandle {
@@ -51,12 +40,7 @@ export function createMemoryHandleStore(): DocumentHandleStore {
   }
 }
 
-/**
- * IndexedDB-backed store, keyed by ref.
- *
- * The database is opened lazily and kept open: opening per operation would
- * serialise every read behind a fresh `onupgradeneeded` check for no benefit.
- */
+/** IndexedDB-backed store, keyed by ref. */
 export function createIndexedDbHandleStore(
   factory: IDBFactory = indexedDB,
   dbName: string = DOCUMENT_DB_NAME,

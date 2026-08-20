@@ -758,10 +758,7 @@ export default function App() {
     })()
   }, [openDoc])
 
-  /**
-   * Whether this host lets the renderer start an open at all. Null under
-   * Electron, where the shell owns file opening — see PdfFilePort.openDocument.
-   */
+  /** Whether this host lets the renderer start an open at all. */
   const openDocument = pdfPlatform().file.openDocument
 
   /** Host open dialog → load what it returns. Must run inside a user gesture. */
@@ -1153,16 +1150,12 @@ export default function App() {
   }
 
   /**
-   * Save As: apply pending edits onto the source bytes and write only to the
-   * host's destination ref. The open document stays untouched and the edits
-   * stay pending in this tab.
+   * Save As: apply pending edits onto the source bytes and write only to the host's destination
+   * ref.
    */
   const saveAsTo = async (target: DocumentRef): Promise<boolean> => {
     if (!docRef) return false
-    // A save already in flight (autosave that started before the dialog opened) lands
-    // first. If it succeeded, every edit that was pending is now part of the source
-    // bytes, so the copy applies nothing on top — deriving this from the save result
-    // (instead of re-reading state) avoids racing React's render of the cleared edits.
+    // A save already in flight (autosave that started before the dialog opened) lands first.
     const inFlight = saveInFlightRef.current
     const flushed = inFlight ? await inFlight.catch(() => false) : false
     const edits = flushed
@@ -1188,11 +1181,8 @@ export default function App() {
     [],
   )
 
-  // Autosave (same strategy as Docs): every 30s and on window blur, silently persist pending
-  // edits via the regular save() path; skipped while a save is in flight or without an open document.
-  // Gated on one explicit save first: a PDF opened only to read must never be
-  // overwritten because a thumbnail got dragged or a markup tool tapped — Save (⌘S / the
-  // toolbar button / File ▸ Save) is what opts this file into unattended writes.
+  // Autosave (same strategy as Docs): every 30s and on window blur, silently persist pending edits
+  // via the regular save() path; skipped while a save is in flight or without an open document.
   useAutosave(
     () =>
       savedOnceRef.current &&

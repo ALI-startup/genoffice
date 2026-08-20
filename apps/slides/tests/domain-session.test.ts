@@ -1,15 +1,4 @@
-/**
- * The document session, exercised without Electron (src/domain/session.ts).
- *
- * Two properties are worth pinning down, and neither was covered before the module
- * was split out: that the session's rendering services are genuinely injected — so
- * a browser host can supply its own — and that a host which forgets to install them
- * fails loudly instead of producing blank slides.
- *
- * The import is `../src/domain/session`, not `../src/main/session-state`, and that is
- * the point of the file: nothing here mocks `electron`, because nothing in the path
- * touches it.
- */
+/** The document session, exercised without Electron (src/domain/session.ts). */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createBlankPptx, openPptx, utf8Bytes, type OpenedPptx } from '@samugen/pptx-engine'
 import {
@@ -51,9 +40,8 @@ describe('the injected render env', () => {
   })
 
   it('refuses to render at all when a host forgot to install its services', async () => {
-    // A fresh module instance, so the slot is genuinely unset — the failure mode this
-    // guards is a host that renders blank slides instead of saying anything. The
-    // statically imported copy above keeps the env this file installed.
+    // A fresh module instance, so the slot is genuinely unset — the failure mode this guards is a
+    // host that renders blank slides instead of saying anything.
     vi.resetModules()
     const fresh = await import('../src/domain/session')
 

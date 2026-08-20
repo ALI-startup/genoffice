@@ -1,10 +1,6 @@
-/**
- * project-store type definitions.
- * Mirrors the cloud project model, implemented on the local filesystem.
- */
+/** project-store type definitions. */
 
-// ────────────────────────────────────────────────────────────
-// Tool types
+// ──────────────────────────────────────────────────────────── Tool types
 // ────────────────────────────────────────────────────────────
 
 export interface ToolActivity {
@@ -27,16 +23,10 @@ export interface ChatAttachment {
   sizeBytes?: number
 }
 
-// ────────────────────────────────────────────────────────────
-// Message structures
+// ──────────────────────────────────────────────────────────── Message structures
 // ────────────────────────────────────────────────────────────
 
-/**
- * One JSONL line corresponds to one message.
- * ts: UTC ISO string
- * seq: monotonically increasing integer within a chat (maintained by the store; the renderer sorts by seq)
- * attachments: not implemented in P0, field reserved only
- */
+/** One JSONL line corresponds to one message. */
 export interface ChatMessage {
   seq: number
   ts: string
@@ -50,8 +40,7 @@ export interface ChatMessage {
   attachments?: ChatAttachment[]
 }
 
-// ────────────────────────────────────────────────────────────
-// Project & index structures
+// ──────────────────────────────────────────────────────────── Project & index structures
 // ────────────────────────────────────────────────────────────
 
 export interface ProjectInfo {
@@ -69,12 +58,7 @@ export interface ProjectIndex {
   projects: ProjectInfo[]
   /** absolute path → projectId */
   fileMap: Record<string, string>
-  /**
-   * Absolute path → stable chatId (registered on first resolve).
-   * Once assigned, a chatId never changes with the path; renaming/moving a file
-   * only updates the key here, so history follows the file.
-   * Old data without this map falls back to sha256(path) derivation.
-   */
+  /** Absolute path → stable chatId (registered on first resolve). */
   chatIdByPath?: Record<string, string>
 }
 
@@ -86,13 +70,10 @@ export interface ChatMeta {
   approxCount: number
 }
 
-// ────────────────────────────────────────────────────────────
-// Extended API types (P1)
+// ──────────────────────────────────────────────────────────── Extended API types (P1)
 // ────────────────────────────────────────────────────────────
 
-/**
- * Summary info returned by listProjects() (with aggregated fields)
- */
+/** Summary info returned by listProjects() (with aggregated fields) */
 export interface ProjectSummary extends ProjectInfo {
   /** Number of files currently belonging to this project */
   fileCount: number

@@ -1,7 +1,6 @@
 /**
- * Post-generation layout QC helpers:
- *  - mergeQcPages: which pages a generation run marks for QC
- *  - createSlideFixSkill: tool allowlist wraps the full slides skill without losing the executor
+ * Post-generation layout QC helpers:  - mergeQcPages: which pages a generation run marks for QC  -
+ * createSlideFixSkill: tool allowlist wraps the full slides skill without losing the executor
  */
 import { describe, it, expect } from 'vitest'
 import { mergeQcPages, createSlideFixSkill, isQcEnabled } from '../src/renderer/ai/slide-qc'

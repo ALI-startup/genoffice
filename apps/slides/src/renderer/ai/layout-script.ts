@@ -3,13 +3,8 @@
  * instead of blindly sending absolute coordinates / calling fine-grained tools attribute by
  * attribute, the AI submits a synchronous JS-shaped DSL program — at runtime it gets a snapshot of
  * this page's real element geometry and text (els) and the canvas size (canvas), computes
- * algorithmically, then uses setBox/moveBy/resizeBy for geometry and setText/setStyle/setFill/setStroke
- * for content and style. The script only collects operations and never mutates the screen directly;
- * the caller dispatches the collected result to existing edit IPC (geometry applied atomically in
- * one batchEditTransform, the rest serially in script order).
- *
- * All precision-number work (reading coordinates, computing spacing) happens at execution site;
- * coordinates never round-trip through LLM tokens — the key to getting layout adjustments right.
+ * algorithmically, then uses setBox/moveBy/resizeBy for geometry and
+ * setText/setStyle/setFill/setStroke for content and style.
  */
 
 import type { EditParagraph } from '../../shared/ipc'
@@ -107,8 +102,7 @@ export function runLayoutScript(
   // Non-geometry ops: keep script call order (order matters when the same element changes text then style)
   const edits: SlideEditOp[] = []
 
-  /** Common existence/read-only validation (shared by all write primitives).
-   *  Direct children of a top-level group pass (their ops carry groupId); deeper nesting is read-only. */
+  /** Common existence/read-only validation (shared by all write primitives). */
   const guard = (fn: string, id: unknown): LayoutScriptElement => {
     const key = String(id)
     const el = byId.get(key)

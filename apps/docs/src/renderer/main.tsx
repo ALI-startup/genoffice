@@ -1,9 +1,8 @@
 import { createRoot } from 'react-dom/client'
 import { htmlLang, type Lang } from '@samugen/i18n'
 import { App } from './App'
-// The build-time host seam: each Vite config aliases `@host` to exactly one of
-// host-web.ts, so this entry point names no host at all and
-// the two bundles carry disjoint host code. See vite.shared.ts.
+// The build-time host seam: each Vite config aliases `@host` to exactly one of host-web.ts, so this
+// entry point names no host at all and the two bundles carry disjoint host code.
 import { createDocsPlatform } from '@host'
 import { LocaleProvider, setModuleLang } from './i18n/locale'
 import { setDocsPlatform } from './platform'

@@ -1,7 +1,4 @@
-/**
- * Section read/write tests: round-trip, add/remove/rename/move.
- * Fixture 01_standard_business.pptx has 5 slides and no sections.
- */
+/** Section read/write tests: round-trip, add/remove/rename/move. */
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'

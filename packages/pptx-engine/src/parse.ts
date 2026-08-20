@@ -1,10 +1,4 @@
-/**
- * Parse one slide → Slide element tree.
- *
- * Semantic parsing uses fast-xml-parser; byte-fidelity anchors come from scanSlide
- * (one-to-one in top-level shape order). Phase 1 supports: text boxes / pictures /
- * simple shapes; everything else → passthrough.
- */
+/** Parse one slide → Slide element tree. */
 import { XMLParser } from 'fast-xml-parser'
 import { scanSlide, type SpElement } from './scan'
 import { tableRowGridCols } from './table-grid'
@@ -55,8 +49,7 @@ import {
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: '@_',
-  // Text fidelity: no trim (leading/trailing spaces in runs matter, e.g. "bold word " + following text),
-  // no numeric coercion of tag values (otherwise <a:t>2026</a:t> becomes a number and downstream string reads lose characters)
+  // Text fidelity: no trim (leading/trailing spaces in runs matter, e.g.
   trimValues: false,
   parseTagValue: false,
   // Order preservation is not the point (semantic tree); keep array structure for multiple runs/paragraphs
@@ -189,13 +182,9 @@ function parseShapeFragment(
   anchor: ByteAnchor,
   ctx: ParseContext,
 ): SlideElement | null {
-  // <a:br/> (in-paragraph soft break) → sentinel run "\n": fast-xml-parser does not
-  // preserve order, so the relative position of a:br vs a:r is lost; replacing it
-  // with a line-break sentinel lets the layout layer force a break. Only affects the
-  // semantic tree; the byte-fidelity side's anchor.originalXml stays the original fragment.
-  // <a:fld> (slide number/date) gets the same treatment: it is structurally an a:r,
-  // and rewriting the tag (attributes kept, so @_type survives for run.field) keeps
-  // fields in document order instead of being appended after all plain runs.
+  // <a:br/> (in-paragraph soft break) → sentinel run "\n": fast-xml-parser does not preserve order,
+  // so the relative position of a:br vs a:r is lost; replacing it with a line-break sentinel lets
+  // the layout layer force a break.
   const semanticXml = fragXml
     .replace(/<a:br\b[^>]*\/>|<a:br\b[\s\S]*?<\/a:br>/g, '<a:r><a:t>\n</a:t></a:r>')
     .replace(/<a:fld\b/g, '<a:r')
@@ -273,11 +262,10 @@ function parseSpShape(
   let shadow = parseShadow(spPr, ctx)
   let glow = parseGlow(spPr, ctx)
 
-  // <p:style> theme style reference fallback: when spPr has no explicit value, take the
-  // fmtScheme template by idx (fillStyleLst/lnStyleLst/effectStyleLst) with phClr
-  // substituted by the reference color; when the theme lacks the template, fall back to
-  // the reference color as solid (shape styles of SmartArt pre-rendered drawings all
-  // come from here). The fontRef color is filled into runs without an explicit color.
+  // <p:style> theme style reference fallback: when spPr has no explicit value, take the fmtScheme
+  // template by idx (fillStyleLst/lnStyleLst/effectStyleLst) with phClr substituted by the
+  // reference color; when the theme lacks the template, fall back to the reference color as solid
+  // (shape styles of SmartArt pre-rendered drawings all come from here).
   const style = node['p:style']
   if (style && typeof style === 'object') {
     if (fill === undefined) {
@@ -346,12 +334,7 @@ function styleRefStroke(node: any, ctx: ParseContext): Stroke | undefined {
   )
 }
 
-/**
- * <a:ln> stroke: fill (solid/gradient…) + width + dash + cap + arrowheads.
- * Returns undefined when a:ln is absent (nothing specified — callers may
- * inherit from p:style/lnRef) and null for an explicit <a:noFill/> (the
- * author turned the outline off — must NOT be upgraded to a theme stroke).
- */
+/** <a:ln> stroke: fill (solid/gradient…) + width + dash + cap + arrowheads. */
 function parseStroke(
   spPr: any,
   ctx: ParseContext,
@@ -399,12 +382,7 @@ function parseArrowEnd(node: any): ArrowEnd | undefined {
 
 // ── p:cxnSp (connector) ─────────────────────────────────────────────
 
-/**
- * Connectors: line / straightConnector / bentConnector / curvedConnector.
- * Semantically = a stroke-only shape (geometry name + adjust + stroke/arrows);
- * the start/end connections (a:stCxn/endCxn) only affect editor snapping, and
- * rendering just draws by xfrm + flip.
- */
+/** Connectors: line / straightConnector / bentConnector / curvedConnector. */
 function parseConnector(node: any, anchor: ByteAnchor, ctx: ParseContext): TextElement {
   const spPr = node['p:spPr'] ?? {}
   const nvCxn = node['p:nvCxnSpPr']
@@ -518,9 +496,7 @@ function parseGroup(
         }
       : undefined
 
-  // Recursively parse children. Child byte anchors are group-local (only for
-  // render/editor positioning; saving still uses the whole group's originalXml:
-  // if any child is dirty the whole group regenerates).
+  // Recursively parse children.
   const groupXml = rawXml || anchor.originalXml
   const slices = sliceGroupChildren(groupXml)
   const byTag: Record<string, GroupChildSlice[]> = {}
@@ -604,11 +580,7 @@ interface GroupChildSlice {
   start: number
 }
 
-/**
- * Group source XML → source fragments of direct child shapes, in document order.
- * Per-tag index order matches fast-xml-parser's same-name arrays; `start` restores
- * cross-tag document order. custGeom also needs source-order command parsing.
- */
+/** Group source XML → source fragments of direct child shapes, in document order. */
 function sliceGroupChildren(xml: string): GroupChildSlice[] {
   const out: GroupChildSlice[] = []
   const tags = new Set<string>(GROUP_CHILD_TAGS)
@@ -651,10 +623,7 @@ export function sliceGroupChildXmls(grpXml: string): string[] {
 
 // ── p:pic (picture) ──────────────────────────────────────────────────
 
-/** r:embed of an <a:blip>, falling back to the Office 2016 <asvg:svgBlip> extension.
-    SVG-only pictures (e.g. PowerPoint 365 vector logos) can carry a bare <a:blip>
-    whose only image reference is the svgBlip inside a:extLst — without this
-    fallback such pictures resolve to no media and render as a broken-image box. */
+/** r:embed of an <a:blip>, falling back to the Office 2016 <asvg:svgBlip> extension. */
 function blipEmbedId(blip: any): string | undefined {
   const direct = blip?.['@_r:embed']
   if (direct) return direct
@@ -792,14 +761,7 @@ function graphicFramePassthrough(node: any, anchor: ByteAnchor, ctx: ParseContex
   return el
 }
 
-/**
- * SmartArt prerendered drawing part (diagrams/drawingN.xml, dsp namespace) →
- * read-only shapes. dsp:sp/dsp:spPr/dsp:txBody/dsp:style are structurally
- * isomorphic to the p: prefix, so after a prefix swap the p:sp parser is reused
- * directly (shape colors fall back to dsp:style's fillRef/lnRef/fontRef theme
- * references). Coordinate system: the diagram canvas (origin 0,0, size ≈
- * graphicFrame ext).
- */
+/** SmartArt prerendered drawing part (diagrams/drawingN.xml, dsp namespace) → read-only shapes. */
 function parseDiagramDrawing(drawingXml: string, ctx: ParseContext): SlideElement[] {
   const xml = drawingXml.replace(/<(\/?)dsp:/g, '<$1p:')
   let doc: any
@@ -1152,9 +1114,7 @@ function parseParagraph(
     if (r?.['@_type']) run.field = String(r['@_type'])
     return run
   })
-  // <a:fld> reaching here in its original form (parse paths without the fragment
-  // rewrite, e.g. master footers): order relative to a:r is lost, appending is the
-  // legacy fallback — a footer fld usually owns its paragraph.
+  // <a:fld> reaching here in its original form (parse paths without the fragment rewrite, e.g.
   const fldsRaw = p['a:fld'] ? (Array.isArray(p['a:fld']) ? p['a:fld'] : [p['a:fld']]) : []
   for (const f of fldsRaw) {
     const run = parseRun(f, ctx, dflt)
@@ -1268,7 +1228,6 @@ function parseRun(r: any, ctx: ParseContext, dflt?: LevelTextStyle): TextRun {
     (hlinkTarget ? ctx.theme?.colors?.hlink : undefined) ??
     dflt?.color
   // Whether the color is display-only: from schemeClr/inheritance (not an explicit run srgbClr).
-  // The patch path uses this to avoid baking theme colors into srgbClr (theme switches must stay linked)
   const colorFollowsTheme = color != null && !(fill && fill['a:srgbClr'])
   const colorInherited = color != null && !fill
   // Font: run explicit (incl. +mj/+mn theme refs) → inherited default → theme font
@@ -1334,11 +1293,7 @@ function parseRun(r: any, ctx: ParseContext, dflt?: LevelTextStyle): TextRun {
 // ── master/layout decoration layer ───────────────────────────────────
 
 export interface DecorationOptions {
-  /**
-   * Footer-family placeholder types allowed to render (subset of ftr/sldNum/dt).
-   * Such placeholders on the master show only when <p:hf> hasn't disabled them
-   * and the slide has no placeholder of the same type.
-   */
+  /** Footer-family placeholder types allowed to render (subset of ftr/sldNum/dt). */
   hfTypes?: Set<string>
   /** Actual value of the slide-number field <a:fld type="slidenum"> (replaces the cached text) */
   slideNum?: number

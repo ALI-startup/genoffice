@@ -1,13 +1,4 @@
-/**
- * Both codecs against each other, over a real `.hwpx` package.
- *
- * This is the closest thing to the actual import path that can run without a
- * Hangul Word Processor file in the repo, and it is what guards the property the
- * import is built around: a document that goes out and comes back must not gain
- * a second set of list markers. Everything else here records what the pair
- * genuinely preserves, so a library bump that changes it fails loudly instead of
- * degrading documents quietly.
- */
+/** Both codecs against each other, over a real `.hwpx` package. */
 import { describe, expect, it } from 'vitest'
 import { htmlToHwpx } from '../src/write'
 import { hwpxToHtml } from '../src/read'
@@ -46,9 +37,8 @@ describe('hwpx round trip', () => {
   })
 
   it('does not accumulate list markers over repeated trips', async () => {
-    // The failure this guards: the exporter writes a list item's bullet into the
-    // text, so an importer that keeps it re-exports "• a" and gets "• • a" back.
-    // Three trips is enough for a per-trip prefix to be unmistakable.
+    // The failure this guards: the exporter writes a list item's bullet into the text, so an
+    // importer that keeps it re-exports "• a" and gets "• • a" back.
     let html = '<ul><li>항목</li></ul><ol><li>first</li></ol>'
     for (let i = 0; i < 3; i += 1) {
       html = (await hwpxToHtml(await htmlToHwpx(html))).html

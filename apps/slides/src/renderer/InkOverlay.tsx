@@ -11,15 +11,7 @@ import {
   type InkTool,
 } from './ink'
 
-/**
- * Transparent drawing layer over the slide (pen/highlighter/eraser). Sits above the Konva
- * canvas (inside .stage-rel) and mounts only while a drawing tool is active. Committed
- * strokes are rendered by Konva as regular images; this layer only draws the stroke in
- * progress, and on pen-up passes the whole stroke back to App (rasterize + IPC into the package).
- *
- * Coordinates: overlay size matches RenderSlide (fitWidth viewport px); the outer
- * .stage-scale zoom is divided back out via the getBoundingClientRect ratio.
- */
+/** Transparent drawing layer over the slide (pen/highlighter/eraser). */
 
 interface InkOverlayProps {
   slide: RenderSlide

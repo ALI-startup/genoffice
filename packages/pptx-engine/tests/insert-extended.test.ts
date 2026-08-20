@@ -1,7 +1,6 @@
 /**
- * Tests for new insert capabilities: chart / SmartArt / audio-video / 3D / hyperlink / header-footer /
- * field textbox / WordArt outline / arbitrary preset geometry shapes.
- * All verify the insert → save → reopen roundtrip.
+ * Tests for new insert capabilities: chart / SmartArt / audio-video / 3D / hyperlink /
+ * header-footer / field textbox / WordArt outline / arbitrary preset geometry shapes.
  */
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'

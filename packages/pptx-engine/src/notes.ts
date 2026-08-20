@@ -1,14 +1,4 @@
-/**
- * Speaker notes (notesSlide) read/write — archive surgery, same approach as
- * duplicateSlide.
- *
- * - Read: slide rels → notesSlide part → body placeholder <a:t> text (\n-separated).
- * - Write: patch the existing notesSlide's body txBody; if there is no notesSlide,
- *   create one (creating a notesMaster too if needed and registering it in
- *   presentation.xml).
- * All changes land in archive.entries: savePptx persists automatically, and the
- * main process's snapshot-style undo (shallow copy of entries) covers them.
- */
+/** Speaker notes (notesSlide) read/write — archive surgery, same approach as duplicateSlide. */
 import { utf8Bytes } from './bytes'
 import type { OpenedPptx } from './index'
 import { relsPathFor, resolveTarget, type PackageArchive } from './zip'

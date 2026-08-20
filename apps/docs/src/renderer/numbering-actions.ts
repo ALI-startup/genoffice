@@ -1,7 +1,5 @@
 /**
- * List numbering actions: allocating numIds, new list definitions, restart /
- * continue numbering. Extracted from App.tsx; the App component passes a
- * NumberingContext built fresh per call so state never goes stale.
+ * List numbering actions: allocating numIds, new list definitions, restart / continue numbering.
  */
 import type { Editor } from '@tiptap/core'
 import type { CustomNumberingLevel, NumberingDef } from '@samugen/docx-engine'

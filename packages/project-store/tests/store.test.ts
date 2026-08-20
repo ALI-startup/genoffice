@@ -4,17 +4,14 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { ProjectStore } from '../src/store.js'
 
-// ────────────────────────────────────────────────────────────
-// Test helpers
+// ──────────────────────────────────────────────────────────── Test helpers
 // ────────────────────────────────────────────────────────────
 
 function makeTempDir(): string {
   return mkdtempSync(join(tmpdir(), 'project-store-test-'))
 }
 
-// ────────────────────────────────────────────────────────────
-// 1. Default project creation
-// ────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────── 1.
 
 describe('ensureDefaultProject', () => {
   let tmpDir: string
@@ -50,9 +47,7 @@ describe('ensureDefaultProject', () => {
   })
 })
 
-// ────────────────────────────────────────────────────────────
-// 2. resolveProjectForFile
-// ────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────── 2.
 
 describe('resolveProjectForFile', () => {
   let tmpDir: string
@@ -85,9 +80,7 @@ describe('resolveProjectForFile', () => {
   })
 })
 
-// ────────────────────────────────────────────────────────────
-// 3. appendChatMessage + loadChat
-// ────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────── 3.
 
 describe('appendChatMessage + loadChat', () => {
   let tmpDir: string
@@ -159,9 +152,7 @@ describe('appendChatMessage + loadChat', () => {
   })
 })
 
-// ────────────────────────────────────────────────────────────
-// 4. Tolerance for corrupted JSONL lines
-// ────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────── 4.
 
 describe('JSONL corrupted-line tolerance', () => {
   let tmpDir: string
@@ -206,9 +197,7 @@ describe('JSONL corrupted-line tolerance', () => {
   })
 })
 
-// ────────────────────────────────────────────────────────────
-// 5. rebindChat
-// ────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────── 5.
 
 describe('rebindChat', () => {
   let tmpDir: string
@@ -279,9 +268,7 @@ describe('rebindChat', () => {
   })
 })
 
-// ────────────────────────────────────────────────────────────
-// 5b. rebindChatToFile
-// ────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────── 5b.
 
 describe('rebindChatToFile', () => {
   let tmpDir: string
@@ -326,9 +313,7 @@ describe('rebindChatToFile', () => {
   })
 })
 
-// ────────────────────────────────────────────────────────────
-// 5c. Stable chatId mapping and rename tracking
-// ────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────── 5c.
 
 describe('resolveChatForFile / fileRenamed', () => {
   let tmpDir: string
@@ -387,9 +372,7 @@ describe('resolveChatForFile / fileRenamed', () => {
   })
 })
 
-// ────────────────────────────────────────────────────────────
-// 5d. Buffering before the first assistant message (empty sessions create no file)
-// ────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────── 5d.
 
 describe('appendChatMessage opening buffer', () => {
   let tmpDir: string
@@ -474,9 +457,7 @@ describe('appendChatMessage opening buffer', () => {
   })
 })
 
-// ────────────────────────────────────────────────────────────
-// 6. listChats
-// ────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────── 6.
 
 describe('listChats', () => {
   let tmpDir: string
@@ -507,9 +488,7 @@ describe('listChats', () => {
   })
 })
 
-// ────────────────────────────────────────────────────────────
-// 7. chatIdForFile
-// ────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────── 7.
 
 describe('chatIdForFile', () => {
   it('same path returns the same id', () => {
@@ -531,9 +510,8 @@ describe('chatIdForFile', () => {
   })
 })
 
-// ────────────────────────────────────────────────────────────
-// Helpers (Node built-in wrappers, avoiding import cycles)
-// ────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────── Helpers (Node built-in wrappers,
+// avoiding import cycles) ────────────────────────────────────────────────────────────
 
 import { readFileSync as _readFileSync, mkdirSync as _mkdirSync } from 'node:fs'
 
@@ -545,9 +523,7 @@ function readFileSyncHelper(p: string): string {
   }
 }
 
-// ────────────────────────────────────────────────────────────
-// 8. P1: createProject / renameProject / deleteProject
-// ────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────── 8.
 
 describe('createProject', () => {
   let tmpDir: string
@@ -664,9 +640,7 @@ describe('deleteProject', () => {
   })
 })
 
-// ────────────────────────────────────────────────────────────
-// 9. P1: moveFileToProject
-// ────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────── 9.
 
 describe('moveFileToProject', () => {
   let tmpDir: string
@@ -726,9 +700,7 @@ describe('moveFileToProject', () => {
   })
 })
 
-// ────────────────────────────────────────────────────────────
-// 10. P1: listProjectsSummary
-// ────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────── 10.
 
 describe('listProjectsSummary', () => {
   let tmpDir: string
@@ -791,9 +763,7 @@ describe('listProjectsSummary', () => {
   })
 })
 
-// ────────────────────────────────────────────────────────────
-// 11. P1: getProjectTimeline
-// ────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────── 11.
 
 describe('getProjectTimeline', () => {
   let tmpDir: string

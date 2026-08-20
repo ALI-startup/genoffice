@@ -1,11 +1,5 @@
 /**
- * Role recovery, against packages assembled here rather than round-tripped
- * through the exporter.
- *
- * The exporter never writes an `hh:heading` of type BULLET or NUMBER and never
- * writes a non-left alignment, so a fixture built from it could not exercise the
- * paths that matter for real Hangul Word Processor files. These fixtures carry
- * the XML such a file carries.
+ * Role recovery, against packages assembled here rather than round-tripped through the exporter.
  */
 import { describe, expect, it } from 'vitest'
 import JSZip from 'jszip'
@@ -50,7 +44,9 @@ function headerXml(styles: StyleSpec[], paraPrs: ParaPrSpec[]): string {
 }
 
 /** One `hp:p` per entry, in document order. */
-function sectionXml(paras: Array<{ paraPrIDRef: number; styleIDRef: number; text?: string }>): string {
+function sectionXml(
+  paras: Array<{ paraPrIDRef: number; styleIDRef: number; text?: string }>,
+): string {
   const body = paras
     .map(
       (p) =>

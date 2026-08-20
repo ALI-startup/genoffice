@@ -1,21 +1,5 @@
 #!/usr/bin/env node
-/**
- * Pagination fidelity — precise baseline extraction with a real Word for Mac
- *
- * Usage:
- *   node scripts/pagination-baseline-word.mjs [--docx-dir <path>] [--out <path>]
- *
- * Dependencies:
- *   - Microsoft Word for Mac (AppleScript automation; the first run needs the
- *     system prompt allowing the terminal to control Word)
- *   - pdftotext (poppler-utils)
- *
- * Behavior:
- *   - Per docx: open in Word → save as PDF → close that document (Word keeps
- *     running; other documents the user has open are untouched)
- *   - PDFs are kept in .task/word-baseline-pdf/ for manual verification
- *   - Writes apps/docs/tests/pagination-corpus/baseline-word.json (source:"word")
- */
+/** Pagination fidelity — precise baseline extraction with a real Word for Mac */
 
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, readdirSync, writeFileSync, existsSync, rmSync, renameSync } from 'node:fs'

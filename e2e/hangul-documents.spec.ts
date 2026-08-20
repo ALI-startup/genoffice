@@ -1,22 +1,4 @@
-/**
- * Opening Hangul documents in the docs editor, in a real browser.
- *
- * These are E2E and not unit tests because the chain has no shorter honest form.
- * A `.hwp` open crosses everything: the file picker's handle, an iframe boundary,
- * a same-origin `fetch` the page's `connect-src 'self'` would otherwise block, a
- * JVM in another process, and only then the codec that turns the result into
- * editable content. Any one of those can be wired wrong while every unit test
- * passes.
- *
- * The picker is faked, because Playwright cannot drive the browser's own file
- * dialog — but only the picker. The bytes are a real HWP 5.0 binary and the
- * converter behind `/v1/convert` is the real one, so what is asserted is a real
- * conversion arriving in a real editor.
- *
- * The `.hwp` case needs the conversion service, so it skips without
- * E2E_CONVERT_URL rather than passing on a mock. `.hwpx` needs nothing but the
- * page and always runs.
- */
+/** Opening Hangul documents in the docs editor, in a real browser. */
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { test, expect, type Page } from '@playwright/test'
@@ -30,14 +12,7 @@ const FIXTURE_TEXT = '한글 문서 테스트 Hello HWP'
 
 const hasConverter = Boolean(process.env.E2E_CONVERT_URL)
 
-/**
- * Make the next Open dialog hand back `name` with `bytes`, in every frame.
- *
- * An init script rather than a route interception: the store calls
- * `showOpenFilePicker` directly, and what it gets back has to behave like a real
- * handle — `getFile()`, the permission pair, and structured-cloneable so the
- * store can persist it. This is the smallest object that satisfies all three.
- */
+/** Make the next Open dialog hand back `name` with `bytes`, in every frame. */
 async function stubOpenPicker(page: Page, name: string, bytes: Uint8Array): Promise<void> {
   await page.addInitScript(
     ([fileName, base64]) => {
@@ -96,9 +71,8 @@ async function chooseOpen(frame: ReturnType<Page['frameLocator']>): Promise<void
 
 test.describe('opening a .hwpx', () => {
   test('opens as a document bound to its file, with its text in the editor', async ({ page }) => {
-    // Built here rather than committed: the codec that reads it in the page is the
-    // same one that writes it, so the fixture cannot drift from the format under
-    // test.
+    // Built here rather than committed: the codec that reads it in the page is the same one that
+    // writes it, so the fixture cannot drift from the format under test.
     const { htmlToHwpx } = await import('@samugen/hwpx-convert')
     const bytes = await htmlToHwpx('<h1>보고서 제목</h1><p>본문 문장입니다.</p>')
     await stubOpenPicker(page, 'report.hwpx', bytes)
@@ -121,8 +95,6 @@ test.describe('opening a .hwpx', () => {
 
   test('saves back over the same file, as .hwpx, without a dialog', async ({ page }) => {
     // The whole difference from an import: Ctrl+S writes the file it came from.
-    // The stub handle records what it was handed, so what is asserted is a real
-    // write of a real package — not merely that the command reported success.
     const { htmlToHwpx } = await import('@samugen/hwpx-convert')
     await stubOpenPicker(page, 'report.hwpx', await htmlToHwpx('<p>처음 문장</p>'))
     await openShell(page, { onboardingSeen: true })
@@ -137,10 +109,7 @@ test.describe('opening a .hwpx', () => {
 
     await expect(frame.locator('.status-msg')).toContainText('Saved')
 
-    // What reached the file, read back by the codec. A `.docx` would also start
-    // with "PK", so the check is that this parses as an OWPML package *and*
-    // carries the edit — which is the only assertion that could not pass if the
-    // save had quietly written the other format.
+    // What reached the file, read back by the codec.
     const written = await frame.locator('body').evaluate(() => {
       const record = (window as unknown as { __samugenWrites?: number[][] }).__samugenWrites
       return record?.at(-1) ?? null

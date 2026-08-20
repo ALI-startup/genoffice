@@ -3,19 +3,15 @@ import { t } from '../i18n/locale'
 import type { PmNode } from './convert'
 
 /**
- * Protected display-equation block built from LaTeX (throws on syntax outside
- * the supported subset). Shared by the insert dialog/gallery and the AI
- * <formula> tag; genXml carries the OMML through the save path.
+ * Protected display-equation block built from LaTeX (throws on syntax outside the supported
+ * subset).
  */
 /** MathML for inline flow (ommlToMathML emits display="block" for equations) */
 export function inlineMathML(omml: string): string {
   return ommlToMathML(omml).replace(/ display="block"/g, ' display="inline"')
 }
 
-/**
- * Atomic inline formula node built from LaTeX (throws on unsupported syntax).
- * Flows with paragraph text; saves as a Run.math (<m:oMath> emitted verbatim).
- */
+/** Atomic inline formula node built from LaTeX (throws on unsupported syntax). */
 export function inlineEquationNodeJson(latex: string): PmNode {
   const inner = latexToOmml(latex)
   const omml = `<m:oMath>${inner}</m:oMath>`

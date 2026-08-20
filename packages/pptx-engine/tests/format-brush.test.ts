@@ -1,6 +1,4 @@
-/**
- * Format painter pure-function unit tests — extract / apply / cross-type intersection.
- */
+/** Format painter pure-function unit tests — extract / apply / cross-type intersection. */
 import { describe, it, expect } from 'vitest'
 import { extractFormat, applyFormat } from '../src/format-brush'
 import type { TextElement } from '../src/types'

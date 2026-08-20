@@ -18,10 +18,8 @@ const LocaleContext = createContext<LocaleValue>({ lang: 'zh', setLang: () => {}
 
 export function LocaleProvider({ initial, children }: { initial: Lang; children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(initial)
-  // One place applies a language, whether it came from the shell's own switcher
-  // or from an editor's. The subscription is the half that is new: the shell
-  // used to be the only place the language could be changed, and every app's
-  // chrome now carries the same toggle.
+  // One place applies a language, whether it came from the shell's own switcher or from an
+  // editor's.
   const apply = useCallback((next: Lang) => {
     document.documentElement.lang = htmlLang(next)
     setLangState(next)

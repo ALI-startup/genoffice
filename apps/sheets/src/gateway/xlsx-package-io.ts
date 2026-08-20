@@ -70,16 +70,7 @@ export interface ArchiveClient {
   }): Promise<unknown>
 }
 
-/**
- * The scratch filesystem a save works in.
- *
- * The save plans patched parts in memory and then hands the engine their *paths* to
- * reassemble an archive from, so those parts have to exist somewhere the engine can read
- * them. On the desktop that is a temp directory and `node:fs`; in a browser it is the wasm
- * engine's own WASI filesystem, reached across the Worker link. Neither is this module's
- * business, which is why it takes one rather than importing one — and why the pipeline
- * itself, including the CRC manifest checks that make a save safe, is the same code on both.
- */
+/** The scratch filesystem a save works in. */
 export interface SaveFs {
   /** A fresh directory nothing else writes to. It exists when this resolves. */
   mkdtemp(prefix: string): Promise<string>

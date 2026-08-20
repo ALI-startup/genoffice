@@ -1,21 +1,6 @@
 /**
- * Executable entry point: read the environment, bind a socket, log what was
- * configured, and shut down cleanly.
- *
- * Split from server.ts on purpose. server.ts is a pure request handler with its
- * settings injected, which is what makes it testable without a socket; this file
- * owns the two impure things — `process.env` and `listen` — and nothing else.
- *
- * Environment (credentials themselves are documented in credentials.ts):
- *
- *   SAMUGEN_AI_BFF_HOST        bind address (default 127.0.0.1)
- *   SAMUGEN_AI_BFF_PORT        port (default 8788); 0 asks the OS for a free one
- *   SAMUGEN_AI_BFF_MAX_TOKENS  output token ceiling per turn (default 8192)
- *
- * The default bind address is loopback, not `0.0.0.0`. This process holds the
- * provider credentials and applies no authentication of its own — it trusts
- * whatever reaches it — so it must not be reachable from off the machine by
- * accident. Exposing it is an explicit opt-in via SAMUGEN_AI_BFF_HOST.
+ * Executable entry point: read the environment, bind a socket, log what was configured, and shut
+ * down cleanly.
  */
 import type { Server } from 'node:http'
 import { AI_BFF_BASE_PATH } from '@samugen/platform-web/wire'
@@ -77,19 +62,7 @@ export async function startAiBff(env: Env = process.env): Promise<RunningAiBff> 
   }
 }
 
-/**
- * What the operator needs to see at boot, and nothing they should not.
- *
- * Per provider this prints the id, the model and whether a credential is
- * present — all of it read from `toPublicSettings`, the same redacted view the
- * HTTP surface serves. Logging is therefore incapable of printing a key, rather
- * than merely avoiding it.
- *
- * Extra headers are the one thing read from the settings directly, because the
- * public view has no field for them. Only `Object.keys` is touched: the names
- * confirm a tracking header actually loaded, and no code path here can reach a
- * header *value*.
- */
+/** What the operator needs to see at boot, and nothing they should not. */
 function describe(settings: ReturnType<typeof loadAiSettings>): string {
   const view = toPublicSettings(settings)
   const rows = Object.values(view.providers).map((entry) => {
@@ -106,13 +79,7 @@ function describe(settings: ReturnType<typeof loadAiSettings>): string {
     : `${active}; configured: none`
 }
 
-/**
- * Parse an integer setting, falling back on anything unusable.
- *
- * `Number('')` and `Number('  ')` are 0, not NaN, so an unset-but-present env var
- * would otherwise bind port 0 instead of the default — hence the explicit blank
- * check before the numeric one.
- */
+/** Parse an integer setting, falling back on anything unusable. */
 function intFromEnv(raw: string | undefined, fallback: number, min: number): number {
   const text = raw?.trim()
   if (!text) return fallback
@@ -120,10 +87,7 @@ function intFromEnv(raw: string | undefined, fallback: number, min: number): num
   return Number.isInteger(value) && value >= min ? value : fallback
 }
 
-/**
- * Run as a program only when invoked as one. Guarding on argv keeps `import`ing
- * this module (tests, an embedder) free of side effects.
- */
+/** Run as a program only when invoked as one. */
 const invokedDirectly =
   process.argv[1] !== undefined && /(?:^|[\\/])main\.(?:ts|js|mjs)$/.test(process.argv[1])
 

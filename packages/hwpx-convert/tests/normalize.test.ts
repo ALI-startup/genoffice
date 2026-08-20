@@ -1,11 +1,4 @@
-/**
- * Renderer HTML → restricted fragment.
- *
- * The inputs here are shaped like what `neoali-hwpxjs` actually emits — one
- * `<span style="font-size:10pt">` per token, `padding-left` for indentation,
- * list markers baked into the text — because that shape is the whole reason this
- * module exists.
- */
+/** Renderer HTML → restricted fragment. */
 import { describe, expect, it } from 'vitest'
 import { normalizeHwpxHtml } from '../src/normalize'
 import type { ParagraphInfo } from '../src/outline'
@@ -176,9 +169,8 @@ describe('normalizeHwpxHtml', () => {
     it('drops empty paragraphs so alignment stays aligned with the emitted blocks', () => {
       const input = '<p style="margin-bottom:10pt"></p>' + p('real')
       const { html, align } = normalizeHwpxHtml(input, [body(), heading(1, 'center')])
-      // Roles are indexed over the *source* blocks, so the second role still
-      // lands on the second source paragraph even though the first produced
-      // nothing...
+      // Roles are indexed over the *source* blocks, so the second role still lands on the second
+      // source paragraph even though the first produced nothing...
       expect(html).toBe('<h1>real</h1>')
       // ...while alignment is indexed over what was emitted, so it has one entry
       // rather than a leading hole that would shift it onto the wrong block.

@@ -1,15 +1,4 @@
-/**
- * The file port in a browser (src/renderer/platform-web.ts).
- *
- * The half of the web host that has no counterpart in the operations: opening a deck through
- * the File System Access API, saving it back through the same handle, and reading the one-off
- * files the picker-driven inserts need.
- *
- * The store and the pickers are fakes, so what is under test is this adapter's choices —
- * which store call each member makes, what it reports where the capability is absent, and
- * whether an automatic save can reach a permission prompt. `@samugen/platform-web`'s own
- * tests cover the store itself.
- */
+/** The file port in a browser (src/renderer/platform-web.ts). */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createBlankPptx, openPptx, savePptx } from '@samugen/pptx-engine'
 import type { FrameChildLink, WebDocumentStore } from '@samugen/platform-web'

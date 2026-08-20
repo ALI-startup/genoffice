@@ -1,8 +1,4 @@
-/**
- * Ribbon: tab bar + grouped buttons. Same mechanism as the apps/docs Ribbon
- * (local state switches tabs, .ribbon-body dispatches); content is trimmed to slide capabilities,
- * unimplemented items are grayed placeholders.
- */
+/** Ribbon: tab bar + grouped buttons. */
 import React, { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import type { AnimEffectKind, AnimTrigger, TransitionKind } from '../../shared/ipc'
 import type { ChartStyleInfo } from '@samugen/pptx-render'
@@ -941,10 +937,8 @@ export function Ribbon({
     collapseOpen,
   ])
 
-  // ── Responsive collapse: when the ribbon body overflows,
-  // whole groups fold into a single dropdown button (flyout = original controls).
-  // Groups collapse in COLLAPSE_ORDER; they expand back when their measured
-  // inline width fits again.
+  // ── Responsive collapse: when the ribbon body overflows, whole groups fold into a single
+  // dropdown button (flyout = original controls).
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const inlineWidthsRef = useRef(new Map<string, number>())
   useLayoutEffect(() => {
@@ -1041,8 +1035,6 @@ export function Ribbon({
   }
 
   // Apply a typed font size: any positive value, 0.5pt steps, clamped to 1-999.
-  // While text-editing, restore the selection saved when the input took focus so the size applies
-  // to the selection instead of element-level
   const commitSizeDraft = () => {
     const v = parseFloat((sizeDraft ?? '').replace(',', '.'))
     if (!Number.isFinite(v) || v <= 0) return
@@ -1059,9 +1051,8 @@ export function Ribbon({
     onFontFamily(v)
   }
 
-  // Custom font color via the native picker: debounced (the picker fires onChange
-  // continuously while dragging), recorded into the recent-colors row. The picker steals focus,
-  // so while editing the saved selection is restored before each apply
+  // Custom font color via the native picker: debounced (the picker fires onChange continuously
+  // while dragging), recorded into the recent-colors row.
   const customColorTimer = useRef<number | null>(null)
   const onCustomTextColor = (value: string) => {
     const hex = value.toUpperCase()
@@ -1388,8 +1379,6 @@ export function Ribbon({
         ) : tab === 'draw' ? (
           (() => {
             // Draw tab: tool buttons, then a tray of ready pens.
-            // Clicking a pen picks it up; clicking the held pen opens its
-            // color/width flyout; customisations stick to that pen preset.
             const applyPenPreset = (preset: PenPreset) => {
               onInkTool(preset.kind)
               if (preset.kind === 'pen')

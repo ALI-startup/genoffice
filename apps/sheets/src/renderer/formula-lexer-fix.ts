@@ -1,19 +1,4 @@
-/**
- * Escaped-quote lexer fix. Univer's LexerTreeBuilder._nodeMaker emits
- * one sequence slot for the two characters of an escaped quote ("") inside a
- * string literal, and getSequenceNode treats slot index as character
- * position, so every node after an escape pair reports startIndex/endIndex
- * shifted left by the number of pairs before it (and STRING tokens drop a
- * quote). sheets-ui's normalizeFormulaString then splices the formula text
- * by those indices on commit, silently rewriting `="a"""&B1` into
- * `="a"""B11`; autofill's moveFormulaRefOffset and F4's
- * convertRefersToAbsolute misassemble the same way.
- *
- * The wrap re-scans the formula with the same quote/bracket state machine,
- * builds the slot→character map the lexer should have produced, and returns
- * cloned nodes with corrected indices and tokens. Formulas whose nodes
- * already reassemble to the source text pass through untouched.
- */
+/** Escaped-quote lexer fix. */
 import { LexerTreeBuilder, type sequenceNodeType } from '@univerjs/engine-formula'
 
 import type { UniverRuntime } from './univer-state'

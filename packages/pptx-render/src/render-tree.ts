@@ -1,15 +1,4 @@
-/**
- * RenderTree — a data-driven abstract draw list (the render layer's core asset).
- *
- * Design intent (plan A): parse the Slide element tree into a pure data structure
- * of "converted pixel geometry + resolved styles + laid-out text glyph boxes".
- * Fidelity verification locks onto this layer (coordinates/metrics/wrapping are
- * unit-testable without a canvas); Konva is just a thin adapter that draws the
- * RenderTree.
- *
- * All geometry units = px (absolute target-canvas coordinates), with viewport
- * scale and nested group offsets already applied.
- */
+/** RenderTree — a data-driven abstract draw list (the render layer's core asset). */
 import type { Fill, Stroke } from '@samugen/pptx-engine'
 import type { PlacedBox } from './coords'
 
@@ -223,11 +212,7 @@ export interface GroupRenderNode extends RenderNodeBase {
   type: 'group'
   /** children boxes are in group-local coords (relative to the group top-left); ext/chExt scaling is baked into the geometry */
   children: RenderNode[]
-  /**
-   * ext/chExt scaling (group box size / child coordinate system size). Already baked into
-   * children boxes at build time; the render container must **not** apply it again. Kept only
-   * for the edit pipeline to convert between local px and child EMU.
-   */
+  /** ext/chExt scaling (group box size / child coordinate system size). */
   childScaleX?: number
   childScaleY?: number
 }

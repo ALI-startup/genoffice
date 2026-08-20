@@ -1,7 +1,6 @@
 /**
- * Phase 3 edit round-trip verification (no GUI; runs the engine+render paths the main process uses):
- * open -> build RenderTree -> edit text/geometry -> patch save -> reopen and read back.
- * Covers the real UI-triggered data flow (IPC handler internals) without Electron/a display.
+ * Phase 3 edit round-trip verification (no GUI; runs the engine+render paths the main process
+ * uses): open -> build RenderTree -> edit text/geometry -> patch save -> reopen and read back.
  */
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'

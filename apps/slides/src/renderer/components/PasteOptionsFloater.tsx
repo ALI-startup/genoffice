@@ -1,7 +1,6 @@
 /**
- * PowerPoint-style paste-options floater: a small clipboard button sitting on
- * the just-pasted slide's thumbnail. Its menu re-runs the paste with another
- * mode (keep source formatting / use destination theme / paste as picture).
+ * PowerPoint-style paste-options floater: a small clipboard button sitting on the just-pasted
+ * slide's thumbnail.
  */
 import React, { useEffect, useRef, useState } from 'react'
 import type { PasteSlideMode } from '../../shared/ipc'

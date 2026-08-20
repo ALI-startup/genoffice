@@ -1,14 +1,4 @@
-/**
- * Rule-management panels say what each rule actually does.
- *
- * - List-type data validation names show the actual options (literal lists)
- *   or the source range address, instead of the fixed "from range" wording.
- * - Rules whose formula references #REF! (deleted cells — they can never
- *   trigger) get a visible ⚠ prefix.
- * - Conditional-formatting "custom formula" items show the formula text.
- *   Univer keeps that describe function module-private, so this is a DOM
- *   pass over the rendered panel, re-applied on panel re-renders.
- */
+/** Rule-management panels say what each rule actually does. */
 import { LocaleService } from '@univerjs/core'
 import {
   ConditionalFormattingRuleModel,
@@ -84,12 +74,7 @@ function rangeA1(r: {
   return start === end ? start : `${start}:${end}`
 }
 
-/**
- * The CF panel's formula items render the bare localized "custom formula"
- * label. Find those describe lines (matched by exact label text, then by the
- * ranges line below them) and append the rule's formula, in DOM order per
- * ranges key so duplicate ranges stay stable.
- */
+/** The CF panel's formula items render the bare localized "custom formula" label. */
 function enhanceCfPanel(runtime: UniverRuntime): () => void {
   const injector = runtime.univer.__getInjector()
   const model = injector.get(ConditionalFormattingRuleModel)

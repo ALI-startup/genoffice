@@ -1,10 +1,6 @@
 /**
  * Table style editing — surgically patches <a:tblPr> style attributes
  * (firstRow/bandRow/tableStyleId) and each cell's <a:tcPr> fill/borders.
- *
- * Design philosophy: reuse the existing anchor.originalXml surgical-patch pattern,
- * replacing only the <a:tblPr> and <a:tcPr> nodes and keeping all other bytes
- * intact. Tables are "modeled" in this app (not passthrough), so editing is allowed.
  */
 import type { Slide } from './types'
 import { escapeXmlAttr } from './xml-utils'
@@ -29,12 +25,9 @@ export interface TableStyleEdit {
   cells?: Array<{ row: number; col: number }>
 }
 
-// ── Preset styles ────────────────────────────────────────────────────
-// Color presets do not reference PowerPoint built-in style GUIDs (built-ins follow
-// the file theme's accent colors, so a "dark blue header" would come out orange in
-// an orange theme). Instead, fixed-color custom <a:tblStyle> definitions are
-// written into ppt/tableStyles.xml — the button swatch, this app's rendering, and
-// PowerPoint all agree.
+// ── Preset styles ──────────────────────────────────────────────────── Color presets do not
+// reference PowerPoint built-in style GUIDs (built-ins follow the file theme's accent colors, so a
+// "dark blue header" would come out orange in an orange theme).
 
 const inLn = (tag: 'insideH' | 'insideV', color: string) =>
   `<a:${tag}><a:ln w="9525" cap="flat"><a:solidFill><a:srgbClr val="${color}"/></a:solidFill></a:ln></a:${tag}>`
@@ -180,9 +173,7 @@ export function ensureTableStyleXml(
 }
 
 /**
- * Surgically patch a table element's originalXml (graphicFrame fragment), applying
- * the style edit. Returns the patched XML; the caller writes it back to
- * anchor.originalXml and sets dirty = true.
+ * Surgically patch a table element's originalXml (graphicFrame fragment), applying the style edit.
  */
 export function patchTableStyleXml(originalXml: string, edit: TableStyleEdit): string {
   let xml = originalXml

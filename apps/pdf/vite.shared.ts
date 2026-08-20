@@ -1,10 +1,4 @@
-/**
- * Renderer build pieces for pdf's web build, including the pdfjs assets it copies.
- *
- * `hostAlias` resolves the bare specifier `@host` to the host module, so the renderer
- * imports its host by name and never by path — `main.tsx` bootstraps from `@host` and
- * tsconfig maps the same specifier for `tsc`.
- */
+/** Renderer build pieces for pdf's web build, including the pdfjs assets it copies. */
 import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { normalizePath } from 'vite'

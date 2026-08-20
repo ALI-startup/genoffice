@@ -1,12 +1,4 @@
-/**
- * Textbox insertion tests - Item 1: create textbox → save → re-parse
- *
- * Uses buildTextboxParagraphXml() to produce genXml nodes, verifying:
- *  1. The saved genXml contains a valid wps:wsp/txbxContent structure
- *  2. The textboxes array is non-empty after re-parsing
- *  3. Text edits can be patched in
- *  4. The wrap mode can be updated (applyImageWrap)
- */
+/** Textbox insertion tests - Item 1: create textbox → save → re-parse */
 import { describe, expect, it } from 'vitest'
 import { Editor } from '@tiptap/core'
 import {

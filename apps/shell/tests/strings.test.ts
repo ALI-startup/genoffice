@@ -38,9 +38,8 @@ describe('home-screen locale tables', () => {
     const mismatched = referenceKeys.filter((key) => {
       const localePlaceholders = placeholdersOf(table[key])
       const zhPlaceholders = placeholdersOf((strings.zh as Record<string, string>)[key])
-      // Singular-count keys ("...One") may drop the numeral entirely in
-      // languages that express "one" grammatically (e.g. ar/he), so a
-      // missing placeholder is fine there — an extra one is not.
+      // Singular-count keys ("...One") may drop the numeral entirely in languages that express
+      // "one" grammatically (e.g.
       if (key.endsWith('One')) {
         return localePlaceholders.some((p) => !zhPlaceholders.includes(p))
       }

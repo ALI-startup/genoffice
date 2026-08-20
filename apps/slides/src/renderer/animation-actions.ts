@@ -1,7 +1,4 @@
-/**
- * Transition and animation actions extracted from App.tsx.
- * Functions take the ActionCtx built fresh per call.
- */
+/** Transition and animation actions extracted from App.tsx. */
 import type { ShapeRenderNode } from '@samugen/pptx-render'
 import type { AnimEffectKind, AnimTrigger, AnimationItem, TransitionKind } from '../shared/ipc'
 import type { ActionCtx } from './action-context'

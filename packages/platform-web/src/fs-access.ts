@@ -1,24 +1,5 @@
 /**
- * The File System Access surface this host builds on, typed here rather than
- * taken from lib.dom.
- *
- * Two reasons for local types instead of the built-in `FileSystemFileHandle`:
- *
- *  1. lib.dom (TypeScript 5.9) types `FileSystemFileHandle.getFile()` and
- *     `.createWritable()` but not `queryPermission` / `requestPermission`, and
- *     it types none of `showOpenFilePicker` / `showSaveFilePicker` /
- *     `showDirectoryPicker`. The permission pair is exactly the part this host
- *     must not get wrong, so it has to be in the type system, not cast away at
- *     the call site.
- *  2. Structural, self-contained interfaces make the store unit-testable with a
- *     plain object fake. A real handle from a picker satisfies them
- *     structurally, so the only cast in the package is the one place that reads
- *     the pickers off `globalThis`.
- *
- * Chromium only, by decision: there is no feature-detection fallback here. If
- * the pickers are absent the host fails loudly at construction rather than
- * quietly degrading to a `<input type=file>` that cannot write back — losing
- * save-in-place is precisely the failure this phase exists to remove.
+ * The File System Access surface this host builds on, typed here rather than taken from lib.dom.
  */
 
 export type FsPermissionMode = 'read' | 'readwrite'
@@ -32,15 +13,7 @@ export interface FsPermissionDescriptor {
 export interface WebFile {
   readonly name: string
   readonly size: number
-  /**
-   * Epoch millis of the file's last modification, i.e. `File.lastModified`.
-   *
-   * Present because it is half of the conflict check that stops a save from
-   * overwriting another program's edits: together with `size` it is exactly
-   * @samugen/platform's `DiskFileState`, whose other producer is `fs.stat`.
-   * Without it a browser host would have to write blind — see
-   * `WebDocumentStore.stat`.
-   */
+  /** Epoch millis of the file's last modification, i.e. */
   readonly lastModified: number
   arrayBuffer(): Promise<ArrayBuffer>
 }
@@ -91,11 +64,7 @@ export interface DirectoryPickerOptions {
   mode?: FsPermissionMode
 }
 
-/**
- * The three dialogs, injected so the store can be driven from tests. Each
- * returns exactly one handle and rejects with an `AbortError` on cancel — the
- * store turns that into `null` and never into a thrown error.
- */
+/** The three dialogs, injected so the store can be driven from tests. */
 export interface FilePickers {
   openFile(options?: OpenFilePickerOptions): Promise<WebFileHandle>
   saveFile(options?: SaveFilePickerOptions): Promise<WebFileHandle>
@@ -115,31 +84,12 @@ export const DOCX_FILE_TYPES: FilePickerAcceptType[] = [
   },
 ]
 
-/**
- * The OWPML package, which docs reads, writes and exports.
- *
- * `.hwpx` only, deliberately: this is the *save* filter, and the legacy `.hwp`
- * binary is a format nothing here writes. Offering it in a save dialog would let
- * the user name a file that would then be written as something else.
- */
+/** The OWPML package, which docs reads, writes and exports. */
 export const HWPX_FILE_TYPES: FilePickerAcceptType[] = [
   { description: 'Hangul Document', accept: { 'application/hwp+zip': ['.hwpx'] } },
 ]
 
-/**
- * Everything docs can open.
- *
- * One entry rather than three, so a single choice in the dialog shows every kind
- * side by side — which matters because they are all opened the same way from the
- * user's side, whatever happens to them after the pick.
- *
- * `.hwp` is here even though it needs a server-side conversion (see
- * services/hwp-convert), and that is a deliberate trade. Whether a deployment
- * runs the converter is only knowable by asking it, and asking is an `await`
- * before `showOpenFilePicker` — which spends the user activation the dialog
- * needs. So the format is always offered, and a `.hwp` picked where there is no
- * converter is reported with the fix rather than silently ignored.
- */
+/** Everything docs can open. */
 export const DOCUMENT_FILE_TYPES: FilePickerAcceptType[] = [
   {
     description: 'Documents',
@@ -151,13 +101,7 @@ export const DOCUMENT_FILE_TYPES: FilePickerAcceptType[] = [
   },
 ]
 
-/**
- * PowerPoint presentations, which slides opens and saves.
- *
- * One entry, one format: `.ppt` is deliberately absent because nothing in the codebase
- * parses the legacy binary format on any host, so offering it would open a file the deck
- * reader cannot read.
- */
+/** PowerPoint presentations, which slides opens and saves. */
 export const PRESENTATION_FILE_TYPES: FilePickerAcceptType[] = [
   {
     description: 'PowerPoint Presentation',
@@ -167,14 +111,7 @@ export const PRESENTATION_FILE_TYPES: FilePickerAcceptType[] = [
   },
 ]
 
-/**
- * Image types for "insert a picture".
- *
- * png / jpeg / gif only, and deliberately not webp: the callers' result type
- * (apps/docs' `PickImageResult.mime`) is a three-value union, so offering a
- * fourth format in the dialog would let the user pick a file the caller cannot
- * describe.
- */
+/** Image types for "insert a picture". */
 export const IMAGE_FILE_TYPES: FilePickerAcceptType[] = [
   {
     description: 'Image',
@@ -206,16 +143,7 @@ export class FilePermissionDeniedError extends Error {
   }
 }
 
-/**
- * Make sure `handle` may be used in `mode`, prompting the user if it may not.
- *
- * This is the whole reason persisted handles are usable at all: a handle
- * restored from IndexedDB after a reload carries no permission, so it must be
- * queried and — when the answer is not 'granted' — re-requested. A denial (or a
- * `requestPermission` call outside a user gesture, which the browser rejects)
- * throws `FilePermissionDeniedError`, so a stale handle surfaces as a real
- * error instead of an empty read or a save that silently does nothing.
- */
+/** Make sure `handle` may be used in `mode`, prompting the user if it may not. */
 export async function ensurePermission(
   handle: WebPermissionAware & { readonly name: string },
   mode: FsPermissionMode,
@@ -235,13 +163,7 @@ interface PickerGlobals {
   showDirectoryPicker?: (options?: DirectoryPickerOptions) => Promise<WebDirectoryHandle>
 }
 
-/**
- * The real browser dialogs.
- *
- * The single cast in this package lives here: `globalThis` has no types for
- * these, and confining the cast to one function keeps every other module
- * checked against the interfaces above.
- */
+/** The real browser dialogs. */
 export function browserFilePickers(scope: object = globalThis): FilePickers {
   const globals = scope as PickerGlobals
   const required = <T>(fn: T | undefined, api: string): T => {
@@ -273,18 +195,7 @@ export function browserFilePickers(scope: object = globalThis): FilePickers {
   }
 }
 
-/**
- * A multi-select *read* dialog, for attachments.
- *
- * Separate from `FilePickers` on purpose. `FilePickers` is the handle-returning
- * surface the document store is built on, where every dialog yields exactly one
- * handle the app will later write back through. An attachment is the opposite
- * case: many files at once, read once, never written. So this returns plain
- * `WebFile`s — a snapshot of bytes and a name — and never asks for write
- * permission or persists anything.
- *
- * `null` means the user dismissed the dialog; every other failure throws.
- */
+/** A multi-select *read* dialog, for attachments. */
 export type MultiFilePicker = (options?: OpenFilePickerOptions) => Promise<WebFile[] | null>
 
 export function browserMultiFilePicker(scope: object = globalThis): MultiFilePicker {
@@ -304,9 +215,8 @@ export function browserMultiFilePicker(scope: object = globalThis): MultiFilePic
       if (isPickerCancel(error)) return null
       throw error
     }
-    // Read access is what a picker just granted, so no ensurePermission round
-    // trip here — and no readwrite request, which would prompt for a grant this
-    // surface must never hold.
+    // Read access is what a picker just granted, so no ensurePermission round trip here — and no
+    // readwrite request, which would prompt for a grant this surface must never hold.
     return Promise.all(handles.map((handle) => handle.getFile()))
   }
 }

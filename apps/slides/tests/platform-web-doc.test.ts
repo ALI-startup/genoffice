@@ -1,13 +1,4 @@
-/**
- * The document port, backed in a page (src/renderer/platform-web.ts).
- *
- * The claim this file checks is the one phase 7a was for: that a browser can back all 84
- * members of `SlidesDocumentPort` by calling the same operations the main process calls,
- * with no bridge and no second implementation. So it opens a real deck, edits it through
- * the port, and reads the result back through the port.
- *
- * Nothing here mocks `electron`, because nothing on this path touches it.
- */
+/** The document port, backed in a page (src/renderer/platform-web.ts). */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createBlankPptx, openPptx, type OpenedPptx } from '@samugen/pptx-engine'
 import { setSlideRenderEnv } from '../src/domain/session'

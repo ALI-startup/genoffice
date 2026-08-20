@@ -1,10 +1,4 @@
-/**
- * Key parity across the 19 dictionaries.
- *
- * `createI18n` looks up `dicts[lang][key]` with no fallback, so a key added to one
- * language and forgotten in another renders as `undefined` for those users at
- * runtime rather than failing the build. Same guard apps/pdf already has.
- */
+/** Key parity across the 19 dictionaries. */
 import { describe, expect, it } from 'vitest'
 import { LANGS } from '@samugen/i18n'
 import { strings } from '../src/renderer/i18n/strings'
@@ -22,9 +16,8 @@ describe('i18n string tables', () => {
   })
 
   // Deliberately not asserting "no empty values", which apps/pdf's version does:
-  // `appCompareWithPrefix` is legitimately '' in ja and ko, where the surrounding
-  // phrase needs no leading word. An empty string still renders, so the failure
-  // mode this file exists to catch is a *missing* key, not a blank one.
+  // `appCompareWithPrefix` is legitimately '' in ja and ko, where the surrounding phrase needs no
+  // leading word.
   it.each([...LANGS])('locale %s defines every key as a string', (lang) => {
     for (const [key, value] of Object.entries(dicts[lang]!)) {
       expect(typeof value, `${lang}.${key}`).toBe('string')
@@ -40,9 +33,7 @@ describe('i18n string tables', () => {
     }
   })
 
-  // The two strings the web host's save path needs. They are asserted by name
-  // because both are reached only from a browser build: the overwrite prompt and
-  // the "this document has nowhere to be saved yet" status.
+  // The two strings the web host's save path needs.
   it.each([...LANGS])('locale %s can warn about an externally modified file', (lang) => {
     expect(dicts[lang]!.appSaveExtModified, lang).toBeTruthy()
   })
@@ -51,10 +42,8 @@ describe('i18n string tables', () => {
     expect(dicts[lang]!.appSaveNeedsLocation, lang).toBeTruthy()
   })
 
-  // The pagination preview's Print button, which only a host that prints through
-  // the renderer ever renders — i.e. the browser build. Asserted by name for the
-  // same reason as the two above: nothing in the desktop app would notice them
-  // missing.
+  // The pagination preview's Print button, which only a host that prints through the renderer ever
+  // renders — i.e.
   it.each([...LANGS])('locale %s can label the browser print button', (lang) => {
     expect(dicts[lang]!.appPrint, lang).toBeTruthy()
     expect(dicts[lang]!.appPvPrintTip, lang).toBeTruthy()

@@ -1,9 +1,7 @@
 /**
- * promoteSlideBackground: full-page solid shapes at the bottom of z-order become a
- * native <p:bg> (the cloud html→pptx converter misses this when the page container
- * carries a fully transparent border — the shapes land in the deck and swallow
- * every click). Fixtures are real pptxgenjs output, run through the real
- * openPptx → promote → savePptx → openPptx chain.
+ * promoteSlideBackground: full-page solid shapes at the bottom of z-order become a native <p:bg>
+ * (the cloud html→pptx converter misses this when the page container carries a fully transparent
+ * border — the shapes land in the deck and swallow every click).
  */
 import { describe, it, expect } from 'vitest'
 import PptxGenJS from 'pptxgenjs'

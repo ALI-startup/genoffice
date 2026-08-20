@@ -73,11 +73,7 @@ function formatSize(bytes: number): string {
   return `${Math.max(1, Math.round(bytes / 1024))} KB`
 }
 
-/**
- * The rename box seeds itself with the name minus its extension. This parses a
- * display *name*, not a ref, so it stays in the renderer; the host supplies the
- * folder label and the full location as their own fields.
- */
+/** The rename box seeds itself with the name minus its extension. */
 function baseName(entry: FileEntry): string {
   return entry.ext ? entry.name.slice(0, -(entry.ext.length + 1)) : entry.name
 }
@@ -394,9 +390,8 @@ const LANG_OPTIONS = [
 ] as const
 
 /**
- * How tall the language flyout may get before it scrolls its own list, and the
- * floor it keeps in a window with less room than that above the row. Nineteen
- * languages do not fit either way, so this list is always a scrolling one.
+ * How tall the language flyout may get before it scrolls its own list, and the floor it keeps in a
+ * window with less room than that above the row.
  */
 const LANG_FLYOUT_MAX_HEIGHT = 320
 const LANG_FLYOUT_MIN_HEIGHT = 140
@@ -420,9 +415,7 @@ function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
   const [langFly, setLangFly] = useState<LangFlyoutAnchor | null>(null)
   const langRowRef = useRef<HTMLDivElement | null>(null)
   const langCloseTimer = useRef<number | null>(null)
-  // A pointer held down inside the flyout is a drag of its scrollbar. That drag
-  // pulls the pointer clear of the row's hover area almost immediately, so
-  // without this the list is taken away mid-scroll by the hover-out timer.
+  // A pointer held down inside the flyout is a drag of its scrollbar.
   const langDragging = useRef(false)
 
   useEffect(() => {
@@ -444,15 +437,7 @@ function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
     setLangFly(null)
   }, [cancelLangFlyClose])
 
-  /**
-   * Anchor the flyout to the language row, in viewport coordinates.
-   *
-   * `position: fixed` is what keeps the list from being clipped by the sidebar's
-   * own scroll container, and the price is coordinates this has to compute. The
-   * height is clamped to the room above the row it grows from: a fixed element
-   * is out of the page scroll's reach, so a list running off the top of the
-   * viewport is unreachable rather than merely out of sight.
-   */
+  /** Anchor the flyout to the language row, in viewport coordinates. */
   const positionLangFly = useCallback(() => {
     const rect = langRowRef.current?.getBoundingClientRect()
     if (!rect) return
@@ -505,13 +490,8 @@ function AccountEntry({ onOpenSettings }: { onOpenSettings: () => void }) {
 
   useEffect(() => {
     if (!langFly) return
-    // The flyout is anchored in viewport coordinates, so a scroll that moves the
-    // row it points at strands it — hence the close. Its own list is the one
-    // scroll that must not: nineteen languages in a 320px box means reaching for
-    // one *is* a scroll, and a capture-phase listener here sees that scroll too
-    // (capture runs from the window down to the target, bubbling or not). So the
-    // test is where the scroll came from: inside the account entry it is the
-    // popup scrolling itself, anywhere else it is the ground moving underneath.
+    // The flyout is anchored in viewport coordinates, so a scroll that moves the row it points at
+    // strands it — hence the close.
     const onScroll = (event: Event) => {
       const target = event.target
       if (target instanceof Element && target.closest('.account-entry')) return
@@ -1053,10 +1033,9 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
   // present and inert — one port per editor, because the answers are per-editor and have
   // changed independently (see each port).
   //
-  // The pdf card is the one that opens a surface rather than creating a document: nothing
-  // authors a blank pdf, so its click lands on pdf's own empty state, whose Open button has
-  // the user activation a picker needs (see ShellPdfLauncherPort). It reads as the fourth
-  // editor anyway, which is what it is once a file is in it.
+  // The pdf card is the one that opens a surface rather than creating a document: nothing authors a
+  // blank pdf, so its click lands on pdf's own empty state, whose Open button has the user
+  // activation a picker needs (see ShellPdfLauncherPort).
   const NEW_ITEMS = [
     { ext: 'docx', title: t('newDoc'), sub: '.docx', action: handleNewDoc },
     ...(sheetsLauncher

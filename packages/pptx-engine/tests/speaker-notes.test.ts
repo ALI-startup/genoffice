@@ -1,10 +1,4 @@
-/**
- * Speaker notes tests (Task 3):
- *  1. Read notes (pptx that has a notesSlide)
- *  2. Write new notes (blank deck, no notesSlide → part auto-created)
- *  3. Write to a real pptx fixture → save+reopen roundtrip
- *  4. Iron rule: notesSlide bytes of slides without written notes stay unchanged
- */
+/** Speaker notes tests (Task 3): 1. */
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -30,7 +24,9 @@ describe('speaker notes', () => {
   it('getSlideNotes reads back immediately after setSlideNotes', async () => {
     const opened = await openPptx(await createBlankPptx())
     expect(setSlideNotes(opened, 0, 'first line\nsecond line')).toBe(true)
-    expect(getSlideNotes(opened.archive, opened.deck.slides[0]!.path)).toBe('first line\nsecond line')
+    expect(getSlideNotes(opened.archive, opened.deck.slides[0]!.path)).toBe(
+      'first line\nsecond line',
+    )
   })
 
   it('save → reopen persists notes (notesSlide part auto-created)', async () => {
@@ -112,7 +108,9 @@ describe('speaker notes', () => {
     }
 
     // Slide 0 notes were written correctly
-    expect(getSlideNotes(reopened.archive, reopened.deck.slides[0]!.path)).toBe('only slide 0 changed')
+    expect(getSlideNotes(reopened.archive, reopened.deck.slides[0]!.path)).toBe(
+      'only slide 0 changed',
+    )
   })
 
   it('multiple slides: per-slide notes do not interfere', async () => {

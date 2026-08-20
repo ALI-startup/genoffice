@@ -1,13 +1,4 @@
-/**
- * Picture crop mode overlay.
- *
- * Entry: context menu "Crop picture" → receives the picture node's box + current srcRect.
- * Interaction: drag 8 handles to adjust the crop frame; Enter / click outside to confirm; Esc to cancel.
- * Output: onConfirm({ l, t, r, b }) or onCancel().
- *
- * Coordinate system: everything in the Konva Stage's CSS px (fitWidth viewport).
- * srcRect l/t/r/b are 0..1 crop ratios (OOXML semantics: the fraction cropped from each edge).
- */
+/** Picture crop mode overlay. */
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useI18n } from './i18n/locale'
 
@@ -39,9 +30,7 @@ type HandleId = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
 const HANDLE_SIZE = 8
 const HANDLE_HALF = HANDLE_SIZE / 2
 
-/**
- * Positions of the 8 handles relative to the crop frame's top-left
- */
+/** Positions of the 8 handles relative to the crop frame's top-left */
 function handlePositions(cx: number, cy: number, cw: number, ch: number) {
   const mx = cx + cw / 2
   const my = cy + ch / 2
@@ -59,9 +48,7 @@ function handlePositions(cx: number, cy: number, cw: number, ch: number) {
   } as Record<HandleId, { x: number; y: number }>
 }
 
-/**
- * srcRect (0..1 ratios) → pixel crop frame (relative to the stage coordinate system)
- */
+/** srcRect (0..1 ratios) → pixel crop frame (relative to the stage coordinate system) */
 function rectFromSrcRect(box: NodeBox, sr: CropRect) {
   const cx = box.x + sr.l * box.w
   const cy = box.y + sr.t * box.h
@@ -70,9 +57,7 @@ function rectFromSrcRect(box: NodeBox, sr: CropRect) {
   return { cx, cy, cw, ch }
 }
 
-/**
- * Pixel crop frame → srcRect 0..1
- */
+/** Pixel crop frame → srcRect 0..1 */
 function srcRectFromRect(box: NodeBox, cx: number, cy: number, cw: number, ch: number): CropRect {
   const l = (cx - box.x) / box.w
   const t = (cy - box.y) / box.h

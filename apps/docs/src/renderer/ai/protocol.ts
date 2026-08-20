@@ -12,11 +12,9 @@ import { TRACK_IGNORE } from '../editor/revisions'
 import { countWords } from '../word-count'
 
 /**
- * Agent protocol: the model runs a multi-turn tool-use loop — it reads the document skeleton
- * (block list with numbered addressing), reads full block content on demand,
- * and mutates the document exclusively through tools (tools.ts). Questions
- * are answered directly in chat without touching the document. Context size
- * stays bounded: previews are clipped and full content is pulled lazily.
+ * Agent protocol: the model runs a multi-turn tool-use loop — it reads the document skeleton (block
+ * list with numbered addressing), reads full block content on demand, and mutates the document
+ * exclusively through tools (tools.ts).
  */
 
 // ---- context budgets (characters, ≈4 chars/token) ----
@@ -27,9 +25,8 @@ const PREVIEW_MAX_CHARS = 60
 const PREVIEW_TIGHT_CHARS = 20
 
 /**
- * Guide for the apply_commands tool: format,
- * structure and batch operations travel as a batchUpdate-style JSON envelope
- * executed deterministically by commands.ts.
+ * Guide for the apply_commands tool: format, structure and batch operations travel as a
+ * batchUpdate-style JSON envelope executed deterministically by commands.ts.
  */
 export const COMMANDS_GUIDE = [
   "The command format mimics documents.batchUpdate of the Google Docs API: each command is a single-key object; the fields array has the same semantics as Google's FieldMask — only the listed fields are updated, everything not listed is left untouched. Differences from Google: target uses semantic addressing (node type / text containment / block index), colors are 6-digit hex (no #), lengths are in twips, font sizes are in half-points.",
@@ -90,10 +87,7 @@ const HTML_RULES = [
   '- Keep the same language as the original document / user instruction, unless translation is requested',
 ].join('\n')
 
-/**
- * Agent system prompt: document-first, intent resolution, act via tools,
- * answer in chat.
- */
+/** Agent system prompt: document-first, intent resolution, act via tools, answer in chat. */
 export const AGENT_SYSTEM_PROMPT = [
   'You are the document assistant built into the local document editor SamuGen Docs. You read and modify the currently open document exclusively through tools; there is no other modification channel.',
   '',
@@ -251,10 +245,7 @@ function tableToHtml(table: TableModel): string {
   return `<table>${rows.join('')}</table>`
 }
 
-/**
- * Serialize top-level nodes [startIndex, endIndex] into restricted HTML.
- * Consecutive list items of the same kind are grouped into ul/ol.
- */
+/** Serialize top-level nodes [startIndex, endIndex] into restricted HTML. */
 export function serializeRangeToHtml(editor: Editor, startIndex: number, endIndex: number): string {
   const json = editor.getJSON() as PmNode
   const children = (json.content ?? []).slice(startIndex, endIndex + 1)
@@ -321,11 +312,7 @@ interface ContextEntry {
   isHeading: boolean
 }
 
-/**
- * Numbered structure snapshot for command-mode addressing: one line per
- * top-level block. Block numbers MUST equal the live PM doc order at execution
- * time, so this is rebuilt per request and never cached.
- */
+/** Numbered structure snapshot for command-mode addressing: one line per top-level block. */
 export function buildDocumentContext(editor: Editor): string {
   const entries: ContextEntry[] = []
   let index = 0
@@ -413,10 +400,7 @@ export function isBlankDocument(editor: Editor): boolean {
   return first.type.name === 'docParagraph' && first.content.size === 0
 }
 
-/**
- * Per-turn context: fresh document skeleton + selection fragment injected
- * as a selection chip.
- */
+/** Per-turn context: fresh document skeleton + selection fragment injected as a selection chip. */
 export function buildDocContext(editor: Editor): string {
   const isEmptyDoc = isBlankDocument(editor)
   const scope = getSelectionScope(editor)
@@ -596,12 +580,7 @@ function cellParas(cell: Element): string[] {
   return out.length > 0 ? out : ['']
 }
 
-/**
- * <table> -> protected table block: display TableModel + generated w:tbl
- * fragment. Cell texts are patched into the fragment at save time via the
- * existing genXml branch of pmDocToSavePlan (patchTableCellTexts), so the
- * model row/col counts must mirror the generated grid.
- */
+/** <table> -> protected table block: display TableModel + generated w:tbl fragment. */
 function parseTable(el: Element): PmNode | null {
   const trs = Array.from(el.querySelectorAll('tr'))
   if (trs.length === 0) return null
@@ -652,10 +631,7 @@ function parseBlockquote(el: Element): PmNode | null {
   )
 }
 
-/**
- * Parse a restricted HTML fragment returned by the model into top-level PmNodes.
- * Tolerates markdown code fences and plain-text responses.
- */
+/** Parse a restricted HTML fragment returned by the model into top-level PmNodes. */
 export function parseHtmlFragment(raw: string, numIds: NumIds): PmNode[] {
   let text = raw.trim()
   const fence = /```(?:html)?\s*([\s\S]*?)```/.exec(text)
@@ -735,12 +711,7 @@ function revisionDate(): string {
 /** blocks whose content ins/del marks can fully represent (tracked replace) */
 const TRACKABLE_TYPES = new Set(['docParagraph', 'docHeading', 'docListItem'])
 
-/**
- * Replace the top-level block range with the parsed nodes (marked aiChanged).
- * With `track`, and when both sides are plain text blocks, this becomes a
- * tracked rewrite instead: the old blocks stay struck through
- * (del) and the new blocks follow with ins marks — accept/reject via Review.
- */
+/** Replace the top-level block range with the parsed nodes (marked aiChanged). */
 export function replaceBlockRange(
   editor: Editor,
   startIndex: number,

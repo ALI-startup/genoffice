@@ -16,10 +16,8 @@ const publicSettings: PublicAiSettings = {
 }
 
 /**
- * A fetch mock typed as fetch itself, so `mock.calls` carries fetch's real
- * argument tuple and the mock is assignable to the port's `fetch` option
- * without a cast. `vi.fn(async () => ...)` infers an empty parameter list,
- * which makes every `mock.calls[0][0]` read a type error.
+ * A fetch mock typed as fetch itself, so `mock.calls` carries fetch's real argument tuple and the
+ * mock is assignable to the port's `fetch` option without a cast.
  */
 function typedFetchMock(impl: (...args: Parameters<typeof fetch>) => Promise<Response>) {
   return vi.fn(impl)

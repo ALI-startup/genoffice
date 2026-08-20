@@ -1,24 +1,10 @@
-/**
- * A renderer's save request → the streaming save's own shape.
- *
- * Moved out of the main process unchanged when sheets gained a browser host. Every line of it
- * is translation — sheet ids to the file's sheet names, per-sheet groupings, ordering — and
- * none of it is host-specific, so having two copies would have meant two ways to interpret the
- * same request. The host-specific parts stayed where they were: which file is being written
- * (`targetPath`), what reassembles the archive (`client`), and where scratch files live
- * (`fs`), all of which arrive as parameters.
- */
+/** A renderer's save request → the streaming save's own shape. */
 import type { WorkbookSaveRequest } from '../shared/desktop-api'
 import { saveWorkbookViaSidecar, type ArchiveClient, type SaveFs } from './xlsx-package-io'
 import type { CellEdit, SheetStructuralOps } from './xlsx-gateway'
 import type { SheetEditPlan } from './xlsx-sheets'
 
-/**
- * What the save needs to know about the open workbook.
- *
- * The desktop's session record and the browser's have more in it than this; both narrow to
- * these two, which is the whole of what a translation from ids to names requires.
- */
+/** What the save needs to know about the open workbook. */
 export interface SaveSession {
   /** Where the workbook the edits apply to lives, in whatever way this host names files. */
   readonly path: string
@@ -217,8 +203,7 @@ export async function writeWorkbookTo({
     sheetName: resolveSheetName(sheetId),
     ...group,
   }))
-  // Recalculated formula values: sheetId → file sheet name, the same
-  // resolution the cell edits use.
+  // Recalculated formula values: sheetId → file sheet name, the same resolution the cell edits use.
   const formulaValuesBySheet = new Map<
     string,
     { row: number; column: number; value: string | number | boolean | null }[]

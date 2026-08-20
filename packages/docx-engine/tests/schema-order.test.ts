@@ -1,7 +1,6 @@
 /**
- * OOXML schema-order gatekeeper: in the output of mergeRPrModel/mergePPrFormat, known
- * children must appear in CT_RPr/CT_PPr sequence — wrong order makes Word show the
- * "repair" dialog.
+ * OOXML schema-order gatekeeper: in the output of mergeRPrModel/mergePPrFormat, known children must
+ * appear in CT_RPr/CT_PPr sequence — wrong order makes Word show the "repair" dialog.
  */
 import { describe, expect, it } from 'vitest'
 import {
@@ -22,7 +21,10 @@ function assertSchemaOrder(fragment: string, rootTag: string, order: readonly st
   for (const child of splitXmlChildren(inner)) {
     const rank = order.indexOf(child.name)
     if (rank === -1) continue
-    expect(rank, `${child.name} appears after ${prevName}, violating the ${rootTag} schema order`).toBeGreaterThanOrEqual(prev)
+    expect(
+      rank,
+      `${child.name} appears after ${prevName}, violating the ${rootTag} schema order`,
+    ).toBeGreaterThanOrEqual(prev)
     prev = rank
     prevName = child.name
   }
@@ -37,7 +39,10 @@ describe('rPr schema order (mergeRPrModel)', () => {
     ['add bold', { text: 'x', bold: true }],
     ['add italic + highlight', { text: 'x', italic: true, highlight: 'yellow' }],
     ['change color + size', { text: 'x', color: 'FF0000', sizeHalfPoints: 36 }],
-    ['add style + vertAlign', { text: 'x', styleId: 'Emphasis', vertAlign: 'superscript' as const }],
+    [
+      'add style + vertAlign',
+      { text: 'x', styleId: 'Emphasis', vertAlign: 'superscript' as const },
+    ],
     ['clear underline + add font', { text: 'x', underline: false, font: '微软雅黑' }],
   ])('%s keeps CT_RPr child order', (_label, run) => {
     const out = mergeRPrModel(RAW, { ...run }, false)

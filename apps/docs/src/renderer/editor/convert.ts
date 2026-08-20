@@ -492,9 +492,8 @@ export function pmTableToModel(table: PmNode): TableModel {
 }
 
 /**
- * w:w horizontal character scaling → letter-spacing approximation (em): estimate,
- * from the run text's average character width, how much layout width to add or
- * remove per character. Error is tiny for monospaced CJK; glyphs themselves are not scaled.
+ * w:w horizontal character scaling → letter-spacing approximation (em): estimate, from the run
+ * text's average character width, how much layout width to add or remove per character.
  */
 function charScaleEm(text: string, scalePct: number): number {
   let sum = 0
@@ -644,10 +643,7 @@ export interface SavePlan {
    * and hands the result to saveDocx via options.partXml.
    */
   chartPatches: Array<{ partPath: string; patch: ChartPatch }>
-  /**
-   * docxIndex of an original block -> its index in saveBlocks. Ink
-   * annotations anchor by docxIndex and the engine wants finalBlocks indexes.
-   */
+  /** docxIndex of an original block -> its index in saveBlocks. */
   saveBlockIndexByDocx: Map<number, number>
   /** count of blocks whose content was regenerated */
   changedCount: number
@@ -662,9 +658,8 @@ export function pmDocToSavePlan(doc: PmNode, originalBlocks: Block[]): SavePlan 
     if (!block.hidden && block.docxIndex !== null) originalByIndex.set(block.docxIndex, block)
   }
 
-  // Multi-block sdt groups (one w:sdt split into N blocks): the shell open/close
-  // bytes live on the first/last member. Track which surviving member emits
-  // them so deleting or regenerating a boundary member never unbalances the sdt.
+  // Multi-block sdt groups (one w:sdt split into N blocks): the shell open/close bytes live on the
+  // first/last member.
   const sdtGroupOf = new Map<number, number>()
   const sdtGroupShells = new Map<number, SdtShell>()
   for (const block of originalBlocks) {
@@ -944,10 +939,8 @@ export function pmDocToSavePlan(doc: PmNode, originalBlocks: Block[]): SavePlan 
       pushBlock({ kind: 'original', docxIndex: idx! })
     } else {
       changedCount++
-      // an in-place edit consumes its original anchor: it is replaced, not
-      // deleted — and may reuse the anchor's original pPr bytes. A split twin
-      // (anchor already consumed) gets no rawPPr, so revision records and
-      // section props are never duplicated.
+      // an in-place edit consumes its original anchor: it is replaced, not deleted — and may reuse
+      // the anchor's original pPr bytes.
       if (original && !usedIndexes.has(idx!)) {
         usedIndexes.add(idx!)
         mapAnchor(idx!)
@@ -1210,11 +1203,7 @@ export function textboxParaSignature(para: TextboxDisplay['paras'][number]): str
   return JSON.stringify([para.align ?? null, normalizedRuns(para.runs)])
 }
 
-/**
- * Per-box, per-paragraph rich-run patches on an original textbox block; null
- * when untouched. Unchanged paragraphs stay null so the engine keeps their
- * original bytes.
- */
+/** Per-box, per-paragraph rich-run patches on an original textbox block; null when untouched. */
 function textboxParasPatch(
   node: PmNode,
   original: Block,
@@ -1275,10 +1264,9 @@ function formulaTokensPatch(node: PmNode, original: Block): string[] | null {
 }
 
 /**
- * High-fidelity pPr passthrough for in-place paragraph edits: text-only edits
- * reuse the original <w:pPr> bytes verbatim; format edits merge the six
- * format-model children into it (everything else keeps its bytes). Structure
- * changes (type / style / list) fall back to a full rebuild.
+ * High-fidelity pPr passthrough for in-place paragraph edits: text-only edits reuse the original
+ * <w:pPr> bytes verbatim; format edits merge the six format-model children into it (everything else
+ * keeps its bytes).
  */
 function applyRawPPr(generated: GeneratedBlock, original: Block): void {
   if (original.rawPPr === undefined) return

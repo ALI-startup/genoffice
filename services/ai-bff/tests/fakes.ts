@@ -1,18 +1,4 @@
-/**
- * Test harness for the BFF.
- *
- * Two things every test here needs:
- *
- *   - a *real* socket. The security properties being asserted are about bytes
- *     that leave the process, so the tests drive the handler over `node:http`
- *     on an ephemeral port and read actual response bodies rather than
- *     inspecting a mocked `ServerResponse`. A mock could pass while the wire
- *     format leaked.
- *   - recorded provider calls. `streamForProvider` / `chatForProvider` are
- *     injected, so a test can assert exactly which provider id and which
- *     `AiProviderConfig` the server chose — which is how "the browser cannot
- *     choose the endpoint" becomes checkable rather than aspirational.
- */
+/** Test harness for the BFF. */
 import { createServer, type Server } from 'node:http'
 import type {
   AiChatResponse,
@@ -27,12 +13,8 @@ import type { AgentMessage, AgentToolDef } from '@samugen/agent-core'
 import { createAiBffHandler, type AiBffOptions } from '../src/server.js'
 
 /**
- * A credential long enough to be redacted (the redactor ignores anything under 8
- * characters) and made of nothing but random alphanumerics after the prefix. The
- * no-leak test searches response bodies for every 4-character substring of this
- * value, so it must contain no English word or version-number-like run that
- * could legitimately appear in a model id or an error message and produce a
- * false failure.
+ * A credential long enough to be redacted (the redactor ignores anything under 8 characters) and
+ * made of nothing but random alphanumerics after the prefix.
  */
 export const SECRET_KEY = 'sk_Zq7vK2mP9xR6tW1yB8nC5dF0hJ3gL4sX7uY2'
 

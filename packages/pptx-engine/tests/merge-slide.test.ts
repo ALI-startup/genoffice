@@ -1,9 +1,7 @@
 /**
  * mergeSlideFromPptx integration tests (mirrors html→pptx per-slide conversion + deck-level merge):
- * each slide is converted to its own single-slide pptx and merged into an existing deck,
- * without re-converting earlier slides. Uses pptxgenjs to generate real single-slide pptx
- * (same library and structure as the html-pipeline convert-worker), running the real
- * openPptx → mergeSlideFromPptx → savePptx → openPptx chain with no mocks.
+ * each slide is converted to its own single-slide pptx and merged into an existing deck, without
+ * re-converting earlier slides.
  */
 import { describe, it, expect } from 'vitest'
 import PptxGenJS from 'pptxgenjs'

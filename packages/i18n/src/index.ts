@@ -111,9 +111,8 @@ export function defineStrings<D extends Record<string, string>>(dicts: LangDicts
   return dicts
 }
 
-// ---- process-wide current language ----
-// Used by Electron main-process code (shell + editor main modules share one
-// bundle, so one holder). Renderers get the language over IPC instead.
+// ---- process-wide current language ---- Used by Electron main-process code (shell + editor main
+// modules share one bundle, so one holder).
 
 let uiLang: Lang = 'zh'
 const langListeners = new Set<(lang: Lang) => void>()
@@ -133,12 +132,7 @@ export function onUiLangChange(listener: (lang: Lang) => void): () => void {
   return () => langListeners.delete(listener)
 }
 
-/**
- * Build a translator over per-language dictionaries. The zh dictionary defines
- * the key set; every other language must cover exactly the same keys
- * (compile-time checked), so a missing translation is a type error, not a
- * runtime fallback.
- */
+/** Build a translator over per-language dictionaries. */
 export function createI18n<D extends Record<string, string>>(dicts: LangDicts<D>) {
   return (lang: Lang, key: keyof D, params?: Params): string => format(dicts[lang][key], params)
 }

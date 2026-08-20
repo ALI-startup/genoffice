@@ -5,11 +5,9 @@ import { useI18n } from '../i18n/locale'
 import { cssFontFamily } from '../line-metrics'
 
 /**
- * Styles popup (Word's styles dialog): lists the document's paragraph/character
- * styles, click to apply; "Update" rewrites the style definition from the current
- * selection's formatting (styles.xml upsert), and the bottom row creates a new
- * style from the selection. Style edits/creations go through
- * SaveOptions.styleUpserts and the canvas CSS refreshes immediately.
+ * Styles popup (Word's styles dialog): lists the document's paragraph/character styles, click to
+ * apply; "Update" rewrites the style definition from the current selection's formatting (styles.xml
+ * upsert), and the bottom row creates a new style from the selection.
  */
 export function StylesPanel({
   styles,

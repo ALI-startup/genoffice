@@ -189,9 +189,8 @@ describe('cross-sheet reference rewriting', () => {
   })
 
   it('skips self-closing shared formulas and still shifts the formula after them', () => {
-    // `<f t="shared" si="0"/>` is not an opening tag: matching it once
-    // swallowed everything up to the next `</f>` and re-escaped it (suppliers
-    // regression: `<v>` became `&lt;v&gt;`).
+    // `<f t="shared" si="0"/>` is not an opening tag: matching it once swallowed everything up to
+    // the next `</f>` and re-escaped it (suppliers regression: `<v>` became `&lt;v&gt;`).
     const sharedFormulaSheet =
       '<worksheet><sheetData><row r="5">' +
       '<c r="F5" s="26"><f t="shared" si="0"/><v>0.24</v></c>' +

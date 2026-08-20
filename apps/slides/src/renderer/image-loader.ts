@@ -1,8 +1,6 @@
 /**
- * Incremental image loading: each decoded image is surfaced in small batches
- * instead of waiting for the whole deck (385 pictures used to render nothing
- * until the last one settled). Loaded/in-flight urls are tracked across calls
- * so re-collecting urls after an edit never reloads or discards progress.
+ * Incremental image loading: each decoded image is surfaced in small batches instead of waiting for
+ * the whole deck (385 pictures used to render nothing until the last one settled).
  */
 export type ApplyImages = (entries: ReadonlyArray<readonly [string, HTMLImageElement]>) => void
 

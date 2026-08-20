@@ -1,13 +1,6 @@
 import { AI_PROVIDERS, type AiProviderId, type AiProviderMeta } from '@samugen/ai-provider'
 
-/**
- * Public shell contract for the AI Providers settings screen.
- *
- * Provider credentials are deliberately write-only: the renderer can submit a
- * new credential, but a read never returns it. The provider runtime owns the
- * actual credential store and can replace the shell IPC implementation without
- * changing this UI contract.
- */
+/** Public shell contract for the AI Providers settings screen. */
 
 export type AiProviderProtocol = 'native' | 'openai-compatible' | 'local'
 
@@ -27,11 +20,7 @@ export interface AiProviderDefinition {
   defaultBaseUrl?: string
   /** Text/chat models. */
   models: string[]
-  /**
-   * The chat model this provider opens on. Carried through rather than left to
-   * `models[0]`: the list is in display order and the default is named in
-   * @samugen/ai-provider, so the two are allowed to differ.
-   */
+  /** The chat model this provider opens on. */
   defaultModel?: string
   /** Image models shown on the Image tab. */
   imageModels?: string[]
@@ -126,10 +115,7 @@ function requiresApiKey(provider: AiProviderMeta): boolean {
   return provider.id !== 'custom' && provider.endpointKind !== 'local'
 }
 
-/**
- * The runtime registry owns endpoints and model presets. The shell adds only
- * presentation metadata so model lists cannot drift between the UI and runtime.
- */
+/** The runtime registry owns endpoints and model presets. */
 /** The provider a screen opens on before anything is known; named in @samugen/ai-provider. */
 export { DEFAULT_AI_PROVIDER } from '@samugen/ai-provider'
 

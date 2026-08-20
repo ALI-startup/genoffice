@@ -1,13 +1,4 @@
-/**
- * Rendering layer for animation playback — shared by the show view and the edit-area "Preview".
- *
- * - useAnimPlayer: holds the playback cursor (steps played + current step's rAF progress) and
- *   outputs each node's NodeAnimState; advance() moves one step (if playing, completes the
- *   current step immediately).
- * - AnimatedSlideStage: static whole-page rendering same as SlideThumb, but each node is wrapped
- *   in a Konva Group driven by NodeAnimState (opacity/scale/rotation/offset/wipe clip,
- *   transformed around the node center).
- */
+/** Rendering layer for animation playback — shared by the show view and the edit-area "Preview". */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Stage, Layer, Rect, Group } from 'react-konva'
 import type { Context } from 'konva/lib/Context'
@@ -265,9 +256,8 @@ function wipedRect(
 }
 
 /**
- * Vertical line ranges per text paragraph (slide coordinates): lines grouped by paraStart,
- * missing means a new paragraph (same paragraph-split rule as the editor). Vertical/rotated/flipped
- * text is approximated as untransformed horizontal — a trade-off on par with the whole-box wipe clip.
+ * Vertical line ranges per text paragraph (slide coordinates): lines grouped by paraStart, missing
+ * means a new paragraph (same paragraph-split rule as the editor).
  */
 function paragraphSpans(node: RenderNode): Array<{ y0: number; y1: number }> {
   const text = (node as ShapeRenderNode).text
@@ -329,8 +319,7 @@ function AnimNode({
   }
 
   // Paragraph layering: the base layer cuts out animated paragraphs' line ranges; each animated
-  // paragraph renders a clone layer showing only its range with its own state. Cloning the whole node then
-  // clipping — shape fill/stroke moves along with the paragraph strip; placeholder text boxes usually have no fill, acceptable approximation.
+  // paragraph renders a clone layer showing only its range with its own state.
   if (st?.hidden) return null
   return (
     <Group {...(st ? stateGroupProps(st, cx, cy) : { listening: false as const })}>

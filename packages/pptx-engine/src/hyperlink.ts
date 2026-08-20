@@ -1,14 +1,4 @@
-/**
- * Element-level hyperlinks — <a:hlinkClick> under <p:cNvPr>.
- *
- * Two kinds of targets:
- * - External URL: a hyperlink relationship with TargetMode="External" in the slide rels;
- * - In-document slide jump: hlinkClick with action="ppaction://hlinksldjump",
- *   whose relationship (type=slide) points at the target slideN.xml.
- *
- * Implemented via "XML surgery + materialize": edit the cNvPr in the element's
- * current fragment, then reparse the whole slide (same path as appendRawElements).
- */
+/** Element-level hyperlinks — <a:hlinkClick> under <p:cNvPr>. */
 import { utf8Bytes } from './bytes'
 import type { GroupElement, Slide } from './types'
 import { escapeXmlAttr } from './xml-utils'
@@ -55,11 +45,7 @@ function stripHlink(xml: string): string {
   return xml.replace(/<a:hlinkClick\b[^>]*\/>|<a:hlinkClick\b[^>]*>[\s\S]*?<\/a:hlinkClick>/, '')
 }
 
-/**
- * Set/clear an element hyperlink. target=null clears it (the relationship is left
- * orphaned, which is harmless). On success returns the materialized new slide model
- * (all element ids refreshed); on failure returns null.
- */
+/** Set/clear an element hyperlink. */
 export function setElementLink(
   opened: OpenedPptx,
   slideIndex: number,
@@ -121,10 +107,8 @@ export function encodeRunLink(target: LinkTarget): string {
 }
 
 /**
- * Allocate slide-rels relationships for runs whose hyperlink was set this session
- * (hyperlink present, hyperlinkRId absent — the edit path clears the rId on change).
- * Cleared links just lose their rId; the old relationship is left orphaned like
- * setElementLink does. Returns whether anything was allocated.
+ * Allocate slide-rels relationships for runs whose hyperlink was set this session (hyperlink
+ * present, hyperlinkRId absent — the edit path clears the rId on change).
  */
 export function ensureRunLinkRels(
   opened: OpenedPptx,
@@ -163,9 +147,8 @@ export function ensureRunLinkRels(
 }
 
 /**
- * All run-level hyperlinks on a slide, resolved live against the rels (parse-time
- * TextRun.hyperlink can go stale after slide reorders). Keyed by element + paragraph +
- * run indexes; the slideshow matches these against layout glyph runs to hit-test clicks.
+ * All run-level hyperlinks on a slide, resolved live against the rels (parse-time TextRun.hyperlink
+ * can go stale after slide reorders).
  */
 export function getRunLinks(
   opened: OpenedPptx,
@@ -235,10 +218,8 @@ export function getElementLink(
 }
 
 /**
- * All element hyperlinks on a slide (groups scanned recursively) — the slideshow
- * uses this to hit-test clicks and follow slide jumps (Zoom) / external URLs.
- * Group children have empty anchors (their bytes live only inside the group's
- * fragment), so each child's XML is sliced out of the group XML by index.
+ * All element hyperlinks on a slide (groups scanned recursively) — the slideshow uses this to
+ * hit-test clicks and follow slide jumps (Zoom) / external URLs.
  */
 export function getSlideLinks(
   opened: OpenedPptx,

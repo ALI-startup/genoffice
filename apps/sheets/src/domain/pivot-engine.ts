@@ -157,10 +157,8 @@ export function recomputePivotData(
   assertSourceMatchesCache(definition, sourceValues)
   const rows = sourceValues.slice(1)
 
-  // Layout drift: a new distinct value in an axis/page column cannot be
-  // placed into the recorded layout. Growth is a separate step
-  // (growPivotDefinition) — recompute itself stays fail-closed; callers grow
-  // first, then recompute.
+  // Layout drift: a new distinct value in an axis/page column cannot be placed into the recorded
+  // layout.
   const axisFieldSet = axisFields(definition)
   for (const field of axisFieldSet) {
     const known = new Set(definition.fields[field]?.sharedItems.map(groupKey) ?? [])
@@ -219,10 +217,8 @@ export function recomputePivotData(
       )
       .map((row) => row[field])
 
-  // Calculated fields: source fields referenced by the formula resolve by
-  // name; each group first takes the SUM of every referenced field, then
-  // evaluates the formula. Formulas parse once and are
-  // reused (validated at parse time; a failure here is exceptional — fail-closed).
+  // Calculated fields: source fields referenced by the formula resolve by name; each group first
+  // takes the SUM of every referenced field, then evaluates the formula.
   const fieldIndexByName = new Map<string, number>()
   definition.fields.forEach((field, index) => {
     if (field.formula === undefined) fieldIndexByName.set(field.name, index)
@@ -238,9 +234,8 @@ export function recomputePivotData(
       )
     }
   })
-  // Aggregated value for one (data field × predicate set): plain data fields
-  // aggregate by subtotal; calculated fields evaluate the formula over each
-  // referenced field's SUM.
+  // Aggregated value for one (data field × predicate set): plain data fields aggregate by subtotal;
+  // calculated fields evaluate the formula over each referenced field's SUM.
   const aggregateCell = (
     dataFieldIndex: number,
     predicates: readonly AxisPredicate[],
@@ -256,10 +251,9 @@ export function recomputePivotData(
     return aggregate(dataField.subtotal, matchingValues(predicates, dataField.field))
   }
 
-  // Denominator for "show values as" (percentages): re-aggregate by
-  // predicates instead of reading grand-total cells — the denominator stays
-  // correct even when the layout disables total rows/columns. The same
-  // (row line/col line × data field) denominator is reused by many cells, so memoize.
+  // Denominator for "show values as" (percentages): re-aggregate by predicates instead of reading
+  // grand-total cells — the denominator stays correct even when the layout disables total
+  // rows/columns.
   const baseCache = new Map<string, number | null>()
   const aggregateBase = (
     cacheKey: string,
@@ -295,10 +289,8 @@ export function recomputePivotData(
         line.push(raw)
         return
       }
-      // Second-pass normalization: % of row = this row's total (row
-      // predicates only); % of column = this column's total (column predicates
-      // only); % of grand total = all visible rows. Also applies to subtotal
-      // and grand-total cells.
+      // Second-pass normalization: % of row = this row's total (row predicates only); % of column =
+      // this column's total (column predicates only); % of grand total = all visible rows.
       const base =
         dataField.showDataAs === 'percentOfTotal'
           ? aggregateBase('total', dataFieldIndex, [])
@@ -347,9 +339,8 @@ export function growPivotDefinition(
   assertSourceMatchesCache(definition, sourceValues)
   const rows = sourceValues.slice(1)
 
-  // For each axis/filter field: collect members missing from the cache (in
-  // first-seen order); for grouped fields the new members are the bucketed
-  // group labels (same space as sharedItems).
+  // For each axis/filter field: collect members missing from the cache (in first-seen order); for
+  // grouped fields the new members are the bucketed group labels (same space as sharedItems).
   const additionsByField = new Map<number, PivotSharedItem[]>()
   for (const field of axisFields(definition)) {
     const grouping = definition.fields[field]?.grouping
@@ -382,9 +373,8 @@ export function growPivotDefinition(
     grownBase = { ...definition, fields, fieldItems }
   }
 
-  // Reapply value/label filters: filtered-out members are marked as hidden
-  // items (this handles both newly grown members and old members that no
-  // longer qualify after aggregates changed).
+  // Reapply value/label filters: filtered-out members are marked as hidden items (this handles both
+  // newly grown members and old members that no longer qualify after aggregates changed).
   const reapplied = reapplyPivotFilters(grownBase, rows)
   if (reapplied.changedFields.size > 0) {
     grownBase = { ...grownBase, fieldItems: reapplied.fieldItems }
@@ -498,8 +488,7 @@ function reapplyPivotFilters(
     const shared = item.x === null ? undefined : definition.fields[field]?.sharedItems[item.x]
     return shared === null || shared === undefined ? '' : String(shared)
   }
-  // Candidate member sets (in fieldItems order), lazily initialized per field
-  // to all real items.
+  // Candidate member sets (in fieldItems order), lazily initialized per field to all real items.
   const allowedByField = new Map<number, Set<number>>()
   const ensureAllowed = (field: number): Set<number> => {
     let allowed = allowedByField.get(field)
@@ -523,8 +512,7 @@ function reapplyPivotFilters(
     })
   }
 
-  // Phase two: value filters. Row scope = report filters plus the candidate
-  // sets left after all label filters.
+  // Phase two: value filters.
   const pagePredicates: AxisPredicate[] = []
   for (const page of definition.pageFields) {
     if (page.item === null) continue
@@ -537,8 +525,7 @@ function reapplyPivotFilters(
       throw new PivotRefreshError('The selected report filter item cannot be resolved.')
     pagePredicates.push({ field: page.field, key: groupKey(shared) })
   }
-  // Member key → member index (within candidate sets), used to assign source
-  // rows to members.
+  // Member key → member index (within candidate sets), used to assign source rows to members.
   const memberKeys = new Map<number, Map<string, number>>()
   const ensureMemberKeys = (field: number): Map<string, number> => {
     let keys = memberKeys.get(field)
@@ -756,8 +743,7 @@ function rebuildAxisLines(
     }
   }
   if (levels > 0) emit(0, new Array(levels).fill(null), [], 0)
-  // Grand-total lines are kept as-is (on a data-field axis there may be one
-  // per data field).
+  // Grand-total lines are kept as-is (on a data-field axis there may be one per data field).
   for (const line of oldLines) {
     if (line.t === 'grand') rebuilt.push(line)
   }

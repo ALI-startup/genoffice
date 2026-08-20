@@ -1,14 +1,4 @@
-/**
- * Word revisions (track changes) support for the TipTap editor.
- *
- * - TrackChangesExtension records edits as ins / del marks while enabled
- *   (Word: Review → Track Changes).
- * - collectRevisions / accept* / reject* implement Accept/Reject Changes.
- *
- * Semantics of a text range carrying BOTH marks (inserted while tracking,
- * then deleted while tracking): the text never existed in the base document,
- * so both accepting and rejecting remove it.
- */
+/** Word revisions (track changes) support for the TipTap editor. */
 import { Extension, type Editor } from '@tiptap/core'
 import type { Node as PmNode } from '@tiptap/pm/model'
 import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state'
@@ -131,8 +121,6 @@ export function collectRevisions(doc: PmNode): RevisionRange[] {
   const out: RevisionRange[] = []
 
   // Table row / cell revisions (trPr w:ins/w:del, tcPr w:cellIns/w:cellDel).
-  // Text ins/del marks inside such a row/cell belong to the same revision and
-  // are suppressed in the text pass (Word: one revision per inserted/deleted row).
   const tableRevs: RevisionRange[] = []
   const suppressed: Array<{ from: number; to: number; kind: 'ins' | 'del' }> = []
   doc.forEach((node, pos) => {
@@ -326,7 +314,6 @@ function applyRevisions(editor: Editor, ranges: RevisionRange[], mode: 'accept' 
 
     if (r.kind === 'rPrChange') {
       // accept = keep the current format; reject = restore the pre-revision modeled format subset.
-      // Both clear the rprChange mark and strip the w:rPrChange record from rawRPr (takes effect on save)
       state.doc.nodesBetween(r.from, r.to, (node, pos) => {
         if (!node.isText) return
         const from = Math.max(pos, r.from)
@@ -346,8 +333,7 @@ function applyRevisions(editor: Editor, ranges: RevisionRange[], mode: 'accept' 
             const baseAttrs = ts ? { ...ts.attrs } : {}
             const nextAttrs: Record<string, unknown> = { ...baseAttrs }
             for (const field of TEXT_STYLE_FIELDS) nextAttrs[field] = old[field] ?? null
-            // Reject goes back to the modeled old format. rawRPr contains the new
-            // format plus the revision record, so rebuild instead of preserving it.
+            // Reject goes back to the modeled old format.
             nextAttrs.rawRPr = null
             const hasAny = TEXT_STYLE_FIELDS.some(
               (field) => nextAttrs[field] !== null && nextAttrs[field] !== undefined,
@@ -561,14 +547,9 @@ declare module '@tiptap/core' {
 }
 
 /**
- * Records edits as tracked changes while `storage.enabled`:
- * - inserted content gets the ins mark
- * - deleted inline content is re-inserted struck through with the del mark
- *   (deleting your own tracked insertion really deletes it)
- *
- * Block-level deletions (paragraph merges) are not re-materialized — only the
- * inline text of the change is tracked. Accept/reject and save fidelity work
- * on run-level w:ins / w:del, matching the engine's revision model.
+ * Records edits as tracked changes while `storage.enabled`: - inserted content gets the ins mark -
+ * deleted inline content is re-inserted struck through with the del mark   (deleting your own
+ * tracked insertion really deletes it)
  */
 export const TrackChangesExtension = Extension.create<object, TrackChangesStorage>({
   name: 'trackChanges',
@@ -580,9 +561,8 @@ export const TrackChangesExtension = Extension.create<object, TrackChangesStorag
   addKeyboardShortcuts() {
     const storage = this.storage
     /**
-     * Backspace over text already marked deleted is a no-op (the recorder puts it
-     * straight back), which would trap the caret. Word skips such text, so step
-     * over the struck run and delete the live character in front of it instead.
+     * Backspace over text already marked deleted is a no-op (the recorder puts it straight back),
+     * which would trap the caret.
      */
     const skipStruckRun = (): boolean => {
       if (!storage.enabled) return false
@@ -762,9 +742,6 @@ export const TrackChangesExtension = Extension.create<object, TrackChangesStorag
           const recordedFormatRanges = new Set<string>()
 
           // Paragraph-property commands are SetNodeMarkup/ReplaceAround operations.
-          // Comparing mapped textblocks catches alignment, spacing, indentation,
-          // styles, heading conversions, and list level/type changes without
-          // depending on the command's concrete ProseMirror step class.
           const fullMapping = new Mapping(
             tracked.flatMap((transaction) => transaction.steps.map((step) => step.getMap())),
           )
@@ -848,8 +825,7 @@ export const TrackChangesExtension = Extension.create<object, TrackChangesStorag
             return false
           })
 
-          // Native table row commands preserve the table anchor. Record the
-          // single contiguous row span they insert/delete using trPr revisions.
+          // Native table row commands preserve the table anchor.
           for (const [index, oldTable] of oldAnchors) {
             const nextTable = newAnchors.get(index)
             if (oldTable.node.type.name !== 'docTable' || nextTable?.node.type.name !== 'docTable')
@@ -1033,9 +1009,6 @@ export const TrackChangesExtension = Extension.create<object, TrackChangesStorag
                     return at + child.nodeSize
                   }, pos)
                   // Leave the caret in front of the struck text, not behind it.
-                  // Behind it, the next Backspace targets content that is already
-                  // marked deleted — which this plugin restores verbatim — so the
-                  // user could only ever strike one character per position.
                   if (newState.selection.empty && tr.mapping.map(newState.selection.from) === end) {
                     tr.setSelection(TextSelection.create(tr.doc, pos))
                   }

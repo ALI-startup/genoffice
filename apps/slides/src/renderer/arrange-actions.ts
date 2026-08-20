@@ -1,7 +1,6 @@
 /**
- * Element arrangement actions extracted from App.tsx: grouping,
- * ungrouping, align/distribute, z-order, and freehand ink. Functions read the
- * latest App state through ActionCtx.
+ * Element arrangement actions extracted from App.tsx: grouping, ungrouping, align/distribute,
+ * z-order, and freehand ink.
  */
 import type { GroupRenderNode, RenderNode } from '@samugen/pptx-render'
 import type { ReorderDirection } from '../shared/ipc'
@@ -55,12 +54,7 @@ export async function ungroupSelected(ctx: ActionCtx): Promise<void> {
 export type AlignOp =
   'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom' | 'distribute-h' | 'distribute-v'
 
-/**
- * Align/distribute selected elements.
- * Coordinates are computed in the renderer (pure geometry) and updated in bulk via batchEditTransform.
- * - align: 6 alignments (relative to the bounding box; to the page for single selection)
- * - distribute: 'horizontal' | 'vertical' (≥3 elements)
- */
+/** Align/distribute selected elements. */
 export async function alignSelected(ctx: ActionCtx, op: AlignOp): Promise<void> {
   const { slide, selectedIds, current } = ctx
   if (!slide || selectedIds.length === 0) return
@@ -188,11 +182,7 @@ export async function commitInk(ctx: ActionCtx, stroke: InkStroke): Promise<void
   if (r) ctx.applySlide(ctx.current, r.slide)
 }
 
-/**
- * Mirror the selection across its own axis. Unlike align/distribute this is
- * not renderer geometry: flipH/flipV are a:xfrm attributes, so the main process toggles
- * them on the model.
- */
+/** Mirror the selection across its own axis. */
 export async function flipSelected(ctx: ActionCtx, axis: 'h' | 'v'): Promise<void> {
   if (ctx.selectedIds.length === 0) return
   const groupId = ctx.groupIdOf(ctx.selectedIds[0]!)

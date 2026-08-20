@@ -1,11 +1,4 @@
-/**
- * The route, over a real socket, with a fake JVM behind it.
- *
- * A real `node:http` server rather than a hand-rolled request object, because
- * the things worth asserting are HTTP's: the status that separates "your file"
- * from "our deployment", the content type the browser reads the body as, and the
- * body limit, which only exists on the wire.
- */
+/** The route, over a real socket, with a fake JVM behind it. */
 import { createServer, type Server } from 'node:http'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
@@ -121,9 +114,8 @@ describe('POST /v1/convert/hwp-to-hwpx', () => {
       body: big,
     }).catch(() => null)
 
-    // The body is abandoned as soon as it passes the limit, so a client can see
-    // either the 413 or a reset connection. Both are the refusal; what must not
-    // happen is the whole upload being accepted.
+    // The body is abandoned as soon as it passes the limit, so a client can see either the 413 or a
+    // reset connection.
     if (response) {
       expect(response.status).toBe(413)
       expect(await response.json()).toMatchObject({ reason: 'too-large' })

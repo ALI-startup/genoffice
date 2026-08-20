@@ -1,10 +1,6 @@
 /**
- * Thin Konva adapter — converts pptx-render's RenderTree (pure data) into primitives Konva can draw.
- *
- * All fidelity logic lives in pptx-render (coordinates/metrics/line breaking); this layer only
- * does mechanical "data → Konva attributes" mapping with no layout decisions. Rendering
- * correctness is therefore guaranteed by pptx-render unit tests, and this layer is thin enough
- * to need almost no testing.
+ * Thin Konva adapter — converts pptx-render's RenderTree (pure data) into primitives Konva can
+ * draw.
  */
 import type {
   RenderGlow,
@@ -140,10 +136,7 @@ export function shadowToKonva(
 // softEdge feathering: source image + radius → offscreen canvas with edges fading to transparent (cached by url+radius)
 const featherCache = new Map<string, HTMLCanvasElement>()
 
-/**
- * Soft-edge approximation: a blurred, inset rectangle as an alpha mask (destination-in).
- * srcRadPx is the feather radius in source-image pixel space (caller converts by display scale).
- */
+/** Soft-edge approximation: a blurred, inset rectangle as an alpha mask (destination-in). */
 export function featheredImage(
   img: HTMLImageElement,
   cacheKey: string,
@@ -232,9 +225,8 @@ const SERIF_HINT_RE =
   /mincho|明朝|batang|바탕|myeongjo|명조|gungsuh|궁서|mingliu|細明|標楷|宋|song/i
 
 /**
- * Display font stack: font names in the file may not be installed locally (Microsoft YaHei
- * on mac / PingFang on win), so append cross-platform equivalents as CSS-level fallbacks.
- * Metrics are handled by the main process FontMetricsProvider's alias table.
+ * Display font stack: font names in the file may not be installed locally (Microsoft YaHei on mac /
+ * PingFang on win), so append cross-platform equivalents as CSS-level fallbacks.
  */
 const FONT_STACK: Record<string, string> = {
   'microsoft yahei': "'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', sans-serif",

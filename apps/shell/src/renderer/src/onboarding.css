@@ -1,8 +1,4 @@
-/* First-run onboarding: full-window overlay above the home screen.
- * Layout follows the design spec: 540×420 white
- * card, left-aligned content column, slide-2 credits offer panel, and a
- * dots-left / Skip-Back-Next-right footer. SamuGen tokens: black pill primary,
- * gray ramp, brand blue #0f7fff only on the credits line. */
+/* First-run onboarding: full-window overlay above the home screen. */
 
 .onb-overlay {
   /* SamuGen tokens, scoped to the overlay (home.css keeps its own --accent) */

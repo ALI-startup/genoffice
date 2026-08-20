@@ -44,11 +44,7 @@ import { TrackChangesExtension } from './revisions'
 import { inlineToRuns, runsToInline, textboxParaSignature, type PmNode as PmJson } from './convert'
 import { constrainTableWidthAtCell } from './table-sizing'
 
-/**
- * Custom schema mirroring the docx-engine Block model 1:1.
- * Every top-level node carries `docxIndex` (patch anchor, null = new) and
- * `aiChanged` (diff highlighting for AI edits).
- */
+/** Custom schema mirroring the docx-engine Block model 1:1. */
 
 import {
   drawChartSvg,
@@ -170,10 +166,6 @@ function blockAttrs(
   )
   if (lh) styles.push(`line-height:${lh}`)
   // list items already indent via padding; a margin would double-shift them.
-  // listGeometry: drive list geometry with w:ind (--li-left text indent, --li-hang the hanging
-  // area i.e. the number-marker width); negative text-indent is expressed by the marker box, no longer emitted directly
-  // Logical (inline-start/end) margins: identical to left/right in LTR, and in bidi
-  // paragraphs they mirror, matching Word's quirk that w:ind left/right swap sides.
   if (includeIndent && node.attrs.indentLeft) {
     styles.push(`margin-inline-start:${Number(node.attrs.indentLeft) / 20}pt`)
   } else if (listGeometry && node.attrs.indentLeft) {
@@ -285,10 +277,7 @@ export const DocXeMark = Node.create({
   },
 })
 
-/**
- * Phonetic guide (w:ruby): atomic, renders as a native <ruby> element.
- * `xml` is the exact <w:ruby> fragment that saves verbatim.
- */
+/** Phonetic guide (w:ruby): atomic, renders as a native <ruby> element. */
 export const DocRuby = Node.create({
   name: 'docRuby',
   inline: true,
@@ -318,11 +307,7 @@ export const DocRuby = Node.create({
   },
 })
 
-/**
- * Atomic inline formula flowing with the text. `omml` is the exact <m:oMath>
- * fragment that saves verbatim; `mathml` renders natively in Chromium;
- * `latex` is kept for editor-created formulas so double-click can re-edit.
- */
+/** Atomic inline formula flowing with the text. */
 export const DocInlineMath = Node.create({
   name: 'docInlineMath',
   inline: true,
@@ -496,10 +481,8 @@ export const DocListItem = Node.create({
   addCommands() {
     return {
       /**
-       * Word's Enter behavior inside a list: a non-empty item splits
-       * into a sibling item (same kind/numId/level, numbering follows), an empty
-       * one leaves the list. ProseMirror's default splitBlock produces the
-       * schema's default block — a paragraph — which broke continuous entry.
+       * Word's Enter behavior inside a list: a non-empty item splits into a sibling item (same
+       * kind/numId/level, numbering follows), an empty one leaves the list.
        */
       continueDocList:
         () =>
@@ -569,16 +552,11 @@ declare module '@tiptap/core' {
 
 /**
  * Real multilevel numbering: compute each list item's marker in document order per the
- * numbering.xml definitions (1. / a. / 1.1 / Chinese numerals, …), attach a data-marker
- * attribute via node decoration, and display with CSS.
- * defs are written into storage by App when a document is opened/re-parsed; items without a definition fall back to CSS counters.
+ * numbering.xml definitions (1.
  */
-// ── Live line-height factor ────────────────────────────────
-// blockAttrs bakes --doc-line-factor into toDOM output, but ProseMirror reuses a
-// block's DOM while typing (sameMarkup ignores content), so a block typed after
-// creation keeps its creation-time factor until save/reopen. These node
-// decorations recompute the factor from the live text on every doc change;
-// unchanged nodes are structurally shared, so the WeakMap makes a pass cheap.
+// ── Live line-height factor ──────────────────────────────── blockAttrs bakes --doc-line-factor
+// into toDOM output, but ProseMirror reuses a block's DOM while typing (sameMarkup ignores
+// content), so a block typed after creation keeps its creation-time factor until save/reopen.
 
 const LINE_FACTOR_BLOCKS = new Set(['docParagraph', 'docHeading', 'docListItem'])
 const lineFactorCjkCache = new WeakMap<PmNode, boolean>()
@@ -795,9 +773,8 @@ export type TableBordersAttr = Partial<
 >
 
 /**
- * Table-level w:tblBorders → outer frame on the table element + inner-line CSS variables
- * (td takes inner lines via --doc-b-h/--doc-b-v; border-collapse lets the outer frame win
- * on edge cells). Undeclared = keep the default grid lines.
+ * Table-level w:tblBorders → outer frame on the table element + inner-line CSS variables (td takes
+ * inner lines via --doc-b-h/--doc-b-v; border-collapse lets the outer frame win on edge cells).
  */
 export function tableBordersCss(b: TableBordersAttr | null): string[] {
   if (!b) return []
@@ -1185,11 +1162,7 @@ export const DocProtected = Node.create({
       /** paragraph alignment of the image (w:jc) */
       imageAlign: { default: null as string | null },
       imageWrap: { default: null as string | null },
-      /**
-       * Free-position offset (EMU) of a floating image with wp:posOffset.
-       * Used for drag-to-reposition. Null when the image uses named alignment
-       * or is inline.
-       */
+      /** Free-position offset (EMU) of a floating image with wp:posOffset. */
       imageOffsetXEmu: { default: null as number | null },
       /** margin-relative wp:align preset (Word position gallery) */
       imagePosH: { default: null as string | null },
@@ -1814,11 +1787,8 @@ function subEditorParas(sub: Editor): TextboxPara[] {
 }
 
 /**
- * Rich textbox editing: each rendered box hosts a full nested
- * Tiptap editor sharing the main schema's marks, so ribbon formatting (color,
- * bold, size, ...) works inside the box. Content commits back into the node's
- * TextboxDisplay model when focus leaves the block (or before saving); the
- * save path regenerates only the changed paragraphs inside w:txbxContent.
+ * Rich textbox editing: each rendered box hosts a full nested Tiptap editor sharing the main
+ * schema's marks, so ribbon formatting (color, bold, size, ...) works inside the box.
  */
 function mountTextboxEditors(
   dom: HTMLElement,
@@ -2012,12 +1982,7 @@ function imageResizePlugin(): Plugin {
 
 const EMU_PER_PX = 9525
 
-/**
- * Drag floating images and textbox shapes (wp:anchor) to update posOffset.
- * Only handles images with numeric posOffset (imageOffsetXEmu/YEmu set).
- * Inline images (no imageWrap) are auto-converted to anchor on drag start
- * with square wrap and the initial offset derived from the drag delta.
- */
+/** Drag floating images and textbox shapes (wp:anchor) to update posOffset. */
 function floatingObjectDragPlugin(): Plugin {
   return new Plugin({
     props: {
@@ -2138,11 +2103,7 @@ function floatingObjectDragPlugin(): Plugin {
 
 export type DomSpec = [string, Record<string, string>, ...unknown[]]
 
-/**
- * Paragraph node for textbox sub-editors. Named docParagraph on purpose so
- * ribbon paragraph commands (updateAttributes('docParagraph', ...)) work
- * unchanged whether they target the main editor or a textbox.
- */
+/** Paragraph node for textbox sub-editors. */
 const TextboxParagraph = Node.create({
   name: 'docParagraph',
   group: 'block',

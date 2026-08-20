@@ -1,8 +1,4 @@
-/**
- * Chart drawing primitives (ChartRenderNode → Konva shapes).
- * Shared by SlideCanvas and SlideThumb; coordinates are already relative to the chart box
- * top-left, the outer Group handles positioning.
- */
+/** Chart drawing primitives (ChartRenderNode → Konva shapes). */
 import React from 'react'
 import { Rect, Text, Line, Circle, Arc } from 'react-konva'
 import type { ChartRenderNode } from '@samugen/pptx-render'

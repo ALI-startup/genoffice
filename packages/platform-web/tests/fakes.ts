@@ -1,11 +1,4 @@
-/**
- * Fakes for the browser surfaces the document store sits on.
- *
- * The store is written against the interfaces in src/fs-access.ts precisely so
- * these can be plain objects: no jsdom, no IndexedDB polyfill, and — the part
- * that matters — the permission answers are scriptable, so the denied path is a
- * first-class test case rather than something only reachable by hand.
- */
+/** Fakes for the browser surfaces the document store sits on. */
 import type {
   FilePickers,
   FsPermissionDescriptor,
@@ -147,13 +140,7 @@ export function fakePickers(): FakePickers {
   return pickers
 }
 
-/**
- * Stand-in for IndexedDB.
- *
- * Entries are kept as-is (a real structured clone would copy the handle, but
- * the browser hands back a live handle object, which is what the store relies
- * on), so a "reload" is modelled by building a second store over the same map.
- */
+/** Stand-in for IndexedDB. */
 export function fakeHandleStore(): DocumentHandleStore & {
   entries: Map<string, StoredDocumentHandle>
 } {

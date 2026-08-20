@@ -1,22 +1,4 @@
-/**
- * pptx-engine data model
- *
- * Design principles:
- * 1. The in-house model is the core asset (Canva-style): rendering / editing /
- *    saving all revolve around it.
- * 2. Byte-level fidelity: every parseable element carries a dual anchor —
- *    `slideXmlRange` (original XML byte range) + `originalXml` (original slice).
- *    On save, untouched elements pass through as their original bytes.
- * 3. Inheritance chain pre-resolved: elements carry `resolved` final styles
- *    (merged slide→layout→master→theme); the render layer uses them directly and
- *    never walks inheritance. The original pptx's layout/master/theme are never
- *    written back.
- * 4. Risky content is passthrough: only a placeholder is shown, original bytes
- *    pass through on save.
- *
- * Coordinate unit: EMU (English Metric Unit, 1 inch = 914400 EMU, 1 px@96dpi = 9525 EMU).
- * Angle unit: 60000ths of a degree (OOXML native), with a convenience `deg` field.
- */
+/** pptx-engine data model */
 
 // ── Geometry ───────────────────────────────────────────────────────────
 
@@ -120,13 +102,7 @@ export interface TextRun {
   letterSpacing?: number
   /** Font family (final font name after theme inheritance, for render/editor display) */
   fontFamily?: string
-  /**
-   * Original <a:latin>/<a:ea> typeface text (incl. +mj-lt/+mn-ea theme refs).
-   * Present = the user has not changed the font: patches keep the original bytes
-   * and regeneration writes the original values back, so CJK/Latin dual fonts and
-   * theme linkage survive; cleared when the user changes the font (along with
-   * fontImplicit)
-   */
+  /** Original <a:latin>/<a:ea> typeface text (incl. */
   latinFont?: string
   eaFont?: string
   /** Original <a:cs> typeface (complex-script bucket), written back on the rebuild path */
@@ -137,8 +113,7 @@ export interface TextRun {
   /** color is display-only (from schemeClr/inheritance, not an explicit run srgbClr);
    * the patch path won't write srgbClr from it, avoiding baking in theme colors and breaking theme switches */
   colorFollowsTheme?: boolean
-  /** rPr has no solidFill at all (color purely inherited); the rebuild path writes no fill.
-   * Explicit schemeClr is not included here (materialized as srgbClr on rebuild to keep visuals) */
+  /** rPr has no solidFill at all (color purely inherited); the rebuild path writes no fill. */
   colorInherited?: boolean
   /** Superscript/subscript baseline offset (%) */
   baseline?: number
@@ -188,11 +163,8 @@ export interface Paragraph {
   /** First-line indent (EMU, negative = hanging indent, common with bullets) */
   indent?: number
   /**
-   * Which paragraph properties come from an explicit <a:pPr> (rather than display
-   * values inherited from lstStyle/placeholder/master). The rebuild path writes
-   * only explicit items to avoid baking in inheritance; paragraphs produced by
-   * parse always have this field, newly created elements may omit it (omitted =
-   * all treated as explicit). Set the matching bit when the user edits a property.
+   * Which paragraph properties come from an explicit <a:pPr> (rather than display values inherited
+   * from lstStyle/placeholder/master).
    */
   pPrExplicit?: {
     align?: boolean
@@ -281,16 +253,11 @@ interface ElementBase {
   /** Placeholder type (title/body/…), located via layout/master inheritance */
   placeholder?: string
   name?: string
-  /**
-   * <p:cNvPr descr="…">: editor-owned metadata payload (e.g. vector points of
-   * freehand ink), written back verbatim with originalXml on save so the editable
-   * state can be restored on reopen.
-   */
+  /** <p:cNvPr descr="…">: editor-owned metadata payload (e.g. */
   descr?: string
   /**
-   * <p:cNvPr id>: matching key between group children and slices of the group's
-   * originalXml (for in-group editing). parseGroup iterates children grouped by
-   * tag, which differs from document order, so index alignment is not possible.
+   * <p:cNvPr id>: matching key between group children and slices of the group's originalXml (for
+   * in-group editing).
    */
   nvId?: string
   /** Connector attachment <a:stCxn>/<a:endCxn>: target shape cNvPr id + connection point index (for move-following) */
@@ -301,10 +268,8 @@ interface ElementBase {
 }
 
 /**
- * <a:custGeom> custom geometry (read-only render; save passes originalXml through,
- * never written back). Each field is a normalized SVG path (M/L/C/Q/Z, coords 0..1
- * relative to the w/h declared by <a:path>; arcTo converted to cubic); the render
- * layer scales it to the element frame.
+ * <a:custGeom> custom geometry (read-only render; save passes originalXml through, never written
+ * back).
  */
 export interface CustomGeometry {
   /** Main fill+stroke path */
@@ -368,9 +333,8 @@ export interface PassthroughElement extends ElementBase {
   /** Protection reason category, for the UI placeholder chip */
   kind: 'chart' | 'smartart' | 'table' | 'ole' | 'connector' | 'media' | 'unknown'
   /**
-   * SmartArt read-only preview: shapes parsed from the pptx's built-in prerendered
-   * drawing part (diagrams/drawingN.xml), coordinate origin (0,0), size ≈ transform
-   * ext (the diagram canvas). Render-only; save still uses the anchor's original bytes.
+   * SmartArt read-only preview: shapes parsed from the pptx's built-in prerendered drawing part
+   * (diagrams/drawingN.xml), coordinate origin (0,0), size ≈ transform ext (the diagram canvas).
    */
   previewShapes?: SlideElement[]
   /** OLE read-only preview: the preview picture embedded in the graphicFrame (stretched to fill the frame when rendering). */
@@ -443,9 +407,8 @@ export interface Slide {
   /** Background (inheritance resolved) */
   background?: Fill
   /**
-   * master/layout decoration layer (read-only render, never written back):
-   * non-placeholder concrete shapes on the master (logos/color bars) + enabled
-   * footer/slide-number/date placeholders. Drawn below elements, above background.
+   * master/layout decoration layer (read-only render, never written back): non-placeholder concrete
+   * shapes on the master (logos/color bars) + enabled footer/slide-number/date placeholders.
    */
   decorations?: SlideElement[]
 }

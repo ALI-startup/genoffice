@@ -1,9 +1,6 @@
 /**
- * verify16-p1p2.test.ts
- * P1+P2 end-to-end verification (pure engine layer, no Electron)
- * Covers: chart workbook / character styles / image posOffset / tab stops / drop caps /
- * SDT / full revision semantics
- * Run: cd packages/docx-engine && npx vitest run tests/verify16-p1p2.test.ts
+ * P1+P2 end-to-end verification at the engine layer: chart workbook, character styles,
+ * image posOffset, tab stops, drop caps, SDT and full revision semantics.
  */
 
 import JSZip from 'jszip'
@@ -112,9 +109,8 @@ describe('T1: chart embedded workbook', () => {
   })
 })
 
-// ═══════════════════════════════════════════════════════════════════════════
-// T2 – character style rStyle preservation
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════ T2 – character style
+// rStyle preservation ═══════════════════════════════════════════════════════════════════════════
 
 const CHAR_STYLE_P =
   '<w:p>' +
@@ -173,9 +169,8 @@ describe('T2: character style rStyle preservation', () => {
   })
 })
 
-// ═══════════════════════════════════════════════════════════════════════════
-// T3 – image posOffset write
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════ T3 – image posOffset
+// write ═══════════════════════════════════════════════════════════════════════════
 
 /** Floating image XML with posOffset */
 const FLOAT_IMG_P =
@@ -230,9 +225,8 @@ describe('T3: image posOffset read/write', () => {
   })
 })
 
-// ═══════════════════════════════════════════════════════════════════════════
-// T4 – tab stops w:tabs save
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════ T4 – tab stops w:tabs
+// save ═══════════════════════════════════════════════════════════════════════════
 
 const TABS_P =
   '<w:p>' +
@@ -269,9 +263,8 @@ describe('T4: tab stops w:tabs', () => {
   })
 })
 
-// ═══════════════════════════════════════════════════════════════════════════
-// T5 – drop cap w:framePr dropCap
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════ T5 – drop cap
+// w:framePr dropCap ═══════════════════════════════════════════════════════════════════════════
 
 const DROPCAP_P =
   '<w:p>' +

@@ -1,13 +1,4 @@
-/**
- * Unit tests for the F1 line-box metrics engine
- *
- * Covers:
- *   - HeuristicMetrics measurements
- *   - computeLineHeight's three line-height modes
- *   - snapSpacingToGrid grid rounding
- *   - simulateLines line-wrapping simulation
- *   - computeLineMetrics main entry (various font sizes/rules/grids)
- */
+/** Unit tests for the F1 line-box metrics engine */
 
 import { describe, it, expect } from 'vitest'
 import {

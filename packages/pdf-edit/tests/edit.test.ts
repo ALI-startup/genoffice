@@ -206,10 +206,8 @@ describe('applyPdfEdits', () => {
   })
 
   it('applies the reorder when combined with deletions', async () => {
-    // Regression: pdf-lib's removePage does not invalidate its page cache,
-    // so a getPages() call after the deletion loop returns the stale
-    // pre-deletion list. applyPdfEdits must derive the remaining pages
-    // from the pre-deletion snapshot instead of re-reading them.
+    // Regression: pdf-lib's removePage does not invalidate its page cache, so a getPages() call
+    // after the deletion loop returns the stale pre-deletion list.
     const bytes = await makePdf([
       [100, 100],
       [200, 200],

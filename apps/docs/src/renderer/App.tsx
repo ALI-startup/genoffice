@@ -171,12 +171,7 @@ const EMPTY_BLOCKS: Block[] = []
 const wordCountOfDoc = cachedByDoc((d) => countWords(d.textContent))
 const revisionCountOfDoc = cachedByDoc((d) => collectRevisions(d).length)
 
-/**
- * Document position of a measured line-start DOM anchor. posAtDOM works from the DOM
- * tree, unlike posAtCoords whose viewport hit-testing returns degenerate positions for
- * lines scrolled off-screen (which misplaced page-break markers into table bodies,
- * inflating the canvas table by a phantom anonymous row and skewing pagination).
- */
+/** Document position of a measured line-start DOM anchor. */
 function posFromAnchor(view: Editor['view'], anchor: LineAnchor): number | undefined {
   try {
     const pos = view.posAtDOM(anchor.node, anchor.charOffset)
@@ -504,9 +499,8 @@ export function App() {
   // serializes save(): overlapping saves (Cmd+S vs autosave timer vs blur) would
   // otherwise race on the write + reparse + setContent sequence
   const saveInFlightRef = useRef(false)
-  // set when a save wrote successfully but the editor changed while it was in
-  // flight, so the file on disk is already one step behind. save() still counts
-  // as succeeded; callers that must not lose data (the close guard) save again.
+  // set when a save wrote successfully but the editor changed while it was in flight, so the file
+  // on disk is already one step behind.
   const saveIncompleteRef = useRef(false)
 
   const editorRef = useRef<Editor | null>(null)
@@ -588,9 +582,8 @@ export function App() {
 
   useEffect(() => {
     void docsPlatform().file.recentDocuments().then(setRecent)
-    // Same reasoning as slides': on the desktop this always resolves, but in a browser it is
-    // a request to the BFF, and an unreachable one would otherwise be an unhandled rejection.
-    // The defaults already loaded stay in place.
+    // Same reasoning as slides': on the desktop this always resolves, but in a browser it is a
+    // request to the BFF, and an unreachable one would otherwise be an unhandled rejection.
     void docsPlatform()
       .ai.getAiSettings()
       .then(setSettings, (error: unknown) => {
@@ -606,8 +599,7 @@ export function App() {
     localStorage.setItem('aidocs.autoSave', autoSave ? '1' : '0')
   }, [autoSave])
 
-  // Pinch-to-zoom: Chromium delivers trackpad pinch as a wheel event
-  // with ctrlKey set. Also support ⌘+scroll. Must be non-passive to preventDefault.
+  // Pinch-to-zoom: Chromium delivers trackpad pinch as a wheel event with ctrlKey set.
   useEffect(() => {
     const onWheel = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return
@@ -842,10 +834,8 @@ export function App() {
     const unsubscribe = docsPlatform().file.onOpenDocument((result) => {
       void loadFile(result)
     })
-    // With no pending file the window lands directly in the editor on a blank document
-    // (the AI panel carries the generate-from-prompt flow). StrictMode runs the mount
-    // effect twice but the pending queues can only be consumed once, so the consume
-    // Promise lives in a ref and its result is processed only once.
+    // With no pending file the window lands directly in the editor on a blank document (the AI
+    // panel carries the generate-from-prompt flow).
     bootPendingRef.current ??= Promise.all([
       docsPlatform().file.consumePending(),
       // Still consume the one-shot new-blank flag so it doesn't leak into the next open
@@ -871,16 +861,7 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, loadFile])
 
-  /**
-   * Report a host-side open failure.
-   *
-   * `loadFile` has its own catch, but it only covers what happens *after* the
-   * host hands a document over. A host can fail before that — an unreadable
-   * package, a revoked permission, a `.hwp` on a deployment with no converter —
-   * and both call sites below are invoked as `void`, so without this the promise
-   * rejects into nothing and the user is left looking at the previous document
-   * wondering whether the click registered.
-   */
+  /** Report a host-side open failure. */
   const openFailed = useCallback((error: unknown) => {
     setStatus(t('appOpenFailed', { error: error instanceof Error ? error.message : String(error) }))
   }, [])
@@ -925,10 +906,9 @@ export function App() {
   })
 
   /**
-   * Insert a section break: the new break paragraph takes a copy of the current
-   * section's sectPr (content before the break keeps the original
-   * section's settings); "continuous" is written to the following section's (the
-   * original current section sectPr's) w:type.
+   * Insert a section break: the new break paragraph takes a copy of the current section's sectPr
+   * (content before the break keeps the original section's settings); "continuous" is written to
+   * the following section's (the original current section sectPr's) w:type.
    */
   const insertSectionBreak = useCallback(
     (type: SectionInfo['startType']) => {
@@ -1273,46 +1253,18 @@ export function App() {
     [],
   )
   const exportHwpx = useCallback(() => exportHwpxImpl(fileCtxRef.current), [])
-  /**
-   * Whether this host can write .hwpx. Both hosts can — Electron in the main
-   * process, the browser in the page — but the port is still consulted rather
-   * than assumed, so a host that drops the capability loses the command instead
-   * of offering a broken one.
-   */
+  /** Whether this host can write .hwpx. */
   const canExportHwpx = docsPlatform().hwpx !== null
   const downloadDoc = useCallback(() => downloadDocumentImpl(fileCtxRef.current), [])
-  /**
-   * Whether this host hands files to the user as downloads. Non-null only in the
-   * browser: on the desktop Save As writes the real document and keeps editing it,
-   * so a Download item there would be a worse duplicate of a working command.
-   */
+  /** Whether this host hands files to the user as downloads. */
   const canDownload = docsPlatform().download !== null
-  /**
-   * Whether this host can render a PDF at all. `pdfExport` is null in the browser
-   * build (Phase 4c adds a renderer-side exporter), and `exportPdf` returns
-   * immediately when it is — so the pagination preview's Export button is hidden
-   * instead of being offered and silently doing nothing.
-   */
+  /** Whether this host can render a PDF at all. */
   const canExportPdf = docsPlatform().pdfExport !== null
 
-  /**
-   * The host's print flow, or null where the renderer does not drive one.
-   *
-   * Null on Electron, where Print belongs to the native application menu, and
-   * non-null in the browser, where `window.print()` is the only way to get paper
-   * or a PDF out at all. Both the Print button and the `@page` stylesheet below
-   * hang off this, so neither exists on a host that would not use them.
-   */
+  /** The host's print flow, or null where the renderer does not drive one. */
   const printPort = docsPlatform().print
   const printPages = useCallback(() => void printPort?.print(), [printPort])
-  /**
-   * `@page` rules matching the document's section paper sizes.
-   *
-   * Rendered as a plain stylesheet rather than injected around a print call, for
-   * two reasons: it stays correct as the document's page setup changes, and it is
-   * already in place when the *browser's* own Ctrl+P runs, which no in-app code
-   * gets to wrap. See print.ts for what happens with mixed paper sizes.
-   */
+  /** `@page` rules matching the document's section paper sizes. */
   const printCss = useMemo(
     () =>
       printPort === null
@@ -1805,10 +1757,8 @@ export function App() {
             )
             if (!b?.el) return
             if (b.el.querySelector('tr')) {
-              // in-table cut point: insert an in-table gap row (display:table-row widget)
-              // before the broken row (next page's first row). Positioning must subtract the
-              // gap's own height: a tr's DOM offset includes in-table gaps above it, so
-              // subtract them before comparing with the slice's gapless virtual coordinates
+              // in-table cut point: insert an in-table gap row (display:table-row widget) before
+              // the broken row (next page's first row).
               const gapRects = Array.from(b.el.querySelectorAll('.page-gap-inline')).map((g) =>
                 g.getBoundingClientRect(),
               )
@@ -2005,11 +1955,8 @@ export function App() {
       })
     })
     const offSave = host.onCloseSaveRequest(() => {
-      // Closing must not report success while edits are still unpersisted, so a
-      // save that raced with typing is retried until the file catches up.
-      // save(false) never prompts — a pathless first save lands silently in the
-      // default folder — so retrying is always safe; reporting "persisted" just
-      // because the snapshot had no path yet would close over mid-save edits.
+      // Closing must not report success while edits are still unpersisted, so a save that raced
+      // with typing is retried until the file catches up.
       void saveUntilPersisted({
         save: () => save(false),
         wasIncomplete: () => saveIncompleteRef.current,
@@ -2262,9 +2209,7 @@ export function App() {
     startNewComment,
   ])
 
-  // Word: TOC entries jump on ⌘/Ctrl+click only; a plain click just places the
-  // caret. Resolve the bookmark anchor against the original block XML, fall
-  // back to matching the heading text.
+  // Word: TOC entries jump on ⌘/Ctrl+click only; a plain click just places the caret.
   const onDocClick = useCallback(
     (e: ReactMouseEvent) => {
       const commentSpan = (e.target as HTMLElement).closest('.doc-comment') as HTMLElement | null
@@ -2539,10 +2484,9 @@ export function App() {
       {doc && <style>{docThemeCss(themeFonts, themeColors)}</style>}
       {printCss && <style>{printCss}</style>}
       {colFlow && viewMode === 'print' && (
-        // columns (sectPr w:cols): column gap follows the document's w:space; measuring-columns
-        // is the single-flow measuring state (columns removed, content-box width = column width,
+        // columns (sectPr w:cols): column gap follows the document's w:space; measuring-columns is
+        // the single-flow measuring state (columns removed, content-box width = column width,
         // toggled instantaneously for measurement, invisible).
-        // .doc-page is border-box, so the measured width must add back the left/right margin padding
         <style>{`.editor-scroll .doc-page { column-count: ${colFlow.cols}; column-gap: ${colFlow.gapPx}px; column-fill: balance; }
 .editor-scroll .doc-page.measuring-columns { column-count: auto; width: ${colFlow.colWidthPx + twipsToPx(canvasSection?.marginLeft ?? section?.marginLeft ?? 0) + twipsToPx(canvasSection?.marginRight ?? section?.marginRight ?? 0)}px; }`}</style>
       )}
@@ -2588,9 +2532,7 @@ export function App() {
         splitView={splitView}
         {...ribbonActions}
         nativeChrome={docsPlatform().window.nativeChrome}
-        // Null on a host with no converter, so the item is hidden rather than
-        // offered and broken. This is the only export surface in the browser,
-        // which has no native menu bar to carry it.
+        // Null on a host with no converter, so the item is hidden rather than offered and broken.
         onExportHwpx={canExportHwpx ? ribbonActions.onExportHwpx : null}
         onDownload={canDownload ? ribbonActions.onDownload : null}
       />

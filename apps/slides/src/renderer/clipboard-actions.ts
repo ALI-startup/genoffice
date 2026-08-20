@@ -1,7 +1,6 @@
 /**
- * Clipboard and format-painter actions extracted from App.tsx:
- * element copy/cut/paste/duplicate, slide copy/paste, external clipboard
- * ingestion, and the format painter. Functions take the ActionCtx built fresh per call.
+ * Clipboard and format-painter actions extracted from App.tsx: element copy/cut/paste/duplicate,
+ * slide copy/paste, external clipboard ingestion, and the format painter.
  */
 import { slidesDeckClipboard } from './platform'
 import type { ActionCtx } from './action-context'

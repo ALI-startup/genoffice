@@ -6,11 +6,8 @@ import type { EditorView } from '@tiptap/pm/view'
 const key = new PluginKey<DecorationSet>('paginationGaps')
 
 /**
- * Always-on pagination in the canvas: renders a "page gap" widget before each
- * page-leading block (previous page's bottom margin + gray inter-page band +
- * next page's top margin). Decorations are visual only; document content and
- * saving are unaffected. Positions are driven by App's pagination measurement;
- * gaps map along transactions while editing and are rebuilt wholesale after a debounce.
+ * Always-on pagination in the canvas: renders a "page gap" widget before each page-leading block
+ * (previous page's bottom margin + gray inter-page band + next page's top margin).
  */
 export const PaginationGapsExtension = Extension.create({
   name: 'paginationGaps',
@@ -58,9 +55,7 @@ function makeGapEl(m: GapMetrics, kind: 'block' | 'inline' | 'table' | 'cut'): H
   gap.style.setProperty('--gap-mb', `${m.marginBottom}px`)
   gap.style.setProperty('--gap-mt', `${m.marginTop}px`)
   if (kind === 'table') {
-    // A real spanning cell is required here. Chromium's collapsed-border table
-    // painting can leak the neighboring row's border/fill through a cell-less
-    // display:table-row, leaving a colored remnant in the gray page gutter.
+    // A real spanning cell is required here.
     gap.className = 'page-gap page-gap-inline page-gap-table'
     const cell = document.createElement('td')
     cell.colSpan = 1000

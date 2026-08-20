@@ -1,12 +1,4 @@
-/**
- * The browser `AttachmentsPort`.
- *
- * What is worth asserting here is not "does it store a blob" but the properties
- * the port's contract rests on: that refs stay opaque and are the only thing the
- * renderer ever sees, that a rejection carries a reason instead of vanishing,
- * that a failed extraction is reported rather than returned as empty text, and
- * that paging a long attachment behaves like the main process's version.
- */
+/** The browser `AttachmentsPort`. */
 import { describe, expect, it, vi } from 'vitest'
 import {
   ATTACHMENT_IMAGE_MAX_BYTES,

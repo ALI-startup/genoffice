@@ -1,23 +1,4 @@
-/**
- * The slides document session, with nothing host-specific in it.
- *
- * Everything about an open deck that is not "which window is it in" lives here:
- * the deck itself, the snapshot undo/redo stacks, the AI rollback points, and the
- * RenderSlide rebuilds the renderer draws. All of it is plain TypeScript over
- * @samugen/pptx-engine and @samugen/pptx-render, both of which run in a browser
- * (see pptx-engine's tests/browser-safety.test.ts), so this module does too.
- *
- * It was extracted from the host's session module, which kept the parts that are
- * genuinely Electron's: the `webContents.id → Session` registry, the window
- * references dialogs are parented to, and the two host services this module needs
- * injected. That file re-exports everything here, so its importers did not change.
- *
- * Why this split is the *first* step of a web build rather than the last: slides
- * parses, edits and saves in the main process, and ~120 of its 147 ipcMain channels
- * are document operations on the `OpenedPptx` this session holds. On a host where
- * the engine runs in the page those are local calls, so the session has to be
- * reachable from the page before any of them can be. See docs/web-migration.md §5.4.
- */
+/** The slides document session, with nothing host-specific in it. */
 import { materializeSlide, type OpenedPptx, type Slide } from '@samugen/pptx-engine'
 import { bytesToBase64 } from '@samugen/pptx-engine'
 import { buildRenderSlide, type FontMetricsProvider, type RenderSlide } from '@samugen/pptx-render'
@@ -39,8 +20,7 @@ export interface Session {
   aiSnapshots?: Map<number, HistorySnapshot>
   /** Edits that only touch archive entries (notes/comments; element-level dirty cannot detect them), reset after save */
   metaDirty?: boolean
-  /** Per-page PageVisualData from the HTML pipeline: appends rebuild "existing + new" wholesale.
-      Set to null after any native edit — a rebuild would lose edits, so refuse to append instead. */
+  /** Per-page PageVisualData from the HTML pipeline: appends rebuild "existing + new" wholesale. */
   htmlPages?: unknown[] | null
   /** Transform preview gesture in progress (the first preview already pushed an undo snapshot; later previews/final commit do not) */
   transformPreview?: boolean
@@ -48,11 +28,9 @@ export interface Session {
   masterEdit?: { partPath: string; slide: Slide } | null
 }
 
-// ── Undo/redo (snapshot-based) ─────────────────────────────────────────
-// The document's source of truth is the session (deck.slides mutated in place +
-// archive.entries surgery), so history lives with it: snapshot both before every edit.
-// slides needs a deep copy (elements are mutated in place); entries only needs a shallow Map
-// copy (byte arrays are never mutated in place, only replaced wholesale).
+// ── Undo/redo (snapshot-based) ───────────────────────────────────────── The document's source of
+// truth is the session (deck.slides mutated in place + archive.entries surgery), so history lives
+// with it: snapshot both before every edit.
 export interface HistorySnapshot {
   slides: Slide[]
   entries: Map<string, Uint8Array>
@@ -104,9 +82,7 @@ export function beginHistoryBatch(session: Session): void {
 
 /**
  * End a transaction and collapse every successful edit since begin into the pre-transaction
- * snapshot. Failed/no-op handlers can continue popping their own snapshots safely.
- * Returns the pre-transaction snapshot when the outermost end collapsed real edits (null otherwise),
- * so the caller can register it as an AI-panel rollback point.
+ * snapshot.
  */
 export function endHistoryBatch(session: Session): HistorySnapshot | null {
   const batch = session.historyBatch
@@ -169,10 +145,9 @@ export function restoreSnapshot(session: Session, snap: HistorySnapshot): void {
 }
 
 /**
- * Close a history batch that outlived its run: an AI tool path that
- * throws between begin and end would otherwise leave historyBatch set forever,
- * and undo/redo — which refuse to run mid-batch — would silently do nothing for
- * the rest of the session. Collapsing here keeps the run's edits as one step.
+ * Close a history batch that outlived its run: an AI tool path that throws between begin and end
+ * would otherwise leave historyBatch set forever, and undo/redo — which refuse to run mid-batch —
+ * would silently do nothing for the rest of the session.
  */
 export function settleStaleHistoryBatch(session: Session): void {
   while (session.historyBatch) {
@@ -183,39 +158,17 @@ export function settleStaleHistoryBatch(session: Session): void {
 
 // ── The two host services a rebuild needs ───────────────────────────────
 
-/**
- * What a host must supply before any RenderSlide can be built.
- *
- * Both members are things a page and a Node process answer differently, and both
- * are required rather than optional — a host that cannot decode TIFF says so with
- * `null` and the resolver skips those pictures, which is visible in the output
- * rather than silently wrong.
- */
+/** What a host must supply before any RenderSlide can be built. */
 export interface SlideRenderEnv {
-  /**
-   * Text metrics for layout. Electron measures real system fonts through
-   * opentype.js over the installed fonts; a browser's equivalent is `queryLocalFonts()`,
-   * with pptx-render's heuristic provider as the fallback.
-   */
+  /** Text metrics for layout. */
   metrics: FontMetricsProvider
-  /**
-   * TIFF → PNG for display, or `null` on a host that cannot decode one. Chromium
-   * decodes no TIFF at all, so without this those pictures render blank — the
-   * archive keeps the original bytes either way, so saving is unaffected.
-   */
+  /** TIFF → PNG for display, or `null` on a host that cannot decode one. */
   decodeTiff: ((bytes: Uint8Array) => { png: Uint8Array } | null) | null
 }
 
 let renderEnv: SlideRenderEnv | null = null
 
-/**
- * Install the host's rendering services. Called once, during host startup.
- *
- * A slot rather than a parameter on every rebuild function, because the
- * alternative is threading `metrics` through some forty call sites in
- * slides-main.ts that have nothing to say about fonts. The same reasoning, and the
- * same fail-loudly-if-unset rule, as @samugen/platform's `createPlatformSlot`.
- */
+/** Install the host's rendering services. */
 export function setSlideRenderEnv(env: SlideRenderEnv): void {
   renderEnv = env
 }
@@ -255,8 +208,7 @@ const DISPLAY_MIME: Record<string, string> = {
   svg: 'image/svg+xml',
 }
 
-/** Image mediaRef -> dataUrl (lazily decoded). TIFF is transcoded to PNG for display
-    (Chromium can't decode it); the archive keeps the original bytes for save fidelity. */
+/** Image mediaRef -> dataUrl (lazily decoded). */
 export function makeMediaResolver(opened: OpenedPptx) {
   const cache = new Map<string, string | undefined>()
   return (mediaRef: string): string | undefined => {
@@ -291,9 +243,8 @@ export function rebuildSlide(session: Session, slideIndex: number): RenderSlide 
 }
 
 /**
- * Rebuild the RenderSlide after re-parsing the whole page (the model is stale after a chart
- * edit and needs a reparse). Equivalent to materializeSlide then rebuildSlide, but without the
- * structureDirty save logic.
+ * Rebuild the RenderSlide after re-parsing the whole page (the model is stale after a chart edit
+ * and needs a reparse).
  */
 export function rebuildSlideWithReparse(session: Session, slideIndex: number): RenderSlide | null {
   const fresh = materializeSlide(session.opened, slideIndex)

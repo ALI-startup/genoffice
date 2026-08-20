@@ -1,11 +1,7 @@
 /**
- * Chart insertion — writes the chart part (ppt/charts/chartN.xml) + Content_Types
- * Override + slide rels + graphicFrame fragment, going through appendRawElements to
- * reuse the existing chart parsing/rendering.
- *
- * The chartSpace template mirrors docx-engine's buildChartPartXml (data goes through
- * strCache/numCache caches, no embedded workbook attached; PowerPoint renders it
- * fine, but "Edit Data" is unavailable).
+ * Chart insertion — writes the chart part (ppt/charts/chartN.xml) + Content_Types Override + slide
+ * rels + graphicFrame fragment, going through appendRawElements to reuse the existing chart
+ * parsing/rendering.
  */
 import { utf8Bytes } from './bytes'
 import type { EmuRect, Slide } from './types'
@@ -145,11 +141,8 @@ export function buildChartSpaceXml(opts: NewChartOptions): string {
 
   let plot: string
   if (opts.kind === 'comboBarLine') {
-    // Combo chart (columns + line): with ≥2 series the last is a line, the rest are
-    // clustered columns; a single series degrades to plain columns.
-    // Columns use the primary axes (category axis 1111… + left value axis 2222…), the line
-    // uses the secondary axes (hidden category axis 3333… + right secondary value axis 4444…),
-    // matching how PowerPoint writes "combo chart + secondary axis".
+    // Combo chart (columns + line): with ≥2 series the last is a line, the rest are clustered
+    // columns; a single series degrades to plain columns.
     const lineCount = opts.series.length >= 2 ? 1 : 0
     const barEnd = opts.series.length - lineCount
     const barSers = opts.series.slice(0, barEnd).map(serXml).join('')
@@ -262,10 +255,7 @@ export function buildChartSpaceXml(opts: NewChartOptions): string {
   )
 }
 
-/**
- * Insert a chart: part surgery + graphicFrame fragment append + reparse.
- * Returns the new slide and element id (all ids on the slide refreshed).
- */
+/** Insert a chart: part surgery + graphicFrame fragment append + reparse. */
 export function addChart(
   opened: OpenedPptx,
   slideIndex: number,

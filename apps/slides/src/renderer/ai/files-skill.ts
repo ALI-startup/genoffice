@@ -4,11 +4,8 @@ import { t } from '../i18n/locale'
 import { slidesAttachments } from '../platform'
 
 /**
- * Chat-attachment capability as an AgentSkill (isomorphic to apps/docs files-skill):
- * each turn's context lists the attached local files; read_attachment reads their
- * extracted text in pages. Where the parsing happens is the host's business — the main
- * process on Electron, the page itself in a browser — and either way the bytes never
- * leave the machine. This skill only ever holds an opaque `AttachmentRef`.
+ * Chat-attachment capability as an AgentSkill (isomorphic to apps/docs files-skill): each turn's
+ * context lists the attached local files; read_attachment reads their extracted text in pages.
  */
 
 const READ_CHUNK_CHARS = 24_000

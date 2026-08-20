@@ -6,11 +6,7 @@ import type {
   AgentMessage,
 } from './types'
 
-/**
- * One streamed chunk pushed back over an Electron IPC bridge. Structurally
- * identical to ai-provider's AiStreamChunk; declared here so this package
- * stays dependency-free.
- */
+/** One streamed chunk pushed back over an Electron IPC bridge. */
 export interface IpcStreamChunk {
   requestId: string
   /** 'ping' = wire-level keepalive; re-arms the silence watchdog and carries no payload */
@@ -38,10 +34,9 @@ export interface IpcStreamStart {
 }
 
 /**
- * Renderer-side silence watchdog: the main process re-arms it with keepalive
- * pings on wire activity, so firing means the turn is dead (main-process stall,
- * lost chunks) and the run must fail instead of leaving the UI busy forever.
- * Longer than the main-process idle timeout so that one (localized) wins.
+ * Renderer-side silence watchdog: the main process re-arms it with keepalive pings on wire
+ * activity, so firing means the turn is dead (main-process stall, lost chunks) and the run must
+ * fail instead of leaving the UI busy forever.
  */
 export const IPC_STREAM_SILENCE_TIMEOUT_MS = 90_000
 
@@ -63,9 +58,8 @@ export interface IpcTransportOptions {
 }
 
 /**
- * AgentTransport over an Electron IPC bridge: the main process talks to the
- * LLM providers (avoids renderer CORS) and streams chunks back per requestId.
- * Each app wires in its own preload bridge and i18n via the options.
+ * AgentTransport over an Electron IPC bridge: the main process talks to the LLM providers (avoids
+ * renderer CORS) and streams chunks back per requestId.
  */
 export function createStreamTransport(options: IpcTransportOptions): AgentTransport {
   const timeoutText = () => options.timeoutErrorText?.() ?? options.unknownErrorText()

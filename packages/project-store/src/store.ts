@@ -1,19 +1,4 @@
-/**
- * project-store core implementation
- *
- * Storage layout (baseDir = userData/projects/):
- *   index.json
- *   <project-id>/
- *     project.json
- *     chats/
- *       <chat-id>.jsonl
- *
- * Design principles:
- * - No Electron dependency; the userData path is injected by the caller
- * - All write failures warn silently, never throw (append path)
- * - JSONL parsing is line-by-line tolerant: bad lines are skipped, no crash
- * - seq is maintained by the store layer: auto-incremented on each appendChatMessage
- */
+/** project-store core implementation */
 
 import { createHash } from 'node:crypto'
 import {
@@ -38,8 +23,7 @@ import type {
   TimelineEntry,
 } from './types.js'
 
-// ────────────────────────────────────────────────────────────
-// Internal helpers
+// ──────────────────────────────────────────────────────────── Internal helpers
 // ────────────────────────────────────────────────────────────
 
 /** Max stored characters for a single tool input/output field */
@@ -70,8 +54,7 @@ function writeJson(filePath: string, data: unknown): void {
   renameSync(tmpPath, filePath)
 }
 
-// ────────────────────────────────────────────────────────────
-// ProjectStore class
+// ──────────────────────────────────────────────────────────── ProjectStore class
 // ────────────────────────────────────────────────────────────
 
 export class ProjectStore {
@@ -149,13 +132,11 @@ export class ProjectStore {
     writeJson(this.projectJsonPath(data.id), data)
   }
 
-  // ────────────────────────────────────────────────────────────
-  // Public API
+  // ──────────────────────────────────────────────────────────── Public API
   // ────────────────────────────────────────────────────────────
 
   /**
    * Ensures the default project exists (id: "default", name: the Chinese "default project" label).
-   * Idempotent: returns directly if it already exists.
    */
   ensureDefaultProject(): ProjectData {
     const existing = this.readProject('default')
@@ -180,10 +161,7 @@ export class ProjectStore {
     return data
   }
 
-  /**
-   * Looks up the projectId by absolute file path.
-   * If not found, assign to default and register in fileMap.
-   */
+  /** Looks up the projectId by absolute file path. */
   resolveProjectForFile(filePath: string): string {
     this.ensureDefaultProject()
     const index = this.readIndex()
@@ -204,12 +182,7 @@ export class ProjectStore {
     return 'default'
   }
 
-  /**
-   * Derives a chatId from a file path (first 16 hex chars of sha256).
-   * Unsaved files use an externally provided temp id (e.g. "unsaved-<timestamp>").
-   * Only a fallback derivation for old data without a mapping; new code uses
-   * resolveChatForFile (stable mapping).
-   */
+  /** Derives a chatId from a file path (first 16 hex chars of sha256). */
   static chatIdForFile(filePath: string): string {
     return createHash('sha256').update(filePath).digest('hex').slice(0, 16)
   }
@@ -220,12 +193,7 @@ export class ProjectStore {
     return index.chatIdByPath?.[filePath] ?? ProjectStore.chatIdForFile(filePath)
   }
 
-  /**
-   * Resolves { projectId, chatId } by file path (the core of the resolveChat IPC).
-   * The chatId is registered into chatIdByPath on first resolve; from then on,
-   * renaming/moving the file only changes the mapping key — the chatId stays
-   * stable and history always follows the file.
-   */
+  /** Resolves { projectId, chatId } by file path (the core of the resolveChat IPC). */
   resolveChatForFile(filePath: string): { projectId: string; chatId: string } {
     const projectId = this.resolveProjectForFile(filePath)
     const index = this.readIndex()
@@ -264,10 +232,9 @@ export class ProjectStore {
   }
 
   /**
-   * Buffer for the opening messages of a chat that has no file yet: the file
-   * is not created until the first assistant reply arrives, so aborted or
-   * failed requests never leave behind an empty record with a lone user
-   * message.
+   * Buffer for the opening messages of a chat that has no file yet: the file is not created until
+   * the first assistant reply arrives, so aborted or failed requests never leave behind an empty
+   * record with a lone user message.
    */
   private readonly pendingFirstWrite = new Map<string, ChatMessage[]>()
 
@@ -286,12 +253,7 @@ export class ProjectStore {
     }
   }
 
-  /**
-   * Appends one message to the JSONL. Write failures warn silently, never throw.
-   * seq is auto-assigned by the store layer (monotonically increasing).
-   * When the record file doesn't exist yet, non-assistant messages are buffered;
-   * the file is created and flushed only when the first assistant message arrives.
-   */
+  /** Appends one message to the JSONL. */
   appendChatMessage(
     projectId: string,
     chatId: string,
@@ -329,10 +291,7 @@ export class ProjectStore {
     }
   }
 
-  /**
-   * Reads the most recent `limit` messages (in ascending seq order).
-   * A bad JSONL line is skipped without crashing.
-   */
+  /** Reads the most recent `limit` messages (in ascending seq order). */
   loadChat(projectId: string, chatId: string, limit = 200): ChatMessage[] {
     const pending = this.pendingFirstWrite.get(this.seqKey(projectId, chatId)) ?? []
     const filePath = this.chatPath(projectId, chatId)
@@ -364,9 +323,7 @@ export class ProjectStore {
     }
   }
 
-  /**
-   * Lists metadata of all chats in a project.
-   */
+  /** Lists metadata of all chats in a project. */
   listChats(projectId: string): ChatMeta[] {
     const dir = this.chatsDir(projectId)
     if (!existsSync(dir)) return []
@@ -392,11 +349,7 @@ export class ProjectStore {
     }
   }
 
-  /**
-   * Moves chats/<fromId>.jsonl to chats/<toId>.jsonl (possibly across projects).
-   * If the target exists, don't overwrite: renumber the source messages' seq and
-   * append them at the target's end (old conversations of a same-named file are kept).
-   */
+  /** Moves chats/<fromId>.jsonl to chats/<toId>.jsonl (possibly across projects). */
   private renameOrMergeChat(
     fromProjectId: string,
     fromId: string,
@@ -448,9 +401,8 @@ export class ProjectStore {
   }
 
   /**
-   * After an unsaved session first gets a real file path: register in fileMap,
-   * compute the chatId from the path, and move the temp JSONL into the target project.
-   * Returns the new { projectId, chatId } for the renderer to update its references.
+   * After an unsaved session first gets a real file path: register in fileMap, compute the chatId
+   * from the path, and move the temp JSONL into the target project.
    */
   rebindChatToFile(
     tempProjectId: string,
@@ -462,25 +414,19 @@ export class ProjectStore {
     return { projectId, chatId }
   }
 
-  /**
-   * Gets project info.
-   */
+  /** Gets project info. */
   getProject(projectId: string): ProjectData | null {
     return this.readProject(projectId)
   }
 
-  /**
-   * Lists all projects.
-   */
+  /** Lists all projects. */
   listProjects(): ProjectInfo[] {
     return this.readIndex().projects
   }
 
   // ── P1 extended API ────────────────────────────────────────
 
-  /**
-   * Lists all projects (with file count + last active time).
-   */
+  /** Lists all projects (with file count + last active time). */
   listProjectsSummary(): ProjectSummary[] {
     this.ensureDefaultProject()
     const index = this.readIndex()
@@ -501,10 +447,7 @@ export class ProjectStore {
     })
   }
 
-  /**
-   * Lists files that currently exist for a project. Stored paths are historical
-   * records and may outlive files deleted or moved outside SamuGen.
-   */
+  /** Lists files that currently exist for a project. */
   listProjectFiles(projectId: string): string[] {
     const proj = this.readProject(projectId)
     if (!proj) return []
@@ -512,9 +455,8 @@ export class ProjectStore {
   }
 
   /**
-   * Creates a project (name must be non-empty; id is the first 12 hex chars of
-   * sha256(name) plus a timestamp suffix to avoid collisions).
-   * Returns the newly created ProjectData.
+   * Creates a project (name must be non-empty; id is the first 12 hex chars of sha256(name) plus a
+   * timestamp suffix to avoid collisions).
    */
   createProject(name: string): ProjectData {
     const trimmed = name.trim()
@@ -542,9 +484,7 @@ export class ProjectStore {
     return data
   }
 
-  /**
-   * Renames a project (the default project cannot be renamed).
-   */
+  /** Renames a project (the default project cannot be renamed). */
   renameProject(id: string, name: string): void {
     if (id === 'default') throw new Error('The default project cannot be renamed')
     const trimmed = name.trim()
@@ -564,13 +504,7 @@ export class ProjectStore {
     this.writeIndex(index)
   }
 
-  /**
-   * Soft-deletes a project:
-   * 1. Move the directory into projects/.trash/<id>-<ts>/
-   * 2. Reassign all of its files in fileMap back to default
-   * 3. Remove the project from index.projects
-   * The default project cannot be deleted.
-   */
+  /** Soft-deletes a project: 1. */
   deleteProject(id: string): void {
     if (id === 'default') throw new Error('The default project cannot be deleted')
     const proj = this.readProject(id)
@@ -615,12 +549,7 @@ export class ProjectStore {
     this.writeIndex(index)
   }
 
-  /**
-   * Moves a file from its current project into a target project:
-   * 1. Update fileMap
-   * 2. Update the files lists in both project.json files
-   * 3. Move the corresponding chat's jsonl file to the new project directory
-   */
+  /** Moves a file from its current project into a target project: 1. */
   moveFileToProject(filePath: string, targetProjectId: string): void {
     this.ensureDefaultProject()
     const index = this.readIndex()
@@ -672,9 +601,8 @@ export class ProjectStore {
   }
 
   /**
-   * Aggregates messages from all chats in a project, sorted by ts descending,
-   * returning the most recent `limit` entries. Each entry includes the file path
-   * (reverse-looked-up from fileMap by chatId), role, and preview text.
+   * Aggregates messages from all chats in a project, sorted by ts descending, returning the most
+   * recent `limit` entries.
    */
   getProjectTimeline(projectId: string, limit = 20): TimelineEntry[] {
     const index = this.readIndex()

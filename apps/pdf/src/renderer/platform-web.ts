@@ -1,22 +1,4 @@
-/**
- * Builds pdf's platform for a browser, from a `WebDocumentStore`.
- *
- * The composition behind the slot, and it follows the seam's division: the
- * shared ports come from @samugen/platform-web, and the two app-specific
- * surfaces — the document operations and the Save As handshake — are adapted
- * here, next to the port declarations they satisfy. Nothing in this file touches
- * a browser global: the store, the pickers and the language/window environments
- * are all passed in, so this module is exercisable without a real `window`, and
- * host-web.ts is the only file that reads globals.
- *
- * Where Electron's file port is a rename (its `DocumentRef` *is* a path, so it
- * forwards to IPC), this one does the work in the renderer: the document's bytes
- * come from a `FileSystemFileHandle` and the editing runs here, through
- * @samugen/pdf-edit — byte-for-byte the same `savePdf` / `extractPagesBytes` /
- * `insertPdfBytes` the Electron main process calls. That is the point of
- * pdf-edit being host-agnostic: the browser gets the same editing behaviour
- * rather than a second implementation of it.
- */
+/** Builds pdf's platform for a browser, from a `WebDocumentStore`. */
 import { extractPagesBytes, insertPdfBytes, savePdf } from '@samugen/pdf-edit'
 import type { AiPort, LanguagePort } from '@samugen/platform'
 import type { WebDocumentStore, WebWindowSlice } from '@samugen/platform-web'
@@ -36,23 +18,12 @@ export interface WebPdfPlatformDeps {
   window: WebWindowSlice
 }
 
-/**
- * pdf's document surface over the File System Access API.
- *
- * Every operation the Electron main process performs on disk has an exact
- * counterpart here, and the results keep the shapes shared/ipc declares. The
- * `savedPath` / `savedDir` fields carry the picked *name* rather than a path,
- * which is all a browser has and all the renderer uses them for — it reads only
- * `ok`, `error` and the presence of `canceled`.
- */
+/** pdf's document surface over the File System Access API. */
 export function createWebPdfFilePort(store: WebDocumentStore): PdfFilePort {
   return {
     /**
-     * Always null, and honestly so: "pending" means a host queued a document
-     * into this view when it created it. A browser tab is opened by the user,
-     * not by a host with a document in hand, so there is never anything queued.
-     * This is what makes the renderer's `empty` state reachable on first load,
-     * and why `openDocument` below has to exist.
+     * Always null, and honestly so: "pending" means a host queued a document into this view when it
+     * created it.
      */
     consumePending: async () => null,
 
@@ -67,9 +38,8 @@ export function createWebPdfFilePort(store: WebDocumentStore): PdfFilePort {
 
     save: ({ ref, target, ...edits }): Promise<SavePdfResult> =>
       attempt(async () => {
-        // Save As reads the source and writes somewhere else; an in-place save
-        // reads and writes the same document. `savePdf` does not care which,
-        // and only writes once the whole edit applied cleanly.
+        // Save As reads the source and writes somewhere else; an in-place save reads and writes the
+        // same document.
         const io =
           target === undefined
             ? store.bytesIo(ref)
@@ -115,17 +85,9 @@ export function createWebPdfFilePort(store: WebDocumentStore): PdfFilePort {
 }
 
 /**
- * The window surface. Two of the three Save As members are event sources this
- * host never emits for, which is the same honest arrangement
- * @samugen/platform-web's `createWebWindowPort` documents for the close guard:
- * the Save As request comes from the shell's menu, and there is no shell.
- *
- * `onSaveAsFlow` is different — it is wired to something real. Its contract is
- * "pause autosave while a host dialog is open", and it exists because a dialog
- * blurs the window while the blur is what triggers autosave. Every browser
- * picker blurs the window, so the store's `onDialog` is a strictly better
- * source than the Electron original: it covers the open, insert and export
- * pickers too, not just Save As.
+ * The window surface. Two of the three Save As members are event sources this host never emits for,
+ * which is the same honest arrangement @samugen/platform-web's `createWebWindowPort` documents for
+ * the close guard: the Save As request comes from the shell's menu, and there is no shell.
  */
 export function createWebPdfWindowPort(
   slice: WebWindowSlice,
@@ -155,12 +117,7 @@ export function createWebPdfPlatform(deps: WebPdfPlatformDeps): PdfPlatform {
   }
 }
 
-/**
- * Turn a thrown failure into the `{ ok: false, error }` shape these channels
- * use. The Electron main process converts its exceptions at the IPC boundary;
- * with no IPC boundary in the browser, this is where it happens — the renderer
- * reads `result.error` and must not have to catch as well.
- */
+/** Turn a thrown failure into the `{ ok: false, error }` shape these channels use. */
 async function attempt<T extends { ok: true }>(
   run: () => Promise<T>,
 ): Promise<T | { ok: false; error: string }> {
@@ -172,10 +129,8 @@ async function attempt<T extends { ok: true }>(
 }
 
 /**
- * `readFile` is declared as returning an `ArrayBuffer` because that is what the
- * Electron IPC channel hands back. Copying the view's own bounds out keeps the
- * two hosts' results identical even when the store returns a view over a larger
- * pooled buffer.
+ * `readFile` is declared as returning an `ArrayBuffer` because that is what the Electron IPC
+ * channel hands back.
  */
 function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer

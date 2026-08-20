@@ -1,8 +1,6 @@
 /**
- * Connector geometry tests:
- * - bent elbow positions (controlled by adj)
- * - curved bezier control point counts
- * - ArrowHead size conversion
+ * Connector geometry tests: - bent elbow positions (controlled by adj) - curved bezier control
+ * point counts - ArrowHead size conversion
  */
 import { describe, it, expect } from 'vitest'
 import { connectorPoints, connectorBezier } from '../src/preset-geometry'

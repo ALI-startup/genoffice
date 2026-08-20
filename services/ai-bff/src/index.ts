@@ -1,19 +1,4 @@
-/**
- * Public surface of the AI BFF.
- *
- * Two kinds of consumer, and the export list is the union of what they need:
- *
- *   - `main.ts`, which reads the environment and starts listening.
- *   - tests and embedders, which want the request handler without a socket.
- *     `createAiBffHandler` is exported for exactly that: it is a plain
- *     `(req, res)` function, so a test can drive it over an ephemeral
- *     `node:http` server and assert on real response bodies.
- *
- * Deliberately *not* exported: anything that returns a credential. There is no
- * such function — `loadAiSettings` is the only thing that ever holds one, and
- * the only view of its result that leaves this process is `toPublicSettings`,
- * which drops the key entirely (see credentials.ts).
- */
+/** Public surface of the AI BFF. */
 export {
   createAiBffHandler,
   createAiBffServer,

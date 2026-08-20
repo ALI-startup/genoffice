@@ -22,9 +22,8 @@ export function useShallowStable<T extends object>(next: T): T {
 type AnyFn = (...args: never[]) => unknown
 
 /**
- * Stable identities for per-render closures: the returned functions never change,
- * but always dispatch into the latest render's handlers (same pattern as fileCtxRef).
- * The key set must be identical on every call.
+ * Stable identities for per-render closures: the returned functions never change, but always
+ * dispatch into the latest render's handlers (same pattern as fileCtxRef).
  */
 export function useStableCallbacks<T extends Record<string, AnyFn>>(handlers: T): T {
   const latest = useRef(handlers)

@@ -1,7 +1,6 @@
 /**
- * Animation pane (right side) — the current page's animation order list: select/reorder/delete/change trigger.
- * The source of truth lives in the main process (the pptx <p:timing>); the list is owned by App
- * and written back wholesale (setAnimations overwrite-style); this only displays and sends back intents.
+ * Animation pane: the current page's animation order, reorderable.
+ * select/reorder/delete/change trigger.
  */
 import React from 'react'
 import type { AnimEffectKind, AnimationItem } from '../../shared/ipc'
@@ -53,7 +52,16 @@ interface Props {
   onCollapse: () => void
 }
 
-export function AnimationPane({ slideIndex, items, selected, onSelect, onMove, onDelete, onPreview, onCollapse }: Props) {
+export function AnimationPane({
+  slideIndex,
+  items,
+  selected,
+  onSelect,
+  onMove,
+  onDelete,
+  onPreview,
+  onCollapse,
+}: Props) {
   const { t } = useI18n()
   // Step numbering: onClick increments; withPrev/afterPrev share the previous entry's number (0 = auto-play)
   const stepNos: number[] = []
@@ -68,7 +76,12 @@ export function AnimationPane({ slideIndex, items, selected, onSelect, onMove, o
       <div className="ai-panel-header">
         <span className="ai-panel-title">{t('paneAnimTitle', { n: slideIndex + 1 })}</span>
         <div className="ai-panel-header-actions">
-          <button className="ai-header-btn" disabled={items.length === 0} onClick={onPreview} title={t('paneAnimPreview')}>
+          <button
+            className="ai-header-btn"
+            disabled={items.length === 0}
+            onClick={onPreview}
+            title={t('paneAnimPreview')}
+          >
             ▶
           </button>
           <button className="ai-header-btn" onClick={onCollapse} title={t('paneAnimCollapse')}>
@@ -106,7 +119,11 @@ export function AnimationPane({ slideIndex, items, selected, onSelect, onMove, o
               <button disabled={i === 0} title={t('paneMoveUp')} onClick={() => onMove(i, -1)}>
                 ▲
               </button>
-              <button disabled={i === items.length - 1} title={t('paneMoveDown')} onClick={() => onMove(i, 1)}>
+              <button
+                disabled={i === items.length - 1}
+                title={t('paneMoveDown')}
+                onClick={() => onMove(i, 1)}
+              >
                 ▼
               </button>
               <button title={t('paneAnimDelete')} onClick={() => onDelete(i)}>

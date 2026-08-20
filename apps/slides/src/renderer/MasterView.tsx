@@ -1,9 +1,4 @@
-/**
- * Slide master editing view (modeled on PowerPoint View → Slide Master).
- * Full-screen overlay: [master, ...layouts] thumbnails on the left, editable canvas for the
- * current part on the right. All edits go through slides:master-* IPC; App only mounts it and
- * refreshes all slides after exit.
- */
+/** Slide master editing view (modeled on PowerPoint View → Slide Master). */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { RenderFill, RenderNode, RenderSlide, ShapeRenderNode } from '@samugen/pptx-render'
 import { SlideCanvas } from './SlideCanvas'

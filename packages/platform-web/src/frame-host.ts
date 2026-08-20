@@ -1,48 +1,11 @@
-/**
- * The shell half of the frame protocol.
- *
- * Owns the set of live editor frames, asks them the two questions the close
- * guard needs, and reads their titles. It is the counterpart of Electron's
- * `TabManager`, minus everything a `WebContentsView` gives that an iframe does
- * not: there is no equivalent of `webContents.close()` here because removing the
- * element *is* the close, and no `setBounds` because CSS positions the frames.
- *
- * Two properties are worth stating outright, because they are what makes this
- * safe rather than merely working:
- *
- *   - **Every inbound message is validated twice.** `parseFrameToShell` checks
- *     the origin and the shape; this module then checks that the message's
- *     `source` is the very window it registered under that frame id. So a
- *     message from another same-origin document — another frame, an opener, a
- *     popup — cannot answer a close check on a tab's behalf and talk the shell
- *     into discarding that tab's unsaved work.
- *   - **Every request has a deadline.** A frame that is wedged, or that never
- *     installed a protocol client, must not hang the close. What the deadline
- *     resolves to depends on whether the frame ever announced itself: a frame
- *     that sent `ready` and then went quiet is treated as *dirty* (prompt, and
- *     let the user decide), while one that never did is treated as *clean*,
- *     because a page that never got as far as running its client has no unsaved
- *     work to lose.
- *
- * The title is deliberately not part of the protocol: the frames are
- * same-origin, so `contentDocument.title` is readable directly and no app has to
- * cooperate. `titleOf` is that read, guarded — a frame can be mid-navigation, in
- * which case there is simply no title yet.
- */
+/** The shell half of the frame protocol. */
 import { FRAME_PROTOCOL, parseFrameToShell } from './frame-wire.js'
 import type { ShellToFrameMessage } from './frame-wire.js'
 
 /** How long the shell waits for a frame to answer before deciding without it. */
 export const FRAME_REPLY_TIMEOUT_MS = 2_000
 
-/**
- * One hosted frame, as the shell holds it.
- *
- * Structural rather than `HTMLIFrameElement` so the link is exercisable without
- * a DOM, and so it is obvious that only three things are ever touched: posting
- * to the window, comparing it against a message's `source`, and reading the
- * document's title.
- */
+/** One hosted frame, as the shell holds it. */
 export interface ShellFrameTarget {
   window: { postMessage(message: unknown, targetOrigin: string): void }
   /** `null` while the frame has no document yet (created, not yet navigated). */
@@ -60,12 +23,7 @@ export interface ShellFrameLinkEnv {
 }
 
 export interface ShellFrameLink {
-  /**
-   * Attach or detach the frame behind a tab id.
-   *
-   * `null` detaches, which also fails any request in flight for that frame:
-   * the element is going away, so nothing can answer.
-   */
+  /** Attach or detach the frame behind a tab id. */
   register(frameId: string, target: ShellFrameTarget | null): void
   /** The frame's current document title, or `null` when it has none yet. */
   titleOf(frameId: string): string | null
@@ -112,8 +70,7 @@ export function createShellFrameLink(
     const message = parseFrameToShell(event, env.origin)
     if (message === null) return
     const record = frames.get(message.frameId)
-    // The second check: the message must come from the window registered under
-    // that id. Origin alone is not identity — every frame of this app shares it.
+    // The second check: the message must come from the window registered under that id.
     if (record === undefined || event.source !== record.target.window) return
     if (message.kind === 'ready') {
       record.ready = true
@@ -180,9 +137,8 @@ export function createShellFrameLink(
         return
       }
       const existing = frames.get(frameId)
-      // Re-registering the same window is React handing back the same element on
-      // a re-render; keep the readiness we already observed. A *different*
-      // window is a new document, which has to announce itself again.
+      // Re-registering the same window is React handing back the same element on a re-render; keep
+      // the readiness we already observed.
       if (existing !== undefined && existing.target.window === target.window) {
         existing.target = target
         return

@@ -1,13 +1,4 @@
-/**
- * WordArt insertion tests - Item 3: WordArt (simplified) → save → re-parse
- *
- * Verifies:
- *  1. buildWordArtParagraphXml produces the correct structure
- *  2. Every preset style produces valid XML
- *  3. insert → save → Word structure assertions (wps:wsp + w:txbxContent, no fill, large text)
- *  4. Text is readable after re-parsing
- *  5. The wordArtId field is kept in the display model (display-only, not written to OOXML)
- */
+/** WordArt insertion tests - Item 3: WordArt (simplified) → save → re-parse */
 import { describe, expect, it } from 'vitest'
 import { Editor } from '@tiptap/core'
 import {

@@ -1,32 +1,4 @@
-/**
- * The AI backend-for-frontend.
- *
- * One job: be the only process that knows the provider credentials, and expose
- * exactly enough over HTTP for a browser renderer to run the same AI surface it
- * runs under Electron. The provider logic itself is not reimplemented — the
- * handlers below call @samugen/ai-provider's `streamForProvider` and
- * `chatForProvider`, the same functions the Electron main process calls, so
- * provider quirks are fixed in one place for both hosts.
- *
- * Shape of the seam: `AiPort` is an Electron-IPC-shaped contract (fire
- * `aiStream`, receive chunks on a separate subscription). SSE is its natural
- * HTTP form, so `POST /v1/ai/stream` answers with a stream of the very same
- * `AiStreamChunk` objects the IPC channel carries, `ping` keepalives included.
- *
- * `node:http` and nothing else. There are four routes, no middleware chain, no
- * templating and no static assets, so a framework would add a dependency and a
- * supply-chain surface to a credential-holding process in exchange for saving
- * about thirty lines of routing.
- *
- * Two deliberate omissions:
- *   - No CORS headers. The browser reaches this service same-origin through the
- *     dev server's `/v1/ai` proxy (the renderer CSP is `connect-src 'self'`), so
- *     any cross-origin caller is by definition not our page.
- *   - No client-supplied provider, endpoint, model or settings. The client names
- *     a *task*; the server chooses everything else. Accepting an endpoint from
- *     the browser would let a compromised page point the server's credentials
- *     wherever it liked.
- */
+/** The AI backend-for-frontend. */
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import {
   AiCreditsError,
@@ -74,10 +46,8 @@ export function createAiBffHandler(
 
   return (req, res) => {
     void route(req, res).catch((error: unknown) => {
-      // Last-resort guard: a handler bug must not leave the socket hanging, and
-      // the message goes out redacted like every other error text. An oversized
-      // body is the one expected failure that lands here, and it gets its own
-      // status so a client can tell "too big" from "we broke".
+      // Last-resort guard: a handler bug must not leave the socket hanging, and the message goes
+      // out redacted like every other error text.
       const status = error instanceof BodyTooLargeError ? 413 : 500
       if (!res.headersSent) sendJson(res, status, { error: redact(errorText(error)) })
       else res.end()
@@ -122,9 +92,7 @@ export function createAiBffHandler(
     const system = asString(body?.system) ?? ''
     const messages = Array.isArray(body?.messages) ? (body.messages as AgentMessage[]) : []
     const tools = Array.isArray(body?.tools) ? (body.tools as AgentToolDef[]) : []
-    // `settings` is the deprecated renderer-supplied field. Dropping it here is
-    // the enforcement point for "the browser does not choose the provider".
-    // `task` is accepted but the active provider is server-chosen either way.
+    // `settings` is the deprecated renderer-supplied field.
 
     res.writeHead(200, {
       'content-type': 'text/event-stream; charset=utf-8',
@@ -228,26 +196,15 @@ export function createAiBffHandler(
   }
 }
 
-/**
- * Redact every configured credential from any text on its way out.
- *
- * Belt and braces on top of never putting a key in a response: a provider's own
- * error body can echo the credential it rejected (some gateways include the
- * offending Authorization header), and that body is forwarded verbatim by
- * @samugen/ai-provider's `HTTP <status>: <detail>` messages. Filtering at the
- * single point where text becomes a response body means no future handler can
- * reintroduce the leak.
- */
+/** Redact every configured credential from any text on its way out. */
 export function createRedactor(settings: AiSettings): (text: string) => string {
   const configs = Object.values(settings.providers ?? {})
   const secrets = [
     ...new Set(
       [
         ...configs.map((config) => config?.apiKey),
-        // Operator-configured headers are usually attribution ("X-Caller"), but
-        // nothing stops one carrying a gateway token, so the auth-shaped ones are
-        // treated as credentials too. Matching on the *name* keeps an ordinary
-        // tracking value from being scrubbed out of otherwise readable errors.
+        // Operator-configured headers are usually attribution ("X-Caller"), but nothing stops one
+        // carrying a gateway token, so the auth-shaped ones are treated as credentials too.
         ...configs.flatMap((config) =>
           Object.entries(config?.headers ?? {})
             .filter(([name]) => /authorization|api[-_]?key|token|secret|credential/i.test(name))
@@ -278,16 +235,7 @@ export class BodyTooLargeError extends Error {
   }
 }
 
-/**
- * Read a JSON body with a hard size cap. A malformed body yields undefined; an
- * oversized one throws.
- *
- * The request stream is abandoned rather than destroyed: destroying the socket
- * here would kill it before the 413 could be written, so the client would see a
- * transport error instead of the reason it was refused. Node stops reusing a
- * connection whose request was not drained and closes it once the response is
- * flushed, so nothing is left hanging either way.
- */
+/** Read a JSON body with a hard size cap. */
 async function readJson(
   req: IncomingMessage,
   maxBytes: number,

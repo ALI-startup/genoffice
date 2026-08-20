@@ -6,11 +6,7 @@ import {} from '@tiptap/pm/tables'
 import { t } from '../i18n/locale'
 import { type TabStop } from '@samugen/docx-engine'
 
-/**
- * Custom schema mirroring the docx-engine Block model 1:1.
- * Every top-level node carries `docxIndex` (patch anchor, null = new) and
- * `aiChanged` (diff highlighting for AI edits).
- */
+/** Custom schema mirroring the docx-engine Block model 1:1. */
 
 import { SearchHighlight } from './extensions'
 import { revisionDisplayState } from './marks'
@@ -89,10 +85,7 @@ export const PendingCommentHighlightExtension = Extension.create({
 
 export const resolvedCommentsPluginKey = new PluginKey<Set<string>>('resolvedComments')
 
-/**
- * Word hides the in-text shading of resolved comment threads. App pushes the
- * resolved id set via meta; spans whose ids are all resolved get un-highlighted.
- */
+/** Word hides the in-text shading of resolved comment threads. */
 export const ResolvedCommentsExtension = Extension.create({
   name: 'resolvedComments',
   addProseMirrorPlugins() {
@@ -151,22 +144,9 @@ interface MeasuredTab {
 }
 
 /**
- * Measures every tab character (in any textblock, including table cells) and
- * turns it into a tab-stop jump: the paragraph gets `tab-size: 0` (class
- * has-tab-stops) and each tab char gets an inline decoration with a per-span
- * `tab-size: <length>`. Chromium ignores letter-/word-spacing on tab chars,
- * but honors a length tab-size: the tab advances to the next multiple of it
- * counted from the paragraph's content edge — with size = stop position and
- * the tab left of the stop, it lands exactly on the stop. The tab stays a
- * plain text character, so an ancestor <u>'s underline is drawn across the
- * gap — signature blanks like "By: ____" depend on this.
- *
- * Word measures stops from the text column edge (page margin / cell content
- * edge) while CSS measures from the paragraph content edge, so the paragraph
- * indent (margin/padding-left) is subtracted when converting.
- *
- * Measure → decorate → re-measure converges (a tab's target is absolute, not
- * cumulative) and is guarded by a signature check to avoid dispatch loops.
+ * Measures every tab character (in any textblock, including table cells) and turns it into a
+ * tab-stop jump: the paragraph gets `tab-size: 0` (class has-tab-stops) and each tab char gets an
+ * inline decoration with a per-span `tab-size: <length>`.
  */
 /** nodes are immutable, so the has-tab verdict per textblock never goes stale */
 const paraHasTabCache = new WeakMap<ProseMirrorNode, boolean>()

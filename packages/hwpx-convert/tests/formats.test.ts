@@ -1,10 +1,4 @@
-/**
- * The name tests, which four call sites used to each own a copy of.
- *
- * Small, and worth having anyway: the one that matters is that `.hwp` never
- * matches a `.hwpx`, because those two names take different routes into the
- * editor and confusing them sends an OWPML package through the HWP converter.
- */
+/** The name tests, which four call sites used to each own a copy of. */
 import { describe, expect, it } from 'vitest'
 import { hwpxNameFor, isHangulName, isHwpName, isHwpxName } from '../src/formats'
 

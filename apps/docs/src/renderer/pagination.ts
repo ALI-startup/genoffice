@@ -25,10 +25,7 @@ export interface BlockBox {
   splitMinLines?: number
 
   // ── F2 line-level page-split extensions ─────────────────────────────────
-  /**
-   * Paragraph line-box list (from computeLineMetrics, for line-level page splitting).
-   * When absent, degrades to F1 block-level greedy placement.
-   */
+  /** Paragraph line-box list (from computeLineMetrics, for line-level page splitting). */
   lineBoxes?: Array<{ offsetInBlock: number; height: number }>
   /** space before (px), from line-metrics output */
   spaceBeforePx?: number
@@ -44,19 +41,14 @@ export interface BlockBox {
   widowControl?: boolean
 
   // ── F2 table row-level page-split extensions ─────────────────────────────
-  /**
-   * Table row data (from parseDocx).
-   * When present, table rows become the page-split unit (instead of hard pixel cuts).
-   */
+  /** Table row data (from parseDocx). */
   tableRows?: TableRowBox[]
 
   /** virtual endnotes-area block (appended by appendEndnotesBlock; no DOM/docxIndex) */
   isEndnotes?: boolean
 }
 
-/**
- * Table row box (for F2 table row-level page splitting).
- */
+/** Table row box (for F2 table row-level page splitting). */
 export interface TableRowBox {
   /** row height (px) */
   height: number
@@ -98,15 +90,13 @@ export interface PageSlice {
   /** owning section index of this page */
   section: number
   /**
-   * tblHeader repetition: this page starts mid-table, so the source table's header
-   * rows must render first. top/height is the header rows' range in the continuous
-   * flow (virtual coordinates); the preview clones and crops accordingly.
+   * tblHeader repetition: this page starts mid-table, so the source table's header rows must render
+   * first.
    */
   repeatHeader?: { top: number; height: number }
   /**
-   * Column flow: provided when this page has cols>1 regions (omitted for single-column
-   * pages; consumers use the original path). start/end is still the whole-page flow
-   * range (= first column start .. last column end); the span can reach columns × column height.
+   * Column flow: provided when this page has cols>1 regions (omitted for single-column pages;
+   * consumers use the original path).
    */
   regions?: PageRegion[]
 }
@@ -131,11 +121,8 @@ export function computePageSlices(
 }
 
 /**
- * Line-level cut point for a page-crossing block: the last line boundary before the
- * page limit that satisfies widow/orphan constraints. Constraints: when the block
- * starts on this page, keep ≥ splitMinLines lines at the head; keep ≥ splitMinLines
- * lines in the tail after the cut. Returns null when there are no line boundaries or
- * the constraints fail (caller pushes the whole block / falls back to pixel cut).
+ * Line-level cut point for a page-crossing block: the last line boundary before the page limit that
+ * satisfies widow/orphan constraints.
  */
 function lineCut(block: BlockBox, pageStart: number, limit: number): number | null {
   const offs = block.lineOffsets
@@ -230,23 +217,7 @@ export function sectionPageBox(set: SectionSettings): {
 
 // ── F2 line-level page splitting + Word pagination constraints ───────────────
 
-/**
- * F2: line-level page splitting + Word pagination constraint solving (incl. column flow).
- *
- * Coordinates:
- *   - block.top: absolute Y in the content flow (px)
- *   - pageStart: starting Y of the current page in the content flow
- *   - usedInCol: height already placed in the current column (single-column doc = height used on the page)
- *   - fits(h): usedInCol + h <= colH + 0.01
- *
- * Columns (SectionGeom.cols>1): three levels, page → region → column. Each column
- * is a "mini page" (column height = content height − region top); overflow moves to
- * the next column, the last column turns the page; forced page breaks turn the page directly.
- * A continuous section changing column count opens a new region on the same page
- * (section capacity = columns × remaining height).
- *
- * Constraint priority: pageBreakBefore > keepNext chain > keepLines > widowControl
- */
+/** F2: line-level page splitting + Word pagination constraint solving (incl. */
 export function computeSectionedSlicesF2(
   blocks: BlockBox[],
   geoms: SectionGeom[],
@@ -442,8 +413,7 @@ export function computeSectionedSlicesF2(
         // note: the while loop stops at j < length-1, so if the chain tail is at document end, j = length-1
         return j
       })()
-      // chainEnd now points at the first non-keepNext block (the anchor), e.g. block[56]
-      // the actual keepNext chain is bi..chainEnd-1; the anchor is chainEnd
+      // chainEnd now points at the first non-keepNext block (the anchor), e.g.
       const lastKeepNextIdx = chainEnd - 1 // last keepNext block
       const anchorBlock = blocks[chainEnd] // anchor block (first non-keepNext)
 
@@ -470,11 +440,9 @@ export function computeSectionedSlicesF2(
       const chainPlusAnchorH = chainH + anchorFirstLineH
 
       if (chainH <= colH) {
-        // whole chain (keepNext blocks) fits on a page: the chain + anchor's first line
-        // must share a page (keepNext semantics); if it doesn't fit, push the whole chain
-        // to the next page (Word behavior; corpus 04 evidence: section 3.2 chain pushed).
-        // Only abandon the constraint when chain + anchor first line can't fit even an
-        // empty page (no solution; avoids infinite loops).
+        // whole chain (keepNext blocks) fits on a page: the chain + anchor's first line must share
+        // a page (keepNext semantics); if it doesn't fit, push the whole chain to the next page
+        // (Word behavior; corpus 04 evidence: section 3.2 chain pushed).
         if (!fits(chainPlusAnchorH) && !colEmpty() && chainPlusAnchorH <= colH) {
           newColumn(block.top, curSection)
         }
@@ -564,9 +532,7 @@ export function computeSectionedSlicesF2(
 
 // ── Internal helpers ────────────────────────────────────────────────────────
 
-/**
- * Place a table (row-level page breaking).
- */
+/** Place a table (row-level page breaking). */
 function _placeTable(
   block: BlockBox,
   rows: TableRowBox[],
@@ -605,15 +571,12 @@ function _placeTable(
     const repeatH = placedHeader && ri >= headerRows ? headerHeight : 0
 
     if (!fits(row.height)) {
-      // in-row page break (Word default): without cantSplit and with safe cut points,
-      // place segment by segment at the cut points. If the first segment doesn't fit,
-      // turn the page first (equivalent to pushing the whole row); rows taller than a page also flow segment by segment
+      // in-row page break (Word default): without cantSplit and with safe cut points, place segment
+      // by segment at the cut points.
       let cuts = !row.cantSplit && row.cutYs ? [...row.cutYs] : []
       if (!row.cantSplit && row.height > contentH) {
-        // A fixed-height row can be taller than a page while containing only one
-        // text band, so DOM line sampling may provide too few natural cuts. Keep
-        // every segment page-sized; natural inter-band cuts remain preferred and
-        // a hard content-band cut is only inserted where no legal cut advances.
+        // A fixed-height row can be taller than a page while containing only one text band, so DOM
+        // line sampling may provide too few natural cuts.
         const bounded: number[] = []
         let previous = 0
         for (const candidate of [...cuts, row.height]) {
@@ -650,10 +613,7 @@ function _placeTable(
   }
 }
 
-/**
- * Place a paragraph block (with widowControl).
- * With lineBoxes = null, degrades to F1 block-level placement.
- */
+/** Place a paragraph block (with widowControl). */
 function _placeParaBlock(
   block: BlockBox,
   lineBoxes: Array<{ offsetInBlock: number; height: number }> | null,
@@ -681,14 +641,13 @@ function _placeParaBlock(
     if (totalH <= contentH) {
       if (!pageEmpty()) newPage(block.top, curSection)
     } else {
-      // big block over one page (no line data): F1 style — each time reset usedOnPage to "block extends past boundary"
-      // equivalent to simulating a page break every contentH
-      // usedOnPage is currently u, block height H > contentH
-      // needs ceil((u + H) / contentH) - 1 page turns
-      // but we have no pageStartY, so we can only simulate
-      // simple approach: set usedOnPage to 0 (like a big block), then keep placing
-      // in practice we only need to avoid infinite loops: when totalH > contentH, place directly and let the next block trigger the page turn
-      // note: the F1 algorithm handles this the same way (falls through after determining it's a big block)
+      // big block over one page (no line data): F1 style — each time reset usedOnPage to "block
+      // extends past boundary" equivalent to simulating a page break every contentH usedOnPage is
+      // currently u, block height H > contentH needs ceil((u + H) / contentH) - 1 page turns but we
+      // have no pageStartY, so we can only simulate simple approach: set usedOnPage to 0 (like a
+      // big block), then keep placing in practice we only need to avoid infinite loops: when totalH
+      // > contentH, place directly and let the next block trigger the page turn note: the F1
+      // algorithm handles this the same way (falls through after determining it's a big block)
     }
     place(totalH)
     return
@@ -803,9 +762,7 @@ function _placeParaBlock(
   }
 }
 
-/**
- * Hard-cut lines (best effort when the paragraph exceeds one page).
- */
+/** Hard-cut lines (best effort when the paragraph exceeds one page). */
 function _hardCutLines(
   block: BlockBox,
   lineBoxes: Array<{ offsetInBlock: number; height: number }>,
@@ -855,8 +812,7 @@ export function effectiveBottomPx(set: SectionSettings, footerPx: number): numbe
   return Math.max(twipsToPx(set.marginBottom), footerPx > 0 ? dist + footerPx : 0)
 }
 
-/** Equal-width column count of a section (w:cols w:num).
- *  equalWidth="0" (local layout columns in PDF-converted docs, varying widths) is not modeled; treated as 1 column */
+/** Equal-width column count of a section (w:cols w:num). */
 export function sectionColumns(s: SectionInfo): number {
   if (/<w:cols[^>]*w:equalWidth="0"/.test(s.sectPrXml ?? '')) return 1
   return Math.max(1, s.settings.columns ?? 1)
@@ -879,11 +835,10 @@ export function sectionColGeom(s: SectionInfo): {
   }
 }
 
-/** SectionInfo[] → pagination geometry
- *  - continuous with unchanged page geometry: no forced break (content flows on the same page)
- *  - continuous with changed page geometry (width/height change, e.g. landscape → portrait): forced break
- *  - nextPage/evenPage/oddPage: forced break
- *  - with hfHeights, oversized headers/footers squeeze body capacity
+/**
+ * SectionInfo[] → pagination geometry - continuous with unchanged page geometry: no forced break
+ * (content flows on the same page) - continuous with changed page geometry (width/height change,
+ * e.g.
  */
 export function sectionGeoms(
   sections: SectionInfo[],
@@ -919,9 +874,8 @@ export function sectionGeoms(
 }
 
 /**
- * evenPage/oddPage sections: insert a zero-height blank page slice when the section's
- * first page has the wrong physical parity. Parity is approximated by physical
- * page order (1-based) — exact when page numbers run from 1.
+ * evenPage/oddPage sections: insert a zero-height blank page slice when the section's first page
+ * has the wrong physical parity.
  */
 export function insertParityBlanks(slices: PageSlice[], geoms: SectionGeom[]): PageSlice[] {
   if (!geoms.some((g) => g.startType === 'evenPage' || g.startType === 'oddPage')) return slices
@@ -1105,11 +1059,9 @@ export function sectionFirstPages(slices: PageSlice[]): boolean[] {
 }
 
 /**
- * Live section list: when a non-final section's break paragraph (the block at
- * lastBlockIndex) has been deleted from the canvas, that section merges into the
- * next (content before a section break takes the following section's
- * page setup). This is derived and doesn't mutate the authoritative sections state,
- * so undoing the deletion restores naturally; readSections rebuilds after saving.
+ * Live section list: when a non-final section's break paragraph (the block at lastBlockIndex) has
+ * been deleted from the canvas, that section merges into the next (content before a section break
+ * takes the following section's page setup).
  */
 export function liveSections(sections: SectionInfo[], blocks: BlockBox[]): SectionInfo[] {
   if (sections.length <= 1) return sections
@@ -1181,11 +1133,8 @@ export interface PageNoteItem {
 }
 
 /**
- * Collect the editor's top-level block boxes (relative to the content-area top,
- * converted back to 100% zoom). origin is the content-area top's screen Y (page
- * rect.top + top margin × zoom). Page-gap decorations (.page-gap) are not content:
- * they are skipped and subtracted from subsequent block coordinates, yielding
- * "gapless continuous flow" virtual coordinates so slicing is independent of the gaps.
+ * Collect the editor's top-level block boxes (relative to the content-area top, converted back to
+ * 100% zoom).
  */
 export function measureBlocks(
   pm: HTMLElement,
@@ -1218,10 +1167,8 @@ export function measureBlocks(
     gapAccum += innerGap
     totalHeight = Math.max(totalHeight, top + height)
   }
-  // inter-block CSS margin (space after): rect height excludes it, but it occupies
-  // vertical layout space. Attribute it to the previous block's spaceAfterPx and add
-  // it to the height, so the engine's capacity bookkeeping matches Y coordinates and
-  // the "trailing space doesn't consume page capacity" rule (Word breaks by text only) applies.
+  // inter-block CSS margin (space after): rect height excludes it, but it occupies vertical layout
+  // space.
   for (let i = 0; i + 1 < blocks.length; i++) {
     const gap = blocks[i + 1].top - (blocks[i].top + blocks[i].height)
     if (gap > 0.5) {
@@ -1233,11 +1180,8 @@ export function measureBlocks(
 }
 
 /**
- * Endnote layout: endnotes gather at the end of the document
- * (or section) right after the body, flowing to later pages when they don't fit.
- * Before slicing, the endnotes area is appended as a virtual block at flow end: one
- * line box per endnote (separator height merged into the first), widowControl off →
- * page breaks are allowed between any entries. Returns the endnotes area's top Y.
+ * Endnote layout: endnotes gather at the end of the document (or section) right after the body,
+ * flowing to later pages when they don't fit.
  */
 export function appendEndnotesBlock(
   blocks: BlockBox[],
@@ -1268,10 +1212,8 @@ export function appendEndnotesBlock(
 }
 
 /**
- * Two-pass slicing: slice by block first, then collect DOM line-box boundaries for
- * blocks crossing page bounds and re-slice. Only blocks that cross a page or exceed
- * one page get line collection (at most one per page, negligible cost).
- * metaOf: docxIndex → parse-layer pagination constraints (keepNext/widow/table row flags).
+ * Two-pass slicing: slice by block first, then collect DOM line-box boundaries for blocks crossing
+ * page bounds and re-slice.
  */
 export function sliceWithLineSplit(
   blocks: BlockBox[],
@@ -1290,11 +1232,9 @@ export function sliceWithLineSplit(
 }
 
 /**
- * Collect DOM line-box data for pagination candidate blocks (F2 model): blocks that
- * cross a page bound, exceed one page, or were pushed wholesale to a page top (the
- * second pass may pull lines back to the previous page). Other blocks are skipped, so cost is negligible.
- * Table blocks → tableRows (tr boundaries; never cuts into text lines inside cells); text blocks → lineBoxes.
- * Returns whether any block was filled (true means the caller must re-slice).
+ * Collect DOM line-box data for pagination candidate blocks (F2 model): blocks that cross a page
+ * bound, exceed one page, or were pushed wholesale to a page top (the second pass may pull lines
+ * back to the previous page).
  */
 export function fillLineBoxes(
   blocks: BlockBox[],
@@ -1493,10 +1433,9 @@ function innerGapHeight(el: HTMLElement): number {
 }
 
 /**
- * In-block text lines (first rect of each line): offset is the virtual in-block Y
- * after subtracting inline gaps; left/top are screen coordinates; node is the text
- * node owning the line's first rect (DOM anchor for viewport-independent positioning).
- * Text inside gaps (e.g. footnotes) doesn't count as lines.
+ * In-block text lines (first rect of each line): offset is the virtual in-block Y after subtracting
+ * inline gaps; left/top are screen coordinates; node is the text node owning the line's first rect
+ * (DOM anchor for viewport-independent positioning).
  */
 function domLineRects(
   el: HTMLElement,
@@ -1542,14 +1481,7 @@ function domLineBoundaries(el: HTMLElement, zoomFactor: number): number[] {
   return lineBreakBoundaries(domLineRects(el, zoomFactor).map((ln) => ln.offset))
 }
 
-/**
- * Convert DOM text-rect tops into safe line-break boundaries.
- *
- * The first rect is the glyph box inside the first line box, so its top can be
- * a few pixels below the block top. Treating it as a boundary creates a phantom
- * first line and lets pagination clip through glyphs. Only subsequent line
- * starts are valid page-break positions.
- */
+/** Convert DOM text-rect tops into safe line-break boundaries. */
 export function lineBreakBoundaries(lineOffsets: number[]): number[] {
   return lineOffsets.slice(1).filter((off) => off > 0.5)
 }
@@ -1560,14 +1492,7 @@ export interface LineAnchor {
   charOffset: number
 }
 
-/**
- * Character offset within a text node where the line whose top is lineTop begins.
- * Uses per-character Range rects (layout data, not viewport hit-testing), so it works
- * for lines scrolled outside the viewport — posAtCoords/caretRangeFromPoint do not:
- * off-screen coordinates resolve to degenerate document positions, which used to drop
- * in-table cut markers before the table's first row where they inflate the canvas
- * table by an anonymous-row line-height and skew all pagination measurement below.
- */
+/** Character offset within a text node where the line whose top is lineTop begins. */
 function lineStartCharOffset(node: Text, lineTop: number): number {
   const len = node.length
   if (len === 0) return 0
@@ -1601,9 +1526,8 @@ const toAnchor = (ln: { node: Text; top: number }): LineAnchor => ({
 })
 
 /**
- * DOM anchor of the line start matching an in-block virtual Y (offsetInBlock)
- * (used to position mid-paragraph page-break decorations).
- * Returns null when no matching line is found (non-text block / hard pixel cut point).
+ * DOM anchor of the line start matching an in-block virtual Y (offsetInBlock) (used to position
+ * mid-paragraph page-break decorations).
  */
 export function lineStartAnchor(
   el: HTMLElement,
@@ -1628,10 +1552,7 @@ export function nextLineAnchor(
   return null
 }
 
-/**
- * Index of each non-first-page page-leading block (a page gap should be inserted before it).
- * Hard pixel-cut boundaries (inside over-page big blocks, with no matching block) are skipped.
- */
+/** Index of each non-first-page page-leading block (a page gap should be inserted before it). */
 export function pageStartBlocks(blocks: BlockBox[], slices: PageSlice[]): number[] {
   const starts: number[] = []
   for (const slice of slices.slice(1)) {

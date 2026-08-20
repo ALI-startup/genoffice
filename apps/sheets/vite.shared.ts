@@ -1,12 +1,4 @@
-/**
- * Renderer build pieces shared by sheets' Vite configs.
- *
- * `hostAlias` resolves the bare specifier `@host` to the host module, so the renderer
- * imports its host by name and never by path — `main.tsx` bootstraps from `@host` and
- * tsconfig maps the same specifier for `tsc`.
- *
- * Same arrangement as apps/slides/vite.shared.ts, apps/docs' and apps/pdf's.
- */
+/** Renderer build pieces shared by sheets' Vite configs. */
 import { resolve } from 'node:path'
 
 /** Resolve `@host` to the host module; tsconfig.json maps the same specifier for `tsc`. */

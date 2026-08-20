@@ -1,9 +1,4 @@
-/**
- * The PDF editing implementation, over bytes only.
- *
- * Everything here is pure pdf-lib: bytes in, bytes out, no filesystem and no
- * Electron. Reading and writing those bytes is the host's job (see io.ts).
- */
+/** The PDF editing implementation, over bytes only. */
 import {
   PDFArray,
   PDFBool,
@@ -34,9 +29,6 @@ const quadBounds = (q: number[]) => {
 /**
  * Hand-written appearance stream (/AP /N), so viewers don't self-draw from QuadPoints —
  * Acrobat/Preview/pdfjs all render from AP for consistent results.
- * Highlight uses Multiply blending to mimic a highlighter; underline/strikeout are stroked
- * segments drawn along the "visual bottom edge" (pageRot is the page's final /Rotate;
- * at 90/270 line height runs along the x axis).
  */
 function markupAppearance(
   pdfDoc: PDFDocument,
@@ -328,8 +320,6 @@ export async function applyPdfEdits(
     if (idx >= 0 && idx < pdfDoc.getPageCount() && pdfDoc.getPageCount() > 1) pdfDoc.removePage(idx)
   }
   // Reorder last: pageOrder gives the new order of remaining-after-delete pages by original index.
-  // pdf-lib's removePage never invalidates its page cache, so getPages() here would return the
-  // stale pre-deletion list — derive the surviving pages from the pre-deletion snapshot instead.
   const order = request.pageOrder
   if (order && order.length > 0) {
     const deletedSet = new Set(request.deletedPages ?? [])
@@ -345,8 +335,7 @@ export async function applyPdfEdits(
   try {
     return await pdfDoc.save({ useObjectStreams: false })
   } catch (err) {
-    // Form values beyond WinAnsi (e.g. CJK) make pdf-lib's appearance generation fail:
-    // skip it and set NeedAppearances so viewers rebuild them (Acrobat/pdfjs both support this)
+    // Form values beyond WinAnsi (e.g.
     if (request.formValues.length === 0) throw err
     pdfDoc.getForm().acroForm.dict.set(PDFName.of('NeedAppearances'), PDFBool.True)
     return await pdfDoc.save({ useObjectStreams: false, updateFieldAppearances: false })

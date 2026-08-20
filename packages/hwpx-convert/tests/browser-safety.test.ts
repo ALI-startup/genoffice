@@ -1,19 +1,4 @@
-/**
- * The export path must not touch the filesystem.
- *
- * This is the property the web build rests on, and it is not self-evident:
- * `html2hwpx` does `require('fs')` at the top of three of its modules, and its
- * own `HTMLtoHWPX` entry point reads the style template off disk on every call.
- * `write.ts` avoids that by assembling the package from an embedded template —
- * but nothing about that arrangement is enforced by the type system, and a
- * library bump could route a new call through `fs` without any other test
- * noticing. A browser would then fail at runtime, in the one host that cannot be
- * debugged from here.
- *
- * So every Node filesystem module is replaced with one that throws on any
- * access, which is what a bundler's browser shim does. If the export still
- * produces a package, it does not need a filesystem.
- */
+/** The export path must not touch the filesystem. */
 import { describe, expect, it, vi } from 'vitest'
 
 /** Stand-in for a module a browser build resolves to a throwing shim. */

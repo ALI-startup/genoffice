@@ -27,11 +27,7 @@ function intAttr(tag: string, name: string, fallback: number): number {
   return Number.isFinite(v) ? v : fallback
 }
 
-/**
- * True when w:pgBorders declares at least one visible side. Word writes explicit
- * "no border" as side elements with w:val="none" (or "nil"), so the mere presence
- * of w:pgBorders must not be treated as a drawn border.
- */
+/** True when w:pgBorders declares at least one visible side. */
 function hasVisiblePageBorder(xml: string): boolean {
   const pgBorders = /<w:pgBorders[^>]*\/>|<w:pgBorders[\s\S]*?<\/w:pgBorders>/.exec(xml)?.[0]
   if (!pgBorders) return false
@@ -135,9 +131,8 @@ function sectionFromSectPr(
 }
 
 /**
- * Rewrite the sectPr page numbering w:pgNumType (fmt = number format, start = starting
- * page number; undefined fields are omitted, and the tag is removed when both are unset).
- * Schema order: pgNumType comes after pgMar/pgBorders and before cols/docGrid.
+ * Rewrite the sectPr page numbering w:pgNumType (fmt = number format, start = starting page number;
+ * undefined fields are omitted, and the tag is removed when both are unset).
  */
 export function applyPageNumType(
   sectPrXml: string,
@@ -153,11 +148,7 @@ export function applyPageNumType(
   return xml
 }
 
-/**
- * Enumerate every section in document order. A paragraph-level w:sectPr
- * (section-break paragraph) closes its section; the trailing hidden sectPr closes the last.
- * Block ranges use docxIndex (body child order), boundaries inclusive.
- */
+/** Enumerate every section in document order. */
 export function readSections(parsed: ParsedDoc): SectionInfo[] {
   const sections: SectionInfo[] = []
   let first = 0
@@ -243,11 +234,7 @@ export function applySectionSettings(sectPrXml: string, settings: SectionSetting
   return xml
 }
 
-/**
- * Rewrite the sectPr start type w:type (how this section starts relative to the previous
- * one). nextPage is the default and is written by removing the tag; w:type comes before
- * pgSz in CT_SectPr.
- */
+/** Rewrite the sectPr start type w:type (how this section starts relative to the previous one). */
 export function applySectionStartType(
   sectPrXml: string,
   type: 'nextPage' | 'continuous' | 'evenPage' | 'oddPage',

@@ -47,10 +47,7 @@ interface ToolActivity {
   isError?: boolean
   /** Full tool output (truncated to 2000 chars) */
   output?: string
-  /**
-   * Side-channel display data: structured UI data filled by tools, not in LLM context.
-   * Takes priority over name-based inference.
-   */
+  /** Side-channel display data: structured UI data filled by tools, not in LLM context. */
   display?: ToolDisplay
 }
 
@@ -145,9 +142,7 @@ interface AiPanelProps {
   applyDeck: (slides: RenderSlide[], goTo?: number) => void
   fitWidthPx: number
   settings: AiSettings
-  /** Preset instruction pushed from the ribbon/start screen; sent immediately when autoRun. When displayText exists the chat bubble shows only it while the full text still goes to the model.
-      attachments are local files added in the start-screen input, taking effect with the first message.
-      slideShot attaches a rendering of the current slide so the model sees what it's editing (AI Beautify) */
+  /** Preset instruction pushed from the ribbon/start screen; sent immediately when autoRun. */
   preset?: {
     text: string
     nonce: number
@@ -396,11 +391,7 @@ export function AiPanel({
         providers: { ...cur.providers, anthropic: { ...ap, model: SLIDES_GEN_MODEL } },
       }
     }
-    // Send one LLM request, aggregating streaming deltas into complete text. Shared by in-tool per-page/planning.
-    // - On timeout/user stop (signal abort) call aiStreamCancel to cancel the main-process stream, leaving no orphan requests.
-    // - useGenModel=true uses SLIDES_GEN_MODEL first; on request errors (non-timeout) automatically falls back to the
-    //   user-configured model and retries once, so generation isn't wiped out when the key lacks access to that model.
-    // errKind marks failure categories that shouldn't retry with another model (timeout/empty output/user stop)
+    // Send one LLM request, aggregating streaming deltas into complete text.
     type LlmResult = {
       ok: boolean
       text?: string
@@ -514,9 +505,7 @@ export function AiPanel({
       // ── In-tool page writing: one LLM call turns a page's brief into a PageSpec — content and
       // a layout name, never geometry — which is what lets generation run on any configured provider.
       writePageSpec: async (a) => {
-        // Content only: no coordinates, no CSS, no pptx. That is what lets this
-        // run on whatever provider is configured — a small local model can
-        // answer this prompt, and `composePage` does the design either way.
+        // Content only: no coordinates, no CSS, no pptx.
         const sys =
           'You write one presentation page as JSON. Output only one JSON object — no explanation, no markdown fences.\n' +
           'Format: {"layout":"<layout name>","blocks":[ ... ]}\n' +
@@ -559,9 +548,8 @@ export function AiPanel({
           ? { ok: true, spec: parsed }
           : { ok: false, error: tGlobal('aiErrEmptyOutput') }
       },
-      // ── In-tool planning: given topic+page count, the LLM produces a structured outline (batched recursion scheduled by the skill).
-      // Fixes "missing pages at the input side" at the root: the main agent doesn't hand-write dozens of pages of pages JSON.
-      // In-tool independent Style Skill generation: one focused LLM call thinking only about the design system.
+      // ── In-tool planning: given topic+page count, the LLM produces a structured outline (batched
+      // recursion scheduled by the skill).
       generateStyleSkill: async (a) => {
         const sys =
           'You are a professional deck visual designer. Given the presentation topic and style preferences, produce a complete Style Skill (visual style guide). Output strictly in the structure below, only the Style Skill content, no explanations/markdown/code fences.\n\n' +
@@ -954,10 +942,8 @@ export function AiPanel({
 
   const runWith = (instruction: string, displayText?: string, opts?: { slideShot?: boolean }) => {
     const loop = loopRef.current
-    // runStartingRef: loop.run is called only after attachments are read asynchronously, during which loop.busy is still false,
-    // so duplicate triggers must be blocked synchronously (e.g. StrictMode double-running the preset autoRun effect),
-    // otherwise two sets of bubbles get pushed and the earlier assistant placeholder stays at "thinking" forever.
-    // qcRunningRef: the post-generation QC pass edits the deck outside the main loop — no concurrent runs
+    // runStartingRef: loop.run is called only after attachments are read asynchronously, during
+    // which loop.busy is still false, so duplicate triggers must be blocked synchronously (e.g.
     if (!instruction || !loop || loop.busy || runStartingRef.current || qcRunningRef.current) return
     runStartingRef.current = true
     setInput('')
@@ -1003,10 +989,8 @@ export function AiPanel({
   }
 
   /**
-   * Post-generation layout QC: each page landed by this run gets one focused vision pass in a
-   * fresh AgentLoop (screenshot + inventory → constrained fixes via execute_slide_script).
-   * Each page's edits sit in their own history batch; if the deterministic audit says the page
-   * got worse, that batch is rolled back. Progress streams into one assistant chat entry.
+   * Post-generation layout QC: each page landed by this run gets one focused vision pass in a fresh
+   * AgentLoop (screenshot + inventory → constrained fixes via execute_slide_script).
    */
   const runQcPass = async () => {
     const pages = qcPagesRef.current
@@ -1815,8 +1799,6 @@ function DeckProgressCard({ progress }: { progress: DeckProgressSnapshot }) {
   type StepStatus = 'done' | 'error' | 'running'
 
   // Fix the step display order (only steps that have appeared are shown).
-  // Labels come from skill-layer events (backend-defined steps pattern);
-  // in progress shows a live summary (e.g. "planned 5/10 page outlines…"), frozen to the label when done.
   const steps: Array<{ key: string; label: string; stepStatus: StepStatus }> = []
 
   const stepView = (

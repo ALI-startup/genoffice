@@ -418,8 +418,7 @@ export function PivotDialog({
                   }}
                 >
                   {spec.formula !== undefined ? (
-                    // Calculated field: name + formula (e.g. Profit =
-                    // Revenue-Cost).
+                    // Calculated field: name + formula (e.g.
                     <>
                       <input
                         type="text"

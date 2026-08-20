@@ -6,9 +6,8 @@ import '@univerjs/preset-sheets-core/lib/index.css'
 import { App } from './App'
 import { LocaleProvider, setModuleLang } from './i18n/locale'
 import './styles.css'
-// The build-time host seam: each Vite config aliases `@host` to exactly one of
-// host-web.ts, so this entry point names no host at all and the
-// bundles carry disjoint host code.
+// The build-time host seam: each Vite config aliases `@host` to exactly one of host-web.ts, so this
+// entry point names no host at all and the bundles carry disjoint host code.
 import { createSheetsPlatform } from '@host'
 import { setSheetsPlatform, sheetsLanguage } from './platform'
 

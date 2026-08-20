@@ -1,13 +1,6 @@
 /**
- * Format painter (renderer side) — extracts formatting from a RenderNode and converts it into
- * IPC call parameters.
- *
- * Format scope:
- *  - shape/text: fill, stroke, default text run (first run of first paragraph), paragraph alignment
- *  - picture: stroke
- *  - cross-type application takes the intersection
- *
- * This module has no side effects; App.tsx calls it.
+ * Format painter (renderer side) — extracts formatting from a RenderNode and converts it into IPC
+ * call parameters.
  */
 import type {
   ShapeRenderNode,
@@ -112,10 +105,7 @@ export interface BrushApplyPlan {
   align?: 'left' | 'center' | 'right' | 'justify'
 }
 
-/**
- * Apply BrushFormat to the target node type, producing an IPC call plan.
- * Cross-type takes the intersection: picture only receives stroke.
- */
+/** Apply BrushFormat to the target node type, producing an IPC call plan. */
 export function computeBrushApply(fmt: BrushFormat, targetNode: RenderNode): BrushApplyPlan {
   const plan: BrushApplyPlan = {}
 
@@ -138,8 +128,6 @@ export function computeBrushApply(fmt: BrushFormat, targetNode: RenderNode): Bru
 /**
  * Convert BrushApplyPlan's runFormat + align into EditParagraph[], keeping the target node's
  * original text structure and replacing only run format attributes.
- *
- * targetNode is a ShapeRenderNode; original run text is extracted from its text.lines.
  */
 export function buildEditParagraphsWithFormat(
   node: RenderNode,

@@ -1,11 +1,4 @@
-/**
- * Clipboard plain-text interop. Univer's copy joins raw cell text with
- * tabs — booleans land as 1/0 and embedded newlines go out unquoted (as bare
- * \r), so Excel/Numbers/scripts mis-parse the paste. Wrap the clipboard
- * service's content generation and rebuild the plain slice with Excel's TSV
- * conventions: TRUE/FALSE for booleans, CSV-style quoting for fields carrying
- * tabs/newlines/quotes, newlines normalized to \n.
- */
+/** Clipboard plain-text interop. */
 import {
   CellModeEnum,
   CellValueType,

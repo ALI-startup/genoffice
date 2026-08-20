@@ -11,13 +11,7 @@ import {
   type XNode,
 } from './xml-utils'
 
-/**
- * OMML (Office Math Markup) <-> display / authoring support.
- *
- * - ommlFragmentsOf: pull the <m:oMath> fragments out of a paragraph
- * - ommlToMathML: convert OMML to MathML Core for native Chromium rendering
- * - latexToOmml: build OMML from a practical LaTeX subset (insert dialog / gallery)
- */
+/** OMML (Office Math Markup) <-> display / authoring support. */
 
 // ---- fragment extraction ----
 
@@ -48,10 +42,7 @@ export function mathTokensOf(xml: string): string[] {
 
 // ---- OMML -> MathML ----
 
-/**
- * MathML Core markup for one or more <m:oMath> fragments (they may be passed
- * concatenated). Returns '' when nothing convertible is found.
- */
+/** MathML Core markup for one or more <m:oMath> fragments (they may be passed concatenated). */
 export function ommlToMathML(ommlXml: string): string {
   const fragments = ommlFragmentsOf(ommlXml)
   const sources = fragments.length > 0 ? fragments : [ommlXml]
@@ -492,13 +483,7 @@ const matrixEnvs = lazyMap(() => {
   return map
 })
 
-/**
- * Decompile a single <m:oMath> fragment back into the LaTeX subset that
- * latexToOmml accepts. Returns null when the formula uses structures the
- * subset cannot express (the caller then keeps token-level editing only).
- * The result is semantically equivalent, not byte-identical: it is only used
- * when the user actually edits the formula, so regeneration is expected.
- */
+/** Decompile a single <m:oMath> fragment back into the LaTeX subset that latexToOmml accepts. */
 export function ommlToLatex(ommlXml: string): string | null {
   const fragments = ommlFragmentsOf(ommlXml)
   const sources = fragments.length > 0 ? fragments : [ommlXml]
@@ -714,13 +699,7 @@ interface LatexParser {
   pos: number
 }
 
-/**
- * Convert a practical LaTeX subset into OMML (the children of <m:oMath>).
- * Supported: \frac \binom \sqrt[n] ^ _ \sum/\int/... with limits,
- * \left(\right), matrix environments, accents, greek letters and common
- * symbols, \text{}, function names. Throws Error (with a Chinese message)
- * on syntax the subset does not cover.
- */
+/** Convert a practical LaTeX subset into OMML (the children of <m:oMath>). */
 export function latexToOmml(latex: string): string {
   const parser: LatexParser = { src: latex, pos: 0 }
   const out = parseSequence(parser, () => parser.pos >= parser.src.length)

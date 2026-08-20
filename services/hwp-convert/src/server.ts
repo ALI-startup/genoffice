@@ -1,26 +1,4 @@
-/**
- * The format-conversion service.
- *
- * One job, and one route that does it: take `.hwp` bytes, answer with `.hwpx`
- * bytes. It exists as its own process rather than as a route on the AI BFF
- * because the two have opposite properties — the BFF holds the provider
- * credentials and accepts small JSON bodies, this holds no secret at all and
- * accepts whole documents — and putting an upload path into a credential-holding
- * process is exactly the coupling worth avoiding.
- *
- * `node:http` and nothing else, for the same reasons the BFF gives: there is no
- * middleware chain to configure, and a framework in a process that runs a
- * subprocess over user-supplied bytes would be added supply-chain surface for
- * about thirty lines of routing.
- *
- * Two deliberate omissions, both inherited from the BFF's reasoning:
- *   - No CORS headers. The browser reaches this same-origin through whatever
- *     fronts the static files (every app's CSP is `connect-src 'self'`), so a
- *     cross-origin caller is by definition not our page.
- *   - No authentication. It is not published outside the compose network, and it
- *     has nothing to spend: the worst a caller can do is occupy a JVM, which is
- *     what the body limit and the conversion timeout bound.
- */
+/** The format-conversion service. */
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import {
   CONVERT_ROUTES,
@@ -37,8 +15,7 @@ import {
 
 /**
  * Documents, not prompts, so the limit is the one nginx already allows through
- * (`client_max_body_size 64m`). A larger `.hwp` than this is not a document
- * anyone is editing.
+ * (`client_max_body_size 64m`).
  */
 export const MAX_BODY_BYTES = 64 * 1024 * 1024
 
@@ -130,12 +107,7 @@ export function createHwpConvertHandler(
   }
 }
 
-/**
- * Read the whole body, or refuse.
- *
- * Counted as it arrives and abandoned the moment it passes the limit, so an
- * oversized upload costs the bytes already in flight rather than all of them.
- */
+/** Read the whole body, or refuse. */
 async function readBody(req: IncomingMessage, limit: number): Promise<Uint8Array | 'too-large'> {
   const chunks: Buffer[] = []
   let total = 0

@@ -308,11 +308,7 @@ export const AI_PROVIDERS: AiProviderMeta[] = [
   },
 ]
 
-/**
- * The provider a fresh install opens on. Named explicitly rather than taken
- * from the head of `AI_PROVIDERS`, so the settings screen's display order and
- * the default are free to change independently.
- */
+/** The provider a fresh install opens on. */
 export const DEFAULT_AI_PROVIDER: AiProviderId = 'vllm'
 
 export const AI_PROVIDER_BY_ID = Object.fromEntries(
@@ -320,10 +316,8 @@ export const AI_PROVIDER_BY_ID = Object.fromEntries(
 ) as Readonly<Record<AiProviderId, AiProviderMeta>>
 
 /**
- * Fresh settings with every provider's default model and an empty key,
- * except providers listed in `defaultApiKeys` (e.g. an app-specific
- * preconfigured Anthropic key). Callers own that policy; this package
- * has no hardcoded keys.
+ * Fresh settings with every provider's default model and an empty key, except providers listed in
+ * `defaultApiKeys` (e.g.
  */
 export function defaultAiSettings(
   defaultApiKeys?: Partial<Record<AiProviderId, string>>,
@@ -333,9 +327,7 @@ export function defaultAiSettings(
     providers[meta.id] = {
       apiKey: defaultApiKeys?.[meta.id] ?? '',
       model: meta.defaultModel,
-      // Built-in transports resolve their endpoint from provider metadata. Keep
-      // the legacy shape (undefined for built-ins) so existing persisted settings
-      // and callers continue to round-trip unchanged.
+      // Built-in transports resolve their endpoint from provider metadata.
       baseUrl: meta.needsBaseUrl ? '' : undefined,
     }
   }
@@ -345,10 +337,8 @@ export function defaultAiSettings(
 }
 
 /**
- * Merge on-disk settings over freshly computed defaults, migrating the
- * pre-provider shape (a single OpenAI-compatible endpoint) into the
- * "custom" provider slot. `stored` is whatever the caller read from its
- * settings file (already JSON-parsed); this function does no file I/O.
+ * Merge on-disk settings over freshly computed defaults, migrating the pre-provider shape (a single
+ * OpenAI-compatible endpoint) into the "custom" provider slot.
  */
 export function resolveAiSettings(
   stored: Partial<AiSettings> & LegacyAiSettings,

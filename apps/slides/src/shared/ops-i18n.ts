@@ -1,15 +1,4 @@
-/**
- * The strings the document operations need a host to say, in every language.
- *
- * Eleven of them are `OpsTranslate` itself (src/domain/ops.ts): the element kind an
- * operation reports ("Text Box", "Picture"), and the names of the chart colour schemes. The
- * other two are the warning a host must show before `editChart` rebuilds an imported chart —
- * not passed to the operation, but asked by the host on its behalf, which is why they belong
- * with it rather than with the host's own dialogs. The operations take the translator as a
- * parameter rather than reaching for one, because the label belongs to the operation and the
- * dictionary belongs to whoever is rendering it — which is also what let the same operations
- * serve a second host while there was one.
- */
+/** The strings the document operations need a host to say, in every language. */
 import { createI18n, type Lang } from '@samugen/i18n'
 
 const tOpsIn = createI18n({

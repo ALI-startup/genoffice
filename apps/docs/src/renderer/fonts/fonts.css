@@ -1,12 +1,6 @@
 /*
- * Metric-compatible fallback fonts (bundled from LibreOffice, SIL OFL 1.1):
- *   Carlito ↔ Calibri, Caladea ↔ Cambria, Liberation Serif/Sans/Mono ↔
- *   Times New Roman/Arial/Courier New.
- * When a Word font the document declares is missing locally, the browser's
- * silent fallback (Helvetica etc.) changes character widths → line breaks and
- * pagination all shift. With metric-compatible fallbacks, canvas line breaking
- * reproduces the original document's layout and shares its font source with
- * the offline pagination model (lo-fonts measures the same set of files).
+ * Metric-compatible fallback fonts (bundled from LibreOffice, SIL OFL 1.1): Carlito ↔ Calibri,
+ * Caladea ↔ Cambria, Liberation Serif/Sans/Mono ↔ Times New Roman/Arial/Courier New.
  */
 
 @font-face {
@@ -135,10 +129,7 @@
 }
 
 /*
- * CJK fallback (Noto Sans/Serif CJK SC, SIL OFL): environments with no Chinese
- * fonts at all (e.g. stripped-down Windows/Linux packages) no longer show tofu
- * boxes. GB2312 subset (7445 common characters + CJK punctuation/fullwidth
- * forms); rare characters still use system fallback. Bold is synthesized by the browser.
+ * CJK fallback (Noto Sans/Serif CJK SC, SIL OFL): environments with no Chinese fonts at all (e.g.
  */
 @font-face {
   font-family: 'Noto Sans CJK SC';

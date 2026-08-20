@@ -1,8 +1,4 @@
-/**
- * Parses the LLM JSON output of generate_deck / planDeckOutline.
- * Models often put unescaped quotes, trailing commas and smart quotes inside brief/title,
- * making JSON.parse fail outright.
- */
+/** Parses the LLM JSON output of generate_deck / planDeckOutline. */
 
 export type OutlineJson = {
   core_hook?: unknown
@@ -13,7 +9,10 @@ export type OutlineJson = {
 /** Strip markdown fences and slice the object between the first and last braces. */
 export function extractJsonObject(text: string): string {
   let s = String(text ?? '').trim()
-  s = s.replace(/^```[a-zA-Z]*\s*/, '').replace(/```\s*$/, '').trim()
+  s = s
+    .replace(/^```[a-zA-Z]*\s*/, '')
+    .replace(/```\s*$/, '')
+    .trim()
   const st = s.indexOf('{')
   const en = s.lastIndexOf('}')
   if (st >= 0 && en > st) s = s.slice(st, en + 1)
@@ -32,11 +31,7 @@ function normalizeSmartQuotes(s: string): string {
     .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'")
 }
 
-/**
- * Escape unescaped " inside string values, and write bare newlines/tabs as JSON escapes.
- * Heuristic: if the character after " (skipping whitespace) isn't , } ] : or the end, treat it
- * as an in-value quote.
- */
+/** Escape unescaped " inside string values, and write bare newlines/tabs as JSON escapes. */
 export function escapeBrokenStringLiterals(json: string): string {
   let out = ''
   let i = 0
@@ -67,9 +62,21 @@ export function escapeBrokenStringLiterals(json: string): string {
       i++
       continue
     }
-    if (c === '\n') { out += '\\n'; i++; continue }
-    if (c === '\r') { out += '\\r'; i++; continue }
-    if (c === '\t') { out += '\\t'; i++; continue }
+    if (c === '\n') {
+      out += '\\n'
+      i++
+      continue
+    }
+    if (c === '\r') {
+      out += '\\r'
+      i++
+      continue
+    }
+    if (c === '\t') {
+      out += '\\t'
+      i++
+      continue
+    }
     out += c
     i++
   }
@@ -85,10 +92,7 @@ function tryParse(s: string): OutlineJson | null {
   }
 }
 
-/**
- * Multi-layer fallback parsing of outline JSON.
- * Returns the object on success; null on failure (caller composes the error message).
- */
+/** Multi-layer fallback parsing of outline JSON. */
 export function parseOutlineJson(text: string): OutlineJson | null {
   const raw = extractJsonObject(text)
   if (!raw) return null

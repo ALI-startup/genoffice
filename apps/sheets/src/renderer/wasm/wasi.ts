@@ -1,22 +1,4 @@
-/**
- * WASI preview1, as much of it as the xlsx engine imports and no more.
- *
- * The module built by `npm run wasm:build` asks for exactly twenty-one functions — the list
- * below is that import list, not a general implementation of the standard. Anything outside
- * it is absent on purpose: a shim that answers calls nobody makes is a shim nobody has
- * tested. (`node -e "WebAssembly.Module.imports(…)"` on the built module prints the list, and
- * instantiation fails loudly if it ever grows.)
- *
- * Why hand-written rather than a dependency: the surface is small, every call maps onto
- * `MemFs` in a line or two, and the alternative is shipping a general-purpose WASI runtime to
- * every user of a spreadsheet page. It is also the layer where a mistake is silent — an
- * `fd_read` that returns the wrong count corrupts a workbook rather than failing — so it is
- * worth having under test in this repo.
- *
- * Structures are written little-endian at the offsets preview1 specifies. Each one is
- * documented where it is written, because a wrong offset here is invisible until a workbook
- * comes back subtly wrong.
- */
+/** WASI preview1, as much of it as the xlsx engine imports and no more. */
 import { MemFs, MemFsError, readAt, writeAt, type MemDir, type MemFile } from './memfs'
 
 /** preview1 errnos, only the ones this shim can return. */

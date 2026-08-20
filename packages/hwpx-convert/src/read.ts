@@ -1,10 +1,4 @@
-/**
- * `.hwpx` bytes → the restricted HTML fragment docs' editor imports.
- *
- * Two passes over the same archive, because neither alone is enough:
- * `neoali-hwpxjs` turns the body into HTML but discards paragraph roles, and
- * `outline.ts` recovers the roles but not the text. `normalize.ts` joins them.
- */
+/** `.hwpx` bytes → the restricted HTML fragment docs' editor imports. */
 import { normalizeHwpxHtml, type BlockAlign } from './normalize'
 import { readParagraphInfo } from './outline'
 
@@ -17,31 +11,12 @@ export interface HwpxImport {
   droppedImages: number
 }
 
-/**
- * Copy out a standalone `ArrayBuffer` for the reader.
- *
- * A `Uint8Array` may be a view onto a larger pool — Node's `Buffer` usually is —
- * so handing over `.buffer` directly would give the reader the whole pool and it
- * would fail to recognise the zip. `slice` is a copy, which is also what keeps
- * the reader from seeing later mutations of the caller's array.
- */
+/** Copy out a standalone `ArrayBuffer` for the reader. */
 function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
 }
 
-/**
- * Read a `.hwpx` package.
- *
- * The reader is loaded on first use. Most documents are `.docx`, and in a
- * browser this is a separate chunk — a session that never opens a `.hwpx` should
- * not download the converter at all.
- *
- * Browser builds must alias the `neoali-hwpxjs` specifier; see this package's
- * `vite.ts` for what and why.
- *
- * Throws when the bytes are not a readable HWPX package — an encrypted or
- * corrupt file has no partial import worth showing.
- */
+/** Read a `.hwpx` package. */
 export async function hwpxToHtml(bytes: Uint8Array): Promise<HwpxImport> {
   const { HwpxReader } = await import('neoali-hwpxjs')
   const reader = new HwpxReader()

@@ -208,9 +208,7 @@ export function App() {
   const { lang } = useI18n()
   const [slides, setSlides] = useState<RenderSlide[]>([])
   const [path, setPath] = useState<string | null>(null)
-  // The host's display name for the open deck. Held rather than derived: `path` is an
-  // absolute path on the desktop and an opaque store key in a browser, so only the host can
-  // say what to show. Empty until a deck is opened or saved.
+  // The host's display name for the open deck.
   const [deckName, setDeckName] = useState('')
   /** AiPanel reset key: incremented only on applyOpen (open/new file), not on draft path updates */
   const [aiPanelKey, setAiPanelKey] = useState(0)
@@ -391,10 +389,9 @@ export function App() {
   /** Copied format (null = nothing copied yet) */
   const [brushFormat, setBrushFormat] = useState<BrushFormat | null>(null)
   /**
-   * Format painter mode:
-   *  - null    = not in format painter mode
-   *  - 'once'  = paste format once (exits after one click)
-   *  - 'continuous' = continuous mode (double-click the button to enter, Esc to exit)
+   * Format painter mode:  - null    = not in format painter mode  - 'once'  = paste format once
+   * (exits after one click)  - 'continuous' = continuous mode (double-click the button to enter,
+   * Esc to exit)
    */
   const [brushMode, setBrushMode] = useState<'once' | 'continuous' | null>(null)
 
@@ -482,10 +479,9 @@ export function App() {
     setScaleBox({ w: el.offsetWidth, h: el.offsetHeight })
   }, [slide?.widthPx, slide?.heightPx, showRuler])
 
-  // On container size changes (window/sidebar/thumbnail toggles): follow with a
-  // re-fit while in fit mode, and clamp any manual zoom back down to fit whenever
-  // the container gets too small — the canvas must never overflow the pane. A
-  // manual zoom smaller than fit is left alone.
+  // On container size changes (window/sidebar/thumbnail toggles): follow with a re-fit while in fit
+  // mode, and clamp any manual zoom back down to fit whenever the container gets too small — the
+  // canvas must never overflow the pane.
   useEffect(() => {
     const el = stageWrapRef.current
     if (!hasDoc || !el) return
@@ -626,9 +622,7 @@ export function App() {
         .then((d) => {
           if (!d || saving) return
           saving = true
-          // `true`: nobody asked for this save. On a host that can only write through a
-          // permission the user grants, that is the difference between writing and raising a
-          // prompt out of a timer.
+          // `true`: nobody asked for this save.
           void save(true).finally(() => {
             saving = false
           })
@@ -703,11 +697,8 @@ export function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // Trackpad pinch zoom: Chromium synthesizes pinch gestures as ctrlKey+wheel events;
-  // Ctrl/⌘ + wheel zoom also supported. Needs passive:false to preventDefault.
-  // setZoom per wheel event re-renders the whole App (thumbnails included) dozens of times per
-  // gesture and froze the pinch for seconds; instead the gesture only touches the CSS transform
-  // (rAF-batched) and the state commit is debounced to the gesture's end.
+  // Trackpad pinch zoom: Chromium synthesizes pinch gestures as ctrlKey+wheel events; Ctrl/⌘ +
+  // wheel zoom also supported.
   useEffect(() => {
     const el = stageWrapRef.current
     if (!el) return
@@ -754,9 +745,8 @@ export function App() {
   }, [applyOpen])
 
   // Files are pushed open by the main process (double-click/command line); with no pending file the
-  // window lands directly in the editor on a fresh blank deck (the AI panel carries the generate-from-prompt flow).
-  // StrictMode runs the mount effect twice, but the pending queue can only be consumed once, so the
-  // consume Promise is stored in a shared ref and its result is processed only once.
+  // window lands directly in the editor on a fresh blank deck (the AI panel carries the
+  // generate-from-prompt flow).
   useEffect(() => {
     const off = slidesWindow().onOpened((r) => applyOpen(r))
     consumePendingRef.current ??= slidesFile().consumePendingOpen(FIT_WIDTH)
@@ -789,9 +779,7 @@ export function App() {
   )
 
   useEffect(() => {
-    // A host that cannot answer leaves the assistant closed rather than failing the page. On
-    // the desktop this is an IPC call that always resolves; in a browser it is a request to
-    // the BFF, and an unreachable one must not surface as an unhandled rejection.
+    // A host that cannot answer leaves the assistant closed rather than failing the page.
     void slidesAi()
       .getAiSettings()
       .then(setAiSettings, (error: unknown) => {
@@ -1543,8 +1531,7 @@ export function App() {
   ])
 
   // Load images (dataUrl → HTMLImageElement): picture elements + picture fills + background images
-  // (recursing into group children and decoration nodes). Walk all pages so thumbnails get
-  // background images/pictures of non-current pages (otherwise unvisited pages' thumbnails are blank).
+  // (recursing into group children and decoration nodes).
   useEffect(() => {
     if (slides.length === 0) return
     const urls = new Set<string>()
@@ -1576,8 +1563,7 @@ export function App() {
     }
     imageLoaderRef.current.load(urls)
   }, [slides])
-  // Dispose on unmount and clear the ref so a remount (e.g. React Strict Mode's
-  // dev double-mount) lazily recreates a fresh loader instead of reusing a disposed one.
+  // Dispose on unmount and clear the ref so a remount (e.g.
   useEffect(
     () => () => {
       imageLoaderRef.current?.dispose()
@@ -1977,10 +1963,7 @@ export function App() {
     () => styleActions.openChartDataDialog(ctxRef.current),
     [],
   )
-  // While editing, measure from the selection; with elements selected (incl. multi-select/groups/tables), aggregate all runs —
-  // mixed fonts show empty, mixed sizes show the minimum plus "+"; elements without text (pictures/charts etc.) keep the last display;
-  // final fallback is the theme body default font.
-  // Whether the selection contains text-capable elements (text boxes/shapes/tables) — font group availability (pictures/charts etc. grayed)
+  // While editing, measure from the selection; with elements selected (incl.
   const hasTextSelection = useMemo(
     () =>
       selectedIds.some((id) => {

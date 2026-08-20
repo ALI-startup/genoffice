@@ -1,10 +1,4 @@
-/**
- * Univer runtime synchronization helpers for the sheets renderer.
- *
- * Module-level functions that translate between the workbook file model
- * (snapshots, edit journal, lazy streaming state) and the live Univer
- * spreadsheet instance. Extracted from App.tsx; they hold no React state.
- */
+/** Univer runtime synchronization helpers for the sheets renderer. */
 import {
   BooleanNumber,
   BorderStyleTypes,
@@ -576,13 +570,8 @@ export function applyDefinedNames(
 ): void {
   const workbook = runtime?.univerAPI.getActiveWorkbook()
   if (!workbook) return
-  // Excel allows one definition per (name, scope) and resolves sheet-scope
-  // first, workbook-scope second. Univer's name table is keyed by name alone
-  // (first insert wins), so a #REF! sheet-scoped residue — Excel leaves those
-  // behind when a sheet is deleted — appearing before the live workbook-level
-  // definition used to shadow it for the whole book. Load each name's
-  // live workbook-level definition first and push #REF! residues last. This
-  // is a stopgap until the engine models (name, scope) pairs.
+  // Excel allows one definition per (name, scope) and resolves sheet-scope first, workbook-scope
+  // second.
   const groups = new Map<string, typeof file.definedNames>()
   for (const defined of file.definedNames) {
     const list = groups.get(defined.name) ?? []
@@ -709,13 +698,11 @@ export async function loadVisibleRange(
   try {
     visible = worksheet.getVisibleRange()
   } catch {
-    // Univer can briefly have no scroll render controller while a workbook is
-    // being replaced. The initial file range must still load.
+    // Univer can briefly have no scroll render controller while a workbook is being replaced.
   }
-  // getVisibleRange lags the scroll by one render frame; a large jump
-  // (name-box goto, hyperlink) produces a single Scroll event whose computed
-  // range is the OLD spot — already loaded, so nothing loads and no later
-  // event corrects it. Re-anchor at the actual scroll position.
+  // getVisibleRange lags the scroll by one render frame; a large jump (name-box goto, hyperlink)
+  // produces a single Scroll event whose computed range is the OLD spot — already loaded, so
+  // nothing loads and no later event corrects it.
   if (viewportStart) {
     visible = {
       startRow: viewportStart.row,
@@ -783,8 +770,7 @@ export async function activateFormulaClosure(
   if (inputs.every((sheet) => sheet.formulas.length === 0)) return giveUp()
   const closure = computeFormulaClosure(inputs, CLOSURE_MAX_CELLS)
   if (!closure.ok) return giveUp()
-  // Structural edits made while analyzing would shift the coordinates the
-  // closure was computed in.
+  // Structural edits made while analyzing would shift the coordinates the closure was computed in.
   if (state.editJournal.structuralOps.size > 0) return giveUp()
   const workbook = runtime.univerAPI.getActiveWorkbook()
   if (!workbook) return giveUp()
@@ -1317,8 +1303,7 @@ async function runFormulaRecalc(
       if (cell.sheetId !== sheetId || !cell.isFormula) continue
       // The user's own journaled edits stay authoritative on screen.
       if (journalCells?.has(`${cell.row}:${cell.column}`)) continue
-      // #NAME? flags a function IronCalc lacks; the file's cached value is
-      // better — keep it.
+      // #NAME? flags a function IronCalc lacks; the file's cached value is better — keep it.
       if (cell.formatted === '#NAME?') {
         unsupported += 1
         continue
@@ -1344,11 +1329,7 @@ async function runFormulaRecalc(
       )
     }
   } catch {
-    // Fail soft: cached values stay on screen and the save still asks Excel
-    // to recalculate on open. Repeated failures disable the fallback — but
-    // only the current run may count (mirrors the success path's guard):
-    // a superseded run failing after a newer success must not stack stale
-    // failures toward the kill switch.
+    // Fail soft: cached values stay on screen and the save still asks Excel to recalculate on open.
     if (lazyWorkbookRef.current !== state || state.recalc.generation !== generation) return
     state.recalc.failures += 1
   }
@@ -1474,10 +1455,9 @@ async function loadRange(
     recordHyperlinks(state, sheetId, mapped.screen.hyperlinks)
     applyRowProperties(worksheet, state, sheetId, mapped.screen.rows)
     applyMerges(worksheet, state, sheetId, mapped.screen.merges)
-    // Conditional formatting, filters, and validations install once with
-    // file-space ranges; Univer shifts the installed models itself on later
-    // structural edits, but a fresh install after a shift would be stale —
-    // skip it (rare: the sheet was being edited before it first rendered).
+    // Conditional formatting, filters, and validations install once with file-space ranges; Univer
+    // shifts the installed models itself on later structural edits, but a fresh install after a
+    // shift would be stale — skip it (rare: the sheet was being edited before it first rendered).
     const hasStructuralOps = (state.editJournal.structuralOps.get(sheetId)?.length ?? 0) > 0
     if (!hasStructuralOps) {
       applyConditionalRules(worksheet, state, sheetId, result.conditionalRules)
@@ -1613,12 +1593,9 @@ function applyRowProperties(
       if (applied.has(key)) continue
       applied.add(key)
       if (row.height !== undefined) {
-        // The engine reports ht for every row that carries one, not just
-        // customHeight="1" rows: Excel stores its laid-out height (auto-fit
-        // included), and honoring it reproduces Excel's layout exactly.
-        // Re-measuring instead with whatever fonts the host OS substitutes
-        // clipped wrapped CJK rows on Windows. Forced = clip overflow and
-        // skip auto-height, exactly like Excel renders a freshly opened file.
+        // The engine reports ht for every row that carries one, not just customHeight="1" rows:
+        // Excel stores its laid-out height (auto-fit included), and honoring it reproduces Excel's
+        // layout exactly.
         worksheet.setRowHeightsForced(row.row, 1, Math.round((row.height * 96) / 72))
       }
       if (row.hidden) worksheet.hideRows(row.row, 1)
@@ -1715,9 +1692,8 @@ export function normalizeVisibleRange(
 function createBufferedRange(visible: IRange, rowCount: number, columnCount: number): IRange {
   const rowBuffer = 80
   const columnBuffer = 8
-  // Frozen panes are protected from eviction in patchWorksheetRange rather
-  // than folded into this range — startRow=0 at deep scroll would blow the
-  // sidecar's 20k-cell request limit.
+  // Frozen panes are protected from eviction in patchWorksheetRange rather than folded into this
+  // range — startRow=0 at deep scroll would blow the sidecar's 20k-cell request limit.
   return {
     startRow: Math.max(0, visible.startRow - rowBuffer),
     endRow: Math.min(rowCount - 1, visible.endRow + rowBuffer),
@@ -1764,10 +1740,8 @@ function patchWorksheetRange(
       useFormulas,
       arrayFollowers,
     )
-    // Closure cells were just evicted or clobbered with static cached
-    // values; re-pin them first — the journal overlay runs after so user
-    // edits always win over pinned originals. Engine-recalculated values
-    // sit between the two for the same reason.
+    // Closure cells were just evicted or clobbered with static cached values; re-pin them first —
+    // the journal overlay runs after so user edits always win over pinned originals.
     if (pinned?.size) applyPinnedOverlay(worksheet, pinned, previousRange, range)
     if (recalcOverlay?.size) applyPinnedOverlay(worksheet, recalcOverlay, previousRange, range)
     if (journal) applyJournalOverlay(worksheet, journal, range)
@@ -1994,9 +1968,8 @@ export function toRichTextDocument(
     })
     cursor = end
   }
-  // Univer document streams use \r as paragraph break and \n as section
-  // break; a raw \n would split the cell into sections and drop later lines.
-  // 1:1 replacement, so textRun offsets stay valid.
+  // Univer document streams use \r as paragraph break and \n as section break; a raw \n would split
+  // the cell into sections and drop later lines.
   const dataStream = `${text.replace(/\n/g, '\r')}\r\n`
   const paragraphs: Array<{ startIndex: number }> = []
   for (let i = 0; i < dataStream.length; i += 1) {
@@ -2570,8 +2543,7 @@ export function journalRangeSnapshot(
         ...('v' in cell ? { v: cell.v } : {}),
         ...(typeof cell.f === 'string' && cell.f.length > 0 ? { f: cell.f } : {}),
         ...(cell.p !== undefined ? { p: cell.p } : {}),
-        // Interned style ids can't be journaled; object styles (streamed
-        // installs) re-apply as-is.
+        // Interned style ids can't be journaled; object styles (streamed installs) re-apply as-is.
         ...(hasStyleObject ? { s: cell.s } : {}),
       }
     }
@@ -2672,9 +2644,8 @@ function applyConditionalRules(
 ): void {
   if (rules.length === 0 || state.appliedCfSheets.has(sheetId)) return
   state.appliedCfSheets.add(sheetId)
-  // Lower xlsx priority number = higher precedence; Univer applies rules in
-  // insertion order, so add the most important rules first. Installing the
-  // file's own rules must not mark the sheet's CF as edited.
+  // Lower xlsx priority number = higher precedence; Univer applies rules in insertion order, so add
+  // the most important rules first.
   const ordered = [...rules].sort((a, b) => a.priority - b.priority)
   journalSuppression.active = true
   try {
@@ -3032,9 +3003,8 @@ export function queueVisualInstall(
     ) {
       return
     }
-    // Reinstalling mid-drag disposes the dragged node and kills its pointer
-    // capture — hold off until the drop. Same for an open inline chart
-    // editor, whose typed-in state lives in the float DOM.
+    // Reinstalling mid-drag disposes the dragged node and kills its pointer capture — hold off
+    // until the drop.
     if (isVisualDragActive() || isChartEditorOpen()) {
       visualInstallTimerRef.current = setTimeout(install, 100)
       return

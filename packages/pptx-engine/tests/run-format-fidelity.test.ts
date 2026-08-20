@@ -1,8 +1,4 @@
-/**
- * Run-level format fidelity: latin/ea dual fonts kept + underline style not collapsed.
- * Modeled via parseSlide (with latinFont/eaFont/fontImplicit/underlineStyle markers),
- * then asserted at the byte level through patchTextElementXml.
- */
+/** Run-level format fidelity: latin/ea dual fonts kept + underline style not collapsed. */
 import { describe, it, expect } from 'vitest'
 import { parseSlide } from '../src/parse'
 import { patchTextElementXml, setElementFont } from '../src/index'

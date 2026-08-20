@@ -1,8 +1,6 @@
 /**
- * Post-generation layout QC: each generated page gets one focused vision pass —
- * screenshot + element inventory → a restricted agent fixes objective layout defects
- * with execute_slide_script. Runs in its own AgentLoop per page (fresh context, so the
- * QC cost doesn't ride on the main conversation), orchestrated by AiPanel.
+ * Post-generation layout QC: each generated page gets one focused vision pass — screenshot +
+ * element inventory → a restricted agent fixes objective layout defects with execute_slide_script.
  */
 import {
   AgentLoop,
@@ -21,14 +19,7 @@ export function isQcEnabled(): boolean {
 /** Cost ceiling per generation run — beyond this the tail pages are skipped (reported to the user) */
 export const QC_MAX_PAGES = 20
 
-/**
- * Fold the pages a generation tool just landed into the run's pending-QC set.
- *
- * The generation tools report the exact page indexes they wrote, so this is a plain
- * union: sorted, deduped, and negative indexes dropped. It is a set rather than a
- * count because one run can land pages in several passes (a deck, then pages appended
- * to it, then one page redone) and each page is worth QC-ing exactly once.
- */
+/** Fold the pages a generation tool just landed into the run's pending-QC set. */
 export function mergeQcPages(prev: number[], added: number[]): number[] {
   return [...new Set([...prev, ...added])].filter((p) => p >= 0).sort((a, b) => a - b)
 }
@@ -99,10 +90,7 @@ ${auditStr}
 Inspect the screenshot and fix objective layout defects now.`
 }
 
-/**
- * One page, one focused QC run. The caller owns history batching (rollback via
- * aiSnapshotRestore) and deciding what to do with the result.
- */
+/** One page, one focused QC run. */
 export function qcSlidePage(opts: QcPageOptions): Promise<QcPageResult> {
   const { access, transport, pageIndex, screenshot, systemSuffix, signal } = opts
   const slide = access.getSlides()[pageIndex]

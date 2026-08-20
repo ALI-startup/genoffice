@@ -63,9 +63,8 @@ const MAX_PART_UNCOMPRESSED_BYTES = 512 * 1024 * 1024
 const MAX_TOTAL_UNCOMPRESSED_BYTES = 1.5 * 1024 * 1024 * 1024
 
 /**
- * Reject zip bombs before any part is inflated, using the declared
- * uncompressed sizes from the central directory (JSZip keeps them in
- * the lazy `_data` compressed object).
+ * Reject zip bombs before any part is inflated, using the declared uncompressed sizes from the
+ * central directory (JSZip keeps them in the lazy `_data` compressed object).
  */
 export function assertZipWithinLimits(zip: JSZip): void {
   const files = Object.values(zip.files).filter((f) => !f.dir)
@@ -349,11 +348,7 @@ function colorFrom(container: XNode | undefined, theme?: ThemeColors | null): st
   return val && val !== 'auto' ? val : undefined
 }
 
-/**
- * Extract a SdtShell from a raw <w:sdt>…</w:sdt> XML string.
- * Returns the shell metadata + the first <w:p> found in <w:sdtContent>,
- * or null if no usable paragraph is found.
- */
+/** Extract a SdtShell from a raw <w:sdt>…</w:sdt> XML string. */
 function parseSdtBlock(sdtXml: string): { shell: SdtShell; pXml: string } | null {
   // --- find the sdtContent region ---
   // sdtContent is a direct child of w:sdt; its content may be a w:p or w:tbl
@@ -426,9 +421,8 @@ interface SdtPart {
 }
 
 /**
- * When <w:sdtContent> holds several top-level w:p / w:tbl children (Word TOC,
- * multi-paragraph rich-text controls), each child becomes its own block.
- * Returns null for 0-1 children (single-block path keeps its behavior).
+ * When <w:sdtContent> holds several top-level w:p / w:tbl children (Word TOC, multi-paragraph
+ * rich-text controls), each child becomes its own block.
  */
 function splitSdtParts(sdtXml: string): SdtPart[] | null {
   const contentOpen = /<w:sdtContent(?:\s[^>]*)?>/.exec(sdtXml)
@@ -548,9 +542,8 @@ async function buildBlock(
 
   // --- SDT (structured document tag): extract sdtContent paragraph as editable ---
   if (el.name === 'w:sdt') {
-    // sdtContent that starts with a table (research-report templates wrap whole
-    // tables in content controls): display as a real table. Untouched
-    // it saves byte-identical; cell-text edits patch inside the sdt shell.
+    // sdtContent that starts with a table (research-report templates wrap whole tables in content
+    // controls): display as a real table.
     const tblXml = sdtTableXml(xml)
     if (tblXml) {
       return { ...base, type: 'table', ...tableSummary(tblXml), table: extractTable(tblXml, ctx) }
@@ -579,22 +572,14 @@ async function buildBlock(
     return { ...base, type: 'passthrough', label: el.name, previewText: '' }
   }
 
-  // Feature-detect on XML with mc:Fallback stripped: Word pairs every modern
-  // DrawingML shape (mc:Choice) with a legacy VML twin (<mc:Fallback><w:pict>),
-  // so matching the raw bytes would misclassify every decorated paragraph as an
-  // embedded object. Only detection uses this; saving still passes through the
-  // original bytes untouched.
-  // aidocs-ink runs are parsed separately into ParsedDoc.inks and re-emitted
-  // from the save options; hide them from detection so an annotated text
-  // paragraph stays an editable paragraph instead of a protected drawing.
+  // Feature-detect on XML with mc:Fallback stripped: Word pairs every modern DrawingML shape
+  // (mc:Choice) with a legacy VML twin (<mc:Fallback><w:pict>), so matching the raw bytes would
+  // misclassify every decorated paragraph as an embedded object.
   const detect = stripInkRuns(
     xml.includes('<mc:Fallback') ? xml.replace(/<mc:Fallback>[\s\S]*?<\/mc:Fallback>/g, '') : xml,
   )
 
   // Paragraph: certain constructs are protected as whole passthrough blocks.
-  // Regenerating them would silently drop structure (section breaks, fields,
-  // footnote anchors...), which is exactly the kind of damage patch-save exists
-  // to prevent.
   if (detect.includes('<w:sectPr')) {
     return {
       ...base,
@@ -603,8 +588,7 @@ async function buildBlock(
       previewText: plainText(detect),
     }
   }
-  // Field paragraphs whose visible result is a picture (e.g. INCLUDEPICTURE)
-  // should still display the image; the block stays protected either way.
+  // Field paragraphs whose visible result is a picture (e.g.
   if (
     detect.includes('<w:drawing') &&
     !detect.includes('<c:chart') &&
@@ -638,9 +622,8 @@ async function buildBlock(
       }
     }
   }
-  // TOC-styled paragraphs are part of a TOC field result even when they carry
-  // no field chars themselves (entries with literal page numbers). Editing
-  // them individually would corrupt the field, so they stay protected.
+  // TOC-styled paragraphs are part of a TOC field result even when they carry no field chars
+  // themselves (entries with literal page numbers).
   if (/<w:pStyle w:val="TOC[1-9]"/.test(xml)) {
     return {
       ...base,
@@ -650,14 +633,9 @@ async function buildBlock(
       fieldDisplay: fieldDisplayOf(xml),
     }
   }
-  // footnote / endnote references are editable: extractRuns turns them into
-  // Run.noteRef markers that regenerate as w:footnoteReference / w:endnoteReference
-  // Run-level w:ins / w:del are parsed into Run.ins / Run.del (editable).
-  // Paragraph-property revisions (pPrChange / numberingChange / paragraph-mark
-  // ins/del) live in pPr and survive editing via Block.rawPPr passthrough.
-  // moveFrom / moveTo are now parsed as editable with move-revision markers.
-  // Only run-level revision constructs the run model cannot round-trip stay
-  // protected: run-property changes, deleted field instructions, table-cell ins/del.
+  // footnote / endnote references are editable: extractRuns turns them into Run.noteRef markers
+  // that regenerate as w:footnoteReference / w:endnoteReference Run-level w:ins / w:del are parsed
+  // into Run.ins / Run.del (editable).
   if (/<w:(delInstrText|cellIns|cellDel)[ />]/.test(detect)) {
     return {
       ...base,
@@ -693,9 +671,8 @@ async function buildBlock(
     }
   }
   if (detect.includes('<w:object') || detect.includes('<w:pict')) {
-    // Legacy VML textboxes (v:shape/v:textbox in w:pict): extract the
-    // structured display model instead of flattening every nested paragraph and
-    // table into one unreadable run. w:object (OLE) keeps the plain preview.
+    // Legacy VML textboxes (v:shape/v:textbox in w:pict): extract the structured display model
+    // instead of flattening every nested paragraph and table into one unreadable run.
     if (!detect.includes('<w:object') && detect.includes('<w:txbxContent')) {
       const textboxes = extractTextboxes(detect, ctx)
       if (textboxes.length > 0 && plainText(stripTextboxes(detect)).trim() === '') {
@@ -735,17 +712,12 @@ async function buildBlock(
     if (image) {
       return { ...base, type: 'image', label: 'Image', imageDataUrl: image, ...imageMeta(detect) }
     }
-    // Anchored decorative shape (underline rule, background box...) in a
-    // paragraph that also carries real text: parse it as a normal paragraph so
-    // the text stays readable/editable. The shape lives in runs we do not
-    // regenerate — the block still saves byte-identical while untouched, and
-    // only loses the decoration if the user actually edits this paragraph.
+    // Anchored decorative shape (underline rule, background box...) in a paragraph that also
+    // carries real text: parse it as a normal paragraph so the text stays readable/editable.
     if (plainText(stripTextboxes(detect)).trim() !== '') {
       return buildTextParagraph(base, xml, ctx)
     }
-    // Anchored textboxes (code boxes, callout cards): all visible text lives in
-    // w:txbxContent. Extract a display-only model so content and box styling
-    // render; the block stays protected and saves byte-identical.
+    // Anchored textboxes (code boxes, callout cards): all visible text lives in w:txbxContent.
     const textboxes = extractTextboxes(detect, ctx)
     if (textboxes.length > 0) {
       return {
@@ -766,9 +738,8 @@ async function buildBlock(
 }
 
 /**
- * Effective heading level 1-9 (Word TOC/outline semantics): direct pPr
- * w:outlineLvl wins (9 = body text), then the style's level, then a built-in
- * HeadingN styleId the document never defined.
+ * Effective heading level 1-9 (Word TOC/outline semantics): direct pPr w:outlineLvl wins (9 = body
+ * text), then the style's level, then a built-in HeadingN styleId the document never defined.
  */
 function headingLevelOf(
   pPr: XNode | undefined,
@@ -818,16 +789,14 @@ function buildTextParagraph(
   const { bookmarks, hiddenBookmarks } = bookmarkNamesOf(stripTextboxes(xml))
   const { commentStarts, commentEnds } = crossParaCommentMarkers(stripTextboxes(xml))
 
-  // --- move revision detection ---
-  // A paragraph with moveFrom/moveTo at run level gets a block-level marker
-  // for visual styling (strikethrough+red bg for moveFrom, green bg for moveTo).
+  // --- move revision detection --- A paragraph with moveFrom/moveTo at run level gets a
+  // block-level marker for visual styling (strikethrough+red bg for moveFrom, green bg for moveTo).
   let moveRevision: 'from' | 'to' | undefined
   if (/<w:moveFrom[\s/>]/.test(xml)) moveRevision = 'from'
   else if (/<w:moveTo[\s/>]/.test(xml)) moveRevision = 'to'
 
-  // --- pPrChange info extraction ---
-  // When the paragraph has a pPrChange (tracked format change), extract the
-  // revision author/date/id for the review badge and navigation.
+  // --- pPrChange info extraction --- When the paragraph has a pPrChange (tracked format change),
+  // extract the revision author/date/id for the review badge and navigation.
   let pPrChangeInfo: Block['pPrChangeInfo']
   if (pPr) {
     const pPrChangeEl = findChild(pPr, 'w:pPrChange')
@@ -932,10 +901,8 @@ function buildTextParagraph(
 }
 
 /**
- * Cross-paragraph comment range endpoints: comment ids where only one end falls in this
- * paragraph (the other end is in a different paragraph). Ranges fully within one
- * paragraph are handled by run.commentIds; this only catches cross-paragraph ones so a
- * paragraph rebuild does not leave orphaned commentRangeEnd/Start markers.
+ * Cross-paragraph comment range endpoints: comment ids where only one end falls in this paragraph
+ * (the other end is in a different paragraph).
  */
 function crossParaCommentMarkers(xml: string): {
   commentStarts: string[] | undefined
@@ -1005,9 +972,8 @@ function rawPPrOf(xml: string): string | undefined {
 }
 
 /**
- * A text-less anchored shape no taller than ~10px is almost always a
- * decorative horizontal rule (heading underlines, dividers); render those as a
- * line instead of a drawing-object chip.
+ * A text-less anchored shape no taller than ~10px is almost always a decorative horizontal rule
+ * (heading underlines, dividers); render those as a line instead of a drawing-object chip.
  */
 function isThinRule(xml: string): boolean {
   const cy = parseInt(/<wp:extent cx="\d+" cy="(\d+)"/.exec(xml)?.[1] ?? '', 10)
@@ -1042,11 +1008,8 @@ function txbxContentParas(content: XNode, ctx: BuildContext): TextboxParaDisplay
 }
 
 /**
- * Table inside a textbox (sidebar key-data blocks): the display model has no
- * grid, so render one line per row with the cells spaced apart — readable rows
- * instead of a single concatenated blob. Tables nested inside a
- * cell (research templates wrap analyst info this way) recurse into their own
- * lines after the host row.
+ * Table inside a textbox (sidebar key-data blocks): the display model has no grid, so render one
+ * line per row with the cells spaced apart — readable rows instead of a single concatenated blob.
  */
 function txbxTableParas(tbl: XNode, ctx: BuildContext): TextboxParaDisplay[] {
   const out: TextboxParaDisplay[] = []
@@ -1114,11 +1077,8 @@ function vmlColorHex(value: string | undefined): string | undefined {
 }
 
 /**
- * Display-only extraction of anchored textboxes: DrawingML (wps:wsp, converter
- * output for code boxes / callout cards) and legacy VML (v:shape etc. inside
- * w:pict, common in broker research templates). Expects
- * fallback-stripped XML, otherwise the mc:Fallback VML twin would duplicate
- * every box.
+ * Display-only extraction of anchored textboxes: DrawingML (wps:wsp, converter output for code
+ * boxes / callout cards) and legacy VML (v:shape etc.
  */
 function extractTextboxes(xml: string, ctx: BuildContext): TextboxDisplay[] {
   if (!xml.includes('<w:txbxContent')) return []
@@ -1332,11 +1292,7 @@ function extractParaFormat(pPr: XNode): ParaFormat | undefined {
   return Object.keys(format).length > 0 ? format : undefined
 }
 
-/**
- * True when every field in the paragraph is an XE (index entry) marker.
- * Multi-fragment instructions or fldSimple fields fail the check, so anything
- * unusual falls back to the protected-passthrough path.
- */
+/** True when every field in the paragraph is an XE (index entry) marker. */
 /** paragraphs whose only fields are XE / REF stay editable (extractRuns round-trips them) */
 /** Simple instructions foldable into an editable inline-field run (the cached result is the display text) */
 const SIMPLE_INLINE_FIELD_RE = /^\s*(DATE|TIME|CREATEDATE|SAVEDATE|NUMPAGES|FILENAME|AUTHOR|PAGE)\b/
@@ -1682,11 +1638,7 @@ function tableSummary(xml: string): { label: string; previewText: string } {
   return { label: `Table ${rows}×${cols}`, previewText: plainText(xml).slice(0, 120) }
 }
 
-/**
- * Display-only table structure. Nested tables render as read-only sub-tables
- * inside their cell; the exact original bytes are what get saved, so lossiness
- * here only affects on-screen rendering.
- */
+/** Display-only table structure. */
 function extractTable(xml: string, ctx: BuildContext): TableModel | undefined {
   let parsed: XNode[]
   try {
@@ -1824,11 +1776,8 @@ function rowRevisionOf(trPr: XNode): ({ kind: 'ins' | 'del' } & RevisionInfo) | 
 }
 
 /**
- * Attach each cell's rawTcPr and each row's rawTrPr from the original table XML (byte
- * fidelity: surgically patched on regeneration so unmodeled tcMar/textDirection/
- * tblHeader etc. are not lost). Uses depth-aware splitXmlChildren so nested tables do
- * not misalign; gives up when row/column counts disagree with the parse result
- * (conservative — never attach to the wrong cell).
+ * Attach each cell's rawTcPr and each row's rawTrPr from the original table XML, byte for byte.
+ * surgically patched on regeneration so unmodeled tcMar/textDirection/ tblHeader etc.
  */
 function attachRawTablePr(xml: string, rows: TableCell[][], rawTrPrs: Array<string | null>): void {
   const open = /<w:tbl[\s>]/.exec(xml)
@@ -1856,9 +1805,8 @@ function attachRawTablePr(xml: string, rows: TableCell[][], rawTrPrs: Array<stri
 }
 
 /**
- * Layer the referenced table style's fills / first-row formatting under the
- * cells' explicit properties, honoring the w:tblLook flags. Display-only:
- * untouched tables still save byte-identically.
+ * Layer the referenced table style's fills / first-row formatting under the cells' explicit
+ * properties, honoring the w:tblLook flags.
  */
 function applyTableStyleDisplay(
   rows: TableCell[][],
@@ -2045,10 +1993,8 @@ function hfPartInfo(
 }
 
 /**
- * display-only images of a header/footer part (logos etc.): resolves a:blip r:embed
- * and VML v:imagedata r:id from the part's own rels; watermarks (v:textpath) excluded.
- * The save path does not go through here -- image paragraphs keep their original bytes
- * when the part is regenerated.
+ * display-only images of a header/footer part (logos etc.): resolves a:blip r:embed and VML
+ * v:imagedata r:id from the part's own rels; watermarks (v:textpath) excluded.
  */
 async function hfImages(zip: JSZip, partPath: string, partXml: string): Promise<HfImage[]> {
   if (!partXml.includes('<a:blip') && !partXml.includes('<v:imagedata')) return []
@@ -2102,9 +2048,7 @@ function hfContentFromXml(
   theme?: ThemeColors | null,
 ): { text: string; hasPageNumber: boolean; watermark: string | null; paras: HfParagraph[] } {
   const hasPageNumber = /<w:instrText[^>]*>[^<]*\bPAGE\b/.test(xml)
-  // drop cached field results (e.g. the stale page number between separate/end),
-  // then mark the PAGE field position with '#' so "- PAGE -" reads "- # -";
-  // NUMPAGES gets the private-use marker (renderer substitutes the total)
+  // drop cached field results (e.g.
   const cleaned = xml
     .replace(/<w:fldChar w:fldCharType="separate"\/>[\s\S]*?<w:fldChar w:fldCharType="end"\/>/g, '')
     .replace(
@@ -2203,9 +2147,7 @@ function hfParagraphs(partXml: string, theme?: ThemeColors | null): HfParagraph[
   for (const pNode of findChildren(root, 'w:p')) {
     const runs = extractRuns(pNode, ctx)
     if (runs.length === 0 && (findChild(pNode, 'w:r') || findChild(pNode, 'w:pict'))) {
-      // Government-style footers keep their text (e.g. the "— PAGE —" page number)
-      // inside a VML textbox shape; surface those inner paragraphs instead of dropping
-      // the content. Watermark / decorative drawing paragraphs still skip.
+      // Government-style footers keep their text (e.g.
       out.push(...textboxParagraphs(pNode, ctx))
       continue
     }
@@ -2295,12 +2237,7 @@ function decodeEntities(text: string): string {
     .replace(/&amp;/g, '&')
 }
 
-/**
- * Display-only rendering hint for protected field paragraphs. The visible
- * field *result* (w:t runs; instruction text lives in w:instrText and is
- * excluded) is shown instead of a generic chip. Original XML still saves
- * byte-identical.
- */
+/** Display-only rendering hint for protected field paragraphs. */
 function fieldDisplayOf(xml: string): FieldDisplay | undefined {
   const styleId = /<w:pStyle w:val="([^"]+)"/.exec(xml)?.[1] ?? ''
   const tocLevel = /^TOC([1-9])$/i.exec(styleId)
@@ -2358,8 +2295,7 @@ function fieldLabel(xml: string): string {
   const keyword = instr.trim().split(/\s+/)[0]?.toUpperCase() ?? ''
   if (keyword && FIELD_LABELS[keyword]) return FIELD_LABELS[keyword]
   if (keyword) return `Field (${keyword})`
-  // No field code in this paragraph: it only closes a field started earlier
-  // (e.g. the paragraph holding the TOC's fldChar end + page break).
+  // No field code in this paragraph: it only closes a field started earlier (e.g.
   if (xml.includes('fldCharType="end"') && !xml.includes('fldCharType="begin"')) {
     return xml.includes('w:type="page"') ? 'Field end marker + page break' : 'Field end marker'
   }
@@ -2496,9 +2432,8 @@ async function extractDiagramText(xml: string, ctx: BuildContext): Promise<strin
 }
 
 /**
- * OLE embed degrade: the original packages a preview picture
- * (v:imagedata) and declares its kind (o:OLEObject ProgID) — surface both
- * instead of a bare type label.
+ * OLE embed degrade: the original packages a preview picture (v:imagedata) and declares its kind
+ * (o:OLEObject ProgID) — surface both instead of a bare type label.
  */
 async function oleDisplay(
   xml: string,
@@ -2518,11 +2453,7 @@ async function oleDisplay(
   return out
 }
 
-/**
- * Load and parse the chart part referenced by a chart drawing paragraph.
- * The part's original XML is kept in ctx.chartParts so data edits can be
- * patched into it at save time (the body paragraph itself never changes).
- */
+/** Load and parse the chart part referenced by a chart drawing paragraph. */
 async function extractChart(xml: string, ctx: BuildContext): Promise<ChartDisplay | null> {
   const rId = /<c:chart [^>]*r:id="([^"]+)"/.exec(xml)?.[1]
   const rel = rId ? ctx.rels.get(rId) : undefined
@@ -2674,10 +2605,8 @@ async function parseStyles(
   }
   for (const styleId of styles.keys()) resolve(styleId, new Set())
 
-  // linkedStyle (w:link): a paragraph style and a character style form one unit (Word
-  // "linked styles"). Fill in run-level display properties in both directions (never
-  // overriding a style's own) — the common gap is a character-style shell with no rPr,
-  // where all run properties live on the linked paragraph style.
+  // linkedStyle (w:link): a paragraph style and a character style form one unit (Word "linked
+  // styles").
   const RUN_KEYS = [
     'sizeHalfPoints',
     'color',

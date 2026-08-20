@@ -161,9 +161,8 @@ export const HOME_CHANNELS = {
   openTrash: 'home:open-trash',
   getLanguage: 'home:get-language',
   setLanguage: 'home:set-language',
-  // The editors' broadcast channel, not a home one: the shell listens on the
-  // same channel every editor does, because a switch made in a tab has to
-  // reach the tab strip and the home page too.
+  // The editors' broadcast channel, not a home one: the shell listens on the same channel every
+  // editor does, because a switch made in a tab has to reach the tab strip and the home page too.
   languageChanged: 'app:language-changed',
   getAppVersion: 'home:get-app-version',
   onboardingSeen: 'home:onboarding-seen',

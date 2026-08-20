@@ -1,11 +1,4 @@
-/**
- * Element group/ungroup (groupElements / ungroupElement) tests:
- * 1. buildGrpSpXml unit tests (generates correct p:grpSp XML).
- * 2. calcBoundingBox unit tests (bounding-box computation).
- * 3. groupElements integration: after grouping, save and reopen; child coordinates correct, original bytes passed through.
- * 4. ungroupElement integration: after ungrouping, children promoted to top level with correct coordinate conversion.
- * 5. Edge cases: fewer than 2 elements / contains passthrough → rejected.
- */
+/** Element group/ungroup (groupElements / ungroupElement) tests: 1. */
 import { describe, it, expect } from 'vitest'
 import { calcBoundingBox, buildGrpSpXml } from '../src/insert'
 import {

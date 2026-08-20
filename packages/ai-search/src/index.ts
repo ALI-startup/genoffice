@@ -1,8 +1,4 @@
-/**
- * Search utilities (main process) — the Serper Google API, with DuckDuckGo as
- * the last resort. Runs in the main process (Node fetch) to avoid renderer
- * CORS; the Serper key comes from SERPER_API_KEY.
- */
+/** Search utilities (main process) — the Serper Google API, with DuckDuckGo as the last resort. */
 
 import {
   COPYRIGHT_HOSTS,

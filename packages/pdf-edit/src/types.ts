@@ -1,13 +1,4 @@
-/**
- * The edit payload: what the user changed, in PDF user space, addressed by
- * original page index.
- *
- * These types describe the edit itself and nothing about where the document
- * lives — no paths, no handles, no transport. apps/pdf's Electron wire format
- * (`SavePdfRequest` in its shared/ipc.ts) is this payload plus the main
- * process's file paths; a web host will pair the same payload with a File
- * System Access handle instead.
- */
+/** The edit payload: what the user changed, in PDF user space, addressed by original page index. */
 
 export type MarkupType = 'highlight' | 'underline' | 'strikeout'
 
@@ -20,8 +11,7 @@ export interface MarkupInput {
   quads: number[][]
 }
 
-/** Drawing annotations (all coords in PDF user space, y up).
-    One union member per kind; a union-literal kind would break TS narrowing. */
+/** Drawing annotations (all coords in PDF user space, y up). */
 interface DrawBase {
   pageIndex: number
   color: [number, number, number]
@@ -46,11 +36,7 @@ export type DrawingInput =
       contents: string
     }
 
-/**
- * Stamp layer (watermark/header/footer/page numbers all go through it).
- * The caller rasterizes the bitmap via canvas (with rotation and fonts, bypassing
- * pdf-lib's lack of CJK support); this package only embeds and positions it.
- */
+/** Stamp layer (watermark/header/footer/page numbers all go through it). */
 export interface StampInput {
   pageIndex: number
   /** base64 PNG, without the data: prefix */

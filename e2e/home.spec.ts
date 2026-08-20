@@ -1,14 +1,4 @@
-/**
- * The home screen and the language list, in a real browser.
- *
- * The language assertions are here rather than in a unit test because the thing that
- * can actually break is the boot path: the shell reads the stored language before its
- * first render, and the list writes through to storage so every other open page and
- * frame follows. Neither half is visible to a component test.
- *
- * The bottom-left Settings menu is the app's only language control, so it is also
- * the only way these tests can change the language.
- */
+/** The home screen and the language list, in a real browser. */
 import { test, expect } from '@playwright/test'
 import { LANGUAGE_KEY, chooseLanguage, openShell } from './helpers'
 
@@ -53,15 +43,7 @@ test.describe('home screen', () => {
   })
 })
 
-/**
- * The language list in the bottom-left Settings menu.
- *
- * This one is a browser test and not a component one because every part of the
- * bug was the browser's: the flyout is `position: fixed`, and it is scroll
- * events, scroll chaining and pointer capture — not React state — that decide
- * whether it is still on screen when the reader arrives at the language they
- * were reaching for. A jsdom render has no scrolling to speak of.
- */
+/** The language list in the bottom-left Settings menu. */
 test.describe('the language list in the settings menu', () => {
   test('stays open while its list is scrolled, and switches to one at the end of it', async ({
     page,
@@ -79,15 +61,11 @@ test.describe('the language list in the settings menu', () => {
     // list means scrolling it, which is what everything below is about.
     const overflow = await flyout.evaluate((el) => el.scrollHeight - el.clientHeight)
     expect(overflow).toBeGreaterThan(0)
-    // It also has to be on screen in full. The page scroll cannot reach a fixed
-    // element, so any part of it above the viewport is unreachable, not just
-    // out of sight.
+    // It also has to be on screen in full.
     const top = await flyout.evaluate((el) => el.getBoundingClientRect().top)
     expect(top).toBeGreaterThanOrEqual(0)
 
-    // A wheel over the list scrolls the list. The flyout's own scroll event
-    // reaches the shell's capture-phase listener too, which used to read it as
-    // the page moving under the popup and close it on the first notch.
+    // A wheel over the list scrolls the list.
     await flyout.hover()
     await page.mouse.wheel(0, 240)
     await expect.poll(() => flyout.evaluate((el) => el.scrollTop)).toBeGreaterThan(0)

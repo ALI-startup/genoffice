@@ -1,17 +1,4 @@
-/**
- * AiPort over the AI BFF.
- *
- * The shape of `AiPort` is the Electron IPC shape — fire `aiStream`, receive
- * chunks through a separate `onAiStream` subscription — and it maps onto HTTP
- * without distortion: the POST body is the request, and the SSE response body
- * is the chunk channel. `@samugen/agent-core`'s `createStreamTransport`
- * therefore drives this adapter unchanged, pings and silence watchdog included.
- *
- * No credential ever reaches this file. `getAiSettings` returns what the server
- * is willing to say about itself, and `aiStream` names a task; the server picks
- * the provider and holds the key. That is the whole point of the BFF, and it is
- * why the returned `AiSettings.apiKey` is the empty string — see below.
- */
+/** AiPort over the AI BFF. */
 import type { AiSettings, AiStreamChunk, AiStreamRequest } from '@samugen/ai-provider'
 import { AI_PROVIDERS, sseLines } from '@samugen/ai-provider'
 import type { AiPort } from '@samugen/platform'
@@ -23,15 +10,7 @@ export interface WebAiPortOptions {
   fetch?: typeof globalThis.fetch
 }
 
-/**
- * Map the server's public view onto the `AiSettings` shape the port declares.
- *
- * `apiKey` is `''` for every provider, and that is the honest value: the
- * browser has no key and must never be given one. `credentialConfigured` is
- * what actually says whether a provider is usable, and the server enforces it —
- * a request for a provider without a credential comes back as an error chunk
- * rather than being silently attempted.
- */
+/** Map the server's public view onto the `AiSettings` shape the port declares. */
 export function toAiSettings(publicSettings: PublicAiSettings): AiSettings {
   const providers = {} as AiSettings['providers']
   for (const meta of AI_PROVIDERS) {
@@ -45,22 +24,7 @@ export function toAiSettings(publicSettings: PublicAiSettings): AiSettings {
   return { provider: publicSettings.active.providerId, providers }
 }
 
-/**
- * Fetch the server's public view of its own AI configuration, unmapped.
- *
- * `toAiSettings` exists to satisfy `AiPort`, and in doing so it drops the one
- * field a *settings screen* needs: `credentialConfigured`. It has to — the
- * `AiSettings` shape has an `apiKey` and no notion of "the server holds one",
- * so the boolean has nowhere to go and becomes `apiKey: ''` for configured and
- * unconfigured providers alike.
- *
- * The shell's read-only AI Providers page reads this instead. It is the same
- * request to the same route; what differs is that nothing is discarded. There is
- * still no credential in the response and cannot be — the BFF's no-leak test
- * asserts that no four-character run of any credential appears in any response
- * body, which is exactly why this view can show *whether* a provider is
- * configured and never a masked hint of the key.
- */
+/** Fetch the server's public view of its own AI configuration, unmapped. */
 export async function fetchPublicAiSettings(
   options: WebAiPortOptions = {},
 ): Promise<PublicAiSettings> {
@@ -89,15 +53,7 @@ export function createWebAiPort(options: WebAiPortOptions = {}): AiPort {
       return toAiSettings((await response.json()) as PublicAiSettings)
     },
 
-    /**
-     * Resolves when the stream ends, not when it starts.
-     *
-     * `createStreamTransport` only uses the returned promise to catch a failure to
-     * start, and treats the run as finished when a `done` or `error` chunk
-     * arrives — so a late resolve is harmless, while a late *rejection* would
-     * race the chunk that already settled the run. Everything is therefore
-     * reported as an error chunk and the promise always resolves.
-     */
+    /** Resolves when the stream ends, not when it starts. */
     async aiStream(request: AiStreamRequest): Promise<void> {
       const { requestId } = request
       // Strip `settings` on the way out as well as on the way in: the browser

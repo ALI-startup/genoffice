@@ -1,9 +1,7 @@
 /**
- * Design-tab theme gallery round-trip verification (= the engine path of the slides:apply-theme handler):
- * bake unsaved edits -> rewrite theme*.xml + remap explicit colors (entry surgery) ->
- * savePptx -> openPptx reparse. Scheme-referenced colors follow the new theme; explicit colors
- * are remapped wholesale to the new palette (neutrals along the dk1<->lt1 axis, chromatic colors
- * change hue while keeping lightness).
+ * Design-tab theme gallery round-trip verification (= the engine path of the slides:apply-theme
+ * handler): bake unsaved edits -> rewrite theme*.xml + remap explicit colors (entry surgery) ->
+ * savePptx -> openPptx reparse.
  */
 import { describe, it, expect } from 'vitest'
 import {

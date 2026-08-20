@@ -1,12 +1,6 @@
 /**
  * Formula view — Excel's Show Formulas (⌘` / Ctrl+`), persisted per sheet as
  * sheetView/@showFormulas.
- *
- * Univer's RENDER_RAW_FORMULA_KEY only reaches the rich-text/rotated cell
- * path in this version, so plain cells never change: the actual value swap
- * happens in a CELL_CONTENT interceptor below. The context key is still
- * toggled for its side effect — every sheet skeleton resets its cache and
- * repaints when it flips.
  */
 import { CellValueType, IContextService } from '@univerjs/core'
 import { RENDER_RAW_FORMULA_KEY } from '@univerjs/preset-sheets-core'

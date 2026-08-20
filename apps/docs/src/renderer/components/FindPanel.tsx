@@ -146,9 +146,6 @@ export function FindPanel({ editor, onClose }: FindPanelProps) {
   }, [])
 
   // stay in sync while the document changes underneath (typing, AI edits).
-  // The listener reads the query through a ref: between a keystroke in the find
-  // box and the next render, the effect closure still holds the previous query
-  // and would overwrite the pending scan for the new needle with stale text.
   const queryRef = useRef(query)
   queryRef.current = query
   useEffect(() => {
@@ -173,9 +170,8 @@ export function FindPanel({ editor, onClose }: FindPanelProps) {
       const fresh = flushPending(query)
       const ranges = fresh ? fresh.ranges : matches
       if (ranges.length === 0) return
-      // A flushed scan for a new query already landed on the first match — Enter should
-      // visit it, not skip past it. A keep-current refresh (document changed underneath)
-      // must still move in the requested direction from the refreshed position.
+      // A flushed scan for a new query already landed on the first match — Enter should visit it,
+      // not skip past it.
       const next = fresh?.queryChanged
         ? indexRef.current
         : ((fresh ? indexRef.current : index) + dir + ranges.length) % ranges.length

@@ -1,15 +1,4 @@
-/**
- * The messages between the page and the engine's Worker.
- *
- * The engine is synchronous: `xlsx_handle` computes a whole answer before it returns, and a
- * large workbook's index or save is measured in seconds. That is fine on the desktop, where
- * it happens in another process, and unacceptable on the main thread of a page — hence a
- * Worker, and hence this.
- *
- * The shape is deliberately dull: one request, one reply, correlated by id. Method names are
- * `XlsxEngine`'s, so the client below and the engine inside the Worker share a vocabulary and
- * neither has a switch statement full of special cases.
- */
+/** The messages between the page and the engine's Worker. */
 
 /** Everything the client may ask the Worker to do. */
 export type EngineMethod =

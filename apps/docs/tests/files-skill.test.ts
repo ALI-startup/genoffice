@@ -10,11 +10,7 @@ const ATT: AttachmentMeta = {
   sizeBytes: 2048,
 }
 
-/**
- * Install a platform whose only real member is the one the skill uses. The slot
- * is typed, so the cast stands in for the rest of the composition rather than
- * stubbing it: a capability this skill does not consume is never reached.
- */
+/** Install a platform whose only real member is the one the skill uses. */
 function mockPlatform(result: AttachmentReadResult) {
   const readAttachment = vi.fn(async () => result)
   setDocsPlatform({ attachments: { readAttachment } } as unknown as DocsPlatform)

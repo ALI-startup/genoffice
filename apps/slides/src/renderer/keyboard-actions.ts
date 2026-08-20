@@ -1,8 +1,7 @@
 /**
- * Global keyboard shortcuts extracted from App.tsx: ⌘Z undo, ⌘F
- * find, zoom, element clipboard, format painter, selection cycling, nudging…
- * The handler reads the latest App state through ActionCtx, so App attaches it
- * once with an empty dependency list.
+ * Global keyboard shortcuts extracted from App.tsx: ⌘Z undo, ⌘F find, zoom, element clipboard,
+ * format painter, selection cycling, nudging… The handler reads the latest App state through
+ * ActionCtx, so App attaches it once with an empty dependency list.
  */
 import type { ActionCtx } from './action-context'
 import * as clipboardActions from './clipboard-actions'
@@ -74,8 +73,7 @@ export function handleGlobalKeydown(ctx: ActionCtx, e: KeyboardEvent): void {
     return
   }
   if (editing || inField) return
-  // ⌘C/⌘X with text dragged in plain DOM (e.g. AI panel, focus on body): let the
-  // native copy run instead of hijacking it for the slide/element clipboard
+  // ⌘C/⌘X with text dragged in plain DOM (e.g.
   if (mod && !e.altKey && !e.shiftKey && ['c', 'C', 'x', 'X'].includes(e.key)) {
     const sel = window.getSelection()
     if (sel && !sel.isCollapsed) return
@@ -127,8 +125,7 @@ export function handleGlobalKeydown(ctx: ActionCtx, e: KeyboardEvent): void {
       return
     }
   }
-  // Tab / Shift+Tab: cycle shape selection in z-order. Only take over when
-  // focus is on the canvas/body, not hijacking focus navigation in ribbon controls etc.
+  // Tab / Shift+Tab: cycle shape selection in z-order.
   if (e.key === 'Tab' && !mod && !e.altKey && document.activeElement === document.body) {
     const ids = (slide?.nodes ?? [])
       .filter((n) => !n.decoration && n.type !== 'placeholder-chip')
@@ -157,10 +154,8 @@ export function handleGlobalKeydown(ctx: ActionCtx, e: KeyboardEvent): void {
     if (ids.length) ctx.setSelectedIds(ids)
     return
   }
-  // Nothing selected: ↑/↓ and PageUp/PageDown switch slides (PowerPoint
-  // thumbnail-pane behavior; mac keyboards have no physical PageUp/PageDown).
-  // defaultPrevented skips events already consumed by the reading view's
-  // capture-phase handler; body-focus check keeps ribbon widgets untouched.
+  // Nothing selected: ↑/↓ and PageUp/PageDown switch slides (PowerPoint thumbnail-pane behavior;
+  // mac keyboards have no physical PageUp/PageDown).
   if (selectedIds.length === 0) {
     if (
       !mod &&

@@ -363,18 +363,16 @@ export function App(): React.JSX.Element {
   useEffect(() => {
     localStorage.setItem('ai-sheets-auto-save', autoSave ? '1' : '0')
   }, [autoSave])
-  // AutoSave tick (docs/slides parity): every 30 s and on window blur, flush
-  // pending edits of the open workbook. The journal is read at tick time so
-  // the interval stays stable; demo mode has no backing file and is skipped.
+  // AutoSave tick (docs/slides parity): every 30 s and on window blur, flush pending edits of the
+  // open workbook.
   useEffect(() => {
     if (!autoSave) return
     let saving = false
     const tick = () => {
       const state = lazyWorkbookRef.current
       if (saving || !state || journalSize(state.editJournal) === 0) return
-      // Never while the in-cell editor is open (saving reloads the workbook
-      // and would wipe the edit), and never for converted .xls/.csv imports
-      // whose first save opens a Save As dialog.
+      // Never while the in-cell editor is open (saving reloads the workbook and would wipe the
+      // edit), and never for converted .xls/.csv imports whose first save opens a Save As dialog.
       if (editingCellRef.current || state.file.needsSaveAs) return
       saving = true
       void handleSaveRef.current('save').finally(() => {
@@ -389,10 +387,9 @@ export function App(): React.JSX.Element {
     }
   }, [autoSave])
 
-  // Crash-recovery copy: independent of the AutoSave pill — a dirty
-  // workbook gets a real .xlsx copy under userData every 30 s, so a force-quit or a
-  // renderer crash no longer costs everything since the last manual save. A normal
-  // save removes the copy; reopening a file whose copy is newer offers Restore.
+  // Crash-recovery copy: independent of the AutoSave pill — a dirty workbook gets a real .xlsx copy
+  // under userData every 30 s, so a force-quit or a renderer crash no longer costs everything since
+  // the last manual save.
   useEffect(() => {
     let writing = false
     const tick = () => {
@@ -409,10 +406,8 @@ export function App(): React.JSX.Element {
     const id = window.setInterval(tick, 30_000)
     return () => window.clearInterval(id)
   }, [])
-  // Null is "nothing has happened yet", not an empty status: the opening line is
-  // resolved at render instead of captured at mount, so a language switch
-  // repaints it like every other string. Captured, it would sit in the language
-  // the app booted in until some other event replaced it.
+  // Null is "nothing has happened yet", not an empty status: the opening line is resolved at render
+  // instead of captured at mount, so a language switch repaints it like every other string.
   const [message, setMessage] = useState<string | null>(null)
   /// Zoom of the active sheet in percent, echoed by the status-bar slider.
   const [zoomPercent, setZoomPercent] = useState(100)
@@ -567,8 +562,7 @@ export function App(): React.JSX.Element {
   /** Synchronous re-entrancy guard between runAgent trigger and loop.run
    * (loop.busy is still false while attachment images load asynchronously) */
   const runStartingRef = useRef(false)
-  /** The shell can repeat its queued-open nudge while the renderer starts.
-   * Only one picker/open request may own the workbook session at a time. */
+  /** The shell can repeat its queued-open nudge while the renderer starts. */
   const workbookOpeningRef = useRef(false)
   /** Current session's projectId/chatId (resolved when the workbook opens) */
   const chatRefIdsRef = useRef<{ projectId: string; chatId: string } | null>(null)
@@ -758,8 +752,7 @@ export function App(): React.JSX.Element {
   const runToolsRef = useRef<
     Array<{ name: string; summary: string; isError?: boolean; input?: string; output?: string }>
   >([])
-  /** AI plans apply asynchronously after propose_operations returns. Run
-   * completion waits for these before doing the run's single auto-save. */
+  /** AI plans apply asynchronously after propose_operations returns. */
   const aiApplyPromisesRef = useRef<Promise<boolean>[]>([])
   /** Last non-empty streamed text of the run: a final empty turn falls back to
    * it instead of wiping the model's own summary from the tool-call turn. */
@@ -783,9 +776,7 @@ export function App(): React.JSX.Element {
         onText: (text) => {
           if (text) runLastTextRef.current = text
           setMessage(text || t('appAiThinking'))
-          // When the model retries successfully and keeps streaming after a
-          // mid-run failure (e.g. one apply error), clear the error flag —
-          // otherwise the whole successful message stays rendered in red.
+          // When the model retries successfully and keeps streaming after a mid-run failure (e.g.
           patchLastAssistant((entry) => ({ ...entry, text, isError: false }))
         },
         onToolStart: (call) => {
@@ -1044,12 +1035,9 @@ export function App(): React.JSX.Element {
           UniverPresetSheetsFindReplaceEnUS,
           UniverPresetSheetsSortEnUS,
           UniverPresetSheetsTableEnUS,
-          // sheets-ui code in 0.25.1 references these two keys, but the language
-          // pack shipped without the entries — unless patched, the raw
-          // "sheets-ui.info.forceStringInfo" pops up for users.
-          // mergeLocales shallow-merges namespaces, so the existing entries must
-          // be spread; otherwise the whole sheets-ui namespace gets overwritten
-          // (the sheet-tab context menu turns into bare keys).
+          // sheets-ui code in 0.25.1 references these two keys, but the language pack shipped
+          // without the entries — unless patched, the raw "sheets-ui.info.forceStringInfo" pops up
+          // for users.
           {
             'sheets-ui': {
               ...(UniverPresetSheetsCoreEnUS as Record<string, Record<string, unknown>>)[
@@ -1104,11 +1092,8 @@ export function App(): React.JSX.Element {
     // The window always starts blank now; still consume the one-shot
     // new-blank flag so it doesn't leak into the next workbook open.
     void sheetsFile().consumeNewBlankWorkbook()
-    // Univer 0.25.1 also badges text parseable as date/time, phone numbers, and
-    // other long numeric identifiers with "Number stored as text". Those values
-    // should remain text, so clear the view type before the built-in marker
-    // interceptor (priority 10). Short numeric text ("007", "20%") keeps its
-    // warning.
+    // Univer 0.25.1 also badges text parseable as date/time, phone numbers, and other long numeric
+    // identifiers with "Number stored as text".
     const dateTextDisposable = runtime.univer
       .__getInjector()
       .get(SheetInterceptorService)
@@ -1146,15 +1131,13 @@ export function App(): React.JSX.Element {
     })
     // RATE converges near -100% via bisection instead of erroring.
     const rateFallbackDisposable = installRateFallback(runtime)
-    // Escaped quotes ("") no longer shift lexer indices and silently
-    // rewrite committed formulas.
+    // Escaped quotes ("") no longer shift lexer indices and silently rewrite committed formulas.
     const formulaLexerFixDisposable = installFormulaLexerFix(runtime)
     // Renaming a sheet to a case variant of itself is not a duplicate.
     const sheetRenameFixDisposable = installSheetRenameFix()
     // Arrow keys stop at the sheet edge instead of wrapping to the far side.
     const selectionWrapGuardDisposable = installSelectionWrapGuard(runtime)
-    // Empty-value formula results (IFERROR/IF/CHOOSE over blank refs)
-    // display as 0 like Excel.
+    // Empty-value formula results (IFERROR/IF/CHOOSE over blank refs) display as 0 like Excel.
     const nullResultDisposable = installFormulaNullResultFix(runtime)
     // Copy/cut load their selection into the lazy window first so streamed
     // workbooks don't serialize blanks for never-viewed rows.
@@ -1291,12 +1274,8 @@ export function App(): React.JSX.Element {
         }
         // Fully-loaded workbooks have nothing left to stream in.
         if (state.flags.preloadComplete) return
-        // Editing a cell whose original content hasn't streamed in yet would
-        // silently overwrite data the user never saw. Beyond the file's used
-        // range every cell is genuinely empty, so those edits are safe — and
-        // so are rows/columns inserted this session (journal-owned, nothing
-        // streams into them). Bounds are screen-space: structural ops shift
-        // the data extent.
+        // Editing a cell whose original content hasn't streamed in yet would silently overwrite
+        // data the user never saw.
         const ops = state.editJournal.structuralOps.get(sheetId) ?? []
         const beyondData =
           event.row >= sheet.rowCount + netAxisDelta(ops, 'row') ||
@@ -1412,9 +1391,8 @@ export function App(): React.JSX.Element {
             const originalName = state.file.sheets.find(
               (sheet) => sheet.id === params.subUnitId,
             )?.name
-            // The live sync matches series refs against live sheet names, so
-            // in-memory refs must follow the rename (the file's own c:f refs
-            // are rewritten independently at save time).
+            // The live sync matches series refs against live sheet names, so in-memory refs must
+            // follow the rename (the file's own c:f refs are rewritten independently at save time).
             const previousName =
               state.editJournal.sheets.renamed.get(params.subUnitId) ??
               state.editJournal.sheets.added.get(params.subUnitId)?.name ??
@@ -1598,9 +1576,8 @@ export function App(): React.JSX.Element {
             )
           })
           refreshLazyVisuals(state)
-          // Univer shifted its installed cells itself, but the loaded-range
-          // bookkeeping and frozen strip are now stale — refetch the viewport
-          // through the updated coordinate mapping.
+          // Univer shifted its installed cells itself, but the loaded-range bookkeeping and frozen
+          // strip are now stale — refetch the viewport through the updated coordinate mapping.
           state.loadedRanges.delete(params.subUnitId)
           state.frozenStripKeys.delete(params.subUnitId)
           // Pinned closure values shift with the model; pinned formulas are
@@ -1704,9 +1681,8 @@ export function App(): React.JSX.Element {
         const state = lazyWorkbookRef.current
         if (journalSuppression.active || !state) return
         if (CF_RULE_COMMAND_PATTERN.test(event.id)) {
-          // The Univer panel offers icon sets and per-threshold icon picks
-          // that only x14 can hold; block them here instead of failing the
-          // whole save later.
+          // The Univer panel offers icon sets and per-threshold icon picks that only x14 can hold;
+          // block them here instead of failing the whole save later.
           const rule = (
             event.params as
               | {
@@ -1721,12 +1697,9 @@ export function App(): React.JSX.Element {
           return
         }
         if (STRUCTURAL_EDIT_COMMAND_PATTERN.test(event.id)) {
-          // Row/column inserts/removals and merges are allowed in every load
-          // mode: viewport reads translate screen ↔ file coordinates through
-          // the journaled operation stream (view-transform.ts), and the save
-          // replays the same stream against the file. Sheets carrying pivot
-          // tables are the exception — a shift would desync the baked pivot
-          // output from its definition.
+          // Row/column inserts/removals and merges are allowed in every load mode: viewport reads
+          // translate screen ↔ file coordinates through the journaled operation stream
+          // (view-transform.ts), and the save replays the same stream against the file.
           const subUnitId =
             (event.params as { subUnitId?: string } | undefined)?.subUnitId ??
             runtime.univerAPI.getActiveWorkbook()?.getActiveSheet()?.getSheetId()
@@ -1842,8 +1815,6 @@ export function App(): React.JSX.Element {
       },
     )
     // File-menu accelerators (⌘O/⌘S/⇧⌘S) arrive from the main process.
-    // Null on a host with no application menu to command from; the same actions are on
-    // this app's own toolbar, so there is nothing to substitute here.
     const unsubscribeMenu =
       sheetsPlatform().menu?.onMenuAction((action) => menuActionRef.current(action)) ??
       (() => undefined)
@@ -1878,8 +1849,7 @@ export function App(): React.JSX.Element {
       ({ worksheet, row, column }) => {
         const state = lazyWorkbookRef.current
         if (!state) return
-        // A journaled link edit (set, changed, or removed) wins over the
-        // file's streamed target.
+        // A journaled link edit (set, changed, or removed) wins over the file's streamed target.
         const journaled = hyperlinkEditAt(state.editJournal, worksheet.getSheetId(), row, column)
         const target =
           journaled !== undefined
@@ -1893,8 +1863,6 @@ export function App(): React.JSX.Element {
       },
     )
     // Track "any cell has content" for the ribbon's AI action buttons.
-    // Mutations fire in bursts (paste, AI plans), so recompute on a short
-    // trailing debounce; the scan itself early-exits on the first value.
     let contentTimer: ReturnType<typeof setTimeout> | null = null
     const contentDisposable = runtime.univerAPI.addEvent(
       runtime.univerAPI.Event.CommandExecuted,
@@ -2074,9 +2042,7 @@ export function App(): React.JSX.Element {
     if (after && journalSize(after.editJournal) === 0) {
       // Saving reopens the sidecar session and resets Univer's undo stack.
       patchLastAssistant(({ autoApplied: _autoApplied, ...entry }) => entry)
-      // Sheets' analog of slides' deckName: propose the first AI-named sheet as
-      // the file name. The main process no-ops unless the file still carries the
-      // shell's auto-created untitled name, so user-chosen names are never touched.
+      // Sheets' analog of slides' deckName: propose the first AI-named sheet as the file name.
       const candidate = after.file.sheets
         .map((sheet) => sheet.name.trim())
         .find((name) => name.length > 0 && !DEFAULT_SHEET_NAME_RE.test(name))
@@ -2090,17 +2056,7 @@ export function App(): React.JSX.Element {
     }
   }
 
-  /**
-   * Auto-apply a just-proposed plan without the manual Apply click.
-   *
-   * All plans (content, format, and structural) commit immediately for a
-   * smoother, Google-Sheets-like flow — AI edits share the ribbon's command
-   * channel + edit journal, so undo (⌘Z / inline button) covers everything.
-   *
-   * The CAS/planStillMatches guards inside plan()/handleLazyApply are preserved
-   * — auto-apply never bypasses the "workbook changed since preview" check.
-   * When apply fails, the preview card stays up as a manual fallback.
-   */
+  /** Auto-apply a just-proposed plan without the manual Apply click. */
   function autoApplySafePlan(plan: ChangePlan): Promise<ApplyOutcome> {
     const opCount =
       plan.cellChanges.length +
@@ -2656,8 +2612,7 @@ export function App(): React.JSX.Element {
       }
     }
     lazyWorkbookRef.current = state
-    // Pivot definitions load eagerly so refresh (a synchronous apply step)
-    // never waits on IPC. Best effort: a failed parse just disables refresh.
+    // Pivot definitions load eagerly so refresh (a synchronous apply step) never waits on IPC.
     for (const sheet of selected.sheets) {
       for (const pivot of sheet.pivotTables) {
         if (pivot.cachePath === null) continue
@@ -2685,8 +2640,7 @@ export function App(): React.JSX.Element {
     setPreview(null)
     lazyPreviewRef.current = null
     setPendingEdits(0)
-    // Slicers belong to the previous workbook's session only; switching files
-    // invalidates them.
+    // Slicers belong to the previous workbook's session only; switching files invalidates them.
     setSlicers([])
     setSlicerPicker(null)
     disposeVisuals(visualDisposablesRef.current)
@@ -2698,9 +2652,7 @@ export function App(): React.JSX.Element {
       requestAnimationFrame(() => {
         const workbook = runtime.univerAPI.getActiveWorkbook()
         if (!workbook) return
-        // Register existing file tables so Univer renders filter dropdowns
-        // and banding. This is visual-only (the journal is empty for file
-        // tables), so failures are swallowed — the data is still usable.
+        // Register existing file tables so Univer renders filter dropdowns and banding.
         for (const sheet of selected.sheets) {
           if (sheet.tables.length === 0) continue
           const ws = workbook.getSheetBySheetId(sheet.id)
@@ -2733,11 +2685,9 @@ export function App(): React.JSX.Element {
         try {
           worksheet.scrollToCell(0, 0)
         } catch {
-          // A workbook opened during startup (the shell's queued-open nudge)
-          // can land before Univer's Rendered lifecycle registers the scroll
-          // render controller, and the facade then throws a redi
-          // QuantityCheckError. The fresh view is already at the origin, so
-          // skipping the reset is harmless.
+          // A workbook opened during startup (the shell's queued-open nudge) can land before
+          // Univer's Rendered lifecycle registers the scroll render controller, and the facade then
+          // throws a redi QuantityCheckError.
         }
         void loadVisibleRange(runtime, lazyWorkbookRef, worksheet, setMessage)
         if (state.formulaMode) {

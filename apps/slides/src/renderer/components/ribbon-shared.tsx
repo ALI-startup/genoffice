@@ -1,7 +1,6 @@
 /**
- * Shared pieces of the slides ribbon: the Props contract, common constants,
- * small layout components, and the RibbonTabCtx bundle handed to the
- * extracted tab components.
+ * Shared pieces of the slides ribbon: the Props contract, common constants, small layout
+ * components, and the RibbonTabCtx bundle handed to the extracted tab components.
  */
 import type { Dispatch, ReactNode, SetStateAction } from 'react'
 import type {

@@ -1,8 +1,4 @@
-/* In-page editor frames (web host only; Electron paints WebContentsViews here).
- * The strip is `position: fixed` and 40px tall, so a frame fills everything
- * under it. Every frame keeps its box whether it is showing or not — hidden with
- * `visibility`, not `display`, so a backgrounded document is never relaid out at
- * zero width and never destroyed. */
+/* In-page editor frames (web host only; Electron paints WebContentsViews here). */
 .app-frame-view {
   position: fixed;
   top: 40px;

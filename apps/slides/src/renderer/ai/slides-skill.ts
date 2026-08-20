@@ -24,10 +24,8 @@ import { slidesDoc, slidesFile } from '../platform'
 import { slidesPlatform } from '../platform'
 
 /**
- * Slides capability as an AgentSkill: deck outline context + three tools (read structure /
- * read one slide / edit element text). Changes go through the existing slides:edit-text IPC;
- * the main process applies them and returns the new RenderSlide, which applySlide writes
- * back into React state — the same pipeline as manual editing.
+ * Slides capability as an AgentSkill: deck outline context + three tools (read structure / read one
+ * slide / edit element text).
  */
 
 // ── Generation progress events (for the onProgress callback; renderer memory only, never persisted or journaled) ──
@@ -82,30 +80,22 @@ export interface DeckAccess {
   /** Replace the whole deck (after adding/removing slides) and jump to the goTo slide */
   applyDeck(slides: RenderSlide[], goTo?: number): void
   /**
-   * Generation progress callback (optional): called by generate_deck stages; the UI updates
-   * the progress card and top progress bar in real time. Passed only through renderer
-   * memory, never persisted or journaled.
+   * Generation progress callback (optional): called by generate_deck stages; the UI updates the
+   * progress card and top progress bar in real time.
    */
   onProgress?(event: DeckProgressEvent): void
-  /**
-   * Page indexes (0-based) a generation tool just landed. The host queues them for the
-   * post-generation layout QC pass; the skill cannot run that itself, because QC needs its
-   * own agent loop with a screenshot of the finished page.
-   */
+  /** Page indexes (0-based) a generation tool just landed. */
   onPagesGenerated?(slideIndexes: number[]): void
   /** Survey: shows a card with options and waits for the user's choices, returning an answer summary. */
   askClarification?(questions: ClarifyQuestion[]): Promise<{ answers: string; cancelled?: boolean }>
   /**
-   * In-tool image search (embedded in the tool):
-   * given English keywords, returns an array of real image URLs (at most N).
-   * On search failure returns an empty array (fail-open; doesn't block the main generation path).
+   * In-tool image search (embedded in the tool): given English keywords, returns an array of real
+   * image URLs (at most N).
    */
   searchImages?(query: string, maxResults: number): Promise<string[]>
   /**
-   * In-tool Style Skill generation:
-   * a dedicated LLM call focused on producing a complete structured visual style guide
-   * (color rules/fonts/layout variants per page type/overall style). Promotes style from an
-   * "outline side-product" to a "dedicated deliverable" — less AI-looking, consistent across pages.
+   * In-tool Style Skill generation: a dedicated LLM call focused on producing a complete structured
+   * visual style guide (color rules/fonts/layout variants per page type/overall style).
    */
   generateStyleSkill?(args: {
     topic: string
@@ -113,12 +103,7 @@ export interface DeckAccess {
     styleHint?: string
     signal?: AbortSignal
   }): Promise<{ ok: boolean; styleSkill?: string; error?: string }>
-  /**
-   * In-tool planning: given topic + page count, the LLM produces a structured outline.
-   * Fixes "missing pages at the input side" at the root — the main agent doesn't hand-write dozens of pages of pages JSON (avoids the argument being truncated by max_tokens).
-   * style is already produced by generateStyleSkill; this function only outputs core_hook + per-page outlines (styleSkill serves as a reference for consistency).
-   * Batched recursion is scheduled by the skill (continueFrom keeps the narrative coherent across batches).
-   */
+  /** In-tool planning: given topic + page count, the LLM produces a structured outline. */
   planDeckOutline?(args: {
     topic: string
     count: number
@@ -135,10 +120,8 @@ export interface DeckAccess {
     error?: string
   }>
   /**
-   * In-tool page writing: one LLM call turns a page's brief into a `PageSpec` —
-   * what goes on the page, not where. Placement is `composePage`'s job, which is
-   * what lets this run on any configured provider: the model is never asked for
-   * coordinates, CSS or pptx, only for content and a layout name.
+   * In-tool page writing: one LLM call turns a page's brief into a `PageSpec` — what goes on the
+   * page, not where.
    */
   writePageSpec?(args: {
     title: string
@@ -155,20 +138,14 @@ export interface DeckAccess {
    * fail-open: failure doesn't block the main path.
    */
   saveSidecar?(data: { topic: string; styleSkill: string; createdAt: string }): Promise<void>
-  /**
-   * Save styleSkill into userData/style-templates/<name>.json for later reuse.
-   */
+  /** Save styleSkill into userData/style-templates/<name>.json for later reuse. */
   saveStyleTemplate?(
     name: string,
     data: { topic: string; styleSkill: string; createdAt: string },
   ): Promise<{ ok: boolean; error?: string }>
-  /**
-   * List saved Style templates (name + topic + createdAt).
-   */
+  /** List saved Style templates (name + topic + createdAt). */
   listStyleTemplates?(): Promise<Array<{ name: string; topic: string; createdAt: string }>>
-  /**
-   * Load the content of a given Style template.
-   */
+  /** Load the content of a given Style template. */
   loadStyleTemplate?(
     name: string,
   ): Promise<{ ok: boolean; styleSkill?: string; topic?: string; error?: string }>
@@ -177,8 +154,7 @@ export interface DeckAccess {
   retryBackoffMs?: number
   /**
    * Names of text attachments in the current conversation that were never read with
-   * read_attachment. When non-empty, generate_deck refuses to run until they are read
-   * (decks must be built from attachment content, not generic filler).
+   * read_attachment.
    */
   unreadTextAttachments?(): string[]
 }
@@ -1068,10 +1044,9 @@ function findNodeById(nodes: RenderNode[], id: string): RenderNode | undefined {
 }
 
 /**
- * Editable context of an element: a top-level node, or a direct child of a top-level group
- * (with groupId + the group's absolute origin for abs↔group-local px conversion — child render
- * boxes are group-local, matching the in-group edit IPCs). Deeper nesting returns {nested:true}:
- * the main process patches one level only, so those stay read-only until ungrouped.
+ * Editable context of an element: a top-level node, or a direct child of a top-level group (with
+ * groupId + the group's absolute origin for abs↔group-local px conversion — child render boxes are
+ * group-local, matching the in-group edit IPCs).
  */
 type EditTarget =
   { node: RenderNode; groupId?: string; groupOrigin?: { x: number; y: number } } | { nested: true }
@@ -1103,9 +1078,8 @@ function targetError(target: EditTarget | null, sourceId: string, pageNo: number
 }
 
 /**
- * Restore a render node's current text into EditParagraph[] (aggregate runs by line, keeping
- * each run's existing formatting). Used by set_element_style: change formatting while keeping
- * the text. fontSize is converted back from px to pt.
+ * Restore a render node's current text into EditParagraph[] (aggregate runs by line, keeping each
+ * run's existing formatting).
  */
 function nodeToParagraphs(node: ShapeRenderNode): EditParagraph[] {
   const lines = node.text?.lines ?? []
@@ -1124,8 +1098,7 @@ function nodeToParagraphs(node: ShapeRenderNode): EditParagraph[] {
 
 /**
  * Merge style-override fields into existing paragraphs: bold/italic/font size/color/font are
- * overridden per run, align is set on the paragraph, fields not passed stay unchanged. Shared
- * by the set_element_style tool and execute_slide_script's setStyle dispatch.
+ * overridden per run, align is set on the paragraph, fields not passed stay unchanged.
  */
 function mergeStyleIntoParagraphs(cur: EditParagraph[], ov: SlideStylePatch): EditParagraph[] {
   return cur.map((p) => ({
@@ -1227,13 +1200,7 @@ function nodeColors(n: RenderNode): Pick<NodeInfo, 'fill' | 'textColor' | 'strok
   return out
 }
 
-/**
- * Collect node info (including nested group children). A child's box is in group-local
- * coordinates (ext/chExt scaling already baked into geometry at build time); here we add the
- * group offset to convert to absolute coordinates and set the inGroup flag. Direct children of a
- * top-level group also carry groupId (editable via the in-group pipeline); deeper nesting stays
- * read-only (the main process patches one level only).
- */
+/** Collect node info (including nested group children). */
 function collectNodeInfos(
   nodes: RenderNode[],
   ox = 0,
@@ -1303,11 +1270,7 @@ function buildDeckOutline(slides: RenderSlide[], current: number, selectedIds: s
   return lines.join('\n')
 }
 
-/**
- * Element inventory of one slide as read_slide reports it (ids + geometry + colors + text).
- * Shared by the read_slide tool and the post-generation layout QC pass (slide-qc.ts), so the
- * QC model maps screenshot pixels back to the same ids/coordinates the edit tools accept.
- */
+/** Element inventory of one slide as read_slide reports it (ids + geometry + colors + text). */
 export function formatSlideDump(slide: RenderSlide): string {
   const infos = collectNodeInfos(slide.nodes)
   const parts = infos.map((n) => {
@@ -1377,15 +1340,7 @@ interface SkillState {
   lastTopic?: string
 }
 
-/**
- * Create one composed page's elements on `slideIndex`, back to front.
- *
- * The composer decided *what* and *where*; this only issues the ops, and it does
- * so one element at a time because each returns the updated slide the next call
- * has to be based on. Failures are collected rather than thrown: a page missing
- * its photo is still a page, and losing the whole run to one dead image URL was
- * the old pipeline's worst failure mode.
- */
+/** Create one composed page's elements on `slideIndex`, back to front. */
 async function landComposedPage(
   access: DeckAccess,
   slideIndex: number,
@@ -1470,9 +1425,8 @@ const PLACEHOLDER_PATTERNS: RegExp[] = [
 ]
 
 /**
- * Cheap audit of the text the model wrote for one page: flags leftover template
- * placeholders and a page with no words on it, so filler is redone rather than
- * delivered as success. Returns a short reason, or null when the page looks fine.
+ * Cheap audit of the text the model wrote for one page: flags leftover template placeholders and a
+ * page with no words on it, so filler is redone rather than delivered as success.
  */
 export function auditPageText(text: string): string | null {
   const flat = text.replace(/\s+/g, ' ').trim()
@@ -1504,13 +1458,7 @@ function specText(spec: PageSpec): string {
     .join(' ')
 }
 
-/**
- * Write one page with the model, then lay it out and land it.
- *
- * The single place the two generation tools share, and the seam that makes them
- * provider-independent: `writePageSpec` asks only for content, `composePage`
- * decides geometry, `landComposedPage` issues the ops.
- */
+/** Write one page with the model, then lay it out and land it. */
 async function generateOnePage(
   access: DeckAccess,
   args: {
@@ -1556,14 +1504,7 @@ async function generateOnePage(
   return landed.failures.length ? { ok: true, failures: landed.failures } : { ok: true }
 }
 
-/**
- * `generateOnePage` with one retry.
- *
- * A provider that rate-limits, overloads or drops a stream mostly does so
- * transiently, and an immediate second attempt would hit the same limit, so the
- * retry waits first. Retrying is safe because every failure path leaves the page
- * with nothing on it: a page that landed only some of its elements returns ok.
- */
+/** `generateOnePage` with one retry. */
 async function generatePageWithRetry(
   access: DeckAccess,
   args: Parameters<typeof generateOnePage>[1],
@@ -1613,11 +1554,10 @@ const fail = (summary: string, output: string) => ({
   summary,
 })
 
-// ── Figure-provenance gate ────────────────────────────────────
-// Prompt rules ("search before writing data") did not stop invented numbers being
-// delivered as fact, so provenance is enforced at the tool layer: chart data and
-// data-dense briefs must declare a dataSource, 'search' is only accepted after a
-// real web_search in this conversation, and 'sample' figures must be disclosed.
+// ── Figure-provenance gate ──────────────────────────────────── Prompt rules ("search before
+// writing data") did not stop invented numbers being delivered as fact, so provenance is enforced
+// at the tool layer: chart data and data-dense briefs must declare a dataSource, 'search' is only
+// accepted after a real web_search in this conversation, and 'sample' figures must be disclosed.
 
 /** Specific figures: percentages, money, magnitude units, decimals — not bare years/counts */
 const SPECIFIC_FIGURE_RE =
@@ -1830,10 +1770,8 @@ async function executeTool(
           summary: t('aiSumScriptNoop', { n: idx + 1 }),
         }
       }
-      // ── Dispatch: geometry applied atomically once via batchEditTransform, the rest serially in script order,
-      //   each step using the returned new slide as the next step's current state. One failure doesn't crash the whole run; report faithfully.
-      // Balanced with the end in the finally below; an unbalanced pair would leave
-      // the session mid-batch, where undo/redo refuse to run
+      // ── Dispatch: geometry applied atomically once via batchEditTransform, the rest serially in
+      // script order, each step using the returned new slide as the next step's current state.
       const batchOpened = (await slidesDoc().beginHistoryBatch?.()) === true
       try {
         let current = slide
@@ -2187,9 +2125,7 @@ async function executeTool(
     }
 
     case 'generate_deck': {
-      // Hard gate: with unread text attachments present, refuse to generate. The prompt
-      // already demands reading them first, but a prompt rule is not enforcement — this is,
-      // and it is fully computable from the tool-call history.
+      // Hard gate: with unread text attachments present, refuse to generate.
       const unread = access.unreadTextAttachments?.() ?? []
       if (unread.length > 0) {
         return fail(
@@ -2431,9 +2367,8 @@ async function executeTool(
       access.onProgress?.({ stage: 'done', total: made, summary: '' })
       if (landedIndexes.length) access.onPagesGenerated?.(landedIndexes)
 
-      // The deck's style guide is worth keeping next to the draft: reopening the file and
-      // asking for another page then matches instead of inventing a second look. Fail-open —
-      // a sidecar that cannot be written must not turn a finished deck into an error.
+      // The deck's style guide is worth keeping next to the draft: reopening the file and asking
+      // for another page then matches instead of inventing a second look.
       if (landedIndexes.length && styleSkill && access.saveSidecar) {
         try {
           await access.saveSidecar({
@@ -2478,8 +2413,7 @@ async function executeTool(
         if (gateErr) return fail(t('aiFailRegen'), gateErr)
       }
 
-      // Clear the page in place. Everything else about the deck — page order,
-      // the other pages, undo — is untouched, which is what "redo this page" means.
+      // Clear the page in place.
       for (const info of collectNodeInfos(slide.nodes)) {
         if (info.locked) continue
         const r = await slidesDoc().deleteElement({ slideIndex: idx, sourceId: info.id })

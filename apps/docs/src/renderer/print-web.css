@@ -1,26 +1,9 @@
-/**
- * Print rules the browser build adds on top of the shared `@media print` block in
- * styles.css.
- *
- * Imported from host-web.ts, which the `@host` alias resolves only for
- * `vite.web.config.ts` — so these rules are in the web bundle and nowhere near the
- * Electron one. That is the point: styles.css's print block is what Electron's
- * `printToPDF` renders through, and changing a single declaration there would
- * change every desktop PDF export. Nothing in this file can.
- *
- * Everything here exists because `window.print()` is driven by a *user's print
- * dialog*, whereas `printToPDF` is driven by arguments the main process passes.
- * The paper size is the other half of that gap and is handled by the `@page`
- * rules App.tsx renders from print.ts.
- */
+/** Print rules the browser build adds on top of the shared `@media print` block in styles.css. */
 
 @media print {
   /*
-   * Chromium's and Firefox's print dialogs default "background graphics" to off,
-   * so shading, table fills, highlights and a set page colour would silently drop
-   * out of a printed document. `printToPDF` is called with `printBackground: true`
-   * and never had the problem. `print-color-adjust` is inherited, so declaring it
-   * once at the root covers the whole page.
+   * Chromium's and Firefox's print dialogs default "background graphics" to off, so shading, table
+   * fills, highlights and a set page colour would silently drop out of a printed document.
    */
   html {
     -webkit-print-color-adjust: exact;
@@ -36,11 +19,8 @@
   }
 
   /*
-   * Only reachable with the pagination preview closed — the preview's own rule in
-   * styles.css already hides every sibling. styles.css hides `.ai-panel` and
-   * `.ai-rail` but not the dock that holds them, which keeps its 360px width and
-   * pushes the page sideways; same for the comments/compare pane, which is not in
-   * that list at all.
+   * Only reachable with the pagination preview closed — the preview's own rule in styles.css
+   * already hides every sibling.
    */
   .ai-dock,
   .comments-pane {

@@ -1,15 +1,4 @@
-/**
- * Browser implementations of the platform ports.
- *
- * The adapter behind the ports, and it obeys two rules:
- * nothing here imports an app, and nothing here claims a capability it cannot
- * honestly back. What it adds over the Electron package is `WebDocumentStore` —
- * Electron gets its ref → file mapping for free (the ref is a path), while a
- * browser has to own that mapping itself.
- *
- * App-specific surfaces (pdf's document operations, the Save As handshake) are
- * assembled in the app from these pieces, exactly as the Electron side does.
- */
+/** Browser implementations of the platform ports. */
 export {
   browserFilePickers,
   browserMultiFilePicker,

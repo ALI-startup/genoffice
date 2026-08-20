@@ -1,18 +1,4 @@
-/**
- * Static server for the composed web bundle, for the E2E run.
- *
- * The apps are plain files, so this is deliberately the smallest thing that
- * serves the bundle the way nginx does in docker/nginx: correct content types (a
- * wrong one for .wasm breaks the sheets engine), a directory index, and one
- * proxy. Playwright starts it via the config's `webServer`.
- *
- * The proxy is `/v1/convert`, and it exists because a `.hwp` cannot be opened
- * without it: the pages set `connect-src 'self'`, so the conversion request has
- * to come from this origin (nginx does the same job in a deployment). It is
- * conditional on E2E_CONVERT_URL — the AI BFF is not proxied at all because no
- * test exercises it, and the same would be true here if the Hangul tests did not
- * need a real converter behind them.
- */
+/** Static server for the composed web bundle, for the E2E run. */
 import { createServer, request as httpRequest } from 'node:http'
 import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'

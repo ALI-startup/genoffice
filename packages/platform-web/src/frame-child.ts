@@ -1,22 +1,4 @@
-/**
- * The frame half of the shell protocol.
- *
- * An editor app running inside the web shell installs one of these; running
- * standalone it installs none, and `createFrameChildLink` says which by
- * returning `null`. That null is the whole reason this is a link object rather
- * than a set of free functions: a host that is not framed must have *nothing* to
- * drive, not a link whose methods quietly go nowhere.
- *
- * The link owns no policy. It does not know what "dirty" means, cannot save
- * anything, and never touches the app's state: it forwards the shell's two
- * questions to callbacks the app's window port registers, and posts the answers
- * back. That keeps the app's existing close-guard ports — docs' `onCloseCheck` /
- * `reportCloseCheck`, pdf's `onCloseSaveRequest` / `reportCloseSaveResult` — the
- * only machinery involved, driven from a second source rather than duplicated.
- *
- * Everything inbound goes through `parseShellToFrame`, so a message from any
- * other window, or of any other shape, is dropped before it reaches a callback.
- */
+/** The frame half of the shell protocol. */
 import { FRAME_ID_PARAM, FRAME_PROTOCOL, parseShellToFrame } from './frame-wire.js'
 import type { FrameToShellMessage } from './frame-wire.js'
 
@@ -35,21 +17,9 @@ export interface FrameChildEnv {
 export interface FrameChildLink {
   /** The id the shell knows this frame by; echoed on every answer. */
   frameId: string
-  /**
-   * Register the predicate that answers "would closing lose work?".
-   *
-   * Must be synchronous, for the same reason docs' `onCloseCheck` documents:
-   * the answer is a read of state the app already holds, and making it async
-   * would only add a way for it to arrive after the shell stopped waiting.
-   * Registering a second predicate replaces the first.
-   */
+  /** Register the predicate that answers "would closing lose work?". */
   onCloseCheck(ask: () => boolean): void
-  /**
-   * Register the handler that runs when the shell asks the frame to save.
-   *
-   * The handler starts the save and returns; the outcome comes back through
-   * `reportCloseSave`, because that is the shape the apps' ports already have.
-   */
+  /** Register the handler that runs when the shell asks the frame to save. */
   onCloseSave(run: () => void): void
   /** Report the outcome of the save the shell asked for. Extra calls are ignored. */
   reportCloseSave(ok: boolean): void
@@ -74,12 +44,7 @@ export function browserFrameChildEnv(scope: Window = window): FrameChildEnv {
   }
 }
 
-/**
- * Install the frame-side protocol client, or report that this page is not one.
- *
- * @returns `null` when the page has no shell frame id or no embedder — i.e. it
- *   is the standalone web build, whose behaviour is then exactly as before.
- */
+/** Install the frame-side protocol client, or report that this page is not one. */
 export function createFrameChildLink(
   env: FrameChildEnv = browserFrameChildEnv(),
 ): FrameChildLink | null {
@@ -154,9 +119,7 @@ export function createFrameChildLink(
     },
     reportCloseSave(ok: boolean): void {
       const requestId = pendingSave
-      // No request in flight: the app called the reply half on its own. Dropping
-      // it is right — there is nobody to answer — and the app's own port already
-      // warns about that case.
+      // No request in flight: the app called the reply half on its own.
       if (requestId === null) return
       pendingSave = null
       post({ protocol: FRAME_PROTOCOL, kind: 'close-save-result', frameId, requestId, ok })

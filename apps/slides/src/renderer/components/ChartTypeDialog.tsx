@@ -1,6 +1,5 @@
 /**
  * Change chart type dialog: grid of SVG thumbnail cards (modeled on PowerPoint Change Chart Type).
- * Single click selects, double click applies directly; OK calls back onConfirm.
  */
 import { useState, type ReactNode } from 'react'
 import type { ChartPresetDef } from '../insert-presets'

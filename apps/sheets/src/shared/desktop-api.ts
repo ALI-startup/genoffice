@@ -1675,11 +1675,8 @@ export type WorkbookCellStyle = z.infer<typeof cellStyleSchema>
 export type WorkbookRichRun = z.infer<typeof richRunSchema>
 export type WorkbookConditionalRule = z.infer<typeof conditionalRuleSchema>
 
-// ---- AI settings + chat/stream: canonical types live in @samugen/ai-provider,
-// shared with apps/docs. Validated here like every other renderer→main request in
-// this file; the validated shape is cast to AiSettings at the main-process call
-// site, which always has exactly the 5 known provider keys once merged through
-// resolveAiSettings/defaultAiSettings. ----
+// ---- AI settings + chat/stream: canonical types live in @samugen/ai-provider, shared with
+// apps/docs.
 
 const aiProviderConfigSchema = z
   .object({

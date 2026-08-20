@@ -144,16 +144,7 @@ interface ExcelShellProps {
   readonly onUndo: () => void
   readonly onCommand: (command: string) => void
   /// Left side of the status bar (ready / streaming / AI progress messages).
-  /**
-   * The status line, or null before anything has happened.
-   *
-   * Null rather than a resting string, because the resting text is a label and
-   * has to follow a language switch: App builds its messages in event handlers
-   * (a toast keeps the language it was raised in, which is right) and does not
-   * subscribe to the locale context, so a default resolved there would sit in
-   * the boot language until some other event replaced it. Resolved here, where
-   * `useI18n` re-renders it.
-   */
+  /** The status line, or null before anything has happened. */
   readonly statusMessage: string | null
   /// Zoom of the active sheet in percent, echoed by the status-bar slider.
   readonly zoomPercent: number
@@ -1623,10 +1614,8 @@ function Ribbon({
   }
 
   if (activeTab === 'Formulas') {
-    // Category buttons all open the same catalog dialog; the per-category
-    // menus funnel into Insert Function.
-    // Each button opens the catalog filtered to its own category; 'All'
-    // for the ones the catalog has no counterpart for (Recently Used / More Functions).
+    // Category buttons all open the same catalog dialog; the per-category menus funnel into Insert
+    // Function.
     const functionCategory = (label: string, symbol: string, category: string) => (
       <RibbonButton
         large

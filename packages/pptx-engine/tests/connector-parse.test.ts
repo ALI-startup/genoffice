@@ -1,7 +1,6 @@
 /**
- * Connector (p:cxnSp) parsing tests:
- * - one each of straight / bent / curved + arrows + flip
- * - roundtrip: connector slide bytes stay identical
+ * Connector (p:cxnSp) parsing tests: - one each of straight / bent / curved + arrows + flip -
+ * roundtrip: connector slide bytes stay identical
  */
 import { describe, it, expect } from 'vitest'
 import { parseSlide } from '../src/parse'

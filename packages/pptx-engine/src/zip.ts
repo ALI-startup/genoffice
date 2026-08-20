@@ -1,10 +1,6 @@
 /**
- * pptx package management — open the zip, archive the original by SHA-256, and read
- * parts and .rels.
- *
- * Byte fidelity: PackageArchive holds the original bytes of every entry; on save,
- * unmodified entries are written back byte-for-byte (handled by the patch layer).
- * This module only handles reading and metadata.
+ * pptx package management — open the zip, archive the original by SHA-256, and read parts and
+ * .rels.
  */
 import { sha256Hex, utf8Text } from './bytes'
 import JSZip from 'jszip'
@@ -61,10 +57,7 @@ export class PackageArchive {
     return this.entries.get(path) ?? null
   }
 
-  /**
-   * Read a part's relationships file. partPath e.g. 'ppt/slides/slide1.xml' →
-   * 'ppt/slides/_rels/slide1.xml.rels'.
-   */
+  /** Read a part's relationships file. */
   readRels(partPath: string): Map<string, Relationship> {
     const relsPath = relsPathFor(partPath)
     const rels = new Map<string, Relationship>()
@@ -84,9 +77,7 @@ export class PackageArchive {
     return rels
   }
 
-  /**
-   * Read the presentation's slide size and the slide part paths in order.
-   */
+  /** Read the presentation's slide size and the slide part paths in order. */
   readPresentation(): { size: SlideSize; slidePaths: string[] } {
     const presXml = this.readText('ppt/presentation.xml')
     if (!presXml) throw new Error('pptx: missing ppt/presentation.xml')
@@ -169,11 +160,7 @@ export function relsPathFor(partPath: string): string {
   return `${dir ? dir + '/' : ''}_rels/${file}.rels`
 }
 
-/**
- * Resolve a relative target into an absolute path inside the zip.
- * basePart is the referencing part's path (its directory is the base); target may be
- * something like '../slideLayouts/slideLayout1.xml'.
- */
+/** Resolve a relative target into an absolute path inside the zip. */
 export function resolveTarget(basePart: string, target: string): string {
   if (target.startsWith('/')) return target.slice(1)
   const baseDir = basePart.slice(0, basePart.lastIndexOf('/'))

@@ -95,18 +95,16 @@ export function Onboarding({ onDone }: OnboardingProps) {
     cardRef.current?.focus()
   }, [])
 
-  // a slide change can strip focus from the active control (the slide it was on
-  // becomes inert, which blurs it) — pull focus back onto the card so it never
-  // drops to body
+  // a slide change can strip focus from the active control (the slide it was on becomes inert,
+  // which blurs it) — pull focus back onto the card so it never drops to body
   useEffect(() => {
     const card = cardRef.current
     const active = document.activeElement
     if (card && (!(active instanceof HTMLElement) || !card.contains(active))) card.focus()
   }, [index])
 
-  // keyboard handling: Escape skips, Enter / ArrowRight advance, ArrowLeft goes
-  // back, and Tab is trapped inside the dialog (aria-modal). Enter is ignored
-  // when a button is focused so the native click doesn't double-fire.
+  // keyboard handling: Escape skips, Enter / ArrowRight advance, ArrowLeft goes back, and Tab is
+  // trapped inside the dialog (aria-modal).
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {

@@ -1,17 +1,4 @@
-/**
- * The browser host adapter (src/renderer/platform-web.ts).
- *
- * @samugen/platform-web covers the document store, the attachments port and the
- * unload guard, so what is left to check here is the glue that turns those into
- * docs' own ports: which store call each channel makes, how a dismissed dialog
- * becomes a cancel rather than a failure, the gesture rule that makes `saveNew`
- * possible at all, and — the part most worth pinning down — that the close-check
- * pull really works over `beforeunload` while the members that cannot work do not
- * pretend to.
- *
- * The store is faked at its public surface rather than mocked per method, so the
- * assertions are about the adapter's choices and not about a call graph.
- */
+/** The browser host adapter (src/renderer/platform-web.ts). */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WebDocumentStore } from '@samugen/platform-web'
 import type { FilePickers, WebFileHandle } from '@samugen/platform-web'
@@ -63,9 +50,8 @@ function fakeStore(
       if (!bytes) return Promise.reject(new Error(`no such ref: ${ref}`))
       return Promise.resolve({ lastModified: stamps.get(ref) ?? 0, size: bytes.byteLength })
     },
-    // Granted by default, which is the state of a document saved through a save
-    // dialog or already written once in this session. A test that models a
-    // freshly-opened (read-only) handle overrides it.
+    // Granted by default, which is the state of a document saved through a save dialog or already
+    // written once in this session.
     writable: () => Promise.resolve(true),
     write: (ref: string, bytes: Uint8Array, options?: { prompt?: boolean }) => {
       files.set(ref, bytes)
@@ -241,9 +227,6 @@ describe('save', () => {
 
   it('declines an autosave rather than raising a permission dialog on a timer', async () => {
     // A document freshly opened through the open dialog: read granted, write not.
-    // This is every document, before the first manual save of the session — and a
-    // reload puts even a written one back here, because a handle restored from
-    // IndexedDB carries no permission at all.
     const { store, writes } = fakeStore({ writable: () => Promise.resolve(false) })
 
     const result = await withPort(store).save('doc-1', new Uint8Array([7, 7]).buffer, true)
@@ -288,9 +271,8 @@ describe('save: the external-modification guard', () => {
 
     await expect(port.save('doc-1', new Uint8Array([9, 9]).buffer)).resolves.toEqual({ ok: true })
 
-    // The shared predicate's performance property, preserved: the hash read only
-    // runs once the stamp already disagrees, so an ordinary save stats once and
-    // reads nothing.
+    // The shared predicate's performance property, preserved: the hash read only runs once the
+    // stamp already disagrees, so an ordinary save stats once and reads nothing.
     expect(fake.reads.length).toBe(readsAfterOpen)
   })
 
@@ -431,11 +413,9 @@ describe('saveNew', () => {
       false,
     )
 
-    // The `reason` is the whole point: a bare `{ ok: false }` is indistinguishable
-    // from a dismissed dialog, so the renderer would report nothing and the user
-    // would believe a never-saved document was being autosaved when it was not.
-    // With the reason, file-actions shows its own status instead of either lying or
-    // flashing "save failed" every 30 seconds. And no error, because nothing failed.
+    // The `reason` is the whole point: a bare `{ ok: false }` is indistinguishable from a dismissed
+    // dialog, so the renderer would report nothing and the user would believe a never-saved
+    // document was being autosaved when it was not.
     expect(result).toEqual({ ok: false, reason: 'needs-user-gesture' })
     expect(result.error).toBeUndefined()
     expect(saveAsCalls).toEqual([])
@@ -444,11 +424,9 @@ describe('saveNew', () => {
   it('never opens a dialog for an automatic save, even while the page holds activation', async () => {
     const { store, saveAsCalls } = fakeStore()
 
-    // `granted` is the default activation probe: this is a page that *may* open a
-    // picker, which is the state a document being typed into is in almost
-    // continuously — transient activation outlives every keystroke by seconds.
-    // That is exactly how the recovery tick used to reach the Save As dialog every
-    // 30 seconds, so the flag has to win over the probe.
+    // `granted` is the default activation probe: this is a page that *may* open a picker, which is
+    // the state a document being typed into is in almost continuously — transient activation
+    // outlives every keystroke by seconds.
     const result = await withPort(store).saveNew('Untitled.docx', new Uint8Array([1]).buffer, true)
 
     expect(result).toEqual({ ok: false, reason: 'needs-user-gesture' })
@@ -469,10 +447,7 @@ describe('writeRecoveryCopy', () => {
   it('declares no crash recovery, so the renderer does not run a timer for it', async () => {
     const { store } = fakeStore()
 
-    // Both halves of the renderer's recovery tick are host features, and a browser
-    // backs neither. The flag is what stops the tick before it serialises a whole
-    // document every 30 seconds to discard the bytes — and, before this existed,
-    // before it reached `saveNew` and opened a dialog.
+    // Both halves of the renderer's recovery tick are host features, and a browser backs neither.
     expect(withPort(store).crashRecovery).toBe(false)
   })
 })
@@ -621,9 +596,8 @@ describe('download', () => {
   })
 
   it('keeps a .hwpx name, and labels it as the package it is', async () => {
-    // An open `.hwpx` saves as `.hwpx`, so its download is one too — the caller
-    // serialized it that way. Renaming it here would hand the user a file whose
-    // extension promised Word could open it.
+    // An open `.hwpx` saves as `.hwpx`, so its download is one too — the caller serialized it that
+    // way.
     const port = createWebDocsDownloadPort(deliver)
 
     await expect(port.download('report.hwpx', new Uint8Array([1]).buffer)).resolves.toEqual({
@@ -659,10 +633,9 @@ describe('download', () => {
 
   it('touches no store: a download adopts nothing and mints no ref', async () => {
     const { store, writes, saveAsCalls } = fakeStore()
-    // The port is built from the delivery function alone — it has no store to
-    // reach — and this pins that down at the seam the renderer sees: after a
-    // download the open document is still whatever it was, still as dirty as it
-    // was, and the recent list has not grown.
+    // The port is built from the delivery function alone — it has no store to reach — and this pins
+    // that down at the seam the renderer sees: after a download the open document is still whatever
+    // it was, still as dirty as it was, and the recent list has not grown.
     await createWebDocsDownloadPort(deliver).download('report.docx', new Uint8Array([1]).buffer)
 
     expect(writes).toEqual([])

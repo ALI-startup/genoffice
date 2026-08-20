@@ -1,13 +1,4 @@
-/**
- * The page → Worker → engine path, end to end, without a Worker.
- *
- * Both halves take a message link rather than reaching for `self` or `new Worker`, so a pair
- * of linked fakes runs the production code: the client's correlation and queueing, the
- * worker host's dispatch and serialisation, and the real wasm module underneath. What a real
- * Worker adds on top of this is a thread, which is exactly the part with no logic in it.
- *
- * Skipped, loudly, when `npm run wasm:build -w @samugen/sheets` has not been run.
- */
+/** The page → Worker → engine path, end to end, without a Worker. */
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -19,12 +10,7 @@ import { buildEditFixture } from './fixture-builder'
 
 const WASM = join(import.meta.dirname, '../src/renderer/wasm/xlsx-sidecar.wasm')
 
-/**
- * Two ends of a channel, delivering asynchronously.
- *
- * The delay is the point: a synchronous hand-off would hide any ordering bug, and message
- * passing between a page and a Worker is never synchronous.
- */
+/** Two ends of a channel, delivering asynchronously. */
 function linkedPair(): { page: MessageLink; worker: MessageLink } {
   let onPage: ((event: { data: unknown }) => void) | null = null
   let onWorker: ((event: { data: unknown }) => void) | null = null

@@ -74,11 +74,7 @@ function xmlOfNode(node: { attrs: Record<string, unknown> }, blocks: Block[]): s
   return blocks.find((b) => b.docxIndex === idx)?.originalXml ?? ''
 }
 
-/**
- * Find the TOC field region (field begin ... matching end, tracked by fldChar
- * depth across top-level blocks) and replace it with a regenerated dirty TOC
- * field built from the current headings.
- */
+/** Find the TOC field region (field begin ... */
 function updateTocField(
   editor: Editor,
   blocks: Block[],

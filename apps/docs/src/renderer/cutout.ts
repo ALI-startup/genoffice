@@ -1,14 +1,6 @@
 /**
- * Core image cutout (background removal) algorithm — pure functions, no DOM dependency, easy to unit test.
- * Shares its source with apps/slides/src/renderer/cutout.ts (keep the algorithms identical; sync changes to both).
- *
- * Approach A: edge flood fill with color tolerance (magic-wand style removal, a simplified take on PowerPoint's "Remove Background"):
- *  1. Sample a ring along the image border (corners included); greedy clustering yields ≤4 background representative colors.
- *  2. With "color distance to any representative ≤ tolerance threshold" as the passable condition, 4-connected flood fill from the edges.
- *  3. Flooded pixels get alpha 0. Only background connected to the edge is removed;
- *     enclosed regions inside shapes matching the background color (e.g. white highlights on a white shirt) are unaffected.
- *
- * TODO (approach B): brush-marked "keep/remove" regions + region growing for interactive edge refinement.
+ * Core image cutout (background removal) algorithm — pure functions, no DOM dependency, easy to
+ * unit test.
  */
 
 /** Pixel map isomorphic to canvas ImageData (RGBA row-major), easy to construct directly in Node unit tests. */
@@ -27,11 +19,7 @@ export interface CutoutResult {
   removedCount: number
 }
 
-/**
- * Tolerance 0..100 → color-distance threshold.
- * Distance is per-channel RMS (0..255 scale); at tolerance 100 the threshold 255 ≈ black-white distance,
- * i.e. at max nearly every color connected to the edge is judged background.
- */
+/** Tolerance 0..100 → color-distance threshold. */
 export function toleranceToThreshold(tolerance: number): number {
   const t = Math.max(0, Math.min(100, tolerance))
   return (t * 255) / 100
@@ -53,9 +41,8 @@ const MIN_CLUSTER_RATIO = 0.05
 const ALPHA_TRANSPARENT = 16
 
 /**
- * Sample background representative colors along the image border (corners included);
- * greedy-cluster and return in descending cluster size.
- * Fully transparent pixels don't participate; tiny clusters (edge noise) are filtered out.
+ * Sample background representative colors along the image border (corners included); greedy-cluster
+ * and return in descending cluster size.
  */
 export function sampleBackgroundColors(img: PixelImage, maxColors = 4): RGB[] {
   const { data, width: w, height: h } = img
@@ -108,10 +95,6 @@ export function sampleBackgroundColors(img: PixelImage, maxColors = 4): RGB[] {
 /**
  * Background removal: 4-connected flood fill from the edges; pixels close to a background
  * representative (within tolerance) and connected to the edge get alpha 0.
- * Returns a new pixel array; the input is not modified.
- *
- * @param tolerance tolerance 0..100 (see toleranceToThreshold)
- * @param bgColors  background representative colors; defaults to auto-sampling from the border
  */
 export function removeBackground(
   img: PixelImage,

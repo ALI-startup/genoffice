@@ -1,18 +1,4 @@
-/**
- * generate_deck / regenerate_slide end to end, with a fake model and a fake host.
- *
- * The pipeline is: the model writes a PageSpec (content + a layout name), `composePage`
- * decides the geometry, and the skill lands the result as real elements through the doc
- * port. `deck-compose.test.ts` covers the middle step in isolation; this drives the whole
- * loop, so it is where the properties that only exist across the steps are asserted:
- * every planned page gets a page, a page that fails does not take the run down with it,
- * a dead image degrades to a page without the picture, and "replace" really replaces.
- *
- * The host is faked at the platform slot rather than at `DeckAccess`, because landing a
- * page calls `slidesDoc()` / `slidesFile()` directly. The fake keeps one deck array as its
- * source of truth, exactly as the main process does, so the skill's applyDeck/applySlide
- * plumbing is exercised too.
- */
+/** generate_deck / regenerate_slide end to end, with a fake model and a fake host. */
 import { describe, it, expect } from 'vitest'
 import type { RenderNode, RenderSlide, PlacedBox } from '@samugen/pptx-render'
 import {

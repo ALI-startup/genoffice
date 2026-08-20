@@ -216,9 +216,8 @@ export interface WordArtPreset {
 }
 
 /**
- * 12 presets modeled on the PowerPoint WordArt gallery: solid bold / white text with colored
- * stroke / colored text with dark stroke / black-gold, metallic silver, etc. (stroke widths
- * in EMU: 12700=1pt, 19050=1.5pt).
+ * 12 presets modeled on the PowerPoint WordArt gallery: solid bold / white text with colored stroke
+ * / colored text with dark stroke / black-gold, metallic silver, etc.
  */
 export const WORDART_PRESETS: WordArtPreset[] = [
   // Solid bold series

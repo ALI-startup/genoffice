@@ -15,15 +15,7 @@ import { ProviderIcon } from './ProviderIcon'
 
 const CUSTOM_MODEL_VALUE = '__samugen_custom_model__'
 
-/**
- * What the screen shows before the settings route has answered.
- *
- * The default provider is named once, in @samugen/ai-provider, rather than taken from
- * the head of the list: the list is in display order, and the two moving together was
- * how this screen used to open on a provider nobody had configured. The image slot
- * cannot follow the chat default, which has no image models — it opens on the first
- * definition that does.
- */
+/** What the screen shows before the settings route has answered. */
 const DEFAULT_DEFINITION = AI_PROVIDER_DEFINITIONS.find(
   (definition) => definition.id === DEFAULT_AI_PROVIDER,
 )
@@ -86,10 +78,8 @@ function supportsCapability(
 
 export function AiProvidersPage() {
   const { t, lang } = useI18n()
-  // Reading the configuration and editing it are separate capabilities: a host
-  // can report which providers are configured without being able to store a
-  // credential. `editor` is null on such a host, and every control that would
-  // write, probe or clear is disabled rather than present-but-inert.
+  // Reading the configuration and editing it are separate capabilities: a host can report which
+  // providers are configured without being able to store a credential.
   const { aiSettings, aiSettingsEditor: editor } = shellPlatform()
   const [snapshot, setSnapshot] = useState<AiSettingsSnapshot>(FALLBACK_SNAPSHOT)
   const [capability, setCapability] = useState<AiProviderCapability>('text')

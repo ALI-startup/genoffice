@@ -1,12 +1,4 @@
-/**
- * The host seam itself: what the slot promises, and what the composition claims.
- *
- * Two things are worth a test rather than a comment. The slot must fail loudly when no host
- * has been installed — a renderer module reaching a half-built platform is exactly the bug
- * the slot exists to make impossible — and the composition must be explicit about the
- * capabilities it cannot back: `null`, never a stub that type-checks and then fails at the
- * call site. A port quietly becoming a no-op object is the failure this file guards.
- */
+/** The host seam itself: what the slot promises, and what the composition claims. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AiPort, AttachmentsPort, LanguagePort } from '@samugen/platform'
 import type { FilePickers } from '@samugen/platform-web'

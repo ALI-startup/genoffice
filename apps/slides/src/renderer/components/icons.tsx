@@ -1906,9 +1906,7 @@ export function IconNoneX(props: IconProps) {
   )
 }
 
-/** AI feature glyphs shared by the ribbon Home tab and the canvas AI bar.
- * Fixed 1.5-unit stroke (not pinnedStroke) to keep the ribbon rendering,
- * where CSS sizes them; `size` is for other hosts. */
+/** AI feature glyphs shared by the ribbon Home tab and the canvas AI bar. */
 function AiFeatureSvg({ size, children }: IconProps & { children: ReactNode }) {
   return (
     <svg

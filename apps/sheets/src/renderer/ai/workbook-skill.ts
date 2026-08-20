@@ -8,14 +8,8 @@ import {
 } from './tools'
 
 /**
- * The workbook DSL as an AgentSkill: mirrors createDocsSkill's shape
- * (systemPrompt + tools + buildContext + executeTool) so it plugs into the
- * same packages/agent-core AgentLoop docx uses.
- *
- * Prompt layout: the always-loaded base prompt (prompts/base.md) stays small
- * — workflow, op catalog, cross-cutting discipline — while per-domain field
- * definitions and conventions live in prompts/guides/*.md, loaded on demand
- * via load_guide.
+ * The workbook DSL as an AgentSkill: mirrors createDocsSkill's shape (systemPrompt + tools +
+ * buildContext + executeTool) so it plugs into the same packages/agent-core AgentLoop docx uses.
  */
 export function createWorkbookSkill(deps: SheetsSkillDeps): AgentSkill {
   return {

@@ -1,14 +1,4 @@
-/**
- * The composed browser platform (`createWebSlidesPlatform`).
- *
- * The per-port tests check that each port does its job; this one checks the *statement* the
- * composition makes — which capabilities this host claims and which it refuses. That
- * distinction is the whole design of the seam, so it is worth a test that fails if someone
- * quietly stubs one of the nine rather than leaving it `null`.
- *
- * The ports are built from fakes, because none of what they need — a store, pickers, the
- * BFF, a printer — is what is being asserted here.
- */
+/** The composed browser platform (`createWebSlidesPlatform`). */
 import { describe, expect, it, vi } from 'vitest'
 import type { AiPort, AttachmentsPort, LanguagePort } from '@samugen/platform'
 import type { WebDocumentStore } from '@samugen/platform-web'
@@ -84,10 +74,9 @@ describe('createWebSlidesPlatform', () => {
 
   it('answers null for every capability a browser does not have', () => {
     const platform = build()
-    // Each of these is a real gap, listed in platform.ts with the reason: a second screen,
-    // a PDF writer, the system clipboard, a provider credential, a server-side generator,
-    // a filesystem of templates, a native menu bar — plus `project`, whose store is a
-    // main-process database (§6.1).
+    // Each of these is a real gap, listed in platform.ts with the reason: a second screen, a PDF
+    // writer, the system clipboard, a provider credential, a server-side generator, a filesystem of
+    // templates, a native menu bar — plus `project`, whose store is a main-process database (§6.1).
     expect({
       presenter: platform.presenter,
       aiMedia: platform.aiMedia,

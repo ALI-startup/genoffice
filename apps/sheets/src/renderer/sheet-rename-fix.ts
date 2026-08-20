@@ -1,12 +1,4 @@
-/**
- * Sheet-rename case-change fix. Univer's rename check (sheets-ui
- * nameRepeatCheck) only passes a case-sensitive self-comparison before
- * calling Workbook.checkSheetName, which matches case-insensitively — so
- * renaming Sheet1 → SHEET1 collides with itself and is rejected as a
- * duplicate. Exempt exactly that case: a candidate differing from the
- * active sheet's name only by letter case is a duplicate only if it also
- * matches some other sheet.
- */
+/** Sheet-rename case-change fix. */
 import { Workbook } from '@univerjs/core'
 
 interface SheetLike {

@@ -11,12 +11,7 @@ const RTL_CHAR =
   /[\p{Script=Hebrew}\p{Script=Arabic}\p{Script=Syriac}\p{Script=Thaana}\p{Script=Nko}\p{Script=Samaritan}\p{Script=Mandaic}]/u
 const LETTER = /\p{L}/u
 
-/**
- * Direction of the first strong directional character (dir="auto" semantics),
- * or null if none. Only letters decide: digits, combining marks, format
- * controls and punctuation (including script-Arabic marks like the Arabic
- * comma, which are bidi-neutral despite their script) are all weak.
- */
+/** Direction of the first strong directional character (dir="auto" semantics), or null if none. */
 export function firstStrongDir(text: string): 'ltr' | 'rtl' | null {
   for (const ch of text) {
     if (!LETTER.test(ch)) continue
@@ -33,12 +28,7 @@ export function activeBidi(editor: Editor): boolean {
   return false
 }
 
-/**
- * The align attr the "align left/right" ribbon buttons, menu items and ⌘L/⌘R
- * should write. align stores the visual value and null means "start", so in an
- * RTL paragraph null already renders right: aligning to the paragraph's start
- * side clears the attr, aligning to the end side sets it explicitly.
- */
+/** The align attr the "align left/right" ribbon buttons, menu items and ⌘L/⌘R should write. */
 export function alignAttrFor(
   align: 'left' | 'center' | 'right' | 'justify',
   bidi: boolean,
@@ -48,11 +38,7 @@ export function alignAttrFor(
   return align
 }
 
-/**
- * Attrs for flipping a paragraph's direction. Explicit left/right alignment
- * swaps: align stores the visual value, so the swap preserves the logical
- * (start/end) alignment, matching Word's behavior when toggling direction.
- */
+/** Attrs for flipping a paragraph's direction. */
 function dirFlipAttrs(attrs: Record<string, unknown>, bidi: boolean): Record<string, unknown> {
   let align = attrs.align as string | null
   if (align === 'left') align = 'right'
@@ -61,10 +47,9 @@ function dirFlipAttrs(attrs: Record<string, unknown>, bidi: boolean): Record<str
 }
 
 /**
- * Apply alignment to every paragraph-like block in the selection, resolving
- * the stored attr per paragraph against its own direction (a mixed LTR/RTL
- * selection must not inherit the cursor paragraph's resolution). Selected
- * images keep receiving the visual value via imageAlign, as before.
+ * Apply alignment to every paragraph-like block in the selection, resolving the stored attr per
+ * paragraph against its own direction (a mixed LTR/RTL selection must not inherit the cursor
+ * paragraph's resolution).
  */
 export function setSelectionAlign(
   editor: Editor,
@@ -118,11 +103,9 @@ export function setParagraphDirection(editor: Editor, dir: 'ltr' | 'rtl'): boole
 }
 
 /**
- * Auto-detect paragraph direction while typing (Word's "detect language"):
- * when a text insertion gives a paragraph its first strong directional
- * character, the paragraph's bidi flag follows that character. Paragraphs
- * that already contained strong text are never touched, so existing content
- * and explicit direction choices survive edits.
+ * Auto-detect paragraph direction while typing (Word's "detect language"): when a text insertion
+ * gives a paragraph its first strong directional character, the paragraph's bidi flag follows that
+ * character.
  */
 export const AutoDirectionExtension = Extension.create({
   name: 'autoDirection',

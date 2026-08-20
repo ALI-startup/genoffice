@@ -1,12 +1,4 @@
-/**
- * Slide comments (classic comments part) read/write — archive surgery.
- *
- * Structure: ppt/commentAuthors.xml (author table, referenced by
- * presentation.xml.rels) + one ppt/comments/commentN.xml per slide (referenced by
- * slide rels). A comment is uniquely identified by (authorId, idx). All changes
- * land in archive.entries: savePptx persists automatically, and the main process's
- * snapshot-style undo covers them automatically.
- */
+/** Slide comments (classic comments part) read/write — archive surgery. */
 import { utf8Bytes } from './bytes'
 import type { OpenedPptx } from './index'
 import { resolveTarget, type PackageArchive } from './zip'
@@ -106,10 +98,7 @@ export function getSlideComments(archive: PackageArchive, slidePath: string): Sl
   return out
 }
 
-/**
- * Ensure the author exists and return {authorId, nextIdx} (bumping lastIdx).
- * Creates the author table / content type / presentation rel if missing.
- */
+/** Ensure the author exists and return {authorId, nextIdx} (bumping lastIdx). */
 function ensureAuthor(
   archive: PackageArchive,
   name: string,

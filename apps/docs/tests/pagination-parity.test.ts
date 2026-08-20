@@ -1,18 +1,6 @@
 /**
- * High-fidelity pagination F2 — assertion runner (line-level page splitting + Word
- * pagination constraints + table row-level page breaking)
- *
- * F2 improvements (over F1):
- *   - computeSectionedSlicesF2: main line-level splitting algorithm (widowControl/keepLines/keepNext)
- *   - BlockBox carries lineBoxes (per-line offset+height) for line-level break decisions
- *   - Table row-level page breaking: tableRows accumulated row by row, cantSplit/tblHeader aware
- *   - Footnote placeholders: paragraphs with footnote refs reserve footnote height on their page
- *   - Page-start line text location: mid-paragraph/mid-table cut points report the exact line text
- *
- * How to run:
- *   npx vitest run tests/pagination-parity.test.ts
- *
- * CI policy: skipIf when no baseline; runnable in any environment.
+ * High-fidelity pagination F2 — assertion runner (line-level page splitting + Word pagination
+ * constraints + table row-level page breaking)
  */
 
 import { describe, expect, it, beforeAll } from 'vitest'
@@ -55,7 +43,6 @@ const FOOTNOTE_SEPARATOR_H = 16
 
 /**
  * Resolve effective style attributes from parsed.styles and parsed.docDefaults (style chain merge).
- * Returns font size (pt), line-height rule, spacing, pagination constraints, etc. for paragraph rendering.
  */
 interface EffectiveStyle {
   fontSizePt: number
@@ -110,9 +97,8 @@ function resolveStyle(
   const lineRule = format?.lineRule ?? styleLineRule ?? defaults?.lineRule
   const lineRawTwips = format?.lineRawTwips ?? styleLineRawTwips ?? defaults?.lineRawTwips
 
-  // Space before/after: paragraph > style > docDefaults > Word Normal default 160
-  // Note: format?.spaceAfter can be 0 (explicitly set to 0) or undefined (not set)
-  // Use a ?? chain: continue only on undefined; stop at 0 (keep the 0)
+  // Space before/after resolves paragraph > style > docDefaults > Word's Normal default of 160.
+  // format?.spaceAfter can be 0 (explicitly set to 0) or undefined (not set) Use a ??
   const spaceBeforeTwips = format?.spaceBefore ?? styleBefore ?? defaults?.spaceBeforeTwips ?? 0
   const spaceAfterTwips = format?.spaceAfter ?? styleAfter ?? defaults?.spaceAfterTwips ?? 160
 
@@ -220,10 +206,7 @@ function computeParaLineData(
   }
 
   // Metrics policy (precise Word baseline revisit 2026-07-27): keep measuring uniformly with the
-  // style-chain font. Honoring the run-declared font (r.font ?? style.fontFamily) gets the
-  // openclaw-report fixture to 10 pages (=Word), but mid-page cut points drift 8/10→4/10 and the
-  // overall match rate drops 91.2%→82.4% — substitution error for missing fonts exceeds the
-  // "uniform proxy" error, so it is a net loss.
+  // style-chain font.
   const runs: Array<{
     text: string
     fontFamily?: string
@@ -263,9 +246,7 @@ function computeParaLineData(
 
 // ─── Table row-box construction ─────────────────────────────────────────────
 
-/**
- * Parse table XML and extract each row's cantSplit / tblHeader flags (indexed like table.rows).
- */
+/** Parse table XML and extract each row's cantSplit / tblHeader flags (indexed like table.rows). */
 function parseTableRowFlags(
   tableXml: string,
 ): Array<{ cantSplit: boolean; isHeader: boolean; heightTwips?: number; heightRule?: string }> {
@@ -316,9 +297,7 @@ function applyTrHeight(
 
 /**
  * Compute the table's tableRowBoxes (for F2 row-level splitting) + per-row text (for page-start
- * line location). Cell line heights share the body-text source (measured on the real-Word
- * baseline: 18pt line + 8pt space-after = 26.4pt/row, no cell-specific factor; the former
- * CELL_CJK_FACTOR=1.44 was an LO tuning artifact, now removed).
+ * line location).
  */
 function computeTableRows(
   block: {
@@ -525,8 +504,7 @@ async function runParity(stem: string, baseline: BaselineEntry): Promise<ParityR
   const sections = readSections(parsed)
   // Multi-column flow: text wraps at column width; the engine splits as a true column flow with
   // "page = columns × column height" (overflow moves to the next column, last column turns the
-  // page, widow/orphan constraints at column boundaries). sectionGeoms outputs cols;
-  // equalWidth="0" (local layout columns from PDF-converted docs) is treated as 1 column.
+  // page, widow/orphan constraints at column boundaries).
   const geoms = sectionGeoms(sections)
 
   // Per-section content width + docGrid (precomputed; column sections split width evenly by w:space)

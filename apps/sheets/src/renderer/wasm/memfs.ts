@@ -1,18 +1,4 @@
-/**
- * The filesystem the xlsx engine sees in a browser.
- *
- * The engine opens workbooks by path, extracts a session's parts into a scratch directory
- * and writes archives back out — that is its design on every host, and the reason the wasm
- * build targets WASI rather than a byte-oriented rewrite (see native/xlsx-engine/src/wasm.rs).
- * A page has no filesystem to offer it, so this is one: directories and files held in memory,
- * with the operations preview1 actually asks for and no others.
- *
- * Deliberately not a general-purpose filesystem. There are no permissions, no links, no
- * timestamps beyond a creation clock, and no attempt at atomicity — the single writer is a
- * single-threaded wasm module, and the whole thing lives for as long as one workbook is open.
- * What it does have to be is exact about the things the engine relies on: reading and writing
- * at an offset, truncation on create, and directory listing.
- */
+/** The filesystem the xlsx engine sees in a browser. */
 
 /** A file's bytes, grown as it is written. */
 export interface MemFile {

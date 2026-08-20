@@ -1,19 +1,4 @@
-/**
- * Translations for the provider descriptions on the AI providers screen.
- *
- * An overlay rather than a dictionary, and deliberately so. Every other string
- * in this app goes through `createI18n`, which has no fallback — a key missing
- * from one language renders `undefined`, so a new string has to be written into
- * all nineteen tables. These descriptions already exist in English, on the other
- * side of a wire: `AI_PROVIDER_DEFINITIONS` carries `description` into the
- * settings snapshot, and the main process serialises it. Copying that English
- * into a dictionary would make two sources of the same sentence and let them
- * drift, so a language with no entry here falls back to what the snapshot
- * already said.
- *
- * The descriptions are also what the provider search box matches, so a reader
- * who searches "이미지" finds the image providers rather than nothing.
- */
+/** Translations for the provider descriptions on the AI providers screen. */
 import type { Lang } from '@samugen/i18n'
 
 const KO: Record<string, string> = {

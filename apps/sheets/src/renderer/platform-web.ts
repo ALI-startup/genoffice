@@ -1,22 +1,4 @@
-/**
- * Builds sheets' platform for a browser.
- *
- * The composition behind the slot: the ports this host can back, and `null` for the rest.
- * The Electron adapter forwards every port to a preload bridge, because the workbook lives in
- * the main process and the engine in a child process. Here there is no bridge and no child:
- * the engine is a wasm module in a Worker, the workbook's bytes are in its filesystem, and
- * the save that writes them is the same pipeline the desktop runs — `writeWorkbookTo` and
- * `saveWorkbookViaSidecar`, with a filesystem passed in.
- *
- * What this file adds over those is the session bookkeeping the main process used to do: a
- * sessionId is minted by the engine, and this layer is what remembers which workbook it names,
- * which file handle it came from, and what its sheets are called. Nothing above it sees a
- * path — the renderer passes session ids, exactly as it does on the desktop.
- *
- * Nothing here reaches a browser global. The engine client, the pickers and the host services
- * are all passed in, so this module is exercisable without a `window`, and host-web.ts is the
- * only place globals are read.
- */
+/** Builds sheets' platform for a browser. */
 import type { AiPort, AttachmentsPort, LanguagePort } from '@samugen/platform'
 import {
   createWebUnloadPrompt,
@@ -64,14 +46,7 @@ const WORKBOOK_TYPES: FilePickerAcceptType[] = [
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
-/**
- * One open workbook, as this host has to remember it.
- *
- * The desktop keeps the same record in its main process, keyed the same way and for the same
- * reasons: the engine answers with a session id and nothing else, so the mapping from that id
- * to a file — and to the sheet names an edit has to be translated into — belongs to whoever
- * opened it.
- */
+/** One open workbook, as this host has to remember it. */
 interface WebSession {
   /** Where the engine knows the bytes by. Never leaves this module. */
   enginePath: string
@@ -117,12 +92,7 @@ async function sha256(bytes: Uint8Array): Promise<string> {
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
-/**
- * Reading a workbook: the five commands that are the engine, and nothing else.
- *
- * Each one checks the session first and parses the engine's answer with the same schema the
- * main process uses, so a malformed result fails here rather than three layers up in Univer.
- */
+/** Reading a workbook: the five commands that are the engine, and nothing else. */
 export function createWebSheetsWorkbookPort(
   sessions: WebWorkbookSessions,
   client: XlsxWorkerClient,
@@ -140,13 +110,7 @@ export function createWebSheetsWorkbookPort(
       sessions.get(request.sessionId)
       return workbookMediaResultSchema.parse(await client.readMedia(request))
     },
-    /**
-     * Recalculation, with the same id↔name translation the desktop does.
-     *
-     * The engine speaks the file's sheet *names* — it is reading the file, not Univer's model
-     * — so a sheet added this session has no name in the map and fails closed here rather
-     * than being silently skipped by the formula engine.
-     */
+    /** Recalculation, with the same id↔name translation the desktop does. */
     recalcWorkbook: async (request) => {
       const session = sessions.get(request.sessionId)
       const fileSheetName = (sheetId: string): string => {
@@ -213,24 +177,7 @@ export interface WebFileServices {
   confirmOverwrite: () => boolean
 }
 
-/**
- * Getting a workbook in and out of a page.
- *
- * `selectWorkbook` and `saveWorkbookEdits` are the two that do real work; the rest report what
- * this host can and cannot do, and do it through the value their signature already allows:
- *
- *   - `writeWorkbookRecovery` answers `{ ok: false }`. On the desktop it drops a copy under
- *     userData every 30s so a crash costs at most half a minute. A page has nowhere durable to
- *     put one without asking the user for a second file handle, which is a prompt every 30
- *     seconds — so the crash guard here is the browser's own "Leave site?" prompt, and this
- *     says plainly that no copy was written rather than pretending one was.
- *   - `autoRenameWorkbook` answers `{ renamed: false }`: the File System Access API can write
- *     through a handle but cannot rename what it points at.
- *   - `consumeNewBlankWorkbook` answers `false` — nothing queues a document into this page.
- *   - `readLocalImage` throws. Its path comes from an AI plan naming a file on the user's
- *     machine, and a page cannot open one it was not handed. Failing loudly is the difference
- *     between "this host cannot do that" and a silently missing image.
- */
+/** Getting a workbook in and out of a page. */
 export function createWebSheetsFilePort(
   sessions: WebWorkbookSessions,
   client: XlsxWorkerClient,
@@ -301,10 +248,8 @@ export function createWebSheetsFilePort(
       const target = handle
       await ensurePermission(target, 'readwrite')
 
-      // The desktop refuses outright when the file changed under the open workbook, because
-      // its save rewrites that file in place. This host is in the same position — it is about
-      // to write through a handle to the same file — but it can ask instead of only refusing,
-      // since the user is right there and Save As is one dialog away.
+      // The desktop refuses outright when the file changed under the open workbook, because its
+      // save rewrites that file in place.
       if (target === session.handle) {
         const onDisk = new Uint8Array(await (await target.getFile()).arrayBuffer())
         if ((await sha256(onDisk)) !== session.sha256 && !services.confirmOverwrite()) {
@@ -325,9 +270,7 @@ export function createWebSheetsFilePort(
       })
       const saved = await client.readFile(targetPath)
 
-      // Only now does anything leave the page. The desktop's equivalent is the fsync-and-
-      // rename inside its own filesystem; here durability is this write through the handle
-      // the user granted, which is the only durable thing a page has.
+      // Only now does anything leave the page.
       const writable = await target.createWritable()
       await writable.write(new Blob([saved as unknown as BlobPart], { type: XLSX_MIME }))
       await writable.close()
@@ -363,15 +306,7 @@ export function createWebSheetsFilePort(
   }
 }
 
-/**
- * The window integration for a browser.
- *
- * `notifyPendingEdits` is the desktop's dirty signal and stays a count here; what changes is
- * who listens. On the desktop the main process holds it for the close prompt. In a page there
- * is no such prompt to hold it for, so the count arms the browser's own "Leave site?" dialog —
- * and inside the web shell, where closing a tab removes the iframe and `beforeunload` never
- * fires, it answers the shell's close check as well.
- */
+/** The window integration for a browser. */
 export function createWebSheetsWindowPort(
   unloadPrompt: typeof createWebUnloadPrompt = createWebUnloadPrompt,
   frame: FrameChildLink | null = null,
@@ -413,14 +348,7 @@ export function createWebSheetsWindowPort(
   }
 }
 
-/**
- * The UI language, from the shared web language storage every app uses.
- *
- * The shared port verbatim, as sheets' AI port is. It used to cast, because sheets declared an
- * eleven-value copy of @samugen/i18n's nineteen-value `Lang` (§6.4 of the migration doc) and
- * a shared `Lang` did not fit through it. The bridge now says `Lang`, so the two agree and
- * there is nothing left to adapt.
- */
+/** The UI language, from the shared web language storage every app uses. */
 export function createWebSheetsLanguagePort(language: LanguagePort): SheetsLanguagePort {
   return language
 }
@@ -445,13 +373,7 @@ export interface WebSheetsPlatformDeps {
   openExternal?: (url: string) => void
 }
 
-/**
- * sheets' platform for a browser: six ports backed, five answered `null`.
- *
- * The `null`s are the list platform.ts documents, and each is a capability this host genuinely
- * lacks — a native menu bar, a PDF writer, a `gsk` CLI to sign in with, a search service with
- * its own credential, and a project database in a main process.
- */
+/** sheets' platform for a browser: six ports backed, five answered `null`. */
 export function createWebSheetsPlatform(deps: WebSheetsPlatformDeps): SheetsPlatform {
   const sessions = new WebWorkbookSessions()
   return {

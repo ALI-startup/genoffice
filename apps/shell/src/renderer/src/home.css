@@ -455,10 +455,7 @@ body.vib .home {
      in Home.tsx); this is the same ceiling for a render before that lands. */
   max-height: 320px;
   overflow-y: auto;
-  /* The list is taller than the box, so it ends at a scroll boundary. Without
-     containment the wheel keeps going into the sidebar behind it, which both
-     scrolls the page under the popup and moves the row it is anchored to —
-     and a moving anchor is what closes the flyout. */
+  /* The list is taller than the box, so it ends at a scroll boundary. */
   overscroll-behavior: contain;
   padding: 8px;
   border: none;

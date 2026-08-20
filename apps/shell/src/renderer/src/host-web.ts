@@ -1,26 +1,6 @@
 /**
- * The browser half of the shell's host seam — the counterpart of
- * the only file in the bundle that reads a browser global.
- *
- * `vite.web.config.ts` aliases `@host` here, so nothing in this file (nor
- * anything it imports) reaches the Electron bundle, and none of the preload
- * globals are referenced: there is no bridge to shim, which is the point of
- * deleting the old web-shim.js.
- *
- * Only `createShellPlatform` is exported. The update window (`update.html`, and
- * `createUpdateWindowPlatform` beside it) has no web counterpart and must not
- * grow one: there is no updater in a browser — the page *is* the current
- * version — so the document, its preload and its platform stay Electron-only,
- * and update.ts keeps importing the Electron host by path.
- *
- * The AI surface takes no configuration. It reads the BFF's settings route on
- * this origin, which the dev server proxies — see `vite.web.config.ts`. That
- * indirection is required, not cosmetic: the shell's CSP is `connect-src 'self'`,
- * so a cross-origin BFF URL would be blocked outright, and same-origin is also
- * what stops any credential from being needed here. It is read-only: the BFF
- * loads its credentials from the environment once at boot and exposes no write
- * route, so `aiSettingsEditor` is null and the settings screen renders as a
- * report rather than a form.
+ * The browser half of the shell's host seam — the counterpart of the only file in the bundle that
+ * reads a browser global.
  */
 import {
   browserLanguageEnv,
@@ -48,15 +28,7 @@ declare const __SHELL_VERSION__: string
 /** Where the first-run tour's "seen" flag lives, in place of app-settings.json. */
 const ONBOARDING_STORAGE_KEY = 'samugen.shell.onboardingSeen'
 
-/**
- * Routing over the History API.
- *
- * Hash routes rather than paths, and deliberately: the editors are served under
- * `/app/docs` and `/app/pdf` of this same origin, so a path-based shell route
- * would have to be distinguished from them by whatever serves the files, and a
- * deep link would 404 without an SPA rewrite rule. A hash needs neither, and it
- * is never sent to the server.
- */
+/** Routing over the History API. */
 function browserRouteEnv(scope: Window = window): RouteEnv {
   return {
     hash: () => scope.location.hash,
@@ -66,9 +38,8 @@ function browserRouteEnv(scope: Window = window): RouteEnv {
     },
     replace: (hash) => scope.history.replaceState(null, '', hash),
     onChange: (handler) => {
-      // `popstate` covers Back/Forward through pushState entries; `hashchange`
-      // covers a hash typed or pasted into the address bar, which fires no
-      // popstate. Both land on the same idempotent handler.
+      // `popstate` covers Back/Forward through pushState entries; `hashchange` covers a hash typed
+      // or pasted into the address bar, which fires no popstate.
       scope.addEventListener('popstate', handler)
       scope.addEventListener('hashchange', handler)
       return () => {
@@ -88,9 +59,7 @@ function createWebOnboardingPort(
   storage: Pick<Storage, 'getItem' | 'setItem'>,
 ): ShellOnboardingPort {
   return {
-    // localStorage throws in some privacy configurations. Treating that as
-    // "seen" skips the tour rather than showing it on every load, which is what
-    // the Electron host does when the flag is unreadable.
+    // localStorage throws in some privacy configurations.
     seen: async () => {
       try {
         return storage.getItem(ONBOARDING_STORAGE_KEY) === 'true'
@@ -121,9 +90,8 @@ export const createShellPlatform: CreateShellPlatform = async () => {
   // identically, and a switch made in either is seen by the other.
   const language = createWebShellLanguagePort(createWebLanguagePort(languageEnv))
 
-  // The tab strip's own copy has to be localised before React exists, because
-  // the first tab (Home) is created here. Same dictionary the UI uses, resolved
-  // once against the language we just read.
+  // The tab strip's own copy has to be localised before React exists, because the first tab (Home)
+  // is created here.
   const translate = createI18n(strings)
   const lang = await language.getLanguage()
   const titleFor = (kind: TabKind): string => {

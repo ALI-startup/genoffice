@@ -1,18 +1,4 @@
-/**
- * The browser's scratch filesystem for a save: the engine's own, reached across the Worker.
- *
- * The counterpart of src/engine-node/save-fs-node.ts, and the reason the save pipeline in
- * gateway/xlsx-package-io.ts takes a filesystem instead of importing one. Everything the
- * pipeline does with paths — planning parts into files, extracting entries to read them back,
- * promoting a finished archive over its target — happens here inside the engine's WASI
- * filesystem, which is the only filesystem both sides of the Worker link can name.
- *
- * `promote` is the one operation with no counterpart. On disk it is an fsync and a rename,
- * which is what makes a desktop save crash-safe. A page has neither: the "target" is a path
- * in memory, and the bytes still have to be handed to the user through the File System Access
- * API afterwards. So it copies, and the durability question moves up a layer, where the file
- * port answers it by writing through a handle the user granted.
- */
+/** The browser's scratch filesystem for a save: the engine's own, reached across the Worker. */
 import type { SaveFs } from '../../gateway/xlsx-package-io'
 import type { XlsxWorkerClient } from './client'
 
@@ -39,8 +25,7 @@ export function createEngineSaveFs(client: XlsxWorkerClient): SaveFs {
     },
     readText: async (path) => decoder.decode(await client.readFile(path)),
     promote: async (temporary, target) => {
-      // A copy, and deliberately so — see the note above. The engine wrote the archive at
-      // `temporary`; the page reads `target` afterwards to get the bytes it must persist.
+      // A copy, and deliberately so — see the note above.
       await client.writeScratch(stripRoot(target), await client.readFile(temporary))
     },
     // Nothing to reclaim eagerly: the whole filesystem goes away with the Worker, and a

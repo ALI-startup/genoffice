@@ -1,17 +1,4 @@
-/**
- * The xlsx engine in a page: the wasm module, its filesystem, and the eleven commands.
- *
- * The method list is `XlsxSidecarClient`'s (src/engine-node/xlsx-sidecar-client.ts), because the
- * callers above it must not be able to tell which host answered. What differs is everything
- * below: no process, no pipe, no request ids to correlate — a call into linear memory returns
- * before the next one starts, so a `Map` of pending requests and a timeout would be
- * bookkeeping for an event that cannot happen.
- *
- * The other difference the callers *do* see is where a workbook lives. The desktop's paths
- * name files on the user's disk; here the host puts the bytes into this engine's filesystem
- * first (`writeWorkbook`) and takes results back out of it (`readFile`), and the paths in
- * between are its own. That is what `WORK_DIR` is for.
- */
+/** The xlsx engine in a page: the wasm module, its filesystem, and the eleven commands. */
 import { WasiExit, WasiHost } from './wasi'
 
 const PROTOCOL_VERSION = 1
@@ -45,13 +32,7 @@ export interface XlsxEngineOptions {
   randomFill?: (bytes: Uint8Array) => void
 }
 
-/**
- * A workbook the page has handed over, addressed the way the engine expects.
- *
- * Not a path the caller invents: `writeWorkbook` returns it, and it is the only thing the
- * caller may pass back as `path`. Same reasoning as the document refs elsewhere in the
- * migration — the host owns the naming, and nothing above parses one.
- */
+/** A workbook the page has handed over, addressed the way the engine expects. */
 export type EnginePath = string
 
 export class XlsxEngine {
@@ -68,13 +49,7 @@ export class XlsxEngine {
     this.newRequestId = options.newRequestId ?? (() => crypto.randomUUID())
   }
 
-  /**
-   * Instantiate the module and hand back an engine ready for its first command.
-   *
-   * `module` is compiled by the caller so a Worker can compile once and instantiate per
-   * workbook if it ever needs to — and so this function stays synchronous about everything
-   * except the instantiation itself.
-   */
+  /** Instantiate the module and hand back an engine ready for its first command. */
   static async start(
     module: WebAssembly.Module,
     options: XlsxEngineOptions = {},
@@ -99,21 +74,14 @@ export class XlsxEngine {
 
   /** Put a workbook's bytes where the engine can open them, and say where that is. */
   writeWorkbook(name: string, bytes: Uint8Array): EnginePath {
-    // A directory per workbook, so two open at once cannot collide on a name and a `close`
-    // can drop the whole thing. The name is kept because the engine reports it back as the
-    // workbook's own (it feeds CELL("filename") and the title bar).
+    // A directory per workbook, so two open at once cannot collide on a name and a `close` can drop
+    // the whole thing.
     const path = `${WORK_DIR}/w${this.nextWorkbook++}/${name}`
     this.host.fs.writeFile(path, bytes)
     return path
   }
 
-  /**
-   * Put bytes at a path the engine will be told to read.
-   *
-   * The save pipeline plans patched parts in memory and hands the engine their *paths* to
-   * reassemble from, so those parts have to exist in the engine's filesystem first. On the
-   * desktop they are files in a temp directory; here they are entries under /tmp.
-   */
+  /** Put bytes at a path the engine will be told to read. */
   writeScratch(path: EnginePath, bytes: Uint8Array): void {
     this.host.fs.writeFile(path, bytes)
   }
@@ -236,12 +204,7 @@ export class XlsxEngine {
     return this.request({ command: 'recalc_cells', ...input })
   }
 
-  /**
-   * One request in, one response out.
-   *
-   * `async` to match the desktop client's signature, not because anything here awaits: the
-   * module is synchronous, which is precisely why it belongs in a Worker.
-   */
+  /** One request in, one response out. */
   private async request(command: Readonly<Record<string, unknown>>): Promise<unknown> {
     const payload = this.encoder.encode(
       JSON.stringify({ version: PROTOCOL_VERSION, requestId: this.newRequestId(), ...command }),

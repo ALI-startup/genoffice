@@ -71,9 +71,7 @@ button {
 .pdf-placeholder {
   flex: 1;
   display: flex;
-  /* Column + gap so the empty state can stack an Open button under its message.
-     With a single child (every Electron case, and the password form) this lays
-     out identically to the previous row direction. */
+  /* Column + gap so the empty state can stack an Open button under its message. */
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -1236,9 +1234,7 @@ button {
 
 /* ── AI tool rows (unified with docs/slides/sheets) ── */
 
-/* Collapsible tool-activity group.
-   Unlike docs/slides, this app renders the group BEFORE the reply text, so the
-   gap to the surrounding content comes from margin-bottom, not margin-top. */
+/* Collapsible tool-activity group. */
 .ai-work-group {
   display: flex;
   flex-direction: column;
@@ -1649,8 +1645,7 @@ button {
   user-select: none;
 }
 
-/* Design tokens — AI panel chrome only (same values as docs/sheets/slides).
- * The viewer chrome around the panel keeps its own variables. */
+/* Design tokens — AI panel chrome only (same values as docs/sheets/slides). */
 :root {
   --gs-font-sans:
     'Arial', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',

@@ -1,9 +1,7 @@
 /**
- * The ⌘S save flow: serializes the edit journal and Univer-owned states
- * (filters, CF, DV, notes, defined names) into one saveWorkbookEdits call,
- * with the two-phase split when structural changes entangle additions.
- * Extracted from App.tsx; the App component passes a SaveContext built fresh
- * per call so refs and state never go stale.
+ * The ⌘S save flow: serializes the edit journal and Univer-owned states (filters, CF, DV, notes,
+ * defined names) into one saveWorkbookEdits call, with the two-phase split when structural changes
+ * entangle additions.
  */
 import type { WorkbookFile, WorkbookFilterState } from '../shared/desktop-api'
 import {
@@ -88,9 +86,8 @@ export async function handleSave(
     }),
   )
   const definedNamesState = collectDefinedNamesState(ctx.univerRef.current, state)
-  // Recalculated formula results: the engine's values are on screen but
-  // deliberately kept out of the journal (they must not become literals). Send them
-  // separately so the save refreshes each formula cell's cached <v>, keeping its <f>.
+  // Recalculated formula results: the engine's values are on screen but deliberately kept out of
+  // the journal (they must not become literals).
   const formulaValues = [...(state.recalc?.overlay ?? [])].flatMap(([sheetId, cells]) =>
     isSheetRemoved(state.editJournal, sheetId)
       ? []
@@ -101,13 +98,8 @@ export async function handleSave(
           return [{ sheetId, row, column, value: cell.v }]
         }),
   )
-  // The gateway fails closed when these additions ride with structural or
-  // sheet changes (their coordinates entangle). Instead of bouncing the
-  // user, hold them back and save in two sequential phases: structure
-  // first, then the additions against the reopened session. Pre-existing
-  // sheet ids are stable across saves (`sheet-<sheetId attr>`), so the
-  // held ops stay addressable — ops on sheets created this session are
-  // the exception and keep the explicit error.
+  // The gateway fails closed when these additions ride with structural or sheet changes (their
+  // coordinates entangle).
   const hasShifts = structuralOps.length > 0 || sheetOps.length > 0
   const heldPivots = hasShifts ? pivotAdditions : []
   const heldTables = structuralOps.length > 0 ? tableAdditions : []
@@ -146,8 +138,7 @@ export async function handleSave(
     if (mode !== 'recovery') ctx.setMessage(t('appNoEditsToSave'))
     return
   }
-  // Sheet ops rebuild workbook.xml's tab list, so the save needs the final
-  // on-screen order.
+  // Sheet ops rebuild workbook.xml's tab list, so the save needs the final on-screen order.
   const sheetOrder =
     sheetOps.length === 0
       ? []

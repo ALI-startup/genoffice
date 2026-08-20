@@ -1,9 +1,6 @@
 /**
- * Drawing (freehand ink) round-trip verification:
- * one stroke = one transparent PNG picture element (cNvPr name carries the aislides-ink prefix;
- * descr stores the vector-point JSON). Verifies the add-ink IPC's engine path (addPicture with
- * name/descr), descr surviving save-and-reopen, render-node passthrough, and editor-side payload
- * encode/decode plus hit testing.
+ * Drawing (freehand ink) round-trip verification: one stroke = one transparent PNG picture element
+ * (cNvPr name carries the aislides-ink prefix; descr stores the vector-point JSON).
  */
 import { describe, it, expect } from 'vitest'
 import { addPicture, createBlankPptx, openPptx, savePptx } from '@samugen/pptx-engine'

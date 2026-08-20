@@ -1,10 +1,4 @@
-/**
- * Workbook operation appliers for the sheets renderer.
- *
- * AI DSL operations (pivot / table / table-column adds) and pivot dialog
- * helpers applied against the live Univer runtime. Extracted from App.tsx;
- * every function receives its runtime and state explicitly.
- */
+/** Workbook operation appliers for the sheets renderer. */
 import type {
   AddPivotOperation,
   AddTableColumnOperation,
@@ -134,8 +128,7 @@ export function applyAiTableRowAdd(
   const dataRows = tableEntry.area.endRow - tableEntry.area.startRow
   // row is 1-based within data region; default = append at end
   const insertDataRow = op.row ?? dataRows + 1
-  // Absolute sheet row: header is tableEntry.area.startRow (0-based),
-  // data starts at startRow + 1.  Insert before this row in the sheet.
+  // Absolute sheet row: header is tableEntry.area.startRow (0-based), data starts at startRow + 1.
   const sheetRow = tableEntry.area.startRow + insertDataRow
   worksheet.insertRowsBefore(sheetRow, count)
   // Expand the journal entry's area
@@ -276,8 +269,7 @@ export function applyAiPivotAdd(
   const rowFieldsArray = Array.isArray(op.rowFields) ? op.rowFields : [op.rowFields]
   const rowFieldIndices = rowFieldsArray.map(fieldIndex)
   const levels = rowFieldIndices.length
-  // Column dimensions mirror rows: 0-8 levels, outer first (single level
-  // accepts a bare string).
+  // Column dimensions mirror rows: 0-8 levels, outer first (single level accepts a bare string).
   const columnFieldsArray =
     op.columnField === undefined
       ? []
@@ -287,9 +279,8 @@ export function applyAiPivotAdd(
   const columnFieldIndices = columnFieldsArray.map(fieldIndex)
   const colLevels = columnFieldIndices.length
   const pageFieldIndices = (op.pageFields ?? []).map(fieldIndex)
-  // Dimension-field grouping (date/numeric ranges): member collection and
-  // bucketing both use group labels; on save the rule (fieldIndex form) goes
-  // into the journal → OOXML extLst.
+  // Dimension-field grouping (date/numeric ranges): member collection and bucketing both use group
+  // labels; on save the rule (fieldIndex form) goes into the journal → OOXML extLst.
   const groupings = (op.groupings ?? []).map(({ field, ...rule }) => ({
     fieldIndex: fieldIndex(field),
     ...rule,
@@ -340,11 +331,8 @@ export function applyAiPivotAdd(
     throw new Error(t('appCalcFieldNameDuplicate'))
   }
 
-  // Per-level member collection: one globally deduplicated list per row/column
-  // level (first-seen order, i.e. each level's sharedItems order on save); the
-  // combination set enumerates branches that actually exist in the hierarchy —
-  // expansion order is the same under every parent group,
-  // rather than first-seen within each parent.
+  // Per-level member collection: one globally deduplicated list per row/column level (first-seen
+  // order, i.e.
   const levelItems: string[][] = rowFieldIndices.map(() => [])
   const comboKeys = new Set<string>()
   const colLevelItems: string[][] = columnFieldIndices.map(() => [])
@@ -373,9 +361,7 @@ export function applyAiPivotAdd(
       }
     })
   }
-  // Grouped levels display members in ascending bucket order (e.g. months
-  // Jan…Dec, intervals small to large); pass-through values sort last keeping
-  // first-seen order; ungrouped levels keep first-seen order untouched.
+  // Grouped levels display members in ascending bucket order (e.g.
   const sortGroupedLevel = (
     items: string[],
     fieldIdx: number,
@@ -457,11 +443,9 @@ export function applyAiPivotAdd(
           ...(filter.to !== undefined ? { to: filter.to } : {}),
         },
   )
-  // Label filters pick candidates by member label first; value filters then
-  // aggregate each candidate over the label-filtered rows before filtering
-  // (same criteria as the refresh engine's reapplyPivotFilters). Filtered-out
-  // members stay in the member table (sharedItems) — they are only dropped
-  // from layout and aggregation.
+  // Label filters pick candidates by member label first; value filters then aggregate each
+  // candidate over the label-filtered rows before filtering (same criteria as the refresh engine's
+  // reapplyPivotFilters).
   const membersOfField = (fieldIdx: number): string[] => {
     const rowLevel = rowFieldIndices.indexOf(fieldIdx)
     if (rowLevel >= 0) return levelItems[rowLevel]!
@@ -533,10 +517,9 @@ export function applyAiPivotAdd(
     })
   }
 
-  // Column layout lines (excluding the trailing grand-total column): data
-  // columns cover all levels, with a subtotal column appended after each
-  // non-leaf member; each line also records its member-label path for value
-  // lookup and header baking.
+  // Column layout lines (excluding the trailing grand-total column): data columns cover all levels,
+  // with a subtotal column appended after each non-leaf member; each line also records its
+  // member-label path for value lookup and header baking.
   const colLines: { t: 'data' | 'default'; members: number[] }[] = []
   const colLinePaths: string[][] = []
   const emitColLevel = (path: string[], indices: number[], depth: number): void => {
@@ -557,10 +540,8 @@ export function applyAiPivotAdd(
     throw new Error(t('appPivotTooManyColLines'))
   }
 
-  // Collect data rows matching (row-member prefix × column-member prefix); an
-  // empty prefix array = unbounded (i.e. the various grand totals; column
-  // subtotals map to shorter column prefixes). Filtered-out rows join no
-  // aggregation.
+  // Collect data rows matching (row-member prefix × column-member prefix); an empty prefix array =
+  // unbounded (i.e.
   const bucketRows = (
     prefix: readonly string[],
     colPrefix: readonly string[],
@@ -575,10 +556,9 @@ export function applyAiPivotAdd(
       return true
     })
 
-  // Second-pass normalization for "show values as" (percent) modes: the
-  // denominator re-aggregates by row prefix/column members, same criteria as
-  // the recompute engine's recomputePivotData (grand-total/subtotal cells
-  // included).
+  // Second-pass normalization for "show values as" (percent) modes: the denominator re-aggregates
+  // by row prefix/column members, same criteria as the recompute engine's recomputePivotData
+  // (grand-total/subtotal cells included).
   const applyShowDataAs = (
     raw: number | null,
     spec: (typeof valueSpecs)[number],
@@ -592,8 +572,7 @@ export function applyAiPivotAdd(
         : spec.showDataAs === 'percentOfRow'
           ? aggregate(bucketRows(prefix, []), spec)
           : aggregate(bucketRows([], colPrefix), spec)
-    // Blank when the denominator is empty or 0 (Excel shows #DIV/0!; baking
-    // chooses to blank it).
+    // Blank when the denominator is empty or 0 (Excel shows #DIV/0!; baking chooses to blank it).
     return base === null || base === 0 ? null : raw / base
   }
 
@@ -616,16 +595,8 @@ export function applyAiPivotAdd(
     ]
   }
 
-  // Bake the output grid: tabular layout, one column per row level; with
-  // multiple levels, non-leaf levels expand recursively with a subtotal row
-  // appended after their children. rowLines map one-to-one to data rows and
-  // are converted to <rowItems> by xlsx-pivot-add on save.
-  // Headers: 1 row without column dimensions; with them, one row per column
-  // level (row-field names go in the last row's label columns), and data
-  // columns write members level by level — the common prefix shared with the
-  // previous data column stays blank (mirroring colItems' r encoding), subtotal
-  // columns write the subtotal label on the next level's row, and the
-  // grand-total column writes on the first row.
+  // Bake the output grid: tabular layout, one column per row level; with multiple levels, non-leaf
+  // levels expand recursively with a subtotal row appended after their children.
   const matrix: (string | number | null)[][] = []
   if (colLevels === 0) {
     matrix.push([...rowFieldsArray, ...valueSpecs.map((spec) => spec.caption)])
@@ -670,8 +641,7 @@ export function applyAiPivotAdd(
     matrix.push(...headers)
   }
   const rowLines: { t: 'data' | 'default'; members: number[] }[] = []
-  // After entering a non-leaf member, its label shows on the first following
-  // leaf row.
+  // After entering a non-leaf member, its label shows on the first following leaf row.
   const pendingLabels: (string | null)[] = new Array(Math.max(0, levels - 1)).fill(null)
   const emitLevel = (path: string[], indices: number[], depth: number): void => {
     levelItems[depth]!.forEach((member, memberIndex) => {
@@ -806,7 +776,6 @@ export function applyAiPivotAdd(
   }
 
   // Apply numFmt to value columns (data rows, skip header and grand total).
-  // Only applicable when there is no column field.
   if (colLevels === 0) {
     for (let vi = 0; vi < valueSpecs.length; vi += 1) {
       const fmt = valueSpecs[vi]?.numFmt
@@ -865,9 +834,8 @@ export function applyAiPivotAdd(
       newOutputRef,
       additionPayload,
     )
-    // The old in-memory definition is stale: after deletion, refresh/slicers
-    // are disabled for it until save-and-reopen; saving reopens the session and
-    // re-parses the newly written definition.
+    // The old in-memory definition is stale: after deletion, refresh/slicers are disabled for it
+    // until save-and-reopen; saving reopens the session and re-parses the newly written definition.
     state.pivotDefinitions.delete(relayout.pivotPath)
     const staleRange = targetMeta?.pivotRanges.find(
       (range) =>
@@ -893,8 +861,7 @@ export function pivotConfigToOpParts(
 ):
   | string
   | Pick<AddPivotOperation, 'rowFields' | 'columnField' | 'groupings' | 'filters' | 'values'> {
-  // Multi-level rows: mapped to field captions in the dialog's order (outer
-  // first).
+  // Multi-level rows: mapped to field captions in the dialog's order (outer first).
   const rowFieldLabels: string[] = []
   for (const rowFieldIndex of config.rowFieldIndices) {
     const label = fields[rowFieldIndex]?.label
@@ -910,8 +877,7 @@ export function pivotConfigToOpParts(
     if (!label) return t('appInvalidColumnField')
     columnFieldLabels.push(label)
   }
-  // Grouping modes: field index → field caption (DSL groupings reference
-  // fields by caption).
+  // Grouping modes: field index → field caption (DSL groupings reference fields by caption).
   const groupingEntries: NonNullable<AddPivotOperation['groupings']> = []
   for (const { fieldIndex: groupedField, rule } of config.groupings) {
     const label = fields[groupedField]?.label
@@ -922,8 +888,7 @@ export function pivotConfigToOpParts(
         : { kind: 'range', field: label, rangeStep: rule.rangeStep },
     )
   }
-  // Filters: label filters by field caption; value filters apply to the
-  // level-1 row field.
+  // Filters: label filters by field caption; value filters apply to the level-1 row field.
   const filterOps: NonNullable<AddPivotOperation['filters']> = []
   for (const { fieldIndex: filteredField, rule } of config.labelFilters) {
     const label = fields[filteredField]?.label
@@ -1044,8 +1009,7 @@ export function pivotColLineLabel(
     )
   }
   if (line.t === 'default') parts.push(t('appPivotSubtotal'))
-  // Without column dimensions, the single data column's caption is the
-  // data-field name.
+  // Without column dimensions, the single data column's caption is the data-field name.
   if (parts.length === 0) return definition.dataFields[line.dataField]?.name ?? ''
   return parts.join(' ')
 }

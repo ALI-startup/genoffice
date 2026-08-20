@@ -274,8 +274,7 @@ export function applyPageSetupState(worksheetXml: string, state: SheetPageSetupS
   }
 
   if (state.showGridlines !== undefined) {
-    // showGridLines defaults to true; write "0" to hide, drop the attribute
-    // to restore the default.
+    // showGridLines defaults to true; write "0" to hide, drop the attribute to restore the default.
     xml = setSheetViewAttr(xml, 'showGridLines', state.showGridlines ? null : '0')
   }
 

@@ -10,12 +10,7 @@ export interface RevisionInfo {
 /** A styled text run inside a paragraph-like block. */
 export interface Run {
   text: string
-  /**
-   * Original <w:rPr> slice (serialized from the parse tree). Written back via
-   * mergeRPrModel when the run is rebuilt: unmodeled properties (caps/vanish/dstrike/
-   * bdr/double underline/themeColor/all four rFonts slots…) are kept verbatim, and
-   * modeled fields are only rebuilt when they differ from the raw encoding (i.e. edited).
-   */
+  /** Original <w:rPr> slice (serialized from the parse tree). */
   rawRPr?: string
   /** character style id (w:rStyle); "Hyperlink" is implied by `link` and never stored here */
   styleId?: string
@@ -41,26 +36,15 @@ export interface Run {
   em?: 'dot' | 'comma' | 'circle' | 'underDot'
   /** hyperlink info; rId references an existing relationship in the original docx */
   link?: { href: string; rId?: string; tooltip?: string }
-  /**
-   * ids of comments whose range covers this run. Only set when the whole
-   * commentRangeStart..End pair lives inside the same paragraph, so an edited
-   * paragraph can re-emit the markers without touching its neighbors.
-   */
+  /** ids of comments whose range covers this run. */
   commentIds?: string[]
   /** run is inside a w:ins (tracked insertion) */
   ins?: RevisionInfo
   /** run is inside a w:del (tracked deletion; text came from w:delText) */
   del?: RevisionInfo
-  /**
-   * The run is a footnote/endnote reference marker (w:footnoteReference /
-   * w:endnoteReference). `text` holds the display number; the marker itself
-   * is what saves (Word renumbers automatically).
-   */
+  /** The run is a footnote/endnote reference marker (w:footnoteReference / w:endnoteReference). */
   noteRef?: { kind: 'footnote' | 'endnote'; id: string }
-  /**
-   * An index entry (XE) field attached AFTER this run's text. Invisible in
-   * Word; kept in the run model so marked paragraphs stay editable.
-   */
+  /** An index entry (XE) field attached AFTER this run's text. */
   xeTerm?: string
   /**
    * The run is a cross-reference (REF field) to the named bookmark; `text`
@@ -72,9 +56,8 @@ export interface Run {
   /** Generic inline field (DATE/TIME/NUMPAGES/FILENAME etc.): full instruction text; run text is the cached result */
   instrField?: string
   /**
-   * Run-level formatting revision (w:rPrChange): records the review info and the modeled
-   * subset of the pre-revision formatting. Accept = keep the current formatting and clear
-   * the record; reject = restore the formatting from `old` and clear the record.
+   * Run-level formatting revision (w:rPrChange): records the review info and the modeled subset of
+   * the pre-revision formatting.
    */
   rPrChange?: RevisionInfo & {
     old?: {
@@ -92,17 +75,9 @@ export interface Run {
       styleId?: string
     }
   }
-  /**
-   * The run is an atomic inline formula. `text` holds the flat OMML token
-   * strip (previews / word count); `omml` is the exact <m:oMath> fragment,
-   * emitted verbatim when the paragraph regenerates.
-   */
+  /** The run is an atomic inline formula. */
   math?: { omml: string }
-  /**
-   * Phonetic guide (w:ruby). `text` holds the base characters; `rt` the
-   * phonetic text; `xml` the exact <w:ruby> fragment, re-wrapped in a w:r
-   * and emitted verbatim when the paragraph regenerates.
-   */
+  /** Phonetic guide (w:ruby). */
   ruby?: { rt: string; xml: string }
 }
 
@@ -125,38 +100,24 @@ export interface CommentInfo {
 
 export type ParaAlign = 'left' | 'center' | 'right' | 'justify' | 'distribute'
 
-/**
- * Preserved shell of a structured document tag (w:sdt) wrapping this block.
- * The original <w:sdt>…<w:sdtPr>…</w:sdtPr>…<w:sdtContent> opening bytes and
- * the closing </w:sdtContent></w:sdt> bytes are stored here so that saving can
- * re-wrap the regenerated paragraph XML in the original SDT shell (byte-fidelity rule).
- */
+/** Preserved shell of a structured document tag (w:sdt) wrapping this block. */
 export interface SdtShell {
   /** human-visible alias label (w:sdtPr/w:alias @w:val), may be empty */
   alias: string
   /** programmatic tag (w:sdtPr/w:tag @w:val), may be empty */
   tag: string
   /**
-   * control type: 'text' = plain/rich text, 'date' = date picker,
-   * 'dropdown' = drop-down list/combo box, 'checkbox' = Word 2013 checkbox,
-   * 'unknown' = unrecognised sdtPr content
+   * control type: 'text' = plain/rich text, 'date' = date picker, 'dropdown' = drop-down list/combo
+   * box, 'checkbox' = Word 2013 checkbox, 'unknown' = unrecognised sdtPr content
    */
   controlType: 'text' | 'date' | 'dropdown' | 'checkbox' | 'unknown'
   /**
-   * Original XML bytes from the opening <w:sdt> up to and including the
-   * <w:sdtContent> tag (i.e. everything BEFORE the paragraph content).
-   * This is emitted verbatim before the regenerated paragraph XML on save.
+   * Original XML bytes from the opening <w:sdt> up to and including the <w:sdtContent> tag (i.e.
    */
   openXml: string
-  /**
-   * Closing bytes "</w:sdtContent></w:sdt>" (emitted after the paragraph XML).
-   */
+  /** Closing bytes "</w:sdtContent></w:sdt>" (emitted after the paragraph XML). */
   closeXml: string
-  /**
-   * Set when one w:sdt was split into several blocks (multi-paragraph
-   * sdtContent, e.g. a Word TOC). Blocks sharing a group belong to the same
-   * sdt; only the first carries openXml and only the last carries closeXml.
-   */
+  /** Set when one w:sdt was split into several blocks (multi-paragraph sdtContent, e.g. */
   group?: number
 }
 
@@ -177,11 +138,8 @@ export interface ParaFormat {
   /** line spacing as a multiple of single (w:spacing w:line / 240, lineRule="auto") */
   lineSpacing?: number
   /**
-   * F1 precise line-height rule (from w:spacing w:lineRule):
-   * 'auto'    = multiple spacing; lineSpacing is the multiplier (e.g. 1.0 = single, 1.5 = 1.5x)
-   * 'atLeast' = line height at least N twips (lineRawTwips), else the font's natural height
-   * 'exact'   = fixed line height of N twips (lineRawTwips), never expands
-   * undefined = same as 'auto' (backward compatible)
+   * F1 precise line-height rule (from w:spacing w:lineRule): 'auto' = multiple spacing; lineSpacing
+   * is the multiplier (e.g.
    */
   lineRule?: 'auto' | 'atLeast' | 'exact'
   /** raw w:spacing w:line value in twips (used in atLeast/exact modes) */
@@ -222,10 +180,7 @@ export interface ParaFormat {
   bidi?: boolean
 }
 
-/**
- * Document grid (w:docGrid) — a key property for Chinese documents.
- * With type=lines, each line's height is rounded up to align with linePitch (twips).
- */
+/** Document grid (w:docGrid) — a key property for Chinese documents. */
 export interface DocGrid {
   /** w:type: 'default'|'lines'|'linesAndChars'|'snapToChars', default 'default' */
   type: 'default' | 'lines' | 'linesAndChars' | 'snapToChars'
@@ -323,9 +278,8 @@ export interface HeaderFooter {
   /** append an automatic page number (PAGE field), footer only */
   pageNumber?: boolean
   /**
-   * Rich paragraphs; when present they are the content source of truth and
-   * the part regenerates one w:p per entry ('#' in a run text becomes the
-   * PAGE field when pageNumber is set). Absent = legacy single centered line.
+   * Rich paragraphs; when present they are the content source of truth and the part regenerates one
+   * w:p per entry ('#' in a run text becomes the PAGE field when pageNumber is set).
    */
   paras?: HfParagraph[]
 }
@@ -407,10 +361,7 @@ export interface ChartSeries {
 }
 
 /**
- * Display/edit model of an embedded chart, extracted from its chart part
- * (word/charts/chartN.xml). Edits patch only cached texts/numbers in that
- * part; the chart structure stays untouched. The embedded workbook is NOT
- * updated, so Word's "Edit Data" sheet will still show the pre-edit numbers.
+ * Display/edit model of an embedded chart, extracted from its chart part (word/charts/chartN.xml).
  */
 export interface ChartDisplay {
   /** zip path of the chart part this model was read from */
@@ -530,11 +481,7 @@ export interface TableModel {
   bidiVisual?: boolean
 }
 
-/**
- * One ink annotation (freehand strokes) to write at save time. Becomes a floating
- * anchored picture (wp:anchor, in front of text) inside its anchor paragraph;
- * word/media/... + relationship are created like NewImage.
- */
+/** One ink annotation (freehand strokes) to write at save time. */
 export interface NewInkImage {
   /** index into the finalBlocks array of the anchor block */
   blockIndex: number
@@ -565,9 +512,8 @@ export interface InkInfo {
 }
 
 /**
- * Text wrapping of a floating image (wp:anchor):
- * square-* = square wrap (text flows around, image on left/right), topBottom = top and
- * bottom, behind = behind text, front = in front of text.
+ * Text wrapping of a floating image (wp:anchor): square-* = square wrap (text flows around, image
+ * on left/right), topBottom = top and bottom, behind = behind text, front = in front of text.
  */
 /**
  * Wrap modes. tight/through still render approximated as square, but the model keeps
@@ -605,10 +551,7 @@ export interface Block {
   /** stable id for editor bookkeeping */
   id: string
   type: BlockType
-  /**
-   * Index of the top-level element in <w:body> of the ORIGINAL document.xml.
-   * This is the patch anchor. null for blocks created in the editor.
-   */
+  /** Index of the top-level element in <w:body> of the ORIGINAL document.xml. */
   docxIndex: number | null
   /** exact XML slice from the original document.xml (patch passthrough basis) */
   originalXml: string | null
@@ -628,12 +571,7 @@ export interface Block {
   commentStarts?: string[]
   /** Cross-paragraph comment ranges: ids whose end falls in this paragraph only. end+reference are re-emitted at paragraph end on rebuild */
   commentEnds?: string[]
-  /**
-   * Exact original <w:pPr> slice (paragraph / heading / listItem). Regenerated
-   * paragraphs reuse it verbatim (text-only edits) or merge format changes
-   * into it, so pPr constructs the format model cannot express (keepNext,
-   * tabs, paragraph-mark rPr, pPrChange revisions...) survive editing.
-   */
+  /** Exact original <w:pPr> slice (paragraph / heading / listItem). */
   rawPPr?: string
   /** rich text content (paragraph / heading / listItem) */
   runs?: Run[]
@@ -653,10 +591,8 @@ export interface Block {
   /** text wrapping of a floating image (wp:anchor); absent = inline (in line with text) */
   imageWrap?: ImageWrap
   /**
-   * Horizontal/vertical posOffset (in EMU) of a floating image (wp:anchor
-   * with wp:positionH/V using posOffset, not align). Used for free-position
-   * drag. Absent when the image uses named alignment (left/center/right) or
-   * is inline.
+   * Horizontal/vertical posOffset (in EMU) of a floating image (wp:anchor with wp:positionH/V using
+   * posOffset, not align).
    */
   imageOffsetXEmu?: number
   imageOffsetYEmu?: number
@@ -678,10 +614,8 @@ export interface Block {
   /** display/edit model of an embedded chart (set on chart-labeled blocks) */
   chartDisplay?: ChartDisplay
   /**
-   * When this block was wrapped in a w:sdt (structured document tag), the
-   * original sdtPr + shell bytes are stored here for save-time re-wrapping.
-   * The block's runs/format are from sdtContent and are fully editable;
-   * saving patches only those runs while keeping the sdt shell verbatim.
+   * When this block was wrapped in a w:sdt (structured document tag), the original sdtPr + shell
+   * bytes are stored here for save-time re-wrapping.
    */
   sdtShell?: SdtShell
   /**
@@ -690,9 +624,8 @@ export interface Block {
    */
   moveRevision?: 'from' | 'to'
   /**
-   * When this paragraph has a tracked paragraph-property change (w:pPrChange),
-   * this carries the revision author/date for the review UI badge and navigation.
-   * The raw pPrChange XML is preserved in rawPPr and used for accept/reject.
+   * When this paragraph has a tracked paragraph-property change (w:pPrChange), this carries the
+   * revision author/date for the review UI badge and navigation.
    */
   pPrChangeInfo?: {
     author: string
@@ -716,10 +649,7 @@ export interface TextboxParaDisplay extends ParaFormat {
   runs: Run[]
 }
 
-/**
- * Display model of an anchored textbox. Text edits are patched back into the
- * original XML via patchTextboxParas; everything else saves byte-identical.
- */
+/** Display model of an anchored textbox. */
 export interface TextboxDisplay {
   /** hex without '#' */
   fill?: string
@@ -727,10 +657,7 @@ export interface TextboxDisplay {
   borderColor?: string
   /** box width from wp:extent in CSS px (render fidelity) */
   widthPx?: number
-  /**
-   * fixed box height in CSS px. Only set when the shape's autofit is off,
-   * i.e. Word renders the box at this exact height and clips overflow.
-   */
+  /** fixed box height in CSS px. */
   heightPx?: number
   /** original fixed height; edited boxes may grow but never shrink below this */
   minHeightPx?: number
@@ -739,10 +666,7 @@ export interface TextboxDisplay {
   insetRightPx?: number
   insetBottomPx?: number
   insetLeftPx?: number
-  /**
-   * DrawingML preset geometry name (a:prstGeom prst="...") for shape rendering.
-   * Absent for plain rectangular textboxes (rect = default).
-   */
+  /** DrawingML preset geometry name (a:prstGeom prst="...") for shape rendering. */
   prst?: string
   /**
    * WordArt preset id (e.g. 'wordArt-1').  When set, the editor applies
@@ -751,10 +675,8 @@ export interface TextboxDisplay {
    */
   wordArtId?: string
   /**
-   * Content holds tables / content controls flattened into display lines, so
-   * paras do not map 1:1 onto the w:txbxContent w:p children the patch-save
-   * path rewrites. The editor must not offer text editing for this box or a
-   * commit would corrupt the table (sidebars).
+   * Content holds tables / content controls flattened into display lines, so paras do not map 1:1
+   * onto the w:txbxContent w:p children the patch-save path rewrites.
    */
   readOnly?: boolean
   paras: TextboxParaDisplay[]
@@ -787,11 +709,7 @@ export interface GeneratedBlock {
    * paragraph XML with this shell on save (byte-fidelity rule for the sdt structure).
    */
   sdtShell?: SdtShell
-  /**
-   * JSON {author,date?,id?} when the block originally had a pPrChange.
-   * Set to null by the editor when the user accepts/rejects the pPrChange revision;
-   * applyRawPPr then strips <w:pPrChange> from rawPPr so the saved file is clean.
-   */
+  /** JSON {author,date?,id?} when the block originally had a pPrChange. */
   pPrChange?: string | null
   /** Used by editor dirty detection; SaveBlock carries the actual wrapper metadata. */
   blockRevision?: ({ kind: 'ins' | 'del' } & RevisionInfo) | null

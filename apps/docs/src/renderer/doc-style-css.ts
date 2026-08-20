@@ -1,12 +1,7 @@
 import type { ParsedDocFull, ThemeColors, ThemeFonts } from '@samugen/docx-engine'
 import { cssFontFamily, cssLineHeight, lineHeightFactor, textHasCjk } from './line-metrics'
 
-/**
- * CSS for the document theme (Design ▸ Themes / Fonts / Colors). Kept separate from
- * docStyleCss so the page reflects a theme pick immediately instead of only after
- * save + reopen in Word: App re-renders this from live state, while
- * docStyleCss is regenerated only on parse.
- */
+/** CSS for the document theme (Design ▸ Themes / Fonts / Colors). */
 export function docThemeCss(
   fonts: ThemeFonts | null | undefined,
   colors: ThemeColors | null | undefined,
@@ -30,9 +25,8 @@ export function docThemeCss(
 }
 
 /**
- * Per-document CSS generated from styles.xml, so paragraphs render with their
- * style's font size / color / spacing (display-only; the save
- * path never touches styles.xml).
+ * Per-document CSS generated from styles.xml, so paragraphs render with their style's font size /
+ * color / spacing (display-only; the save path never touches styles.xml).
  */
 /** Body contains CJK text (drives the document-level line-height factor). */
 export function docHasCjk(parsed: ParsedDocFull): boolean {
@@ -40,10 +34,9 @@ export function docHasCjk(parsed: ParsedDocFull): boolean {
 }
 
 /**
- * Document-level line-height factor: bodies containing CJK use the Chinese font's
- * factor (Word takes the max of in-line fonts; the declared eastAsia default font
- * doesn't reflect actual content, and pure-English documents shouldn't get CJK
- * line height). Recomputed live while editing via App's liveDocCjk.
+ * Document-level line-height factor: bodies containing CJK use the Chinese font's factor (Word
+ * takes the max of in-line fonts; the declared eastAsia default font doesn't reflect actual
+ * content, and pure-English documents shouldn't get CJK line height).
  */
 export function docLineFactor(parsed: ParsedDocFull, hasCjk: boolean): number {
   const dd = parsed.docDefaults

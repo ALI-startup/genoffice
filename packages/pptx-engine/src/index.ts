@@ -1,9 +1,4 @@
-/**
- * pptx-engine top-level API.
- *
- * Phase 1 scope: openPptx (parsing) + savePptx's "no changes = byte identical"
- * path (proving fidelity). Element-level patch regeneration is left for Phase 3.
- */
+/** pptx-engine top-level API. */
 import { utf8Bytes } from './bytes'
 import JSZip from 'jszip'
 import { PackageArchive, relsPathFor, resolveTarget } from './zip'
@@ -256,9 +251,8 @@ export {
 } from './table-edit'
 export { listMasterParts, parseMasterPart, type MasterPartInfo } from './master-edit'
 
-// The following functions are implemented in this file and exposed directly via
-// export function (see below): editPictureSrcRect, setSlideBackground,
-// setSlideHidden, etc. TypeScript sees export function directly, no need to relist.
+// The following functions are implemented in this file and exposed directly via export function
+// (see below): editPictureSrcRect, setSlideBackground, setSlideHidden, etc.
 
 export interface OpenedPptx {
   deck: SlideDeck
@@ -372,14 +366,7 @@ function partMediaRels(archive: PackageArchive, partPath: string): Map<string, s
   return media
 }
 
-/**
- * <p:hf> footer-family toggle state.
- * Actual PowerPoint behavior: enabling footers writes ftr/sldNum/dt placeholders
- * into every slide (rendered as normal elements); same-type placeholders on
- * layout/master are just templates. So the decoration layer doesn't render them
- * by default (unset), and only draws them when hf explicitly enables them (a few
- * generators depend on this).
- */
+/** <p:hf> footer-family toggle state. */
 function hfState(xml: string | undefined, attr: 'ftr' | 'sldNum' | 'dt'): 'on' | 'off' | 'unset' {
   if (!xml) return 'unset'
   const hf = /<p:hf\b[^>]*\/?>/.exec(xml)?.[0]
@@ -390,13 +377,8 @@ function hfState(xml: string | undefined, attr: 'ftr' | 'sldNum' | 'dt'): 'on' |
 }
 
 /**
- * Assemble a slide's decoration layer: master concrete shapes (bottom-most) →
- * layout concrete shapes.
- * - showMasterSp="0" on the slide/layout disables the master layer;
- * - Footer-family placeholders (ftr/sldNum/dt) follow the <p:hf> toggles + nearest
- *   override (present on the slide → skip the layout's; present on the layout →
- *   skip the master's);
- * - The slide-number field is replaced with the slide's actual index.
+ * Assemble a slide's decoration layer: master concrete shapes (bottom-most) → layout concrete
+ * shapes.
  */
 function buildDecorations(
   archive: PackageArchive,
@@ -484,10 +466,9 @@ export async function openPptx(bytes: Uint8Array): Promise<OpenedPptx> {
 }
 
 /**
- * Rebuild the deck model from the archive's current entries — same result as
- * openPptx(await savePptx(opened)) without materializing the zip, whose contiguous
- * output buffer fails outright on large decks. Pending edits must already be baked
- * into the entries (commitSaved).
+ * Rebuild the deck model from the archive's current entries — same result as openPptx(await
+ * savePptx(opened)) without materializing the zip, whose contiguous output buffer fails outright on
+ * large decks.
  */
 export function reparseDeck(opened: OpenedPptx): OpenedPptx {
   const { archive } = opened
@@ -500,17 +481,7 @@ export function reparseDeck(opened: OpenedPptx): OpenedPptx {
   return { deck: { slides, size, originalHash: archive.originalHash }, archive }
 }
 
-/**
- * Save (element-level patches, Phase 3.3).
- *
- * - With no dirty elements: write original entries back byte-for-byte, producing a
- *   slideN.xml 100% identical to the original.
- * - Slides with dirty elements: rebuild that slideN.xml = bodyPrefix + each element
- *   (dirty ? patch-regenerated : original byte slice) + bodySuffix; all other
- *   entries are copied byte-for-byte.
- * - Non-text elements (pictures/passthrough) don't support content editing yet;
- *   even flagged dirty they use original bytes.
- */
+/** Save (element-level patches, Phase 3.3). */
 export async function savePptx(opened: OpenedPptx): Promise<Uint8Array> {
   return buildZip(opened).generateAsync({
     type: 'uint8array',
@@ -519,28 +490,13 @@ export async function savePptx(opened: OpenedPptx): Promise<Uint8Array> {
   })
 }
 
-/**
- * The JSZip instance a save writes out, exposed for the Node-only streaming save.
- *
- * Not part of the package's public shape — `./node`'s `savePptxToFile` is its one
- * consumer, and it lives in a separate module precisely so that `node:fs` stays out
- * of this one. See src/save-node.ts.
- */
+/** The JSZip instance a save writes out, exposed for the Node-only streaming save. */
 export { buildZip as buildSaveZip }
 
 /**
- * Sync the in-memory model with what savePptx/savePptxToFile just wrote, without
- * the full reopen (readFile + sha256 + unzip + reparse) that used to double save
- * latency and peak memory on large decks.
- *
- * For every dirty slide this bakes the patched XML back into archive.entries and
- * anchor.originalXml, then clears the dirty flags — exactly the state a reopen
- * would produce, minus new element ids. Uses the same patchSlideXml /
- * patchedElementXml pair as buildZip, so memory and disk are byte-identical and
- * the next save's byte slices are safe to reuse.
- *
- * Call only after a successful save; on failure keep the dirty state so the next
- * save retries the patches.
+ * Sync the in-memory model with what savePptx/savePptxToFile just wrote, without the full reopen
+ * (readFile + sha256 + unzip + reparse) that used to double save latency and peak memory on large
+ * decks.
  */
 export function commitSaved(opened: OpenedPptx): void {
   const { deck, archive } = opened
@@ -562,11 +518,7 @@ export function commitSaved(opened: OpenedPptx): void {
   }
 }
 
-/**
- * Only XML text parts benefit from deflate. Everything else (media, fonts, OLE
- * blobs) is already compressed or opaque binary: deflating it burns seconds of
- * CPU on large decks for no size win, so it is stored verbatim.
- */
+/** Only XML text parts benefit from deflate. */
 const COMPRESSED_EXTENSIONS = new Set(['xml', 'rels'])
 
 function slideIsDirty(s: Slide): boolean {
@@ -663,11 +615,7 @@ export function setSlideBackground(slide: Slide, color: string): void {
   slide.structureDirty = true
 }
 
-/**
- * Update a picture element's srcRect crop (0..1 fractions, null = full image).
- * Flags dirtySrcRect so save surgically patches <a:srcRect>; no other bytes are
- * touched. Returns whether the element was found and updated.
- */
+/** Update a picture element's srcRect crop (0..1 fractions, null = full image). */
 export function editPictureSrcRect(
   slide: Slide,
   sourceId: string,
@@ -685,9 +633,7 @@ export function editPictureSrcRect(
   return true
 }
 
-/**
- * Text-box vertical alignment (bodyPr anchor: t/ctr/b). Byte surgery baked directly into originalXml.
- */
+/** Text-box vertical alignment (bodyPr anchor: t/ctr/b). */
 export function setElementTextAnchor(
   slide: Slide,
   elementId: string,
@@ -713,9 +659,8 @@ export function setElementTextAnchor(
 }
 
 /**
- * Shape image fill: after landing the image in the package (media + rels), the
- * spPr fill node is replaced with a blipFill, byte surgery baked directly into
- * originalXml. Returns the mediaPath (for render-layer decoding), null on failure.
+ * Shape image fill: after landing the image in the package (media + rels), the spPr fill node is
+ * replaced with a blipFill, byte surgery baked directly into originalXml.
  */
 export function setElementImageFill(
   opened: OpenedPptx,
@@ -738,10 +683,7 @@ export function setElementImageFill(
   return added.mediaPath
 }
 
-/**
- * Whole-picture opacity (0..1; ≥1 clears alphaModFix). Byte surgery on the
- * <a:blip> child, baked directly into originalXml (no separate dirty flag).
- */
+/** Whole-picture opacity (0..1; ≥1 clears alphaModFix). */
 export function setPictureOpacity(slide: Slide, sourceId: string, opacity: number): boolean {
   const el = slide.elements.find((e) => e.id === sourceId && e.type === 'picture')
   if (!el) return false
@@ -841,11 +783,7 @@ function registerNewSlide(opened: OpenedPptx, sourceIndex: number, newPath: stri
 }
 
 /**
- * Duplicate the sourceIndex slide as a new slide inserted after it; returns the
- * new slide model.
- *
- * The new slideK.xml includes the source slide's unsaved patches; rels are copied
- * verbatim but with notesSlide removed, so two slides don't share the same notes.
+ * Duplicate the sourceIndex slide as a new slide inserted after it; returns the new slide model.
  */
 export function duplicateSlide(
   opened: OpenedPptx,
@@ -888,14 +826,7 @@ export function copySlide(opened: OpenedPptx, sourceIndex: number): SlideBundle 
   return collectSlideBundle(opened.archive, slide.path, patchSlideXml(slide))
 }
 
-/**
- * Paste a bundle after `afterIndex` (-1 pastes at the front). By default the
- * slide adopts a layout from this deck — matched by the source layout's name,
- * else the neighbour's — so it takes on the destination theme ("use destination
- * theme"). With `keepSourceFormatting` the bundled layout→master→theme chain is
- * imported instead, so the slide keeps its source look; falls back to the
- * destination theme when the bundle carries no chain.
- */
+/** Paste a bundle after `afterIndex` (-1 pastes at the front). */
 export function pasteSlide(
   opened: OpenedPptx,
   afterIndex: number,
@@ -995,20 +926,7 @@ const MIME_BY_EXT: Record<string, string> = {
   wmf: 'image/x-wmf',
 }
 
-/**
- * Merge the single slide of a one-slide pptx into the target deck (appended at
- * the end).
- *
- * Used by the html→pptx pipeline's per-slide independent conversion: each slide's
- * HTML converts into its own single-slide pptx, and on landing that slide is moved
- * into the existing deck **without reconverting earlier slides**.
- *
- * Precondition (pipeline homogeneity): all single-slide pptx files share the same
- * layout/master/theme structure, so the appended slide reuses the target's
- * existing slideLayout (the source's layout/master/theme is not imported); only
- * the slide XML + the media it references are moved (rIds reassigned to avoid
- * cross-slide name clashes), notesSlide dropped.
- */
+/** Merge the single slide of a one-slide pptx into the target deck (appended at the end). */
 export async function mergeSlideFromPptx(
   target: OpenedPptx,
   sourceBytes: Uint8Array,
@@ -1100,9 +1018,8 @@ function importLayoutChain(
 }
 
 /**
- * Insert a blank slide after the sourceIndex slide, with rels pointing at the
- * given layoutPath (from listSlideLayouts). The layout itself is read-only, never
- * written back. Returns the new Slide, or null on failure.
+ * Insert a blank slide after the sourceIndex slide, with rels pointing at the given layoutPath
+ * (from listSlideLayouts).
  */
 export function insertSlideWithLayout(
   opened: OpenedPptx,
@@ -1120,9 +1037,8 @@ export function insertSlideWithLayout(
 }
 
 /**
- * Delete a slide: the sldId in presentation.xml, the presentation rels, the
- * [Content_Types] Override, the slide part and its rels are all removed;
- * deck.slides synced. Refused when only one slide remains.
+ * Delete a slide: the sldId in presentation.xml, the presentation rels, the [Content_Types]
+ * Override, the slide part and its rels are all removed; deck.slides synced.
  */
 export function deleteSlide(opened: OpenedPptx, index: number): boolean {
   const { deck, archive } = opened
@@ -1185,13 +1101,7 @@ export function reorderElement(slide: Slide, elementId: string, dir: ReorderDire
 
 // ── Raw slice append + whole-slide reparse (shared by paste/table insert) ──
 
-/**
- * Write the slide's current state (incl. unsaved patches) back to the archive and
- * reparse, replacing the model in the deck. New elements appended as raw XML
- * slices go through here, gaining a full semantic model for any element type.
- * Note: after reparse all element ids on the slide change; the caller must rebuild
- * the render tree for the whole slide.
- */
+/** Write the slide's current state (incl. */
 export function materializeSlide(opened: OpenedPptx, slideIndex: number): Slide | null {
   const { deck, archive } = opened
   const slide = deck.slides[slideIndex]
@@ -1223,11 +1133,9 @@ function connectionPoint(t: Transform, idx: number): { x: number; y: number } {
 }
 
 /**
- * Re-lay connectors after connected shapes move: the geometry box = the bounding
- * box of the two endpoints, direction expressed via flip (exact for straight
- * connectors; elbow connectors approximated by the same bounding box). An
- * unattached end keeps its current endpoint. Returns the number of connectors
- * updated (>0 means each is flagged dirtyTransform).
+ * Re-lay connectors after connected shapes move: the geometry box = the bounding box of the two
+ * endpoints, direction expressed via flip (exact for straight connectors; elbow connectors
+ * approximated by the same bounding box).
  */
 export function updateConnectorsForMoved(slide: Slide, movedIds: string[]): number {
   const movedSpids = new Set<number>()
@@ -1271,10 +1179,8 @@ export function updateConnectorsForMoved(slide: Slide, movedIds: string[]): numb
 }
 
 /**
- * Write/clear a connector's shape attachments (<a:stCxn>/<a:endCxn> in
- * p:cNvCxnSpPr; id = target shape's cNvPr id, idx = connection point index).
- * undefined leaves that end unchanged, null detaches it. Byte surgery baked
- * directly into originalXml (pending patches are materialized first).
+ * Write/clear a connector's shape attachments (<a:stCxn>/<a:endCxn> in p:cNvCxnSpPr; id = target
+ * shape's cNvPr id, idx = connection point index).
  */
 export function setElementConnection(
   slide: Slide,
@@ -1321,11 +1227,9 @@ export function setElementConnection(
 }
 
 /**
- * Switch an existing slide's layout: point the slide rels' slideLayout
- * relationship at the new layout, then reparse (inheritance chain/decoration
- * layer/placeholder default styles all refreshed). Placeholder positions are kept
- * (existing shapes stay put; use resetSlideLayout to snap
- * them back).
+ * Switch an existing slide's layout: point the slide rels' slideLayout relationship at the new
+ * layout, then reparse (inheritance chain/decoration layer/placeholder default styles all
+ * refreshed).
  */
 export function setSlideLayout(
   opened: OpenedPptx,
@@ -1365,9 +1269,8 @@ export function setSlideLayout(
 }
 
 /**
- * Reset layout: placeholder elements drop their explicit <a:xfrm>, geometry falls
- * back to layout/master inheritance (restoring the inherited
- * position/size).
+ * Reset layout: placeholder elements drop their explicit <a:xfrm>, geometry falls back to
+ * layout/master inheritance (restoring the inherited position/size).
  */
 export function resetSlideLayout(opened: OpenedPptx, slideIndex: number): Slide | null {
   const slide = opened.deck.slides[slideIndex]
@@ -1389,14 +1292,7 @@ export function resetSlideLayout(opened: OpenedPptx, slideIndex: number): Slide 
   return materializeSlide(opened, slideIndex)
 }
 
-/**
- * Slide size (16:9 ↔ 4:3 etc.): edits <p:sldSz> in presentation.xml.
- * Content reflows with the canvas: each axis scales independently
- * (sx = cx/oldCx, sy = cy/oldCy), like PowerPoint's stretch on size change.
- * Anisotropic on purpose — it fills the new canvas with no letterbox bands
- * and makes A→B→A a true round-trip (within 1 EMU of rounding), which a
- * uniform fit-and-center scale cannot be. Font sizes are left alone.
- */
+/** Slide size (16:9 ↔ 4:3 etc.): edits <p:sldSz> in presentation.xml. */
 export function setSlideSize(opened: OpenedPptx, cx: number, cy: number): boolean {
   const { deck, archive } = opened
   const old = deck.size
@@ -1427,9 +1323,8 @@ export function setSlideSize(opened: OpenedPptx, cx: number, cy: number): boolea
     }
   }
 
-  // layout/master scaled in sync (PowerPoint also rewrites masters on resize;
-  // otherwise decorations/inherited placeholders still lay out at the old size).
-  // A deliberate user action that is the exception to the never-write-masters rule.
+  // layout/master scaled in sync (PowerPoint also rewrites masters on resize; otherwise
+  // decorations/inherited placeholders still lay out at the old size).
   for (const part of listMasterParts(archive)) {
     const partSlide = parseMasterPart(archive, part.partPath)
     if (!partSlide) continue
@@ -1502,9 +1397,8 @@ function nthTagSpan(xml: string, tag: string, n: number): { start: number; end: 
 }
 
 /**
- * Rewrite table cell text: XML surgery (replacing the txBody paragraphs of the
- * col-th a:tc inside the row-th a:tr, keeping bodyPr/lstStyle/tcPr) with the model
- * synced. col is the tc index (not the logical column).
+ * Rewrite table cell text: XML surgery (replacing the txBody paragraphs of the col-th a:tc inside
+ * the row-th a:tr, keeping bodyPr/lstStyle/tcPr) with the model synced.
  */
 export function editTableCellText(
   slide: Slide,
@@ -1553,10 +1447,8 @@ export function editTableCellText(
 }
 
 /**
- * Table style editing (surgical patch of a:tblPr + a:tcPr):
- * apply a preset style or change firstRow/bandRow/shading/borders without touching
- * cell text. anchor.originalXml is patched directly; structureDirty=true triggers
- * the save rebuild.
+ * Table style editing (surgical patch of a:tblPr + a:tcPr): apply a preset style or change
+ * firstRow/bandRow/shading/borders without touching cell text.
  */
 export function editTableStyle(slide: Slide, elementId: string, edit: TableStyleEdit): boolean {
   const el = slide.elements.find((e) => e.id === elementId)
@@ -1567,9 +1459,8 @@ export function editTableStyle(slide: Slide, elementId: string, edit: TableStyle
 }
 
 /**
- * Ensure ppt/tableStyles.xml contains the given custom style (injected the first
- * time a preset is applied). Creates the part when missing, adding the
- * [Content_Types].xml Override and presentation rels.
+ * Ensure ppt/tableStyles.xml contains the given custom style (injected the first time a preset is
+ * applied).
  */
 export function ensureTableStylePart(
   opened: OpenedPptx,
@@ -1610,10 +1501,9 @@ export function ensureTableStylePart(
 }
 
 /**
- * Chart editing (charts created by this app, rebuilding the chart part):
- * find the element's chart part path (via slide rels), rebuild the XML with the
- * new data/type/colors, and write it back to the archive. structureDirty=true
- * triggers a reparse.
+ * Chart editing (charts created by this app, rebuilding the chart part): find the element's chart
+ * part path (via slide rels), rebuild the XML with the new data/type/colors, and write it back to
+ * the archive.
  */
 export function editChartElement(
   opened: OpenedPptx,
@@ -1761,11 +1651,10 @@ export function editChartElement(
 }
 
 /**
- * Mark a chart not created by this app as editable (cNvPr descr="aislides-chart"):
- * only tags it without rewriting the chart part (the conversion itself is
- * lossless); subsequent edits go through editChartElement's rebuild template, and
- * fine-grained formatting beyond the parsed model (number formats/per-point
- * styles etc.) is dropped at that point.
+ * Mark a chart not created by this app as editable (cNvPr descr="aislides-chart"): only tags it
+ * without rewriting the chart part (the conversion itself is lossless); subsequent edits go through
+ * editChartElement's rebuild template, and fine-grained formatting beyond the parsed model (number
+ * formats/per-point styles etc.) is dropped at that point.
  */
 export function markChartEditable(slide: Slide, elementId: string): boolean {
   const el = slide.elements.find((e) => e.id === elementId)
@@ -1837,9 +1726,7 @@ export function getChartElementData(
   }
 }
 
-/**
- * Elements without text (pictures/charts etc.) return false.
- */
+/** Elements without text (pictures/charts etc.) return false. */
 export interface ElementFontPatch {
   fontFamily?: string
   fontSizePt?: number
@@ -1929,10 +1816,8 @@ export interface ReplaceOptions {
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /**
- * Deck-wide replace (matches within a run; cross-run matches are not handled —
- * consistent with byte-faithful run-structure patches). Covers text/shape, table
- * cells, and direct group children; dynamic field runs are skipped.
- * Returns the replacement count; elements on changed slides are flagged dirty.
+ * Deck-wide replace (matches within a run; cross-run matches are not handled — consistent with
+ * byte-faithful run-structure patches).
  */
 export function replaceAllInDeck(
   deck: SlideDeck,
@@ -2153,10 +2038,9 @@ function mergePPrDirty(el: SlideElement, d: PPrDirty): void {
 }
 
 /**
- * Change paragraph formatting directly on a selected element (bullet/line
- * spacing/paragraph spacing/alignment), applied to all of its paragraphs
- * (text/shape/table; same as clicking bullets with a shape selected in PowerPoint).
- * paraIndices restricts the patch to those paragraphs (editing-mode selection).
+ * Change paragraph formatting directly on a selected element (bullet/line spacing/paragraph
+ * spacing/alignment), applied to all of its paragraphs (text/shape/table; same as clicking bullets
+ * with a shape selected in PowerPoint).
  */
 export function setElementParagraphFormat(
   slide: Slide,
@@ -2261,12 +2145,9 @@ function bumpFrameExt(xml: string, attr: 'cx' | 'cy', delta: number): string {
 }
 
 /**
- * Table row/column insert/delete (XML surgery + materialize/reparse):
- * - Inserted rows/columns clone the reference row/column's formatting with text
- *   cleared; the table frame grows/shrinks with the total row height/column width.
- * - Deleting is refused when only 1 row/column remains; tables with merged cells
- *   are always refused.
- * After reparse element ids change; the new table id is found back by element position.
+ * Table row/column insert/delete (XML surgery + materialize/reparse): - Inserted rows/columns clone
+ * the reference row/column's formatting with text cleared; the table frame grows/shrinks with the
+ * total row height/column width.
  */
 export function editTableStructure(
   opened: OpenedPptx,
@@ -2387,12 +2268,7 @@ function tcParagraphsXml(tcXml: string): string {
   return paras.filter((p) => /<a:t>(?=[^<]*\S)[^<]*<\/a:t>/.test(p)).join('')
 }
 
-/**
- * Merge/split cells (XML surgery + materialize/reparse). v1 constraints:
- * merge-right requires anchor rowSpan=1 and a plain right neighbor; merge-down
- * requires anchor gridSpan=1 and a plain neighbor below (an already-merged anchor
- * can keep extending). The absorbed cell's text folds into the anchor.
- */
+/** Merge/split cells (XML surgery + materialize/reparse). */
 export function mergeTableCells(
   opened: OpenedPptx,
   slideIndex: number,
@@ -2574,10 +2450,8 @@ function scaleToSum(values: number[], target: number): number[] {
 }
 
 /**
- * Resize a table by proportionally redistributing <a:gridCol w> and <a:tr h>
- * (PowerPoint's behavior). Without this, setting the frame's a:ext leaves the
- * internal grid at its old size, so other software renders the old dimensions
- *. The frame ext is synced to the redistributed sums.
+ * Resize a table by proportionally redistributing <a:gridCol w> and <a:tr h> (PowerPoint's
+ * behavior).
  */
 export function resizeTable(slide: Slide, elementId: string, cx: number, cy: number): boolean {
   const el = slide.elements.find((e) => e.id === elementId)
@@ -2712,10 +2586,9 @@ function relTargetFromSlide(absTarget: string): string {
 }
 
 /**
- * Paste: rels surgery (reuse the rId when the target slide already has a
- * relationship with the same type+target, otherwise create one pointing at the
- * same part — media bytes are not copied), renumber cNvPr ids, offset the whole
- * thing, append, and reparse.
+ * Paste: rels surgery (reuse the rId when the target slide already has a relationship with the same
+ * type+target, otherwise create one pointing at the same part — media bytes are not copied),
+ * renumber cNvPr ids, offset the whole thing, append, and reparse.
  */
 export function pasteElements(
   opened: OpenedPptx,
@@ -2817,9 +2690,8 @@ export function getSlideHidden(slide: Slide): boolean {
 }
 
 /**
- * Fetch a slide's patch-rebuilt result directly (Phase 1: with no dirty elements
- * it should equal originalXml). Lets tests verify the scan's
- * prefix/elements/suffix concatenation is lossless.
+ * Fetch a slide's patch-rebuilt result directly (Phase 1: with no dirty elements it should equal
+ * originalXml).
  */
 export function reassembleSlideXml(slide: Slide): string {
   const parts: string[] = [slide.bodyPrefix]
@@ -2833,16 +2705,7 @@ export function reassembleSlideXml(slide: Slide): string {
 
 // ── Element group / ungroup ───────────────────────────────────────────────
 
-/**
- * Group multiple editable elements (text/shape/picture) into one p:grpSp.
- *
- * - Removes the selected elements from slide.elements, builds the p:grpSp XML and appends at the slide end
- * - Goes through the appendRawElements → materialize path (structureDirty=true, rebuilt on save)
- * - Only accepts text/shape/picture; passthrough/table/chart/group are refused outright
- * - Requires at least 2 elements
- *
- * Returns: { slide: fresh Slide, groupId: new group element id } or null (failure)
- */
+/** Group multiple editable elements (text/shape/picture) into one p:grpSp. */
 export function groupElements(
   opened: OpenedPptx,
   slideIndex: number,
@@ -2879,23 +2742,7 @@ export function groupElements(
   return { slide: result.slide, groupId: result.elementIds[result.elementIds.length - 1]! }
 }
 
-/**
- * Ungroup: lift the group's children to the slide top level.
- *
- * Coordinate conversion rules:
- * - If childOffset defines a child coordinate system (chOff/chExt), child
- *   coordinates are based on it.
- * - This implementation sets chOff=off, chExt=ext (1:1 mapping) in buildGrpSpXml,
- *   so child coordinates are directly slide coordinates; groups from old files
- *   get the generic conversion too.
- * - Conversion: slideX = childX - chOff.x + group.off.x (plus * ext/chExt when scaled)
- *
- * Old-file groups pass their bytes through wholesale; after ungrouping they take
- * the rebuild path (structureDirty=true). Passthrough children (charts etc.)
- * keep their originalXml slices.
- *
- * Returns a fresh Slide or null.
- */
+/** Ungroup: lift the group's children to the slide top level. */
 export function ungroupElement(
   opened: OpenedPptx,
   slideIndex: number,
@@ -2960,12 +2807,7 @@ export function ungroupElement(
   return result?.slide ?? null
 }
 
-/**
- * Replace the xfrm coordinates in an XML slice with new values directly (a:xfrm
- * or p:xfrm). Only changes <a:off>/<a:ext>, leaving rot/flip alone.
- * Conservative strategy: find the first xfrm block and replace off/ext inside it;
- * do nothing if none is found.
- */
+/** Replace the xfrm coordinates in an XML slice with new values directly (a:xfrm or p:xfrm). */
 function patchElementXfrmDirect(
   xml: string,
   x: number,
@@ -2996,10 +2838,7 @@ function patchElementXfrmDirect(
 
 // ── In-group editing (patching group children; no ungrouping) ────────────
 //
-// Groups save via whole-originalXml passthrough; children have no independent
-// byte anchors. In-group editing applies surgical patches to child slices inside
-// originalXml, with structureDirty=true triggering the save rebuild.
-// Slices match model children by <p:cNvPr id> (nvId) (document order ≠ children array order).
+// Groups save via whole-originalXml passthrough; children have no independent byte anchors.
 
 /** End position of the <tag …> element at start (incl. closing tag; correct for self-closing and same-name nesting). */
 function elementEnd(xml: string, start: number, tag: string): number {

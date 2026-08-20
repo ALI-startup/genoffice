@@ -36,12 +36,8 @@ const clearCellSchema = z.object({
   address: cellAddressSchema,
 })
 
-// String values starting with "=" are treated as formulas, matching what
-// typing the same text into the cell editor would do.
-// `start` (top-left target cell) is canonical; `range` is also accepted
-// because every other range-shaped op uses that field name and models keep
-// reaching for it — when given, its size must match the values grid, which
-// doubles as a misaligned-write check (validated in expandToPrimitiveOps).
+// String values starting with "=" are treated as formulas, matching what typing the same text into
+// the cell editor would do.
 const setRangeSchema = z.object({
   op: z.literal('set_range'),
   sheetId: z.string().min(1),
@@ -97,10 +93,8 @@ const deleteSheetSchema = z.object({
   sheetId: z.string().min(1),
 })
 
-// Edits an EXISTING chart (charts are listed in get_workbook_context):
-// file charts by chart part path, session-added and demo charts by their
-// visual id. At least one property required — checked at expansion because
-// discriminated-union members cannot carry refinements.
+// Edits an EXISTING chart (charts are listed in get_workbook_context): file charts by chart part
+// path, session-added and demo charts by their visual id.
 const editChartSchema = z.object({
   op: z.literal('edit_chart'),
   chartPath: z
@@ -140,9 +134,7 @@ const editChartSchema = z.object({
     .optional(),
 })
 
-// Creates a NEW chart from a data range (imported workbooks only). The range
-// may include a header row and a leading category column — both are detected
-// from the data, matching the ribbon's Insert Chart.
+// Creates a NEW chart from a data range (imported workbooks only).
 const addChartSchema = z.object({
   op: z.literal('add_chart'),
   sheetId: z.string().min(1),
@@ -183,9 +175,8 @@ const addShapeSchema = z.object({
   text: z.string().max(1000).optional(),
 })
 
-// Edits a shape/text box ADDED THIS SESSION (ids listed by
-// read_sheet_features); file-original drawings stay read-only. At least one
-// property required — checked at expansion.
+// Edits a shape/text box ADDED THIS SESSION (ids listed by read_sheet_features); file-original
+// drawings stay read-only.
 const editShapeSchema = z.object({
   op: z.literal('edit_shape'),
   visualId: z.string().min(1).max(128),
@@ -204,9 +195,7 @@ const addImageSchema = z.object({
   anchorCell: cellAddressSchema,
 })
 
-// Creates a real Excel table (ListObject) over a data range (imported
-// workbooks only). The range's first row must hold the column headers —
-// non-empty and unique; they become the table's column names in the file.
+// Creates a real Excel table (ListObject) over a data range (imported workbooks only).
 const addTableSchema = z.object({
   op: z.literal('add_table'),
   sheetId: z.string().min(1),
@@ -225,10 +214,7 @@ const addTableSchema = z.object({
   bandedRows: z.boolean().optional(),
 })
 
-// Inserts blank rows into a session-created table. The table must have been
-// created with add_table in the current session (fail-closed: file tables not
-// supported yet — save and reopen first). Rows are inserted into the data area
-// (not the header row). row is 1-based within the data area; omit to append.
+// Inserts blank rows into a session-created table.
 const addTableRowSchema = z.object({
   op: z.literal('add_table_row'),
   sheetId: z.string().min(1),
@@ -239,9 +225,7 @@ const addTableRowSchema = z.object({
   count: z.number().int().min(1).max(1000).default(1),
 })
 
-// Inserts blank columns into a session-created table. Column is 1-based
-// within the table area; omit to append. columnName must be non-blank and
-// unique within the table.
+// Inserts blank columns into a session-created table.
 const addTableColumnSchema = z.object({
   op: z.literal('add_table_column'),
   sheetId: z.string().min(1),
@@ -253,7 +237,6 @@ const addTableColumnSchema = z.object({
 })
 
 // Deletes rows from the data area of a session-created table.
-// row is 1-based within the data area; table must retain ≥1 data row.
 const deleteTableRowSchema = z.object({
   op: z.literal('delete_table_row'),
   sheetId: z.string().min(1),
@@ -273,11 +256,9 @@ const deleteTableColumnSchema = z.object({
   count: z.number().int().min(1).max(100).default(1),
 })
 
-// Creates a real PivotTable (imported workbooks only): the apply bakes the
-// aggregated grid into the target cells, and the save writes native pivot
-// parts with refreshOnLoad so Excel turns it into a live pivot on open.
-// Constraints: 1–8 row dimension levels; 0–8 column dimension levels; with
-// column field(s) exactly one value entry; up to 4 page (report filter) fields.
+// Creates a real PivotTable (imported workbooks only): the apply bakes the aggregated grid into the
+// target cells, and the save writes native pivot parts with refreshOnLoad so Excel turns it into a
+// live pivot on open.
 const addPivotSchema = z.object({
   op: z.literal('add_pivot'),
   sheetId: z.string().min(1),
@@ -287,29 +268,18 @@ const addPivotSchema = z.object({
   targetCell: cellAddressSchema,
   /** sheet for the output; default: the source sheet */
   targetSheetId: z.string().min(1).optional(),
-  /**
-   * Row dimension field(s) — 1 to 8 headers from the source, outer levels first.
-   * For a single level you may pass a bare string or a one-element array.
-   * With multiple fields the pivot groups hierarchically and subtotal rows
-   * are automatically inserted for every non-leaf level.
-   */
+  /** Row dimension field(s) — 1 to 8 headers from the source, outer levels first. */
   rowFields: z.union([
     z.string().min(1).max(255),
     z.array(z.string().min(1).max(255)).min(1).max(8),
   ]),
-  /**
-   * Column dimension field(s) to spread across columns — 1 to 8 headers,
-   * Outer levels first. Single level may be a bare string; multiple levels take
-   * an array, expanding members as a cartesian product in column-field order,
-   * with a subtotal column appended after each non-leaf member.
-   */
+  /** Column dimension field(s) to spread across columns — 1 to 8 headers, Outer levels first. */
   columnField: z
     .union([z.string().min(1).max(255), z.array(z.string().min(1).max(255)).min(1).max(8)])
     .optional(),
   /**
-   * Report filter fields (pageFields) — up to 4 source headers that are
-   * placed above the pivot as filter drop-downs in the saved Excel file.
-   * The baked grid omits the filter row; Excel/LibreOffice shows them on open.
+   * Report filter fields (pageFields) — up to 4 source headers that are placed above the pivot as
+   * filter drop-downs in the saved Excel file.
    */
   pageFields: z.array(z.string().min(1).max(255)).max(4).optional(),
   values: z
@@ -326,11 +296,9 @@ const addPivotSchema = z.object({
          */
         showDataAs: z.enum(['percentOfTotal', 'percentOfRow', 'percentOfCol']).optional(),
         /**
-         * Calculated field: when formula is present, field is the new data field's
-         * name (must not clash with source headers); the formula does basic
-         * arithmetic over other source field names (e.g. "Revenue-Cost"; wrap names
-         * containing spaces in single quotes); each group sums the referenced fields
-         * first, then evaluates the formula, and agg must be sum.
+         * Calculated field: when formula is present, field is the new data field's name (must not
+         * clash with source headers); the formula does basic arithmetic over other source field
+         * names (e.g.
          */
         formula: z.string().min(1).max(1_024).optional(),
       }),
@@ -338,10 +306,9 @@ const addPivotSchema = z.object({
     .min(1)
     .max(8),
   /**
-   * Dimension-field grouping: date groups by year/quarter/month (quarter/month
-   * merge across years); range groups into fixed-step numeric intervals (bucket
-   * boundaries rangeStart + k*rangeStep, default start 0). field must be a
-   * dimension field from rowFields/columnField.
+   * Dimension-field grouping: date groups by year/quarter/month (quarter/month merge across years);
+   * range groups into fixed-step numeric intervals (bucket boundaries rangeStart + k*rangeStep,
+   * default start 0).
    */
   groupings: z
     .array(
@@ -363,10 +330,8 @@ const addPivotSchema = z.object({
     .optional(),
   /**
    * Value/label filters: label filters row/column field members by label
-   * (equals/contains/begins-with, case-insensitive); value filters the field's
-   * members by one values entry's aggregate (top: largest count / greaterThan:
-   * > from / between: from ≤ x ≤ to). field must be a dimension field from
-   * rowFields/columnField, at most one filter per field.
+   * (equals/contains/begins-with, case-insensitive); value filters the field's members by one
+   * values entry's aggregate (top: largest count / greaterThan: > from / between: from ≤ x ≤ to).
    */
   filters: z
     .array(
@@ -415,8 +380,7 @@ const setColsHiddenSchema = z.object({
   hidden: z.boolean(),
 })
 
-// target: full URL (https://…) or internal reference like "Sheet1!A1";
-// null removes the link.
+// target: full URL (https://…) or internal reference like "Sheet1!A1"; null removes the link.
 const setHyperlinkSchema = z.object({
   op: z.literal('set_hyperlink'),
   sheetId: z.string().min(1),
@@ -430,8 +394,7 @@ const protectSheetSchema = z.object({
   protected: z.boolean(),
 })
 
-// Creates (or replaces) the sheet's auto-filter over the range. Filter
-// criteria are then chosen by the user through the column dropdowns.
+// Creates (or replaces) the sheet's auto-filter over the range.
 const setFilterSchema = z.object({
   op: z.literal('set_filter'),
   sheetId: z.string().min(1),
@@ -571,9 +534,7 @@ const setDataValidationSchema = z.object({
   validation: dvRuleSchema.nullable(),
 })
 
-// Print/page-layout settings; saved into the file, mirroring the Page Layout
-// ribbon. At least one setting required (checked at expansion). scale and
-// fitToWidth/fitToHeight are mutually exclusive.
+// Print/page-layout settings; saved into the file, mirroring the Page Layout ribbon.
 const setPageSetupSchema = z.object({
   op: z.literal('set_page_setup'),
   sheetId: z.string().min(1),
@@ -736,9 +697,7 @@ const renameSheetSchema = z.object({
   name: sheetNameSchema,
 })
 
-// Deletes a floating visual (chart/shape/image). Charts accept the chart
-// part path or the visual id; shapes/images use the visual id (both listed
-// in get_workbook_context / read_sheet_features).
+// Deletes a floating visual (chart/shape/image).
 const deleteVisualSchema = z.object({
   op: z.literal('delete_visual'),
   visualId: z.string().min(1).max(300),
@@ -763,9 +722,7 @@ const addSparklineSchema = z.object({
   color: hexColorSchema.optional(),
 })
 
-// Literal find & replace over TEXT values in a range (formulas and numbers
-// are untouched). Expands to plain set_cell edits, so preview and undo
-// behave like typing. Case-insensitive by default.
+// Literal find & replace over TEXT values in a range (formulas and numbers are untouched).
 const findReplaceSchema = z.object({
   op: z.literal('find_replace'),
   sheetId: z.string().min(1),
@@ -963,9 +920,8 @@ const LAYOUT_OPS = new Set([
   'delete_table',
   'add_sparkline',
 ])
-// Content addresses cells, so it must not ride in the same batch as
-// row/column shifts that would move those addresses. Layout ops keep their
-// row/column coordinates too, so they count the same way.
+// Content addresses cells, so it must not ride in the same batch as row/column shifts that would
+// move those addresses.
 const CELL_CONTENT_OPS = new Set([
   'set_cell',
   'set_formula',
@@ -998,9 +954,8 @@ export const workbookCommandBatchSchema = z
   })
   .refine(
     (batch) => {
-      // Structural ops shift addresses, so mixing them with cell edits in one
-      // batch would make previewed before/after states unverifiable. Propose
-      // structure first, apply, then propose content.
+      // Structural ops shift addresses, so mixing them with cell edits in one batch would make
+      // previewed before/after states unverifiable.
       const hasStructural = batch.operations.some((op) => STRUCTURAL_OPS.has(op.op))
       const hasCellContent = batch.operations.some((op) => CELL_CONTENT_OPS.has(op.op))
       return !(hasStructural && hasCellContent)
@@ -1226,8 +1181,7 @@ export function expandToPrimitiveOps(
       if (operation.values.some((value) => value.formula !== undefined && value.agg !== 'sum')) {
         throw new Error('A calculated field must use agg "sum".')
       }
-      // Grouping may only target row/column dimension fields, with at most one
-      // rule per field.
+      // Grouping may only target row/column dimension fields, with at most one rule per field.
       const axisFields = [...rowFieldsArray, ...columnFieldsArray]
       const groupedFields = (operation.groupings ?? []).map((grouping) => grouping.field)
       if (groupedFields.some((field) => !axisFields.includes(field))) {
@@ -1236,9 +1190,8 @@ export function expandToPrimitiveOps(
       if (new Set(groupedFields).size !== groupedFields.length) {
         throw new Error('A field can only have one grouping rule.')
       }
-      // Filters may only target row/column dimension fields, at most one per
-      // field; value-filter params must be complete for the op, and the
-      // referenced values entry must exist.
+      // Filters may only target row/column dimension fields, at most one per field; value-filter
+      // params must be complete for the op, and the referenced values entry must exist.
       const filteredFields = (operation.filters ?? []).map((filter) => filter.field)
       if (filteredFields.some((field) => !axisFields.includes(field))) {
         throw new Error('A filter field must be a row or column dimension field.')

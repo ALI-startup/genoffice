@@ -1,20 +1,4 @@
-/**
- * The engine must run in a browser.
- *
- * Not an abstract property: apps/slides currently parses, edits and saves decks in
- * the Electron main process, and moving that work into the renderer is what a web
- * build of slides requires. Nothing in the type system says whether the engine can
- * live there — `Buffer` is a global that simply resolves in Node, and a bundler
- * happily emits a reference to it that fails only when a user opens a deck.
- *
- * So this test removes everything a browser does not have and runs a real deck
- * through the whole pipeline: every `node:*` module resolves to a throwing shim (what
- * a bundler's browser field does), and `Buffer` is taken off the global object. If a
- * deck still opens, gets edited and saves, the engine does not need Node.
- *
- * `./node` — the streaming save — is deliberately exempt and is the one module that
- * may name `node:fs`. It exists so that this file can be strict about the rest.
- */
+/** The engine must run in a browser. */
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 /** Stand-in for a module a browser build resolves to a throwing shim. */
@@ -53,13 +37,7 @@ vi.mock('node:stream/promises', () => shim('node:stream/promises'))
 vi.mock('child_process', () => shim('child_process'))
 vi.mock('node:child_process', () => shim('node:child_process'))
 
-/**
- * `Buffer` off the global object for the duration.
- *
- * The sharpest edge of the three, and the reason it is worth the awkwardness: a
- * `Buffer.from(xml, 'utf8')` left anywhere in the package would pass every other
- * test in this directory and then throw `Buffer is not defined` in a browser tab.
- */
+/** `Buffer` off the global object for the duration. */
 const nodeBuffer = globalThis.Buffer
 beforeAll(() => {
   Reflect.deleteProperty(globalThis, 'Buffer')

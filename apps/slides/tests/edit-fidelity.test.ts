@@ -1,9 +1,6 @@
 /**
  * Text-edit save fidelity regression: the full chain of layout -> editor DOM -> extraction ->
- * main-process mapping -> XML patch. Watches three classes of historical defects: run
- * fragmentation (CJK per-character/Latin per-word commits), run field whitelist truncation
- * (letterSpacing/hyperlink/field etc. lost after one edit), and paragraph attributes shifting
- * by index (wrong inheritance when splitting paragraphs).
+ * main-process mapping -> XML patch.
  */
 import { describe, it, expect } from 'vitest'
 import { layoutText, makeViewport, HeuristicMetrics } from '@samugen/pptx-render'

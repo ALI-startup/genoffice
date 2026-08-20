@@ -1,15 +1,4 @@
-/**
- * Byte-level scanner for slideN.xml.
- *
- * Same idea as docx-engine.scanBody: never parse->serialize (that silently alters
- * untouched bytes: attribute order, self-closing form, entity encoding). Only locate
- * the exact character range of each top-level shape inside <p:spTree>
- * (p:sp / p:pic / p:graphicFrame / p:grpSp / p:cxnSp); on save, splice in new
- * fragments and copy unmodified shapes verbatim from the original substring.
- *
- * The leading <p:nvGrpSpPr> / <p:grpSpPr> inside spTree are not shapes; they go
- * into bodyPrefix.
- */
+/** Byte-level scanner for slideN.xml. */
 
 export interface SpElement {
   /** tag: p:sp / p:pic / p:graphicFrame / p:grpSp / p:cxnSp */

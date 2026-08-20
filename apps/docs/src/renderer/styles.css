@@ -308,11 +308,10 @@ button {
      enters a table never pushes the editing area below. A tab that outgrows this must
      compact its own content instead. */
   height: 80px;
-  /* Groups never shrink below content, so a narrow window overflows the row:
-     scroll it inside the ribbon instead of stretching the document (matching
-     the sheets/slides ribbons). Dropdown panels are NOT clipped by this —
-     they escape the scroll container via anchor positioning (see
-     .rb-split-wrap). */
+  /*
+   * Groups never shrink below content, so a narrow window overflows the row: scroll it inside the
+   * ribbon instead of stretching the document (matching the sheets/slides ribbons).
+   */
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
@@ -381,10 +380,7 @@ button {
   color: #232425;
 }
 
-/* hover/open paint only the icon row — the label below
- * stays outside the gray. The box spans the whole button width (align-self
- * stretch + horizontal bleed), not just the icon content. Negative margins
- * cancel the bleed so button layout/alignment is unchanged. */
+/* hover/open paint only the icon row — the label below stays outside the gray. */
 .rb-big .rb-big-icon {
   align-self: stretch;
   border-radius: 4px;
@@ -628,12 +624,10 @@ button {
   align-items: center;
 }
 
-/* Anchor for the dropdown panels (color-palette / layout-menu / …), which are
-   position: fixed so they escape the ribbon-body scroll clip while tracking
-   their trigger through ribbon scrolling. Every wrap shares the name, so the
-   scope is essential: without it a fixed-position panel (laid out after all
-   in-flow content) would resolve to the LAST wrap in the document instead of
-   its own parent. */
+/*
+ * Anchor for the dropdown panels (color-palette / layout-menu / …), which are position: fixed so
+ * they escape the ribbon-body scroll clip while tracking their trigger through ribbon scrolling.
+ */
 .rb-split-wrap,
 .rb-color-wrap {
   anchor-name: --rb-drop-wrap;
@@ -1736,8 +1730,7 @@ th.cell-rev-del {
   tab-size: 0;
 }
 
-/* underlined tab run: browsers skip text-decoration over a tab advance, so
-   the blank (e.g. signature "By: ____") gets an explicit line */
+/* underlined tab run: browsers skip text-decoration over a tab advance, so the blank (e.g. */
 .doc-tab-underline {
   border-bottom: 1px solid currentColor;
 }
@@ -2591,9 +2584,7 @@ th.cell-rev-del {
   text-indent: 0;
 }
 
-/* In-table gap at a row boundary. A real spanning cell isolates collapsed
-   borders/backgrounds from the page gutter; the inner fill paints paper /
-   canvas / paper bands without inheriting table-cell decoration. */
+/* In-table gap at a row boundary. */
 .page-gap-table {
   display: table-row;
 }
@@ -2884,13 +2875,11 @@ th.cell-rev-del {
   cursor: pointer;
 }
 
-/* flat list items (1:1 with w:p anchors)
-   geometry comes from w:ind (--li-left text indent / --li-hang hanging marker-area width,
-   emitted by extensions.ts); defaults replicate the old fixed per-level indents. The marker
-   is an inline hanging box: it fills the hanging area, and when too wide it pushes the body
-   text aside instead of overlapping it (Word behavior).
-   Logical (inline-start) geometry so RTL list items (direction:rtl via w:bidi)
-   mirror automatically: indent and marker land on the right side. */
+/*
+ * flat list items (1:1 with w:p anchors) geometry comes from w:ind (--li-left text indent /
+ * --li-hang hanging marker-area width, emitted by extensions.ts); defaults replicate the old fixed
+ * per-level indents.
+ */
 .doc-li {
   position: relative;
   padding-inline-start: var(--li-left, 0.55in);
@@ -3236,9 +3225,7 @@ th.cell-rev-del {
   margin: 0;
 }
 
-/* Word gives empty w:p elements no line box; only their explicit w:spacing
-   contributes height. Keeping browser-default <br> line boxes made fixed
-   textboxes clip valid content far above their actual bottom edge. */
+/* Word gives empty w:p elements no line box; only their explicit w:spacing contributes height. */
 .doc-textbox-editor p:has(> br.ProseMirror-trailingBreak:only-child),
 .doc-textbox-para-empty {
   height: 0;
@@ -3900,9 +3887,7 @@ body.docs-crop-active
 
 /* ================= AI panel (Copilot-style pane) ================= */
 
-/* Design tokens — AI panel chrome only.
- * Canonical names/values from colors_and_type.css; the editor chrome
- * around the panel keeps its own editor theme variables. */
+/* Design tokens — AI panel chrome only. */
 :root {
   --gs-font-sans:
     'Arial', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
@@ -5554,8 +5539,7 @@ body.docs-crop-active
     margin: 0 !important;
   }
 
-  /* Direct PDF uses the same section page box as the editor. Preview export
-     already supplies one fixed-size .pv-page per sheet and keeps its clone fluid. */
+  /* Direct PDF uses the same section page box as the editor. */
   .app:not(:has(.pagination-preview)) .doc-page {
     min-height: var(--page-h, 1056px) !important;
   }

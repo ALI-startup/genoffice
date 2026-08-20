@@ -102,10 +102,7 @@ function layoutNameOf(archive: PackageArchive, layoutPath: string): string | und
   return xml ? /<p:cSld[^>]*\sname="([^"]*)"/.exec(xml)?.[1] : undefined
 }
 
-/**
- * Snapshot a slide and its dependencies. `slideXml` is passed in so callers can
- * hand over the patched (unsaved-edits-included) XML.
- */
+/** Snapshot a slide and its dependencies. */
 export function collectSlideBundle(
   archive: PackageArchive,
   slidePath: string,
@@ -207,14 +204,12 @@ export function listLayouts(archive: PackageArchive): { path: string; name?: str
 }
 
 /**
- * Writes a bundle's dependency parts into `archive` under fresh names and returns
- * the slide's .rels XML, with every rId preserved and the layout rel pointed at
- * `layoutPath`. The caller writes the slide part itself.
+ * Writes a bundle's dependency parts into `archive` under fresh names and returns the slide's .rels
+ * XML, with every rId preserved and the layout rel pointed at `layoutPath`.
  */
 /**
- * Writes a bag of bundled parts into `archive` under non-conflicting names,
- * rewriting each part's own rels to wherever its dependencies landed. Returns
- * the source→destination path map.
+ * Writes a bag of bundled parts into `archive` under non-conflicting names, rewriting each part's
+ * own rels to wherever its dependencies landed.
  */
 function writeParts(
   archive: PackageArchive,
@@ -317,9 +312,7 @@ function partText(parts: Readonly<Record<string, string>>, path: string): string
 }
 
 /**
- * A target layout whose XML, owning master and theme are byte-identical to the
- * bundled chain — i.e. this chain was already imported (or the decks share the
- * template), so "keep source formatting" can reuse it instead of adding a master.
+ * A target layout whose XML, owning master and theme are byte-identical to the bundled chain — i.e.
  */
 function findIdenticalLayout(
   archive: PackageArchive,
@@ -380,10 +373,8 @@ function registerMaster(archive: PackageArchive, masterPath: string): boolean {
 }
 
 /**
- * "Keep source formatting": land the bundled layout→master→theme chain in the
- * target (registering the master) and return the layout path the pasted slide
- * should point at. Returns null when the bundle has no chain or the target's
- * presentation.xml can't take another master — callers fall back to chooseLayout.
+ * "Keep source formatting": land the bundled layout→master→theme chain in the target (registering
+ * the master) and return the layout path the pasted slide should point at.
  */
 export function importSourceLayout(archive: PackageArchive, bundle: SlideBundle): string | null {
   const chain = bundle.chain

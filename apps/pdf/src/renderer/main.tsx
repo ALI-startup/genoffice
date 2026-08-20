@@ -6,10 +6,7 @@ import { LocaleProvider } from './i18n/locale'
 import { pdfPlatform, setPdfPlatform } from './platform'
 import './styles.css'
 
-// The single bootstrap, shared by both hosts. `@host` is a build-time alias:
-// the Vite config points it at host-web.ts,
-// so this file never asks which host it is running on and neither bundle
-// contains the other's code.
+// The single bootstrap, shared by both hosts.
 void (async () => {
   // Install the host implementation before anything renders: every other module
   // reaches the host through the slot, and the slot throws until this runs.

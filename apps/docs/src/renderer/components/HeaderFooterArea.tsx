@@ -32,10 +32,9 @@ function parasOf(value: HfValue): HfParagraph[] {
 }
 
 /**
- * Header / footer zone on the page: renders the rich paragraphs,
- * double-click enters in-place editing (plain text per paragraph; each line
- * keeps its paragraph format and first-run styling), blur commits. The '#'
- * marker stands for the automatic page number.
+ * Header / footer zone on the page: renders the rich paragraphs, double-click enters in-place
+ * editing (plain text per paragraph; each line keeps its paragraph format and first-run styling),
+ * blur commits.
  */
 export function HeaderFooterArea({
   kind,

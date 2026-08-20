@@ -603,9 +603,8 @@ export async function planCellEditsToXlsx(
   ) {
     throw new Error('There are no edits to save.')
   }
-  // A pending pivot pins final coordinates for its source and output; shifts
-  // on either sheet, and sheet renames (worksheetSource@sheet), would desync
-  // the recorded ranges. Fail closed, mirroring the table-add guard.
+  // A pending pivot pins final coordinates for its source and output; shifts on either sheet, and
+  // sheet renames (worksheetSource@sheet), would desync the recorded ranges.
   if (pivotAdditions.length > 0) {
     if (sheetPlan !== undefined) {
       throw new Error(
@@ -623,9 +622,8 @@ export async function planCellEditsToXlsx(
       )
     }
   }
-  // A pending table add pins final coordinates; row/column shifts on the same
-  // sheet would desync the recorded range. The renderer saves before allowing
-  // further structural work, so this is a defensive fail-closed check.
+  // A pending table add pins final coordinates; row/column shifts on the same sheet would desync
+  // the recorded range.
   if (tableAdditions.length > 0) {
     const tableSheets = new Set(tableAdditions.map((table) => table.sheetName))
     if (structuralOps.some((sheet) => sheet.ops.length > 0 && tableSheets.has(sheet.sheetName))) {
@@ -635,9 +633,8 @@ export async function planCellEditsToXlsx(
       )
     }
   }
-  // The defined-names snapshot carries model coordinates and file sheet
-  // indices; replaying structural or sheet operations underneath it would
-  // desync both. The renderer blocks the combination too.
+  // The defined-names snapshot carries model coordinates and file sheet indices; replaying
+  // structural or sheet operations underneath it would desync both.
   if (
     definedNamesState !== null &&
     (structuralOps.some((sheet) => sheet.ops.length > 0) || sheetPlan !== undefined)
@@ -650,9 +647,8 @@ export async function planCellEditsToXlsx(
   const pkg = new PackageEditor(source)
   const touchedEntries = new Set<string>()
 
-  // Added sheets get their parts up front so cell edits, structural ops, and
-  // the cross-sheet scan below all see them. Duplicates are seeded from the
-  // source sheet's part; their journaled edits replay on top like any other.
+  // Added sheets get their parts up front so cell edits, structural ops, and the cross-sheet scan
+  // below all see them.
   const additions =
     sheetPlan === undefined
       ? []
@@ -713,8 +709,7 @@ export async function planCellEditsToXlsx(
   // location refs before any cell edits are applied, so the worksheetXml
   // seen by worksheetHasContentInArea reflects the pre-edit state.
   if (pivotRefreshUpdates.length > 0) {
-    // The renderer only carries the sheet name; resolve it to a part path here
-    // before expanding.
+    // The renderer only carries the sheet name; resolve it to a part path here before expanding.
     const resolvedUpdates: PivotRefreshUpdate[] = []
     for (const update of pivotRefreshUpdates) {
       const worksheetPath =
@@ -730,9 +725,8 @@ export async function planCellEditsToXlsx(
     await applyPivotLayoutExpansions(pkg, resolvedUpdates, touchedEntries)
   }
 
-  // Structural operations replay first: journaled cell edits are already in
-  // the post-operation coordinate space. Qualified references from other
-  // sheets, defined names, and chart series shift along with the edited sheet.
+  // Structural operations replay first: journaled cell edits are already in the post-operation
+  // coordinate space.
   const workbookPath = 'xl/workbook.xml'
   const originalWorkbookXml = await pkg.readText(workbookPath)
   let workbookXml = originalWorkbookXml
@@ -824,9 +818,8 @@ export async function planCellEditsToXlsx(
     }
     worksheetXmls.set(sheetName, expandWorksheetDimensionToCells(worksheetXml))
   }
-  // Recalculated formula results: refresh each formula cell's cached
-  // <v> while leaving its <f> alone. Applied after the value edits so a cell the
-  // user turned into a literal keeps that literal.
+  // Recalculated formula results: refresh each formula cell's cached <v> while leaving its <f>
+  // alone.
   for (const sheet of formulaValues) {
     if (sheet.cells.length === 0) continue
     let worksheetXml = worksheetXmls.get(sheet.sheetName)
@@ -914,8 +907,7 @@ export async function planCellEditsToXlsx(
     touchedEntries.add(stylesPath)
   }
 
-  // Chart edits run after structural shifts so they patch the already-shifted
-  // chart XML.
+  // Chart edits run after structural shifts so they patch the already-shifted chart XML.
   for (const chartEdit of chartEdits) {
     const chartXml = await pkg.readText(chartEdit.chartPath)
     pkg.write(chartEdit.chartPath, applyChartEdit(chartXml, chartEdit))
@@ -946,9 +938,8 @@ export async function planCellEditsToXlsx(
     await applyVisualAdditions(pkg, resolved, touchedEntries)
   }
 
-  // Note snapshots replace each dirty sheet's whole comment set; they run
-  // after the worksheet flush so the legacyDrawing element lands on the
-  // final sheet XML.
+  // Note snapshots replace each dirty sheet's whole comment set; they run after the worksheet flush
+  // so the legacyDrawing element lands on the final sheet XML.
   for (const state of noteStates) {
     const worksheetPath =
       additionPaths.get(state.sheetName) ?? (await resolveWorksheetPath(pkg, state.sheetName))
@@ -999,13 +990,9 @@ export async function planCellEditsToXlsx(
     }
   }
 
-  // Any worksheet edit can invalidate the calculation chain — not just
-  // structural shifts: overwriting a formula cell with a literal leaves a
-  // calcChain entry pointing at a cell with no <f>, which Excel repairs with
-  // a scary prompt. calcChain is a pure recalculation-order cache, so
-  // drop it (with its content-type and relationship) whenever this save wrote
-  // any worksheet part and let Excel rebuild it on open. Sheet set changes
-  // are kept as an extra trigger (a removal-only save may touch no part).
+  // Any worksheet edit can invalidate the calculation chain — not just structural shifts:
+  // overwriting a formula cell with a literal leaves a calcChain entry pointing at a cell with no
+  // <f>, which Excel repairs with a scary prompt.
   const sheetSetChanged =
     sheetPlan !== undefined &&
     (sheetPlan.additions.length > 0 ||
@@ -1036,9 +1023,8 @@ export async function planCellEditsToXlsx(
     }
   }
 
-  // Sheet-level surgery runs last: every worksheet and chart part is already
-  // in its final content, so rename rewrites and removal guards see the
-  // saved state.
+  // Sheet-level surgery runs last: every worksheet and chart part is already in its final content,
+  // so rename rewrites and removal guards see the saved state.
   if (sheetPlan !== undefined) {
     workbookXml = await applySheetPlanToPackage(
       pkg,
@@ -1053,9 +1039,8 @@ export async function planCellEditsToXlsx(
     workbookXml = applyDefinedNamesState(workbookXml, definedNamesState)
   }
 
-  // Print areas / title rows are sheet-scoped _xlnm names; they apply to the
-  // final workbook.xml (post sheet-plan, post defined-names rewrite — which
-  // keeps _xlnm entries verbatim).
+  // Print areas / title rows are sheet-scoped _xlnm names; they apply to the final workbook.xml
+  // (post sheet-plan, post defined-names rewrite — which keeps _xlnm entries verbatim).
   const printAreas = pageSetupStates
     .filter((state) => state.printArea !== undefined || state.printTitles !== undefined)
     .map((state) => ({
@@ -1346,13 +1331,7 @@ export function toA1Address(row: number, column: number): string {
   return `${letters}${row + 1}`
 }
 
-/**
- * sha256 as hex, through Web Crypto rather than `node:crypto`.
- *
- * The gateway is imported by both hosts now, so it may not reach for a Node built-in — and
- * `crypto.subtle` is present in every browser and in Node since 19. Async where the old one
- * was synchronous, which cost nothing: its only caller was already async.
- */
+/** sha256 as hex, through Web Crypto rather than `node:crypto`. */
 export async function sha256(input: Uint8Array | string): Promise<string> {
   const bytes = typeof input === 'string' ? new TextEncoder().encode(input) : input
   const digest = await crypto.subtle.digest('SHA-256', bytes as unknown as BufferSource)
@@ -1548,10 +1527,8 @@ function patchCellKeepingStyle(
 }
 
 /**
- * Refresh a formula cell's cached value: replace (or insert) <v> inside the existing
- * <c>, keeping <f> and every attribute. Cells that don't exist or aren't formulas are
- * left alone — the recalc overlay only ever names formula cells, and a cell the user
- * turned into a literal must keep the literal.
+ * Refresh a formula cell's cached value: replace (or insert) <v> inside the existing <c>, keeping
+ * <f> and every attribute.
  */
 function patchFormulaCachedValue(
   worksheetXml: string,

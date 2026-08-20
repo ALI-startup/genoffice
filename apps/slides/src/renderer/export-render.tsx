@@ -1,7 +1,6 @@
 /**
- * Offscreen rendering for export — draws each RenderSlide page into an offscreen Konva Stage
- * and exports high-resolution PNGs. Reuses SlideThumb (same rendering as the main canvas and
- * thumbnails), guaranteeing the export matches what the editor shows.
+ * Offscreen rendering for export — draws each RenderSlide page into an offscreen Konva Stage and
+ * exports high-resolution PNGs.
  */
 import React from 'react'
 import { createRoot } from 'react-dom/client'
@@ -12,12 +11,7 @@ import { SlideThumb } from './SlideThumb'
 /** Pixel ratio of the exported bitmap (2x hi-res, 1280 viewport width → 2560px PNG) */
 const EXPORT_PIXEL_RATIO = 2
 
-/**
- * Render each page to PNG base64 (without the data: prefix).
- * Reuse a single offscreen root page by page, grabbing each page as it's drawn, so the whole
- * deck never sits in memory at once.
- * pixelRatio 1 is enough for AI-vision screenshots (half the tokens of the 2x export default).
- */
+/** Render each page to PNG base64 (without the data: prefix). */
 export async function renderSlidesToPngBase64(
   slides: RenderSlide[],
   images: Map<string, HTMLImageElement>,

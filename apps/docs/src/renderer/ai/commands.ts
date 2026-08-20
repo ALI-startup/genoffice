@@ -5,12 +5,9 @@ import { generateTocFieldXml, type TocEntry } from '@samugen/docx-engine'
 import { t } from '../i18n/locale'
 
 /**
- * Structured edit commands: the model emits a
- * batchUpdate-style JSON envelope and code applies it deterministically on the
- * PM doc — one transaction per envelope, so one undo reverts the whole round.
- * The docx round trip is untouched: changed nodes become dirty via the normal
- * signature comparison and regenerate on save; docxIndex anchors are never
- * modified here.
+ * Structured edit commands: the model emits a batchUpdate-style JSON envelope and code applies it
+ * deterministically on the PM doc — one transaction per envelope, so one undo reverts the whole
+ * round.
  */
 
 // ---- command types (§4) ----
@@ -93,10 +90,7 @@ export interface MoveBlocks {
   afterBlockIndex: number
 }
 
-/**
- * Paragraphs to list (name and semantics aligned with Google's createParagraphBullets).
- * BULLET*-prefixed presets = unordered, NUMBERED* = ordered; heading blocks aren't converted (counted in matched but unchanged).
- */
+/** Paragraphs to list (name and semantics aligned with Google's createParagraphBullets). */
 export interface CreateParagraphBullets {
   target: Target
   bulletPreset?: string

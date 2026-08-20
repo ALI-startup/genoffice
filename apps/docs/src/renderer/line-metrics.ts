@@ -1,27 +1,4 @@
-/**
- * F1 line-box metrics engine
- *
- * Pure functions — input (paragraph text + run font/size + available width +
- * line-height rule + docGrid grid), output (line count + per-line heights + total block height).
- *
- * Design aligned with packages/pptx-render/src/metrics.ts (dual track: precise
- * opentype / heuristic fallback). F1 runs on heuristics first with the interface
- * ready, so we can switch seamlessly to OpentypeMetrics once font files load.
- *
- * Line-breaking rules:
- *   - Latin text breaks greedily by word (breakable at whitespace)
- *   - CJK breaks per character (Unicode CJK ranges)
- *   - Mixed text splits by Unicode segments (same logic as text-layout.ts, simplified port)
- *
- * Line-height semantics (Word's three modes):
- *   - auto    = multiple spacing; single = font natural line height (ascent+descent+lineGap)
- *   - atLeast = max(font natural line height, specified value (twips))
- *   - exact   = fixed value (twips), does not grow with the font
- *
- * docGrid:
- *   - with type='lines' or 'linesAndChars', each line height rounds up to a linePitch multiple
- *   - space-before/space-after also align to the grid when a grid exists
- */
+/** F1 line-box metrics engine */
 
 import type { DocGrid } from '@samugen/docx-engine'
 
@@ -47,10 +24,7 @@ export interface FontMetricsProvider {
 
 // ─── Heuristic metrics (deterministic, unit-testable) ──────────────────────
 
-/**
- * Estimate advance by character class (as a fraction of the font size).
- * Ported directly from pptx-render/metrics.ts HeuristicMetrics.
- */
+/** Estimate advance by character class (as a fraction of the font size). */
 function charAdvanceEm(code: number): number {
   if (
     (code >= 0x3000 && code <= 0x30ff) ||
@@ -71,10 +45,9 @@ function charAdvanceEm(code: number): number {
 export class HeuristicMetrics implements FontMetricsProvider {
   metrics(style: RunStyle): FontMetrics {
     const s = style.fontSizePx
-    // Windows metric line heights ((usWinAscent+usWinDescent) / UPM) differ a lot by font:
-    //   PMingLiU / MingLiU (Traditional Chinese): ~1.0em (compact)
-    //   SimSun / NSimSun / SimHei families (Simplified Chinese): ~1.3em (expanded)
-    //   Calibri / Arial / Times (Western): ~1.2em (standard)
+    // Windows metric line heights ((usWinAscent+usWinDescent) / UPM) differ a lot by font: PMingLiU
+    // / MingLiU (Traditional Chinese): ~1.0em (compact) SimSun / NSimSun / SimHei families
+    // (Simplified Chinese): ~1.3em (expanded) Calibri / Arial / Times (Western): ~1.2em (standard)
     // ascent/descent keep the generic ratios (0.8/0.2 em); lineHeight uses the per-font factor
     return {
       ascent: s * 0.8,
@@ -94,10 +67,7 @@ export class HeuristicMetrics implements FontMetricsProvider {
   }
 }
 
-/**
- * Per-font line-height factor (based on measured Windows font metrics).
- * PMingLiU/MingLiU: ~1.0em; SimSun and other Simplified fonts: ~1.3em; Western: 1.2em.
- */
+/** Per-font line-height factor (based on measured Windows font metrics). */
 export function lineHeightFactor(fontFamily: string): number {
   const f = fontFamily.toLowerCase()
   // compact Traditional Chinese fonts (PMingLiU, MingLiU, etc.)
@@ -169,14 +139,7 @@ export class OpentypeMetrics implements FontMetricsProvider {
 
 const TWIPS_TO_PX = 96 / 1440
 
-/**
- * Compute a single line's height (px) per Word's line-height rules.
- *
- * @param naturalLineH the font's natural line height (ascent+descent, px)
- * @param lineRule      'auto'|'atLeast'|'exact'
- * @param lineRawTwips  raw w:spacing w:line twips (auto = multiple of 240; atLeast/exact = absolute)
- * @param docGrid       the section docGrid (optional; when present, round to linePitch)
- */
+/** Compute a single line's height (px) per Word's line-height rules. */
 export function computeLineHeight(
   naturalLineH: number,
   lineRule: 'auto' | 'atLeast' | 'exact' | undefined,
@@ -199,24 +162,15 @@ export function computeLineHeight(
     lineH = naturalLineH
   }
 
-  // docGrid: real Word for Mac baseline (2026-07-27, line-by-line PDF measurement of
-  // corpora 02/10) shows line heights are NOT rounded to linePitch — 12pt with line
-  // spacing 276 (1.15×) lays out at 18pt/line, not the 15.6 or 31.2 grid multiples;
-  // space-after is also left unrounded. The earlier round-up was tuned to LibreOffice
-  // behavior and halved lines-per-page for docGrid documents (7 pages vs Word's 4).
-  // The docGrid param stays: other semantics like lines-per-page rulers may still need it.
+  // docGrid: real Word for Mac baseline (2026-07-27, line-by-line PDF measurement of corpora 02/10)
+  // shows line heights are NOT rounded to linePitch — 12pt with line spacing 276 (1.15×) lays out
+  // at 18pt/line, not the 15.6 or 31.2 grid multiples; space-after is also left unrounded.
   void docGrid
 
   return lineH
 }
 
-/**
- * Font family → canvas CSS font-family fallback chain.
- * When a common Word font is missing locally, fall back to metric-compatible
- * open-source fonts (registered in fonts/fonts.css); identical widths keep line
- * breaks aligned with Word and the offline pagination model. CJK families fall
- * back to macOS equivalents (CJK width is always 1em, so this is mostly glyph appearance).
- */
+/** Font family → canvas CSS font-family fallback chain. */
 export function cssFontFamily(font: string): string {
   const f = font.toLowerCase()
   const chain = (...families: string[]) =>
@@ -299,15 +253,7 @@ export function textHasCjk(text: string): boolean {
   return false
 }
 
-/**
- * Word line spacing → editing-canvas CSS line-height value (shared by extensions/docStyleCss).
- *
- * Line rules: auto = multiple × font natural line height; atLeast = max(natural, N); exact = N.
- * CSS expression: natural line height ≈ var(--doc-line-factor) (line-height factor
- * of the document's default Chinese font, injected by docStyleCss; default 1.2) × 1em.
- * The canvas previously used a uniform lineSpacing×1.2, which made Chinese documents
- * (factor 1.3) systematically too tight and dropped atLeast/exact entirely.
- */
+/** Word line spacing → editing-canvas CSS line-height value (shared by extensions/docStyleCss). */
 export function cssLineHeight(
   lineRule: 'auto' | 'atLeast' | 'exact' | undefined,
   lineRawTwips: number | undefined,
@@ -323,9 +269,7 @@ export function cssLineHeight(
   return null
 }
 
-/**
- * Space-before/space-after, aligned to the grid when docGrid exists.
- */
+/** Space-before/space-after, aligned to the grid when docGrid exists. */
 export function snapSpacingToGrid(spacingTwips: number, docGrid: DocGrid | undefined): number {
   // real Word baseline measurement: space-before/after are not rounded to the grid (corpus 10-cn: 240tw space-after lays out at ~8pt, the original value)
   void docGrid
@@ -345,27 +289,14 @@ function isCjk(cp: number): boolean {
 
 // ─── Line-break simulation ───────────────────────────────────────────────────
 
-/**
- * CJK character line-height factor (by font family).
- * PMingLiU/MingLiU (compact Traditional) → 1.0: the font's lineHeight is already 1.0×, no extra boost.
- * Other fonts (SimSun/SimHei/Calibri etc.) → 1.3: CJK chars render via SimSun fallback with ~1.3em line height.
- */
+/** CJK character line-height factor (by font family). */
 function cjkLineHFactor(fontFamily: string): number {
   const f = fontFamily.toLowerCase()
   if (f.includes('pmingliu') || f.includes('mingliu')) return 1.0
   return 1.3
 }
 
-/**
- * Paragraph line-break simulation — computes line count (heights only, no glyph coordinates).
- *
- * Logic aligned with text-layout.ts layoutParagraph, but outputs only the list of line boxes (heights).
- * Each item in the runs array is a stretch of text with the same style (same as Block.runs).
- *
- * cjkFactor semantics:
- *   NaN (default) = decided dynamically per font family via cjkLineHFactor(style.fontFamily)
- *   0..N = fixed factor (table cells pass 1.0 = no extra boost)
- */
+/** Paragraph line-break simulation — computes line count (heights only, no glyph coordinates). */
 const CJK_LINE_HEIGHT_FACTOR = NaN
 
 export function simulateLines(
@@ -535,10 +466,7 @@ export interface LineMetricsInput {
   metrics?: FontMetricsProvider
   /** whether the paragraph is empty (a textless paragraph occupies one line height) */
   isEmpty?: boolean
-  /**
-   * Table-cell mode: disables the CJK line-height boost (1.5× → 1.2×).
-   * Cell line height is controlled by the line-height rule + docGrid, without extra CJK expansion.
-   */
+  /** Table-cell mode: disables the CJK line-height boost (1.5× → 1.2×). */
   tableCellMode?: boolean
   /** CJK line-height factor override (e.g. tuned against the baseline layout engine); defaults to tableCellMode/font-family behavior */
   cjkFactor?: number
@@ -559,11 +487,7 @@ export interface LineMetricsResult {
   totalHeight: number
 }
 
-/**
- * Line box (for line-level page splitting).
- * offsetInBlock: offset of the line's top relative to the paragraph block's top, including spaceBefore (px).
- * height: the line's height (px).
- */
+/** Line box (for line-level page splitting). */
 export interface LineBox {
   /** top offset of the line within the block (px, relative to block top) */
   offsetInBlock: number
@@ -571,10 +495,7 @@ export interface LineBox {
   height: number
 }
 
-/**
- * Extended computeLineMetrics: additionally returns each line's LineBox (with offsets).
- * Used for line-level split decisions — the pagination algorithm can break a paragraph at any line boundary.
- */
+/** Extended computeLineMetrics: additionally returns each line's LineBox (with offsets). */
 export interface LineMetricsResultEx extends LineMetricsResult {
   /** per-line boxes (with in-block offsets), consumed by line-level page splitting */
   lineBoxes: LineBox[]
@@ -586,11 +507,7 @@ const DEFAULT_FONT_SIZE_PT = 12
 /** global default HeuristicMetrics instance (avoids rebuilding per call) */
 const defaultMetrics = new HeuristicMetrics()
 
-/**
- * Compute a paragraph's precise line-box metrics (block height from Word's perspective).
- *
- * Used for pagination computation (replacing getBoundingClientRect); does not affect editor rendering.
- */
+/** Compute a paragraph's precise line-box metrics (block height from Word's perspective). */
 export function computeLineMetrics(input: LineMetricsInput): LineMetricsResultEx {
   const {
     runs,
@@ -634,8 +551,7 @@ export function computeLineMetrics(input: LineMetricsInput): LineMetricsResultEx
 
   const totalHeight = lineHeights.reduce((s, h) => s + h, 0) + spaceBeforePx + spaceAfterPx
 
-  // build each line's LineBox (with in-block offsets)
-  // spaceBefore counts before the first line
+  // build each line's LineBox (with in-block offsets) spaceBefore counts before the first line
   const lineBoxes: LineBox[] = []
   let offset = spaceBeforePx
   for (const h of lineHeights) {
@@ -657,10 +573,7 @@ export function computeLineMetrics(input: LineMetricsInput): LineMetricsResultEx
 /** reserved height for the footnote separator line (px) */
 export const FOOTNOTE_SEPARATOR_H = 16
 
-/**
- * Header/footer part height estimate (px): per-paragraph line-box model. Capacity
- * input for body push-down (body top = max(marginTop, headerDist + header height)).
- */
+/** Header/footer part height estimate (px): per-paragraph line-box model. */
 export function estimateHfHeight(
   part:
     | {

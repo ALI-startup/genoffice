@@ -1,10 +1,4 @@
-/**
- * Comment mark operations for Review → New/Delete Comment.
- *
- * The comment mark stores space-separated ids so overlapping comments share
- * one mark instance; adding/removing an id therefore rewrites the ids attr
- * per text node instead of blindly stacking marks.
- */
+/** Comment mark operations for Review → New/Delete Comment. */
 import type { Editor } from '@tiptap/core'
 import type { CommentInfo } from '@samugen/docx-engine'
 import { TRACK_IGNORE } from './revisions'

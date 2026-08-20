@@ -1,27 +1,4 @@
-/**
- * `AttachmentsPort` for a browser host.
- *
- * The port went ref-based in Phase 4a precisely so this could exist: Electron
- * resolves an `AttachmentRef` to an absolute path, and here the host resolves it
- * to a blob it is holding itself. The mapping is private to this module — the
- * renderer receives an opaque string and hands it back, and there is nothing in
- * a ref for it to parse even if it tried, because the refs are UUIDs.
- *
- * The blobs live in memory for the life of the page and nowhere else. That is a
- * deliberate difference from Electron, which has a path and can re-read the file
- * whenever it likes: a browser's `File` is a snapshot the page already holds, so
- * persisting it would mean *copying* every attachment into IndexedDB to buy a
- * capability nothing uses (attachments are picked, sent, and discarded within a
- * session). The consequence is stated rather than hidden: refs do not survive a
- * reload, and a ref from a previous page load fails with a real error instead of
- * reading empty text.
- *
- * Text extraction is *injected*, not imported. Which parsers a browser build
- * carries is a bundle-size decision belonging to the app, and some formats have
- * no client-side parser at all — see `WebAttachmentExtractor`. Injecting it also
- * keeps this package free of jszip / pdfjs, and keeps these tests free of
- * fixtures.
- */
+/** `AttachmentsPort` for a browser host. */
 import { ATTACHMENT_IMAGE_EXTS, type AttachmentsPort } from '@samugen/platform'
 import type {
   AttachmentAddResult,
@@ -84,14 +61,7 @@ export interface WebAttachmentText {
   error?: string
 }
 
-/**
- * Turn an attachment's bytes into text, or say why it cannot be done.
- *
- * The extractor also decides which non-image extensions are accepted at all:
- * `addAttachments` asks it via `supports(ext)`, so a format with no client-side
- * parser is rejected at add time with a reason the user sees, rather than
- * accepted and then found unreadable when the model asks for its contents.
- */
+/** Turn an attachment's bytes into text, or say why it cannot be done. */
 export interface WebAttachmentExtractor {
   supports(ext: string): boolean
   extract(file: WebAttachmentSource): Promise<WebAttachmentText>
@@ -159,9 +129,8 @@ export function createWebAttachmentsPort(options: WebAttachmentsOptions): Attach
         error: `${name}: image larger than ${Math.round(ATTACHMENT_IMAGE_MAX_BYTES / 1024 / 1024)}MB`,
       }
     }
-    // No `location`: a picked File exposes no path, and inventing one would put a
-    // fiction in the attachment chip's tooltip. The field is optional for exactly
-    // this host — see @samugen/platform's ports/attachments.ts.
+    // No `location`: a picked File exposes no path, and inventing one would put a fiction in the
+    // attachment chip's tooltip.
     return { meta: { ref: entry.ref, name, ext, sizeBytes } }
   }
 
@@ -216,17 +185,8 @@ export function createWebAttachmentsPort(options: WebAttachmentsOptions): Attach
     },
 
     /**
-     * Every `File` a browser hands over can be held, so this returns a ref for
-     * all of them — including a clipboard bitmap, which has bytes even though it
-     * has no file behind it.
-     *
-     * That is not the Electron behaviour and it is not meant to be: Electron
-     * returns `null` for a bitmap because it has no *path* to name, which is a
-     * limitation of using paths as refs. A blob-holding host has no such
-     * limitation, so `addPastedImage` stays available for callers that reach for
-     * it but is never *forced* here. `null` is still reachable — an empty
-     * `File`, which a browser produces for a directory dropped onto the page,
-     * cannot be an attachment.
+     * Every `File` a browser hands over can be held, so this returns a ref for all of them —
+     * including a clipboard bitmap, which has bytes even though it has no file behind it.
      */
     async refForFile(file: File): Promise<AttachmentRef | null> {
       if (file.size === 0) return null
@@ -252,8 +212,6 @@ export function createWebAttachmentsPort(options: WebAttachmentsOptions): Attach
           name: `pasted-${stamp}.${clean}`,
           size: data.byteLength,
           // Pasted bytes have no file behind them, so "last modified" is now.
-          // Unused by this port (attachments are never written back), but `WebFile`
-          // requires it because the document store's conflict check does.
           lastModified: Date.now(),
           arrayBuffer: async () => data,
         }),
@@ -313,11 +271,8 @@ function messageOf(error: unknown): string {
 }
 
 /**
- * Bytes → raw base64, without the `data:` prefix (which is what
- * `AttachmentImageResult.base64` is documented to carry).
- *
- * Chunked because `String.fromCharCode(...bytes)` blows the argument limit on a
- * multi-megabyte image, and the cap here is 5MB.
+ * Bytes → raw base64, without the `data:` prefix (which is what `AttachmentImageResult.base64` is
+ * documented to carry).
  */
 function toBase64(bytes: Uint8Array): string {
   const CHUNK = 0x8000

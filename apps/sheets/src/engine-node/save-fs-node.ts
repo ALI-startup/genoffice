@@ -1,15 +1,5 @@
 /**
- * The desktop's scratch filesystem for a save: `node:fs`, exactly as the save used to do it
- * inline.
- *
- * This file exists because the pipeline above it (gateway/xlsx-package-io.ts) now runs in a
- * browser too, where none of these calls exist. Moving them here rather than branching inside
- * the pipeline keeps that pipeline — including the CRC manifest checks that decide whether a
- * save is safe to promote — one implementation with no host in it.
- *
- * Every operation is what it replaced, `promote` included: fsync the temporary file, then
- * rename it over the target, so a crash mid-save leaves either the old workbook or the new
- * one and never a half-written file.
+ * The desktop's scratch filesystem for a save: `node:fs`, exactly as the save used to do it inline.
  */
 import { randomUUID } from 'node:crypto'
 import { mkdir, mkdtemp, open, readFile, rename, rm, writeFile } from 'node:fs/promises'

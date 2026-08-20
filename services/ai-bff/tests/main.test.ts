@@ -1,11 +1,4 @@
-/**
- * The executable entry: environment → config, and a real bind.
- *
- * `startAiBff` is exercised against port 0 so the test never collides with a
- * developer's running service, and the default bind address is asserted because
- * a process holding credentials becoming reachable off-box would be a silent
- * regression rather than a visible one.
- */
+/** The executable entry: environment → config, and a real bind. */
 import { describe, expect, it } from 'vitest'
 import { AI_BFF_ROUTES } from '@samugen/platform-web/wire'
 import { DEFAULT_HOST, DEFAULT_PORT, loadServerConfig, startAiBff } from '../src/main.js'

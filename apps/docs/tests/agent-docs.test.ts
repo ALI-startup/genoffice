@@ -7,21 +7,12 @@ import { buildDocContext, countWords } from '../src/renderer/ai/protocol'
 import { executeTool } from '../src/renderer/ai/tools'
 import { setDocsPlatform, type DocsPlatform } from '../src/renderer/platform'
 
-/**
- * Install a platform backing only the search port these tools reach for. The
- * slot is typed, so the cast stands in for the rest of the composition rather
- * than stubbing it; each test installs its own, so there is nothing to restore.
- */
+/** Install a platform backing only the search port these tools reach for. */
 function installSearchPort(search: Partial<DocsPlatform['search']>): void {
   setDocsPlatform({ search } as unknown as DocsPlatform)
 }
 
-/**
- * End-to-end through the local stack: AgentLoop -> docs skill -> tools ->
- * real tiptap editor. The "model" is scripted, so these tests verify that
- * the capabilities behind typical requests (word count, heading colors,
- * rewrite, insert) actually work when the model picks the right tool.
- */
+/** End-to-end through the local stack: AgentLoop -> docs skill -> tools -> real tiptap editor. */
 
 interface JsonNode {
   type: string

@@ -1,18 +1,8 @@
 /**
- * Bake `html2hwpx`'s HWPX template into a source module.
+ * Bake `html2hwpx`'s HWPX template into a source module — the library's own `fs` read of
+ * it is the only reason its exporter cannot run in a browser.
  *
- * The library reads this template off its own package directory with `fs` every
- * time it writes a document. That is the single reason its exporter cannot run
- * in a browser — everything else on the conversion path is pure string work.
- * Embedding the files removes the filesystem from the export path entirely, so
- * one implementation serves the browser and Node alike, and no bundler has to be
- * told to keep the library external.
- *
- * Regenerate after bumping `html2hwpx`:
- *
- *     npm run generate:template -w @samugen/hwpx-convert
- *
- * The output is committed so a plain `npm ci` needs no generation step.
+ * Regenerate after a version bump: npm run generate:template -w @samugen/hwpx-convert
  */
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'

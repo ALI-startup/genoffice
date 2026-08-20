@@ -1,8 +1,6 @@
 /**
- * Symbol-encoded legacy fonts (Symbol / Wingdings / Webdings) carry glyphs at
- * arbitrary byte positions, stored either as that byte or as U+F0xx (private
- * use). Without the font installed they render as the raw letter or tofu, so
- * map the common glyphs to their Unicode equivalents for display.
+ * Symbol-encoded legacy fonts (Symbol / Wingdings / Webdings) carry glyphs at arbitrary byte
+ * positions, stored either as that byte or as U+F0xx (private use).
  */
 
 const SYMBOL: Record<number, string> = {

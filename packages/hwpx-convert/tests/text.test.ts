@@ -1,14 +1,4 @@
-/**
- * Plain-text extraction, over packages this repo writes itself.
- *
- * The fixture is `htmlToHwpx`'s output for the same reason the round-trip suite
- * uses it: it is a real OWPML package, produced by the library the importer
- * reads, without a Hangul Word Processor file having to live in the repo.
- *
- * What is asserted is the shape a model receives — one line per paragraph, cells
- * tab-separated — because that is the contract the attachment path depends on
- * and the thing a parser change would silently alter.
- */
+/** Plain-text extraction, over packages this repo writes itself. */
 import { describe, expect, it } from 'vitest'
 import { htmlToHwpx } from '../src/write'
 import { hwpxToText } from '../src/text'

@@ -1,8 +1,6 @@
 /**
- * Review-tab actions: footnotes/endnotes, comments, revisions, ink
- * annotations, document protection and compare. Extracted from App.tsx; the
- * App component passes a ReviewContext built fresh per call so state never
- * goes stale.
+ * Review-tab actions: footnotes/endnotes, comments, revisions, ink annotations, document protection
+ * and compare.
  */
 import type { Editor } from '@tiptap/core'
 import {
@@ -290,8 +288,7 @@ export async function compareWithFile(ctx: ReviewContext): Promise<void> {
   if (!ctx.doc) return
   const picked = await docsPlatform().file.openDocument()
   if (!picked) return
-  // Compare diffs two parsed docx documents. An imported .hwpx has no bytes to
-  // parse — it is content only — so it cannot be the other side of a comparison.
+  // Compare diffs two parsed docx documents.
   if (picked.kind !== 'document') {
     ctx.setStatus(t('appCompareNeedsDocx'))
     return

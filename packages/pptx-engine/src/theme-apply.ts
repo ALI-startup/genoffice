@@ -1,15 +1,6 @@
 /**
- * Theme application (Design tab theme gallery) — rewrites <a:clrScheme> and
- * <a:fontScheme> of every ppt/theme/theme*.xml in the package, in place.
- *
- * Semantics match PowerPoint: content referencing schemeClr / +mj-lt / +mn-lt
- * follows the new theme; content with explicit srgbClr / explicit fonts stays
- * as-is. After rewriting, the caller (main process) must save→reopen to reparse
- * the inheritance chain so elements' resolved colors/fonts refresh.
- *
- * Exception: theme parts are the sole exemption from the "never write back
- * layout/master/theme" rule — the whole point of the theme gallery is to replace
- * the theme; layout/master themselves are still untouched.
+ * Theme application (Design tab theme gallery) — rewrites <a:clrScheme> and <a:fontScheme> of every
+ * ppt/theme/theme*.xml in the package, in place.
  */
 import { utf8Bytes } from './bytes'
 import type { OpenedPptx } from './index'
@@ -91,17 +82,9 @@ export function applyThemeToArchive(opened: OpenedPptx, spec: ThemeSpec): number
   return patched
 }
 
-// ── Explicit color remapping ──────────────────────────────────────────
-// Real-world decks (especially AI-generated/exported ones) use almost exclusively
-// explicit srgbClr colors that never reference the scheme — swapping only the theme
-// parts changes nothing visually. Here the deck's existing explicit colors are
-// remapped wholesale onto the new theme palette:
-//   · neutrals (low saturation / near black-white) map onto the new theme's
-//     dk1↔lt1 axis, bucketed by lightness;
-//   · chromatic colors are clustered by hue, and clusters are assigned to
-//     accent1..6 in order of frequency;
-//   · output replaces only hue/base saturation, keeping the original lightness —
-//     shading levels and contrast structure stay intact.
+// ── Explicit color remapping ────────────────────────────────────────── Real-world decks
+// (especially AI-generated/exported ones) use almost exclusively explicit srgbClr colors that never
+// reference the scheme — swapping only the theme parts changes nothing visually.
 
 interface Hsl {
   /** 0..360 */
@@ -176,10 +159,7 @@ export function collectExplicitColors(xmls: string[]): Map<string, number> {
   return counts
 }
 
-/**
- * Mapping table from explicit colors to new theme colors. Identity mappings are omitted.
- * Cluster assignment is deterministic: iterated by (occurrence count desc, hex asc).
- */
+/** Mapping table from explicit colors to new theme colors. */
 export function buildColorMap(counts: Map<string, number>, spec: ThemeSpec): Map<string, string> {
   const neutralFor = (l: number): string => {
     const key = l > 0.85 ? 'lt1' : l > 0.55 ? 'lt2' : l > 0.28 ? 'dk2' : 'dk1'
@@ -225,10 +205,7 @@ export function recolorXml(xml: string, map: Map<string, string>): string {
 }
 
 /**
- * Remap all slides' explicit colors onto the theme palette (rewriting archive
- * entries directly). Requires the model to have no unpersisted edits (caller should
- * save→reopen first), otherwise dirty elements would overwrite with old colors on
- * save. Returns the number of distinct colors mapped.
+ * Remap all slides' explicit colors onto the theme palette (rewriting archive entries directly).
  */
 export function remapDeckColors(opened: OpenedPptx, spec: ThemeSpec): number {
   const { archive, deck } = opened

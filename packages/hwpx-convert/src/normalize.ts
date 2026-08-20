@@ -1,28 +1,4 @@
-/**
- * Renderer HTML → the restricted fragment docs' editor accepts.
- *
- * `neoali-hwpxjs` produces *display* HTML: a wall of `<p>`s carrying inline
- * styles, one `<span>` per whitespace-delimited token, headings flattened to
- * body text, and list markers baked in as literal characters. The editor's
- * importer (`parseHtmlFragment` in apps/docs) accepts a deliberately small tag
- * set instead — `h1`–`h6`, `p`, `ul`/`ol`/`li`, `strong`/`em`/`u`/`s`, `a`,
- * `br`, tables, `pre`, `blockquote` — and drops everything else.
- *
- * The importer is tolerant enough that the renderer's output would already load:
- * unknown inline tags such as `<span>` keep their text. What it would *not* do is
- * recover the structure the renderer discarded, so this module rebuilds the two
- * roles that matter, driven by the roles `outline.ts` reads out of the package
- * itself rather than by guessing from the rendered text:
- *
- *   - headings, which the renderer flattens outright;
- *   - lists, whose markers must be stripped from the text *and* re-expressed as
- *     real `<li>` elements. This is the one that cannot be skipped: leaving the
- *     literal marker in place means the exporter writes it back as body text and
- *     prefixes a fresh one on top, so `1. one` becomes `1. 1. one` on every trip.
- *
- * Alignment is carried out-of-band (see `BlockAlign`) because the restricted tag
- * set has nowhere to put it; the caller applies it to the parsed nodes instead.
- */
+/** Renderer HTML → the restricted fragment docs' editor accepts. */
 import { parseDocument } from 'htmlparser2'
 import type { ChildNode, Element, Text } from 'domhandler'
 import type { ParagraphInfo } from './outline'
@@ -33,26 +9,9 @@ export type BlockAlign = ReadonlyArray<'center' | 'right' | 'justify' | null>
 export interface NormalizedHtml {
   /** The restricted fragment, ready for the editor's `parseHtmlFragment`. */
   html: string
-  /**
-   * Alignment of each emitted top-level block, by index.
-   *
-   * Indexed over what was *emitted*, not over the source paragraphs: a list
-   * collapses several source paragraphs into one `<ul>`/`<ol>` block, and empty
-   * paragraphs are not emitted at all. Every emitted block becomes exactly one
-   * node in the editor, so a caller can apply these positionally — but should
-   * still check the lengths agree before doing so, for the same reason
-   * `normalizeHwpxHtml` checks its own input: misattributed formatting is worse
-   * than none.
-   */
+  /** Alignment of each emitted top-level block, by index. */
   align: BlockAlign
-  /**
-   * Images seen and dropped.
-   *
-   * The restricted fragment has no `<img>`, and the editor inserts pictures
-   * through a separate path that needs a resolvable URL rather than the data
-   * URI the renderer embeds. Reported so the caller can say so instead of
-   * quietly losing them.
-   */
+  /** Images seen and dropped. */
   droppedImages: number
 }
 
@@ -79,29 +38,11 @@ const INLINE_TAGS: Record<string, string> = {
   del: 's',
 }
 
-/**
- * List markers the renderer bakes into the text.
- *
- * Bullets cover the glyphs `bulletResolver` emits plus the ASCII dash a
- * document may carry literally. Ordinals cover Arabic digits, Latin letters,
- * lowercase Roman numerals and the Korean 가나다 sequence — all of which Hangul
- * Word Processor offers as numbering formats — followed by `.` or `)`.
- *
- * Anchored and applied only to paragraphs the package itself reports as list
- * items, so an ordinary sentence that happens to start "가. " is never touched.
- */
+/** List markers the renderer bakes into the text. */
 const BULLET_MARKER = /^[•·▪◦‣∙●○▶※*-]\s+/
 const ORDERED_MARKER = /^(?:\d+|[a-z]|[ivxlcdm]+|[가-힣])\s*[.)]\s+/i
 
-/**
- * Ordinals accepted when *guessing* that an unmarked paragraph is a list item.
- *
- * Narrower than `ORDERED_MARKER`, which only ever runs on paragraphs the package
- * already called list items and so can afford to be generous. Here the marker is
- * the whole evidence, and a wrong guess eats real text: `2024. 5. 1. 회의록`
- * would lose its year. Capping the run at three digits excludes years while
- * still covering any list a person will number by hand.
- */
+/** Ordinals accepted when *guessing* that an unmarked paragraph is a list item. */
 const GUESSABLE_ORDERED = /^(?:\d{1,3}|[a-z]|[ivxlcdm]{1,4}|[가-힣])\s*[.)]\s+/i
 
 /** Indent step the renderer emits per list level, in points. */
@@ -122,19 +63,7 @@ function textOf(node: ChildNode): string {
   return (node.children as ChildNode[]).map(textOf).join('')
 }
 
-/**
- * Guess whether an indented paragraph is really a list item.
- *
- * The package's own list roles (`hh:heading` of type BULLET or NUMBER) are
- * authoritative and are used whenever they are present. They are not always:
- * a document may carry hand-typed markers, and files produced by this package's
- * own exporter always do, because `html2hwpx` writes list items as indented
- * paragraphs with the marker baked into the text.
- *
- * Both signals are required — an indent *and* a leading marker. A marker with no
- * indent is far more likely to be prose that starts with a number, and an indent
- * with no marker is just an indented paragraph.
- */
+/** Guess whether an indented paragraph is really a list item. */
 function guessListRole(el: Element): { ordered: boolean; level: number } | null {
   const indent = paddingLeftPt(el)
   if (indent < INDENT_STEP_PT) return null
@@ -160,20 +89,7 @@ function textNodes(el: Element): Text[] {
   return out
 }
 
-/**
- * Remove the baked-in list marker.
- *
- * The marker is matched against the paragraph's *concatenated* text and then
- * deleted across however many text nodes it spans, because the renderer splits
- * on whitespace and so may put the glyph and the space that follows it in
- * separate `<span>`s. Matching one node at a time would then see `"•"` with no
- * trailing space, miss it, and leave the marker in the item text — which is
- * exactly the corruption this whole path exists to prevent.
- *
- * A list paragraph with no recognisable marker is left untouched: the numbering
- * may be a field the renderer did not render, and deleting real words to satisfy
- * a pattern would be worse than keeping an unmarked item.
- */
+/** Remove the baked-in list marker. */
 function stripLeadingMarker(el: Element, ordered: boolean): void {
   const nodes = textNodes(el)
   if (nodes.length === 0) return
@@ -197,13 +113,7 @@ interface InlineState {
   droppedImages: number
 }
 
-/**
- * Serialize a node's children to restricted inline HTML.
- *
- * Anything not in the kept set is unwrapped to its children rather than
- * dropped — that is what turns the renderer's per-token `<span>` soup back into
- * plain text without losing a single character.
- */
+/** Serialize a node's children to restricted inline HTML. */
 function inlineHtml(node: Element, state: InlineState): string {
   let out = ''
   for (const child of node.children as ChildNode[]) {
@@ -303,26 +213,11 @@ function tableHtml(table: Element, state: InlineState): string {
 interface OpenList {
   tag: 'ul' | 'ol'
   level: number
-  /**
-   * Whether this list sits inside an `<li>` of the list below it.
-   *
-   * True for a sublist, which is opened *within* the preceding item, and false
-   * for the outermost list — including when the outermost one starts at a level
-   * above zero, which happens whenever a document's first list paragraph is
-   * indented. Closing such a list must not emit a `</li>`: there is no open item
-   * to close, and doing so produced stray end tags.
-   */
+  /** Whether this list sits inside an `<li>` of the list below it. */
   insideItem: boolean
 }
 
-/**
- * Emits list items into correctly nested `<ul>`/`<ol>` markup.
- *
- * HWPX records a flat sequence of paragraphs each carrying its own level, so
- * nesting has to be reconstructed: a deeper level opens a sublist *inside* the
- * item that precedes it, a shallower one closes back out, and a level that
- * merely changes kind at the same depth closes and reopens.
- */
+/** Emits list items into correctly nested `<ul>`/`<ol>` markup. */
 class ListBuilder {
   private stack: OpenList[] = []
   private parts: string[] = []
@@ -332,14 +227,7 @@ class ListBuilder {
     return this.stack.length > 0
   }
 
-  /**
-   * How many sibling lists the pending markup will contain.
-   *
-   * A bullet run followed by a numbered run at the same depth closes `</ul>` and
-   * opens `<ol>`, which is two top-level blocks out of one uninterrupted stretch
-   * of list paragraphs. Callers keeping a positional array over emitted blocks
-   * need the count, not a boolean.
-   */
+  /** How many sibling lists the pending markup will contain. */
   get rootCount(): number {
     return this.roots
   }
@@ -353,24 +241,17 @@ class ListBuilder {
   add(item: string, ordered: boolean, level: number): void {
     const tag = ordered ? 'ol' : 'ul'
     // Dedent: close sublists until the innermost list is at or above `level`.
-    // Guarded on length > 1 because the outermost list has no parent to fall back
-    // to — see below.
     while (this.stack.length > 1 && this.stack[this.stack.length - 1].level > level) {
       this.close()
     }
-    // An item shallower than the outermost list, which happens when a document's
-    // first list paragraph is indented further than the ones after it. There is
-    // nothing to dedent *into*, so the outermost list takes the shallower level
-    // and both items sit in it — one list, in source order. Closing it and
-    // opening another would split one run of list paragraphs into two blocks.
+    // An item shallower than the outermost list, which happens when a document's first list
+    // paragraph is indented further than the ones after it.
     const outermost = this.stack[0]
     if (this.stack.length === 1 && outermost.level > level) outermost.level = level
 
     const top = this.stack[this.stack.length - 1]
     if (top && top.level === level && top.tag !== tag) {
-      // Same depth, different kind: close this list and open the other one in its
-      // place. It keeps the old list's parentage — a sublist stays a sublist —
-      // which is why the `</li>` is not emitted here.
+      // Same depth, different kind: close this list and open the other one in its place.
       const { insideItem } = this.stack.pop()!
       this.parts.push(`</${top.tag}>`)
       this.parts.push(`<${tag}>`)
@@ -407,14 +288,7 @@ class ListBuilder {
   }
 }
 
-/**
- * Convert renderer HTML to the restricted fragment.
- *
- * `info` is positional over the top-level blocks. When its length does not match
- * what the renderer emitted the two have disagreed about the document's shape,
- * and the roles are dropped wholesale rather than applied at the wrong indexes —
- * a flattened import is recoverable, a misattributed one is not.
- */
+/** Convert renderer HTML to the restricted fragment. */
 export function normalizeHwpxHtml(html: string, info: readonly ParagraphInfo[]): NormalizedHtml {
   const doc = parseDocument(html)
   const blocks = (doc.children as ChildNode[]).filter(isTag)
@@ -468,10 +342,7 @@ export function normalizeHwpxHtml(html: string, info: readonly ParagraphInfo[]):
 
     closeList()
     const inner = inlineHtml(block, state)
-    // Blocks with no content are dropped rather than emitted empty. The editor's
-    // importer discards an empty paragraph anyway, so emitting one would leave
-    // `align` describing a block that never becomes a node and shift every entry
-    // after it onto the wrong paragraph.
+    // Blocks with no content are dropped rather than emitted empty.
     if (!inner.trim()) return
 
     if (role.kind === 'heading') {

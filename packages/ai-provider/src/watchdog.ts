@@ -1,8 +1,6 @@
 /**
- * Abort-linked watchdog for LLM requests: a connect timeout until the response
- * headers arrive, then an idle timeout re-armed on every received byte. A
- * silently stalled connection (dropped by a proxy/VPN/firewall without an RST)
- * otherwise leaves the request pending forever and the UI stuck busy.
+ * Abort-linked watchdog for LLM requests: a connect timeout until the response headers arrive, then
+ * an idle timeout re-armed on every received byte.
  */
 
 export const AI_CONNECT_TIMEOUT_MS = 60_000

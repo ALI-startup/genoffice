@@ -1,24 +1,4 @@
-/**
- * Section read/write — modeled after PowerPoint's "sections".
- *
- * OOXML storage: inside <p:extLst> at the end of ppt/presentation.xml:
- *   <p:ext uri="{521415D9-36F7-43E2-AB2F-B90AF26B5E84}">
- *     <p14:sectionLst xmlns:p14="…/powerpoint/2010/main">
- *       <p14:section name="…" id="{GUID}">
- *         <p14:sldIdLst><p14:sldId id="256"/>…</p14:sldIdLst>
- *       </p14:section>…
- *
- * Note: a p14:sldId's id is the numeric slide id from p:sldIdLst (what PowerPoint
- * actually writes), not an rId; parsing tolerates the odd generator that writes
- * rIds by mistake.
- *
- * After slide-order changes (adding/deleting slides), section data may be stale
- * (dangling references / incomplete coverage), so every edit operation first does
- * a positional normalization: each section covers [its first slide, next
- * section's first slide), and slides before the first section count as
- * unsectioned — an intuitive rule that naturally self-heals stale
- * references.
- */
+/** Section read/write — modeled after PowerPoint's "sections". */
 import { randomGuid, utf8Bytes } from './bytes'
 import { resolveTarget } from './zip'
 import { escapeXmlAttr } from './xml-utils'
@@ -76,10 +56,7 @@ function readSlideEntries(opened: OpenedPptx): SlideEntry[] {
   return out
 }
 
-/**
- * Parse presentation.xml's p14:sectionLst. Returns [] if there are no sections
- * (older documents). sldIds referencing deleted slides are silently skipped.
- */
+/** Parse presentation.xml's p14:sectionLst. */
 export function getSections(opened: OpenedPptx): SectionInfo[] {
   const pres = opened.archive.readText(PRES_PATH)
   if (!pres) return []
@@ -104,12 +81,7 @@ export function getSections(opened: OpenedPptx): SectionInfo[] {
   return out
 }
 
-/**
- * Write the section structure back into presentation.xml's extLst (created if
- * missing). With empty sections the whole sectionLst extension is removed (and
- * the extLst too if it becomes empty). Only presentation.xml is touched;
- * [Content_Types]/rels are unaffected.
- */
+/** Write the section structure back into presentation.xml's extLst (created if missing). */
 export function setSections(opened: OpenedPptx, sections: SectionInfo[]): void {
   const { archive } = opened
   const pres = archive.readText(PRES_PATH)
@@ -146,10 +118,8 @@ export function setSections(opened: OpenedPptx, sections: SectionInfo[]): void {
 }
 
 /**
- * Positional normalization: each section's start = its minimum index (empty
- * sections take the next section's start), section i covers
- * [starts[i], starts[i+1]), the last section runs to total. Returns the
- * unsectioned leading slides + the normalized sections.
+ * Positional normalization: each section's start = its minimum index (empty sections take the next
+ * section's start), section i covers [starts[i], starts[i+1]), the last section runs to total.
  */
 export function normalizeSections(
   sections: SectionInfo[],
@@ -173,10 +143,8 @@ export function normalizeSections(
 }
 
 /**
- * Add a section before slide atSlideIndex (covering atSlideIndex through the end
- * of its containing section). For documents without sections: slides before
- * atSlideIndex go into an auto-created "default section".
- * Returns the updated section list; null for an invalid index.
+ * Add a section before slide atSlideIndex (covering atSlideIndex through the end of its containing
+ * section).
  */
 export function addSection(
   opened: OpenedPptx,
@@ -235,9 +203,8 @@ export function renameSection(opened: OpenedPptx, id: string, name: string): Sec
 }
 
 /**
- * Delete a section but keep its slides: the section's slides merge into the
- * previous section (or the next one for the first section); when no sections
- * remain the whole sectionLst is removed. Returns null if the id does not exist.
+ * Delete a section but keep its slides: the section's slides merge into the previous section (or
+ * the next one for the first section); when no sections remain the whole sectionLst is removed.
  */
 export function removeSection(
   opened: OpenedPptx,
@@ -261,12 +228,7 @@ export function removeSection(
   return getSections(opened)
 }
 
-/**
- * Move slide fromIndex to toIndex (the insertion index after removal, i.e.
- * drag-drop semantics). Keeps presentation.xml's sldIdLst order and deck.slides
- * in sync; with sections, the moved slide joins the section at the drop position
- * (a section emptied by the move stays as an empty section).
- */
+/** Move slide fromIndex to toIndex (the insertion index after removal, i.e. */
 export function moveSlide(opened: OpenedPptx, fromIndex: number, toIndex: number): boolean {
   const { deck, archive } = opened
   const total = deck.slides.length

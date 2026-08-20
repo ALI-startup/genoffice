@@ -57,10 +57,7 @@ export interface BuildOptions {
   metrics?: FontMetricsProvider
   /** Image/fill mediaRef → dataUrl. */
   media?: MediaResolver
-  /**
-   * Current slide number (1-based): slidenum fields display it (model bytes untouched).
-   * If omitted, the cached text in <a:fld> is used (which may be stale from before slides were moved).
-   */
+  /** Current slide number (1-based): slidenum fields display it (model bytes untouched). */
   slideNo?: number
 }
 
@@ -135,8 +132,7 @@ export function buildRenderSlide(
       nodes.push(node)
     }
   }
-  // Hidden-slide flag (<p:sld show="0">). Same logic as the engine's readSlideHiddenXml,
-  // inlined here as a small regex so we only depend on pptx-engine types (safe to bundle in the renderer).
+  // Hidden-slide flag (<p:sld show="0">).
   const sldOpen = /<p:sld\b[^>]*>/.exec(slide.bodyPrefix)?.[0]
   const hidden = !!sldOpen && /\sshow="0"/.test(sldOpen)
   return {
@@ -208,14 +204,7 @@ function buildNode(
   }
 }
 
-/**
- * ArrowEnd (OOXML Stroke model) → ArrowEndRender (px sizes).
- * PowerPoint arrow sizing rules (ECMA-376 §20.1.8.27):
- *   sm / med / lg map to approximate multiples of line width (empirically):
- *   width:  sm≈2×lw, med≈3×lw, lg≈5×lw
- *   length: sm≈2×lw, med≈3×lw, lg≈5×lw
- * A 4px minimum keeps arrows visible.
- */
+/** ArrowEnd (OOXML Stroke model) → ArrowEndRender (px sizes). */
 function resolveArrowEnd(end: ArrowEnd, strokeWidthEmu: number, scale: number): ArrowEndRender {
   const lw = Math.max(emuToPx(strokeWidthEmu, scale), 1)
   const sizeMultW = end.w === 'sm' ? 2 : end.w === 'lg' ? 5 : 3
@@ -384,15 +373,6 @@ function buildGroup(
   media: MediaResolver | undefined,
 ): GroupRenderNode {
   // Child coordinate system: child element EMU coords are based on <a:chOff>/<a:chExt>.
-  // The size difference between the group box and the child coordinate system (the group
-  // was scaled as a whole; ext/chExt may be non-uniform) is **baked into child geometry**
-  // at placement time (position/size converted to group-local px by scale), while font
-  // size and stroke width keep their declared values unscaled -- group scaling only
-  // affects geometry, and text lays out in the scaled box at the
-  // original font size (MS-OE376 §2.1.1360/2.1.1364). The render container no longer
-  // stretches as a whole (which would make line-wrap widths wrong and distort glyphs
-  // non-uniformly). childScaleX/Y are still written on the node so the edit pipeline can
-  // convert between group-local px and child EMU.
   const ch = el.childOffset
   const chX = ch?.x ?? el.transform.offset.x
   const chY = ch?.y ?? el.transform.offset.y
@@ -425,12 +405,7 @@ function buildGroup(
   }
 }
 
-/**
- * Table → TableRenderNode. Cell coordinates are relative to the table's top-left (px).
- * Column widths/row heights are distributed by EMU ratio over the frame's actual px size.
- * Row height is a minimum in PPT: rows whose wrapped cell text needs more space grow to
- * fit it, and the node box grows with the total so nothing is clipped.
- */
+/** Table → TableRenderNode. */
 function buildTable(
   el: TableElement,
   box: PlacedBox,

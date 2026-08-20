@@ -1,9 +1,8 @@
 import type { Lang } from '@samugen/i18n'
 
 /**
- * Font dropdown candidates grouped by script, ordered per UI language so the
- * fonts a user is most likely to want appear at the top (e.g. Western fonts
- * for the US market, Japanese fonts for the Japanese market).
+ * Font dropdown candidates grouped by script, ordered per UI language so the fonts a user is most
+ * likely to want appear at the top (e.g.
  */
 const LATIN = [
   'Calibri',
@@ -52,12 +51,8 @@ export function fontFamiliesFor(lang: Lang): readonly string[] {
 }
 
 /**
- * docDefaults w:eastAsia font for new blank documents, matching what Word
- * ships per market (zh → SimSun, ja → Yu Mincho, ko → Malgun Gothic,
- * zh-TW → PMingLiU). English and every other language return undefined —
- * like en-US Word, whose theme leaves the East Asian slot empty and lets
- * per-script substitution kick in only when CJK text actually appears.
- * Latin default stays Calibri for every language.
+ * docDefaults w:eastAsia font for new blank documents, matching what Word ships per market (zh →
+ * SimSun, ja → Yu Mincho, ko → Malgun Gothic, zh-TW → PMingLiU).
  */
 export function defaultEastAsiaFontFor(lang: Lang): string | undefined {
   switch (lang) {

@@ -45,10 +45,7 @@ export function findChildren(node: XNode, name: string): XNode[] {
 }
 
 /**
- * Direct children with `name`, looking through w:sdt → w:sdtContent wrappers
- * (nested sdt included). Structured document tags may wrap table rows, cells
- * or paragraphs at any level; for display purposes the wrapper is transparent
- * (research-report templates wrap every field in an sdt).
+ * Direct children with `name`, looking through w:sdt → w:sdtContent wrappers (nested sdt included).
  */
 export function childrenThroughSdt(node: XNode, name: string): XNode[] {
   const out: XNode[] = []
@@ -76,10 +73,8 @@ export function boolProp(parent: XNode, name: string): boolean {
 }
 
 /**
- * w:u is NOT an OOXML boolean (CT_OnOff) — it is CT_Underline, where the
- * underline pattern lives entirely in w:val. A <w:u> with no w:val (e.g.
- * `<w:u w:color="415461"/>` as emitted by Pages/LibreOffice) means no
- * underline, matching how Word renders it.
+ * w:u is NOT an OOXML boolean (CT_OnOff) — it is CT_Underline, where the underline pattern lives
+ * entirely in w:val.
  */
 export function underlineProp(parent: XNode): boolean {
   const child = findChild(parent, 'w:u')
@@ -88,11 +83,7 @@ export function underlineProp(parent: XNode): boolean {
   return val !== undefined && val !== 'none'
 }
 
-/**
- * XNode → XML text (attribute order = parse order, empty elements self-close). Semantic
- * fidelity, not byte fidelity: used to store parse-tree fragments (e.g. a run's rPr) as
- * writable source slices.
- */
+/** XNode → XML text (attribute order = parse order, empty elements self-close). */
 export function serializeXNode(node: XNode): string {
   if ('#text' in node) return escapeXmlText(String(node['#text']))
   const name = nameOf(node)

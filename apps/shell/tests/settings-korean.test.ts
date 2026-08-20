@@ -1,11 +1,6 @@
 /**
- * The settings dialog's copy, which was the last screen reachable from home
- * still in English whatever the UI language said.
- *
- * The settings overlay deliberately lets a locale fall back to the English
- * wording (see the comment above it in strings.ts), so key parity — which
- * strings.test.ts already asserts — cannot tell a translated table from an
- * aliased one. These assert the translation itself.
+ * The settings dialog's copy, which was the last screen reachable from home still in English
+ * whatever the UI language said.
  */
 import { describe, expect, it } from 'vitest'
 import { AI_PROVIDER_DEFINITIONS } from '../src/shared/ai-settings-api'
@@ -37,9 +32,7 @@ describe('the settings dialog in Korean', () => {
   })
 
   it('translates every settings string, not just the ones spot-checked above', () => {
-    // The overlay's whole key set: anything the English table has that the base
-    // tables do not. `ja` still aliases English, which is what makes this a
-    // meaningful comparison rather than a tautology.
+    // The overlay's whole key set: anything the English table has that the base tables do not.
     const overlayKeys = (Object.keys(strings.en) as Array<keyof typeof strings.en>).filter(
       (key) => strings.ja[key] === strings.en[key] && strings.zh[key] !== strings.en[key],
     )

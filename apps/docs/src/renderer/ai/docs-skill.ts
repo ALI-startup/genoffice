@@ -5,17 +5,10 @@ import { AGENT_TOOLS, executeTool, markDocSeen } from './tools'
 import type { AgentToolDef } from '../../shared/ipc'
 
 /**
- * The docx capability as an AgentSkill: document skeleton context, the five
- * document tools, and the local executor. Future apps register their own
- * skills (Excel / PPT) against the same agent loop.
+ * The docx capability as an AgentSkill: document skeleton context, the five document tools, and the
+ * local executor.
  */
-/**
- * @param tools which tool definitions to offer the model. The app passes
- *   `availableTools()`, which drops the search-backed tools on a host with no
- *   `SearchPort` so the model is never offered a capability that would fail. The
- *   default is the full catalogue, for callers (tests) that exercise the skill
- *   without a host installed.
- */
+/** @param tools which tool definitions to offer the model. */
 export function createDocsSkill(
   getEditor: () => Editor,
   getNumIds: () => NumIds,

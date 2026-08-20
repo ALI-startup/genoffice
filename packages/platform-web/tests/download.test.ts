@@ -1,12 +1,4 @@
-/**
- * Handing bytes to the user as a download (src/download.ts).
- *
- * The mechanism is three lines of DOM, and the two things worth pinning down are
- * both invisible from the outside: that the object URL is revoked, and that it is
- * revoked *later*. Revoking in the same task as the click cancels the download in
- * Chromium, which is a bug no assertion about the anchor would catch — so the
- * environment is injected and the deferral is observed directly.
- */
+/** Handing bytes to the user as a download (src/download.ts). */
 import { describe, expect, it } from 'vitest'
 import { browserDownloadEnv, DOWNLOAD_URL_TTL_MS, downloadBytes } from '../src/download'
 import type { DownloadEnv } from '../src/download'
@@ -65,9 +57,7 @@ describe('downloadBytes', () => {
 
     downloadBytes(env, 'report.docx', new Uint8Array([1]), DOCX_MIME)
 
-    // Nothing revoked yet: at this point the browser has only been *told* to fetch
-    // the blob. This is the assertion that a "tidy up straight after the click"
-    // refactor has to fail.
+    // Nothing revoked yet: at this point the browser has only been *told* to fetch the blob.
     expect(revoked).toEqual([])
     expect(deferred).toHaveLength(1)
 
@@ -150,12 +140,7 @@ interface FakeAnchor {
   remove(): void
 }
 
-/**
- * The smallest DOM `browserDownloadEnv` touches.
- *
- * Hand-rolled rather than jsdom because this package's suite runs in node on
- * purpose (see vitest.config.ts) and the surface is four members wide.
- */
+/** The smallest DOM `browserDownloadEnv` touches. */
 function fakeDom(
   clicks: string[],
   appended: FakeAnchor[],

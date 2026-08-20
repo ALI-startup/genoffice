@@ -1,29 +1,5 @@
 #!/usr/bin/env node
-/**
- * Pagination fidelity F0 — LibreOffice headless baseline extraction
- *
- * Usage:
- *   node scripts/pagination-baseline.mjs [--docx-dir <path>] [--out <path>]
- *
- * Dependencies:
- *   - soffice (already installed locally, LO headless)
- *   - pdftotext (poppler-utils, already installed locally)
- *
- * Output: apps/docs/tests/pagination-corpus/baseline-lo.json
- *   {
- *     "<stem>": {
- *       source: "libreoffice",
- *       version: "LO version string",
- *       pages: N,
- *       pageStarts: ["first 40 chars of each page's first line", ...],
- *       pageEnds:   ["last 40 chars of each page's last line", ...]  // reserved field
- *     }
- *   }
- *
- * Note: LO layout != Word; the baseline is tagged source:"libreoffice".
- *       When a precise Word baseline coexists later, the field structure stays the same
- *       and only the source value changes to "word".
- */
+/** Pagination fidelity F0 — LibreOffice headless baseline extraction */
 
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, readdirSync, writeFileSync, rmSync, existsSync } from 'node:fs'

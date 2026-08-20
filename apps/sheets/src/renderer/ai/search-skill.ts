@@ -3,9 +3,8 @@ import { t } from '../i18n/locale'
 import { sheetsPlatform } from '../platform'
 
 /**
- * Web-search AgentSkill (same source as docs/slides web_search):
- * the main process queries Serper/DuckDuckGo; the renderer only receives
- * titles/links/snippets.
+ * Web-search AgentSkill (same source as docs/slides web_search): the main process queries
+ * Serper/DuckDuckGo; the renderer only receives titles/links/snippets.
  */
 
 const SEARCH_SYSTEM_PROMPT = `## Web search
@@ -39,10 +38,8 @@ export function createSearchSkill(): AgentSkill {
       if (!query) {
         return { output: 'query must not be empty', isError: true, summary: t('aiToolWebSearch') }
       }
-      // The search port is null on a host with no search service of its own to call — a
-      // browser, today, since the BFF has no route for it. The tool then reports that it
-      // cannot run rather than returning an empty result set the model would read as
-      // "nothing on the web matches".
+      // The search port is null on a host with no search service of its own to call — a browser,
+      // today, since the BFF has no route for it.
       const search = sheetsPlatform().search
       if (!search) {
         return {

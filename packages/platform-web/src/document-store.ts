@@ -1,26 +1,4 @@
-/**
- * The browser's answer to "what is a DocumentRef?".
- *
- * Electron can use an absolute path as its ref because the main process can
- * reopen a path at will. A browser cannot: the only thing that carries the
- * user's grant is the `FileSystemFileHandle` object itself, and it has no path
- * and no stable identity the renderer may print. So this store issues an opaque
- * `crypto.randomUUID()` ref and privately owns the ref → handle mapping — which
- * is exactly the indirection `PendingDocument.location` was made optional for
- * in Phase 3a.
- *
- * The mapping lives in two places at once, deliberately:
- *
- *   - an in-memory `Map`, the authority for the current page. Handles minted by
- *     a picker in this session already carry the user's grant.
- *   - IndexedDB, so the mapping survives a reload. Handles are
- *     structured-cloneable, so the handle itself is stored — no bytes are
- *     copied and no path is invented.
- *
- * The two are not interchangeable, and the difference is the permission rule:
- * a handle restored from IndexedDB carries *no* permission, so the first use
- * after a reload must query and, if needed, re-request it. See `handleFor`.
- */
+/** The browser's answer to "what is a DocumentRef?". */
 import type { PdfBytesIo } from '@samugen/pdf-edit'
 import {
   ensurePermission,
@@ -64,14 +42,7 @@ export class UnknownDocumentError extends Error {
 export interface WebDocumentStoreOptions {
   handles: DocumentHandleStore
   pickers: FilePickers
-  /**
-   * File types every dialog this store opens is filtered to. Defaults to PDF,
-   * which is what the first caller needed; docs passes `DOCX_FILE_TYPES`.
-   *
-   * One store handles one document format on purpose: a store is created per
-   * app, and mixing filters would let a docx open dialog offer a .pdf that
-   * nothing downstream could parse.
-   */
+  /** File types every dialog this store opens is filtered to. */
   fileTypes?: FilePickerAcceptType[]
   /**
    * Groups this store's dialogs so the browser reopens them in the last
@@ -86,14 +57,7 @@ export interface WebDocumentStoreOptions {
 
 /** Options for `WebDocumentStore.write`. */
 export interface WriteOptions {
-  /**
-   * May this write open the browser's write-permission dialog? Defaults to true.
-   *
-   * `false` for an unattended write (an autosave, a recovery tick): the write then
-   * proceeds only on a grant that already exists, and otherwise throws
-   * `FilePermissionDeniedError` for the caller to report as "not saved yet"
-   * without anything having appeared on screen.
-   */
+  /** May this write open the browser's write-permission dialog? */
   prompt?: boolean
 }
 
@@ -118,12 +82,7 @@ export class WebDocumentStore {
     this.now = options.now ?? (() => Date.now())
   }
 
-  /**
-   * Show the open dialog and adopt the picked file as a document.
-   *
-   * `null` means the user dismissed the dialog — a cancel is not an error, and
-   * every other failure still throws.
-   */
+  /** Show the open dialog and adopt the picked file as a document. */
   async open(): Promise<WebDocument | null> {
     const handle = await this.withDialog(() =>
       this.pickers.openFile({ types: this.fileTypes, id: this.pickerId }),
@@ -160,58 +119,25 @@ export class WebDocumentStore {
     return new Uint8Array(await file.arrayBuffer())
   }
 
-  /**
-   * The document's current last-modified time and size — a browser's `fs.stat`.
-   *
-   * Together with a hash of the bytes the host last read or wrote, this is
-   * @samugen/platform's `DiskFileState`, so a browser host can run the very same
-   * `isExternallyModified` check the Electron main process runs before it
-   * overwrites a file. `getFile()` is a metadata snapshot and does not read the
-   * contents, which is what keeps the no-conflict save path from rereading the
-   * document.
-   */
+  /** The document's current last-modified time and size — a browser's `fs.stat`. */
   async stat(ref: string): Promise<{ lastModified: number; size: number }> {
     const file = await (await this.handleFor(ref)).getFile()
     return { lastModified: file.lastModified, size: file.size }
   }
 
-  /**
-   * May this document be written *without asking the user*?
-   *
-   * A query, never a request: `queryPermission` reports the standing grant and
-   * opens nothing, which is what makes it safe to call from a timer. A `false` is
-   * not a failure — it means the next write has to be one the user asked for, so
-   * that the browser's permission prompt has a gesture behind it.
-   *
-   * True for a handle that came from a save dialog (writable by construction) and
-   * for one already granted in this session; false for a freshly opened document
-   * whose grant is still read-only, and for one restored from IndexedDB after a
-   * reload.
-   */
+  /** May this document be written *without asking the user*? */
   async writable(ref: string): Promise<boolean> {
     const handle = await this.handleFor(ref)
     return (await handle.queryPermission({ mode: 'readwrite' })) === 'granted'
   }
 
-  /**
-   * Overwrite the document in place.
-   *
-   * `createWritable()` truncates by default, so the file is replaced rather
-   * than patched; the bytes handed in are always a complete document (see
-   * `savePdf` in @samugen/pdf-edit, which only writes after the whole edit
-   * applied cleanly).
-   */
+  /** Overwrite the document in place. */
   async write(ref: string, bytes: Uint8Array, options: WriteOptions = {}): Promise<void> {
     const handle = await this.handleFor(ref)
     // A session handle may hold read-only permission even though it never left
     // memory: `showOpenFilePicker` grants read, and write is a second grant.
     //
-    // `prompt: false` is for a write nobody asked for. Requesting the grant opens
-    // a browser permission dialog, and one of those arriving out of a 30-second
-    // timer is the same interruption a picker would be — worse, from a timer the
-    // request may simply be rejected for want of user activation, which surfaces
-    // as a failed save. So an unattended write asks whether it *already* may, and
-    // declines when it may not.
+    // `prompt: false` is for a write nobody asked for.
     if (options.prompt === false) {
       if (!(await this.writable(ref))) {
         throw new FilePermissionDeniedError(handle.name, 'readwrite', 'prompt')
@@ -227,13 +153,7 @@ export class WebDocumentStore {
     }
   }
 
-  /**
-   * The `PdfBytesIo` for a document — the seam that makes save-in-place work.
-   *
-   * @samugen/pdf-edit's `savePdf` reads through this, applies the edits with
-   * pdf-lib and writes back, so the browser runs byte-for-byte the same editing
-   * code as the Electron main process.
-   */
+  /** The `PdfBytesIo` for a document — the seam that makes save-in-place work. */
   bytesIo(ref: string): PdfBytesIo {
     return {
       read: () => this.read(ref),
@@ -252,21 +172,13 @@ export class WebDocumentStore {
     return new Uint8Array(await file.arrayBuffer())
   }
 
-  /**
-   * Write bytes to a destination the user picks. Returns the chosen file name,
-   * or `null` on cancel.
-   *
-   * No ref is minted: the destination is written once and never reopened, so
-   * persisting a handle for it would grow the recent list with documents the
-   * user never opened.
-   */
+  /** Write bytes to a destination the user picks. */
   async saveBytesAs(
     suggestedName: string,
     bytes: Uint8Array,
     /**
-     * Accepted types for this write, when the artifact is not the store's own
-     * document format — exporting `.hwpx` out of a `.docx` store, for instance.
-     * Defaults to the store's types.
+     * Accepted types for this write, when the artifact is not the store's own document format —
+     * exporting `.hwpx` out of a `.docx` store, for instance.
      */
     types: FilePickerAcceptType[] = this.fileTypes,
   ): Promise<string | null> {
@@ -284,19 +196,7 @@ export class WebDocumentStore {
     return handle.name
   }
 
-  /**
-   * Save As: write bytes to a destination the user picks, then *adopt* it as the
-   * open document.
-   *
-   * The difference from `saveBytesAs` is the adoption, and it is what an editor
-   * needs. After Save As the app keeps editing the new file, so the destination
-   * has to become a ref the store can resolve for every later save — and it
-   * belongs in the recent list, because the user really did open it. Callers that
-   * only export a derived artifact (extracted pages, a rendered image) want
-   * `saveBytesAs` and its deliberate lack of a ref.
-   *
-   * `null` means the user dismissed the dialog.
-   */
+  /** Save As: write bytes to a destination the user picks, then *adopt* it as the open document. */
   async saveAsDocument(suggestedName: string, bytes: Uint8Array): Promise<WebDocument | null> {
     const handle = await this.withDialog(() =>
       this.pickers.saveFile({ types: this.fileTypes, suggestedName, id: this.pickerId }),
@@ -322,13 +222,7 @@ export class WebDocumentStore {
     return directoryWriter(handle)
   }
 
-  /**
-   * Fires `true` while any host dialog is open and `false` once it closes.
-   *
-   * A real event source with real events: every picker blurs the window, and a
-   * blur is what triggers autosave. Without this, opening "insert PDF" would
-   * race an autosave into the document being inserted into.
-   */
+  /** Fires `true` while any host dialog is open and `false` once it closes. */
   onDialog(handler: (open: boolean) => void): () => void {
     this.dialogListeners.add(handler)
     return () => void this.dialogListeners.delete(handler)
@@ -339,23 +233,15 @@ export class WebDocumentStore {
     const ref = this.newRef()
     this.live.set(ref, handle)
     const entry: StoredDocumentHandle = { ref, name: handle.name, handle, openedAt: this.now() }
-    // A browser with IndexedDB blocked (private mode, storage pressure) can
-    // still work for this session — losing the recent list must not lose the
-    // document the user just opened.
+    // A browser with IndexedDB blocked (private mode, storage pressure) can still work for this
+    // session — losing the recent list must not lose the document the user just opened.
     await this.handles.put(entry).catch((error: unknown) => {
       console.warn('[platform-web] could not persist the file handle:', error)
     })
     return { ref, name: handle.name }
   }
 
-  /**
-   * Resolve a ref to a usable handle.
-   *
-   * The permission rule lives here. A handle still in `live` was granted by a
-   * picker in this session, so it is used as is. A handle loaded from IndexedDB
-   * is a *reused persisted handle*: the browser drops its permission across a
-   * reload, so it is queried and re-requested before anyone touches the file.
-   */
+  /** Resolve a ref to a usable handle. */
   private async handleFor(ref: string): Promise<WebFileHandle> {
     const live = this.live.get(ref)
     if (live) return live
@@ -404,9 +290,8 @@ function directoryWriter(handle: WebDirectoryHandle): WebDirectory {
 }
 
 /**
- * `Uint8Array` is a `BufferSource`, but a view over a pooled `ArrayBuffer` (as
- * pdf-lib may return) would write the whole backing buffer if passed as one.
- * Slicing to the view's own bounds keeps the write exact.
+ * `Uint8Array` is a `BufferSource`, but a view over a pooled `ArrayBuffer` (as pdf-lib may return)
+ * would write the whole backing buffer if passed as one.
  */
 function toBlobPart(bytes: Uint8Array): ArrayBuffer {
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer

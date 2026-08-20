@@ -2,10 +2,9 @@ import { useEffect, useRef } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 
 /**
- * Shared modal keyboard behavior: Esc closes (stopped so it never reaches
- * global listeners like "exit read mode"), and the first form control gets
- * focus on mount unless something inside is already focused (autoFocus).
- * Spread the returned ref/onKeyDown onto the modal backdrop element.
+ * Shared modal keyboard behavior: Esc closes (stopped so it never reaches global listeners like
+ * "exit read mode"), and the first form control gets focus on mount unless something inside is
+ * already focused (autoFocus).
  */
 export function useModalKeys(onClose: () => void) {
   const ref = useRef<HTMLDivElement>(null)

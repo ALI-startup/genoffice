@@ -1,22 +1,11 @@
 /**
- * Copy semantics for filtered sheets: copying a range on a sheet
- * with an active auto-filter copies visible rows only.
- *
- * Univer's built-in clipboard hook already skips rows its own filter model
- * marks as filtered, which covers filters applied inside the app. Workbooks
- * opened from file are different: the sidecar delivers the filter range but
- * not its criteria, so the app re-applies the file's filtered-out rows as
- * plain hidden rows (`hideRows`). Those rows are invisible to the user but
- * not "filtered" to Univer, and the default copy would include them. This
- * hook reports raw-hidden rows inside the filter range as filtered-out too.
- * Hidden rows outside a filter range keep copying: manually hidden rows are
- * still included in copies.
+ * Copy semantics for filtered sheets: copying a range on a sheet with an active auto-filter copies
+ * visible rows only.
  */
 import { IUniverInstanceService, type IRange } from '@univerjs/core'
 import { ISheetClipboardService } from '@univerjs/preset-sheets-core'
-// The plugin package, not the preset: the preset re-exports the filter UI,
-// whose module scope needs a browser canvas (Path2D) and cannot load in
-// node-side tests.
+// The plugin package, not the preset: the preset re-exports the filter UI, whose module scope needs
+// a browser canvas (Path2D) and cannot load in node-side tests.
 import { SheetsFilterService } from '@univerjs/sheets-filter'
 
 import type { UniverRuntime } from './univer-state'

@@ -6,12 +6,7 @@ import { getActiveSubEditor } from '../editor/active-editor'
 import { effectiveSizeHalfPoints } from '../editor/text-style-resolve'
 import { cachedByDoc } from '../doc-cache'
 
-/**
- * Snapshot of every editor-state read the ribbon (and its tabs) shows at render
- * time. App computes it each render and keeps the reference stable via
- * useShallowStable, so React.memo skips the ribbon whenever none of these
- * change (e.g. caret moves inside uniformly formatted text).
- */
+/** Snapshot of every editor-state read the ribbon (and its tabs) shows at render time. */
 export interface RibbonFormatState {
   /** current PM doc: any content change invalidates the ribbon (doc-derived tab displays stay fresh) */
   doc: PmNode | null

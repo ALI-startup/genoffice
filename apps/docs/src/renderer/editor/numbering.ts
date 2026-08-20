@@ -100,11 +100,9 @@ export interface ListItemRef {
 }
 
 /**
- * Word numbering semantics: counters accumulate document-wide per abstractNum
- * (plain paragraphs in between don't break the sequence); when a level appears,
- * its deeper levels reset; startOverride applies the first time that numId uses
- * the level. Returns a marker array the same length as items; items without a
- * definition return null (CSS fallback handles them).
+ * Word numbering semantics: counters accumulate document-wide per abstractNum (plain paragraphs in
+ * between don't break the sequence); when a level appears, its deeper levels reset; startOverride
+ * applies the first time that numId uses the level.
  */
 export function computeListMarkers(
   items: ListItemRef[],

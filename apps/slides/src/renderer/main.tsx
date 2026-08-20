@@ -3,9 +3,8 @@ import { createRoot } from 'react-dom/client'
 import { htmlLang, type Lang } from '@samugen/i18n'
 import { App } from './App'
 import { AudienceView } from './components/AudienceView'
-// The build-time host seam: each Vite config aliases `@host` to exactly one of
-// host-web.ts, so this entry point names no host at all and the
-// bundles carry disjoint host code.
+// The build-time host seam: each Vite config aliases `@host` to exactly one of host-web.ts, so this
+// entry point names no host at all and the bundles carry disjoint host code.
 import { createSlidesPlatform } from '@host'
 import { LocaleProvider, setModuleLang } from './i18n/locale'
 import { setSlidesPlatform } from './platform'

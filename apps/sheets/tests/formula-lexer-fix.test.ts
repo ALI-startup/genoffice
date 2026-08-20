@@ -13,9 +13,8 @@ function fixedNodes(formula: string): SequenceEntry[] {
 }
 
 /**
- * Replica of sheets-ui's normalizeFormulaString splice: FUNCTION and
- * REFERENCE tokens are upper-cased and written back by node index. With the
- * broken indices this is what rewrote `="a"""&B1` into `="a"""B11`.
+ * Replica of sheets-ui's normalizeFormulaString splice: FUNCTION and REFERENCE tokens are
+ * upper-cased and written back by node index.
  */
 function normalizeLikeCommit(formula: string): string {
   const nodes = fixedNodes(formula)

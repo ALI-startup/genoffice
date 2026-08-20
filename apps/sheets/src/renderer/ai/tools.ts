@@ -18,13 +18,7 @@ import { t } from '../i18n/locale'
 import { guideCatalogSummary, loadGuides } from './guides'
 
 /**
- * The workbook DSL as an AgentSkill tool set: read-only context/reader tools
- * and one propose tool. Mirrors the docx skill's read-before-write discipline
- * (get_document_context / read_blocks / replace_blocks), but the mutating
- * tool never touches the workbook directly — it only computes a ChangePlan
- * and hands it to the SAME plan/apply path the manual flow uses, which now
- * auto-applies immediately (undo via ⌘Z / inline button covers everything;
- * the preview card only remains as a manual fallback when apply fails).
+ * The workbook DSL as an AgentSkill tool set: read-only context/reader tools and one propose tool.
  */
 
 /** raw shape the model sends for one operation; validated against workbookOperationSchema */
@@ -305,14 +299,9 @@ function describeFormatState(format: CellFormatState): string {
   return parts.join(', ') || '(none)'
 }
 
-// Cell text is emitted into tab/newline-delimited tool output (read_range grid,
-// read_cells lists, plan summaries), where raw control characters would tear the
-// line/column structure apart and scramble the model's view of the grid. Escape
-// them — and backslash itself, so the encoding stays unambiguous. Univer streams
-// in-cell paragraph breaks as \r (the file model uses \n; see edit-journal's
-// dataStream conversion), so CR/CRLF are normalized to \n first: the model sees
-// a single line-break representation, and echoing the same `\n` escape inside
-// JSON string values of write operations round-trips into real line breaks.
+// Cell text is emitted into tab/newline-delimited tool output (read_range grid, read_cells lists,
+// plan summaries), where raw control characters would tear the line/column structure apart and
+// scramble the model's view of the grid.
 function escapeCellText(text: string): string {
   return text
     .replace(/\\/g, '\\\\')
@@ -322,9 +311,8 @@ function escapeCellText(text: string): string {
 }
 
 function formatCellScalar(cell: { value: CellScalar; formula?: string | undefined }): string {
-  // Formula cells prefer the value (the AI reasons from computed values, with
-  // the formula as provenance); when the value isn't computed yet, give only the
-  // formula
+  // Formula cells prefer the value (the AI reasons from computed values, with the formula as
+  // provenance); when the value isn't computed yet, give only the formula
   if (cell.formula) {
     return cell.value === null || cell.value === undefined
       ? escapeCellText(cell.formula)
@@ -557,9 +545,8 @@ export function executeWorkbookTool(
           outcome.plan.sheetRenames.length +
           outcome.plan.structuralChanges.length
         const base = `Auto-applied ${opCount} change(s) (undo via the side panel [Undo] button or ⌘Z): ${formatPlanSummary(outcome.plan)}${warnings}`
-        // Read-back after write (write → verify): formula cells fetch their
-        // computed values after the async recalc, so the AI sees real results and
-        // errors like #REF!/#DIV/0! instead of just what it wrote.
+        // Read-back after write (write → verify): formula cells fetch their computed values after
+        // the async recalc, so the AI sees real results and errors like #REF!/#DIV/0!
         const formulaAddrs = outcome.plan.cellChanges
           .filter((c) => c.after.formula)
           .map((c) => c.address)

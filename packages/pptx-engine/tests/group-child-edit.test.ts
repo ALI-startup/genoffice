@@ -1,11 +1,4 @@
-/**
- * In-group editing (patching group children) tests:
- * 1. groupChildSlices: document-order slicing, nvId extraction, nested-group inner children not double-counted.
- * 2. editGroupChildTransform: nvId matching (no mismatch even when children array order ≠ document order),
- *    model and XML updated in sync, nested-group chOff/chExt preserved.
- * 3. patchGroupChildText: child txBody regenerated into the group XML.
- * 4. Integration: groupElements → edit a child → save and reopen with correct coordinates/text.
- */
+/** In-group editing (patching group children) tests: 1. */
 import { describe, it, expect } from 'vitest'
 import {
   groupChildSlices,

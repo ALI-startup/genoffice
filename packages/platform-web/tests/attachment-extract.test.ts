@@ -1,15 +1,4 @@
-/**
- * The default extractor's decisions about Hangul documents.
- *
- * Only the decisions: whether a format is offered at all, and what a caller is
- * told when it cannot be read. The extraction itself is @samugen/hwpx-convert's,
- * tested there against real packages, and re-testing it through a dynamic import
- * would buy a slower copy of those assertions.
- *
- * `.hwp` is the interesting case, because it is the one format whose support
- * depends on the deployment rather than on the bundle. Everything here is about
- * the two answers that follow from that.
- */
+/** The default extractor's decisions about Hangul documents. */
 import { describe, expect, it } from 'vitest'
 import { createBrowserAttachmentExtractor } from '../src/attachment-extract'
 import type { WebAttachmentSource } from '../src/attachments'

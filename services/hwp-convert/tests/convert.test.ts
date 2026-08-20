@@ -1,14 +1,4 @@
-/**
- * The converter driver, without a JVM.
- *
- * `runJava` is injected precisely so this suite can walk the whole decision
- * tree — signature rejected, JVM missing, non-zero exit, exit 0 with no output,
- * timeout — every one of which is a distinct answer the browser renders
- * differently. Driving those through a real JVM would mean either a corrupt
- * fixture per case or no coverage of them at all.
- *
- * The real converter is exercised in `integration.test.ts`.
- */
+/** The converter driver, without a JVM. */
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

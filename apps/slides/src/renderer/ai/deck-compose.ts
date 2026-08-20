@@ -1,23 +1,4 @@
-/**
- * Deck generation, composed from native elements.
- *
- * The previous generator handed each page's brief to a cloud service that wrote
- * HTML and returned a one-slide pptx; `slides:html-to-pptx` only ever unpacked
- * those. That service is gone, and there has never been a local HTML→pptx
- * converter to fall back to — so generation is rebuilt the other way round: the
- * model writes a *page spec* (what goes on the page), and this module decides
- * *where it goes*.
- *
- * Splitting it there is what makes it work on any provider. The model is asked
- * only for content and a layout name, which any instruct-tuned model can produce
- * — no CSS, no absolute coordinates, no pptx. Placement is arithmetic here:
- * deterministic, unit-testable, and identical whichever model answered. It also
- * means every generated page is made of real editable elements from the start,
- * rather than a converted picture of a page.
- *
- * Everything is expressed in the deck's own pixel canvas (`RenderSlide.widthPx`
- * / `heightPx`), which is what the element ops take.
- */
+/** Deck generation, composed from native elements. */
 
 /** One block of content the model asked for. `kind` decides how it is drawn. */
 export type SpecBlock =
@@ -105,15 +86,7 @@ function inkFor(background: string, preferred: string): string {
   return bg < 0.5 ? '#ffffff' : '#1b1b1f'
 }
 
-/**
- * Read the Style Skill's colours and fonts.
- *
- * The style guide is model-written prose in a known shape ("Main background:
- * #hex"), so this is deliberately forgiving: every field falls back to the
- * default rather than failing the page, and the ink is recomputed for contrast
- * regardless of what the guide said — an unreadable page is worse than an
- * off-palette one.
- */
+/** Read the Style Skill's colours and fonts. */
 export function parseDeckStyle(styleSkill: string | undefined): DeckStyle {
   const s = String(styleSkill ?? '')
   const pick = (...labels: string[]): string | null => {
@@ -206,13 +179,7 @@ export interface ComposedPage {
   elements: ComposedElement[]
 }
 
-/**
- * Place a page's blocks.
- *
- * Pure, and the reason the generator is reproducible: the same spec and style
- * always produce the same geometry, so a page can be regenerated, diffed, or
- * asserted in a test without a model in the loop.
- */
+/** Place a page's blocks. */
 export function composePage(spec: PageSpec, style: DeckStyle, canvas: Canvas): ComposedPage {
   const t = scale(canvas)
   const out: ComposedElement[] = []
@@ -466,12 +433,9 @@ export function composePage(spec: PageSpec, style: DeckStyle, canvas: Canvas): C
   return { background: style.background, elements: out }
 }
 
-// ── validation ───────────────────────────────────────────────────────────────
-// The model's JSON is untrusted input: it arrives from whatever provider the
-// user configured, at whatever instruction-following quality that model has. So
-// every field is checked, unknown block kinds are dropped rather than failing
-// the page, and a spec that survives is one `composePage` can lay out without
-// a single defensive check of its own.
+// ── validation ─────────────────────────────────────────────────────────────── The model's JSON is
+// untrusted input: it arrives from whatever provider the user configured, at whatever
+// instruction-following quality that model has.
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -541,13 +505,7 @@ function parseBlock(raw: unknown): SpecBlock | null {
 const isLayout = (v: unknown): v is PageLayout =>
   typeof v === 'string' && (PAGE_LAYOUTS as readonly string[]).includes(v)
 
-/**
- * Validate one page spec.
- *
- * `fallbackLayout` is what an unrecognised layout name becomes — the planner
- * suggests layouts from a wider vocabulary than the composer draws, and a page
- * laid out plainly beats a page refused.
- */
+/** Validate one page spec. */
 export function parsePageSpec(
   raw: unknown,
   fallbackLayout: PageLayout = 'title_bullets',
@@ -560,14 +518,7 @@ export function parsePageSpec(
   return { layout: isLayout(raw.layout) ? raw.layout : fallbackLayout, blocks }
 }
 
-/**
- * Map a planner layout name onto one the composer draws.
- *
- * The outline planner's vocabulary predates this module (its prompt lists
- * `timeline_horizontal`, `full_image_text_overlay` and others), so rather than
- * narrow the planner — which would make its outlines worse — near-misses are
- * mapped by intent and anything unknown lands on a layout that always reads.
- */
+/** Map a planner layout name onto one the composer draws. */
 export function layoutForPlan(name: unknown, pageType?: unknown): PageLayout {
   const n = String(name ?? '').toLowerCase()
   if (isLayout(n)) return n

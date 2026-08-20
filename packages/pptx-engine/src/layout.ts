@@ -1,12 +1,4 @@
-/**
- * SlideLayout listing + inserting a new slide with a given layout.
- *
- * Read-only: layout parts are never written back.
- * Provides:
- *  - listSlideLayouts: enumerate every slideLayout's path/name/placeholders in the pptx
- *  - insertBlankSlideWithLayout: insert a blank slide after a given position, with
- *    rels pointing at the chosen layout
- */
+/** SlideLayout listing + inserting a new slide with a given layout. */
 import { utf8Bytes } from './bytes'
 import type { PackageArchive } from './zip'
 import { resolveTarget, relsPathFor } from './zip'
@@ -95,11 +87,7 @@ function parseLayoutPlaceholders(xml: string): LayoutPlaceholder[] {
   return results
 }
 
-/**
- * Enumerate all slideLayouts in the archive (sorted by number).
- * Only scans ppt/slideLayouts/slideLayoutN.xml files; does not rely on
- * presentation.xml's sldLayoutIdLst.
- */
+/** Enumerate all slideLayouts in the archive (sorted by number). */
 export function listSlideLayouts(archive: PackageArchive): SlideLayoutInfo[] {
   const paths = [...archive.entries.keys()]
     .filter((p) => /^ppt\/slideLayouts\/slideLayout\d+\.xml$/.test(p))
@@ -153,11 +141,7 @@ const EMPTY_SPTREE =
   '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/>' +
   '<a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>'
 
-/**
- * Build blank slide XML containing the layout's placeholders.
- * Each non-functional placeholder produces a minimal text box (<p:sp>) with a
- * hint text paragraph.
- */
+/** Build blank slide XML containing the layout's placeholders. */
 function buildSlideXmlWithPlaceholders(placeholders: LayoutPlaceholder[]): string {
   const shapes: string[] = []
   let id = 2
@@ -186,16 +170,7 @@ function buildSlideXmlWithPlaceholders(placeholders: LayoutPlaceholder[]): strin
   )
 }
 
-/**
- * Insert a blank slide associated with a given layout.
- * The internal caller is responsible for:
- *  1. writing the new path into the archive
- *  2. registering it in presentation.xml + rels + [Content_Types].xml
- *  3. parsing and splicing it into deck.slides
- *
- * This function only performs the archive surgery of 1-3; parseSlide is up to the
- * caller (index.ts). Returns the new slide's path, or null on failure.
- */
+/** Insert a blank slide associated with a given layout. */
 export function prepareInsertSlideWithLayout(
   archive: PackageArchive,
   deck: SlideDeck,

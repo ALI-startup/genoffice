@@ -1,6 +1,4 @@
-/**
- * 3.1/3.2 Konva canvas — renders one RenderSlide + selection/transform + text-edit triggering.
- */
+/** 3.1/3.2 Konva canvas — renders one RenderSlide + selection/transform + text-edit triggering. */
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Stage, Layer, Rect, Group, Transformer, Line, Arrow, Text, Circle } from 'react-konva'
 import type Konva from 'konva'
@@ -96,10 +94,8 @@ interface Props {
 }
 
 /**
- * Canvas bleed margin (slide px): PowerPoint's edit view draws elements that extend past the
- * slide boundary on the surrounding workspace, but pixels outside the canvas cannot be drawn.
- * Add a bleed ring around the Stage; content is wrapped in an offset Group (slide coordinate
- * system unchanged), and the Stage container is absolutely positioned at -BLEED to align.
+ * Canvas bleed margin (slide px): PowerPoint's edit view draws elements that extend past the slide
+ * boundary on the surrounding workspace, but pixels outside the canvas cannot be drawn.
  */
 export const CANVAS_BLEED = 160
 
@@ -130,13 +126,7 @@ function countNodes(nodes: RenderNode[]): number {
   return n
 }
 
-/**
- * Main-canvas rasterization ratio. Zoom is a pure CSS transform on the Stage's container, so
- * without this the bitmap stays at devicePixelRatio and zoom>1 just stretches it (blurry).
- * Never below devicePixelRatio (zoom<1 keeps the old quality); capped to bound canvas memory.
- * Dense slides skip the zoom upscale and cap harder: full-layer redraw cost scales with
- * ratio² × node count, and bounding it is the cheap half of the freeze mitigation.
- */
+/** Main-canvas rasterization ratio. */
 export function canvasPixelRatio(devicePixelRatio: number, zoom: number, nodeCount = 0): number {
   if (nodeCount >= DENSE_SLIDE_NODE_COUNT) return Math.min(devicePixelRatio || 1, 2)
   return Math.min((devicePixelRatio || 1) * Math.max(zoom, 1), 3)
@@ -169,11 +159,8 @@ export function SlideCanvas({
   const nodeCount = useMemo(() => countNodes(slide.nodes), [slide])
   const dense = nodeCount >= DENSE_SLIDE_NODE_COUNT
 
-  // zoom is committed to state only after the gesture ends (App batches wheel events),
-  // so re-rasterizing here happens once per gesture, not per wheel event. The slide dep
-  // covers layers (re)created between zoom changes; the resolution media query covers
-  // devicePixelRatio changes (window dragged to another display) — it matches the current
-  // dpr, so it must be re-armed after each change.
+  // zoom is committed to state only after the gesture ends (App batches wheel events), so
+  // re-rasterizing here happens once per gesture, not per wheel event.
   useEffect(() => {
     const apply = () => {
       const ratio = canvasPixelRatio(window.devicePixelRatio, zoom, nodeCount)
@@ -685,9 +672,8 @@ interface AnchorPt {
 }
 
 /**
- * Attachable connection points of the other elements: side midpoints of each box
- * (idx matches the engine's rectangle approximation — 0 top, 1 left, 2 bottom, 3 right).
- * Uses the unrotated model box, same as the engine's move-following computation.
+ * Attachable connection points of the other elements: side midpoints of each box (idx matches the
+ * engine's rectangle approximation — 0 top, 1 left, 2 bottom, 3 right).
  */
 function connectorAnchors(slide: RenderSlide, excludeId: string): AnchorPt[] {
   const out: AnchorPt[] = []
@@ -888,11 +874,7 @@ function NodeView({
   const transformingRef = useRef(false)
   const lastPreviewRef = useRef(0)
 
-  // The Transformer's frame/scale basis defaults to getClientRect() (content bounding box). When text
-  // overflows the shape box (autofit off and content too tall), overflowing glyphs inflate the bounding
-  // box; after shrinking, the Transformer refresh pops the frame back to content size, which looks like
-  // "resize doesn't work". Match PowerPoint: handles always sit on the shape box (model box), text may
-  // overflow — override getClientRect so the Transformer measures by the model box (live boxRef value).
+  // The Transformer's frame/scale basis defaults to getClientRect() (content bounding box).
   useEffect(() => {
     const g = groupRef.current
     if (!g) return
@@ -967,9 +949,7 @@ function NodeView({
       // Snap threshold semantics are "6 screen px": convert back by the canvas CSS zoom (same as dragDistance)
       const thr = 6 / Math.max(zoom, 0.1)
       const raw = { x: t.x() - flipOffX, y: t.y() - flipOffY }
-      // Multi-select drag: snap the selection bounding box as a whole. All selected
-      // nodes fire their own dragmove under the Transformer's proxy drag, but each computes the same snap
-      // delta from the same model bounding box + its own fixed offset -> relative positions stay unchanged.
+      // Multi-select drag: snap the selection bounding box as a whole.
       const bb = multiDrag
         ? selBBox && {
             x: selBBox.x + raw.x - box.x,
@@ -1037,8 +1017,6 @@ function NodeView({
     },
     onTransform: (e: Konva.KonvaEventObject<Event>) => {
       // Live preview during drag: re-lay out text at the new box size (font size unchanged).
-      // Commit width/height only (x/y are managed by the Konva gesture and land in the model with the final commit on release).
-      // Offset conversion for flipped elements relies on a one-shot back-calculation at gesture end; preview stays disabled for them.
       if (!livePreview || box.flipH || box.flipV) return
       const t = e.target
       const sx = Math.abs(t.scaleX())

@@ -28,9 +28,8 @@ function roundRectPathD(w: number, h: number, r: number): string {
 }
 
 /**
- * Preset name → SVG path data (local w×h box), same resolution order as the
- * canvas renderer: polygon channel → path channel → pill → native primitives.
- * Returns null for presets none of the channels cover.
+ * Preset name → SVG path data, in a local w×h box; same resolution order as the canvas renderer.
+ * polygon channel → path channel → pill → native primitives.
  */
 /** Open V arrowhead stroke at (x2,y2), pointing away from (x1,y1). */
 function arrowHeadD(x1: number, y1: number, x2: number, y2: number, len: number): string {

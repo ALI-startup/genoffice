@@ -1,17 +1,4 @@
-/**
- * The page's handle on the engine: the same eleven commands, one Worker away.
- *
- * Method for method this is `XlsxSidecarClient` (src/engine-node/xlsx-sidecar-client.ts) — which is
- * the point, since the ports above must not be able to tell which host answered. The
- * bookkeeping is the desktop's too, and for the same reason: requests are correlated by id,
- * because a Worker's replies arrive out of order relative to nothing in particular and the
- * caller is owed its own answer.
- *
- * What is deliberately absent is the desktop's timeout. There it guards against a child
- * process that died or wedged; here a wedged engine is a wedged Worker, and a timer would
- * free the caller while the Worker went on holding a half-saved workbook. A caller that
- * wants to give up can stop waiting; the engine is not something to abandon mid-write.
- */
+/** The page's handle on the engine: the same eleven commands, one Worker away. */
 import type { EngineMethod, EngineReply, MessageLink } from './protocol'
 
 /** The engine-side path of a workbook, opaque above this layer. */
@@ -42,13 +29,7 @@ export class XlsxWorkerClient {
     }
   }
 
-  /**
-   * Compile and instantiate, once.
-   *
-   * Every call funnels through here, so a caller never has to remember to start the engine —
-   * and the compile happens on the first workbook rather than on page load, since a session
-   * that never opens a spreadsheet should not pay 4.5MB for one.
-   */
+  /** Compile and instantiate, once. */
   start(): Promise<void> {
     this.ready ??= this.send('init', [])
     return this.ready
@@ -196,12 +177,7 @@ export class XlsxWorkerClient {
   }
 }
 
-/**
- * A view's bytes as a transferable buffer.
- *
- * Copied when the view is a window onto a larger buffer, because transferring that buffer
- * would take the rest of it with it — and the rest may be someone else's workbook.
- */
+/** A view's bytes as a transferable buffer. */
 function toTransferable(bytes: Uint8Array): ArrayBuffer {
   return bytes.byteOffset === 0 && bytes.byteLength === bytes.buffer.byteLength
     ? (bytes.buffer as ArrayBuffer)

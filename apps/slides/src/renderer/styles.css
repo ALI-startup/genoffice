@@ -364,12 +364,11 @@ button {
    * the icon area grows (hover paints edge to edge), labels sit at the bottom */
   align-items: stretch;
   padding: 6px 12px 6px;
-  /* HARD-fixed height, not min-height: constant ribbon height across tabs,
-     so switching/auto-jumping to contextual tabs never pushes the canvas
-     below (root cause of the selected-element jitter). min-height still let any
-     taller tab stretch the row — a tab that outgrows this must compact its own
-     content instead. Sized to the tallest tab content: the font group's two 30px
-     rows + gaps/padding = 80px. */
+  /*
+   * HARD-fixed height, not min-height: constant ribbon height across tabs, so
+   * switching/auto-jumping to contextual tabs never pushes the canvas below (root cause of the
+   * selected-element jitter).
+   */
   height: 80px;
   /* Groups never shrink (flex-shrink: 0 below), so a narrow window overflows
      the row: scroll it inside the ribbon instead of stretching the document
@@ -519,9 +518,7 @@ button {
   background: transparent;
 }
 
-/* hover/open paint only the icon row — the label below
-
-/* AI button: brand logo only — no gray plate behind the icon, label stays black */
+/* hover/open paint only the icon row — the label below */
 .rb-big.rb-ai {
   font-size: 11px;
   font-weight: 500;
@@ -540,10 +537,7 @@ button {
   background: none;
 }
 
-/* PowerPoint-style: hover/open paint only the icon row — the label below
- * stays outside the gray. The box spans the whole button width (align-self
- * stretch + horizontal bleed), not just the icon content. Negative margins
- * cancel the bleed so button layout/alignment is unchanged. */
+/* PowerPoint-style: hover/open paint only the icon row — the label below stays outside the gray. */
 .rb-big .rb-big-icon {
   align-self: stretch;
   border-radius: 4px;
@@ -924,8 +918,7 @@ body.vib .slide-list {
 
 /* ================= start screen ================= */
 
-/* Design tokens — start screen + AI composer chrome.
- * Canonical names/values from colors_and_type.css. */
+/* Design tokens — start screen + AI composer chrome. */
 :root {
   --gs-font-sans:
     'Arial', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
@@ -2604,10 +2597,7 @@ body.vib .slide-list {
   /* let the wrapped button stretch to the full group height */
   display: flex;
   align-items: stretch;
-  /* Anchor for the .rb-drop panel. Every wrap shares the name, so the scope
-     is essential: without it a fixed-position panel (laid out after all
-     in-flow content) would resolve to the LAST wrap in the document instead
-     of its own parent. */
+  /* Anchor for the .rb-drop panel. */
   anchor-name: --rb-drop-wrap;
   anchor-scope: --rb-drop-wrap;
 }
@@ -5390,8 +5380,7 @@ body.vib .slide-list {
   box-shadow: 0 0 0 3px rgba(35, 36, 37, 0.2);
 }
 
-/* Answered receipt: the submitted Q/A shown as a right-aligned user-reply card
-   (answered state) */
+/* Answered receipt: the submitted Q/A shown as a right-aligned user-reply card (answered state) */
 .ai-clarify-answered {
   align-self: flex-end;
   margin: 8px 0 0 auto;

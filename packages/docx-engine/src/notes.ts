@@ -2,13 +2,7 @@ import { patchParagraphTexts } from './text-patch'
 import type { NoteInfo, NoteRun } from './types'
 import { escapeXmlAttr, escapeXmlText } from './xml-utils'
 
-/**
- * Footnotes / endnotes part handling (word/footnotes.xml, word/endnotes.xml).
- *
- * Both parts share one schema: a list of w:footnote / w:endnote elements.
- * Entries carrying a w:type attribute (separator, continuationSeparator, ...)
- * are structural and must be preserved; only typeless entries are real notes.
- */
+/** Footnotes / endnotes part handling (word/footnotes.xml, word/endnotes.xml). */
 
 export type NoteKind = 'footnote' | 'endnote'
 
@@ -149,15 +143,7 @@ function noteEntryXml(kind: NoteKind, note: NoteInfo): string {
   return `<${entry} w:id="${escapeXmlAttr(note.id)}">${paras.join('')}</${entry}>`
 }
 
-/**
- * Regenerate the notes part from the full desired list. Structural entries
- * (separator/continuation) from the original part are kept byte-identical;
- * when there is no original part, standard separators are created.
- * Surgical: existing entries whose text is unchanged keep their original bytes (inline
- * formatting, images, and hyperlinks are preserved); entries with changed text first try
- * an in-paragraph w:t-level patch (formatting still preserved), and only fall back to a
- * plain-text rebuild when patching fails (paragraph count changed, etc.).
- */
+/** Regenerate the notes part from the full desired list. */
 export function buildNotesXml(
   kind: NoteKind,
   notes: NoteInfo[],

@@ -1,8 +1,6 @@
 /**
- * Slide- and section-level actions extracted from App.tsx:
- * add/duplicate/delete/cut slides, sections, and slide reorder. Element-level
- * clipboard lives in clipboard-actions.ts. Functions read the latest App
- * state through ActionCtx.
+ * Slide- and section-level actions extracted from App.tsx: add/duplicate/delete/cut slides,
+ * sections, and slide reorder.
  */
 import { slidesDeckClipboard } from './platform'
 import { FIT_WIDTH } from './app-constants'

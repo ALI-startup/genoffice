@@ -5,10 +5,8 @@ import { buildDocx } from '../../../packages/docx-engine/tests/helpers/build-doc
 import { blocksToPmDoc, pmDocToSavePlan, type PmNode } from '../src/renderer/editor/convert'
 
 /**
- * A Word automatic TOC is one w:sdt whose sdtContent holds a
- * heading paragraph + N PAGEREF field paragraphs. The engine splits it into
- * one block per paragraph; the save plan must keep the single sdt balanced
- * whichever member is edited, split, or deleted.
+ * A Word automatic TOC is one w:sdt whose sdtContent holds a heading paragraph + N PAGEREF field
+ * paragraphs.
  */
 
 const TOC_ENTRY = (n: number) =>

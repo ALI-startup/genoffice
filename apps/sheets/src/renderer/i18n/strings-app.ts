@@ -9,7 +9,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: '语言',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm: '工作簿在打开后被磁盘上的改动覆盖——请改用另存为。',
     // Number-format category dropdown
     appNumFmtAccounting: '会计专用',
@@ -943,7 +942,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: 'Language',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
       'The workbook changed on disk after it was opened — use Save As instead.',
     appNumFmtAccounting: 'Accounting',
@@ -1894,7 +1892,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: '言語',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
       'ブックを開いた後にディスク上で変更されています — 名前を付けて保存を使用してください。',
     // Number-format category dropdown
@@ -2911,7 +2908,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: '언어',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
       '통합 문서가 열린 후 디스크에서 변경되었습니다. 다른 이름으로 저장을 사용하세요.',
     // Number-format category dropdown
@@ -3899,7 +3895,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: 'Langue',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
       'Le classeur a été modifié sur le disque après son ouverture — utilisez Enregistrer sous.',
     appNumFmtAccounting: 'Comptabilité',
@@ -4919,7 +4914,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: 'Sprache',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
       'Die Arbeitsmappe wurde nach dem Öffnen auf dem Datenträger geändert — verwenden Sie stattdessen „Speichern unter“.',
     appNumFmtAccounting: 'Buchhaltung',
@@ -5927,7 +5921,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: 'Idioma',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
       'El libro cambió en el disco después de abrirse; usa Guardar como en su lugar.',
     appNumFmtAccounting: 'Contabilidad',
@@ -6922,7 +6915,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: 'ภาษา',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm: 'เวิร์กบุ๊กถูกเปลี่ยนแปลงบนดิสก์หลังจากเปิด — โปรดใช้บันทึกเป็นแทน',
     appNumFmtAccounting: 'บัญชี',
     appNumFmtShortDate: 'วันที่แบบสั้น',
@@ -7861,7 +7853,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: 'Bahasa',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm: 'Buku kerja berubah di disk setelah dibuka — gunakan Simpan Sebagai.',
     appNumFmtAccounting: 'Akuntansi',
     appNumFmtShortDate: 'Tanggal Pendek',
@@ -8822,7 +8813,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: 'Язык',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
       'Книга была изменена на диске после открытия — используйте «Сохранить как».',
     appNumFmtAccounting: 'Финансовый',
@@ -9804,7 +9794,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: 'اللغة',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm: 'تم تغيير المصنف على القرص بعد فتحه — استخدم «حفظ باسم» بدلاً من ذلك.',
     appNumFmtAccounting: 'محاسبة',
     appNumFmtShortDate: 'تاريخ قصير',
@@ -10746,7 +10735,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: 'Idioma',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
       'A pasta de trabalho foi alterada no disco após ser aberta — use Salvar Como.',
     appNumFmtAccounting: 'Contábil',
@@ -11738,7 +11726,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: 'Lingua',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
       "La cartella di lavoro è stata modificata sul disco dopo l'apertura — usa Salva con nome.",
     appNumFmtAccounting: 'Contabilità',
@@ -12731,7 +12718,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: 'Język',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
       'Skoroszyt został zmieniony na dysku po otwarciu — użyj polecenia Zapisz jako.',
     appNumFmtAccounting: 'Księgowy',
@@ -13722,7 +13708,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: 'Taal',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
       'De werkmap is op de schijf gewijzigd nadat deze was geopend — gebruik Opslaan als.',
     appNumFmtAccounting: 'Financieel',
@@ -14721,7 +14706,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: 'Bahasa',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
       'Buku kerja telah diubah pada cakera selepas dibuka — gunakan Simpan Sebagai.',
     appNumFmtAccounting: 'Perakaunan',
@@ -15685,7 +15669,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: 'שפה',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm: 'חוברת העבודה השתנתה בדיסק לאחר פתיחתה — השתמש בשמירה בשם.',
     appNumFmtAccounting: 'חשבונאות',
     appNumFmtShortDate: 'תאריך קצר',
@@ -16610,7 +16593,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: 'भाषा',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm:
       'खोले जाने के बाद कार्यपुस्तिका डिस्क पर बदल गई — इसके बजाय इस रूप में सहेजें का उपयोग करें।',
     appNumFmtAccounting: 'लेखांकन',
@@ -17576,7 +17558,6 @@ export const appStrings = defineStrings({
     // Language switch (the EN/한국어 toggle in the app's chrome)
     appLanguage: '語言',
     // Shown before overwriting a file another program changed since it was opened.
-    // Same condition the desktop reports as an error; a browser can offer the choice.
     appDiskChangedConfirm: '活頁簿在開啟後被磁碟上的變更覆蓋——請改用另存新檔。',
     appNumFmtAccounting: '會計專用',
     appNumFmtShortDate: '簡短日期',

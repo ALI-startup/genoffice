@@ -54,12 +54,7 @@ export interface HfSet {
 }
 
 /**
- * Pagination preview: a read-only snapshot of real page slicing over the canvas's continuous
- * flow. Each page = a full content clone + overflow clipping + negative-margin offset; the
- * clone is fixed at the canvas content width (line breaks from measurement must not change),
- * and paper size/margins render per each page's section (mixed portrait/landscape across
- * sections is real). Headers/footers render per page by Word variant rules (first page /
- * odd-even), with real page numbers.
+ * Pagination preview: a read-only snapshot of real page slicing over the canvas's continuous flow.
  */
 export function PaginationPreview({
   section,
@@ -99,15 +94,13 @@ export function PaginationPreview({
   /** Multi-section: unsaved per-section header/footer edit overrides (default variant) */
   sectionHfOverride?: (sectionIndex: number, kind: 'header' | 'footer') => HeaderFooter | null
   /**
-   * Export the preview to PDF, or `null` on a host with no PDF pipeline (the
-   * browser build, until a renderer-side exporter exists). Null hides the button
-   * rather than showing one that would do nothing.
+   * Export the preview to PDF, or `null` on a host with no PDF pipeline (the browser build, until a
+   * renderer-side exporter exists).
    */
   onExportPdf: (() => void) | null
   /**
-   * Print these pages through the host's print flow, or `null` on a host the
-   * renderer does not drive printing on (the Electron build, where Print is the
-   * native menu's). Null hides the button rather than showing an inert one.
+   * Print these pages through the host's print flow, or `null` on a host the renderer does not
+   * drive printing on (the Electron build, where Print is the native menu's).
    */
   onPrint: (() => void) | null
   onClose: () => void
@@ -361,11 +354,8 @@ export function PaginationPreview({
                 {
                   width: pageW,
                   height: pageH,
-                  // Which `@page` rule this sheet prints under, so a mixed-paper
-                  // document keeps each section's paper size in the browser (see
-                  // print.ts). Set unconditionally: with no `@page` rules in the
-                  // stylesheet the property names nothing, and Electron's
-                  // printToPDF ignores CSS page geometry outright.
+                  // Which `@page` rule this sheet prints under, so a mixed-paper document keeps
+                  // each section's paper size in the browser (see print.ts).
                   page: printPageName({ width: pageW, height: pageH }),
                   '--pv-page-h': `${pageH}px`,
                   '--page-w': `${pageW}px`,

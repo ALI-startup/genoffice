@@ -398,10 +398,9 @@ export function chartDataFromValues(
   const toNumber = (v: unknown): number =>
     typeof v === 'number' ? v : isNumeric(v) ? Number(String(v).trim()) : 0
   const width = firstRow.length
-  // A header row is signalled by non-numeric labels, or by the cross-tab
-  // fingerprint Excel also uses: blank corner cell with filled cells across
-  // the rest of the first row (numeric headers — years, months — are data
-  // otherwise).
+  // A header row is signalled by non-numeric labels, or by the cross-tab fingerprint Excel also
+  // uses: blank corner cell with filled cells across the rest of the first row (numeric headers —
+  // years, months — are data otherwise).
   const hasLabelHeader =
     grid.length > 1 &&
     firstRow.some((v, i) => (width === 1 || i > 0) && !isBlank(v) && !isNumeric(v))
@@ -557,8 +556,7 @@ export function buildChartVisual(input: BuildChartVisualInput): SheetVisual {
           toColumnOffset: 0,
         }
   const dataStartRow = bounds.startRow + (parsed.hasHeaderRow && !parsed.byRow ? 1 : 0)
-  // by-row orientation: series names come from the first column, categories
-  // from the first row
+  // by-row orientation: series names come from the first column, categories from the first row
   const dataStartColumn = bounds.startColumn + (parsed.hasHeaderRow && parsed.byRow ? 1 : 0)
   return {
     id: input.id,

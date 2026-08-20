@@ -1,16 +1,4 @@
-/**
- * Changing the UI language, end to end through the locale context.
- *
- * The point of the test is the second half: a switch has to repaint the UI in
- * the language just chosen, and it cannot wait for the host to say so — no host
- * echoes a switch back to the window that asked (see LanguagePort). A version of
- * this that only asserted `setLanguage` was called would pass while the UI stayed
- * in English, which is the bug worth catching.
- *
- * It drives `useI18n().setLang` rather than a control in the chrome: the editor
- * has none any more, and the language it shows is the shell's choice arriving
- * through the host — the last two cases here.
- */
+/** Changing the UI language, end to end through the locale context. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, createElement, useRef, type ReactElement } from 'react'
 import { createRoot } from 'react-dom/client'

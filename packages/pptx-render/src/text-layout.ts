@@ -1,23 +1,6 @@
 /**
- * 2.3 Text layout — replicates PPT text-box layout: wrapping / line spacing /
- * paragraph spacing / vertical alignment / autofit.
- *
- * Input: TextBody (pptx-engine parse result) + text box pixel size + font metrics.
- * Output: RenderTextLayout (glyph runs per line with exact px coordinates).
- *
- * Wrapping rules:
- *   - wrap=true: wrap to the available width; prefer breaking at whitespace, CJK may
- *     break per character, over-long words without whitespace hard-break.
- *   - wrap=false: no wrapping (overflow handled by clipping/autofit).
- *   - autofit=shrink: when content is too tall, shrink font sizes proportionally
- *     (bisection) until it fits or hits the floor.
- *
- * Alignment (baked into glyph coordinates; the renderer computes nothing):
- *   - Paragraph align (l/ctr/r/just) → each line offsets horizontally within the
- *     available width; negative offsets allowed on overflow (wrap=none centered
- *     content overflows equally to both sides).
- *   - bodyPr anchor (t/ctr/b) → the overall vertical offset is added to each line's
- *     top/baselineY.
+ * 2.3 Text layout — replicates PPT text-box layout: wrapping / line spacing / paragraph spacing /
+ * vertical alignment / autofit.
  */
 import type { TextBody, Paragraph, TextRun } from '@samugen/pptx-engine'
 import type { RenderTextLayout, TextLine, GlyphRun } from './render-tree'
@@ -154,10 +137,8 @@ const RTL_RE = /[\u0590-\u08ff\ufb1d-\ufdff\ufe70-\ufeff]/
 let bidiApi: ReturnType<typeof bidiFactory> | null = null
 
 /**
- * Runs UAX#9 over the paragraph token stream: tokens crossing direction levels are
- * split at level boundaries and tagged with their level. Line breaking stays in
- * logical order (UAX#9 requires wrap first, reorder after); visualOrder reorders
- * each line once formed.
+ * Runs UAX#9 over the paragraph token stream: tokens crossing direction levels are split at level
+ * boundaries and tagged with their level.
  */
 function applyBidi(tokens: Token[]): Token[] {
   const text = tokens.map((t) => t.text).join('')
@@ -261,9 +242,7 @@ function layoutParagraph(
       trailingSpace = true
     }
     if (!toks.length) {
-      // An empty line still occupies one line height. A textless run (the marker
-      // element-level font ops leave on blank cells/paragraphs) styles the line and is
-      // kept as a zero-width glyph run so the editor and ribbon readback see the format.
+      // An empty line still occupies one line height.
       const src = p.runs[0]
       const st: RunStyle = src
         ? runStyle(src, scale, fontScale)
@@ -414,12 +393,7 @@ function buildLine(
   }
 }
 
-/**
- * Computes line height with the paragraph's line-spacing settings. Single spacing =
- * the font's suggested line height (opentype: hhea ascent+descent; heuristic: 1.2em)
- * — with no extra ×1.2 on top (the earlier double scaling made large-size
- * title spacing ~20% too tall).
- */
+/** Computes line height with the paragraph's line-spacing settings. */
 function lineH(
   p: Paragraph,
   m: { ascent: number; descent: number; lineHeight: number },
@@ -468,10 +442,8 @@ export function layoutText(input: TextLayoutInput): RenderTextLayout {
   const build = (fontScale: number, lnSpcRed: number) =>
     layoutAll(body, availWidth, wrap, metrics, vp.scale, fontScale, lnSpcRed)
 
-  // PowerPoint's stored shrink ratio takes priority (files with shrunk text render
-  // as-is; we don't scale back up per our own metrics). Only if content still
-  // overflows (we edited text / metric differences) do we step further down the
-  // discrete autofit ladder (see SHRINK_STEPS), capped at the stored value
+  // PowerPoint's stored shrink ratio takes priority (files with shrunk text render as-is; we don't
+  // scale back up per our own metrics).
   const storedScale = body.autofit === 'shrink' ? (body.fontScale ?? 1) : 1
   const storedRed = body.autofit === 'shrink' ? (body.lnSpcReduction ?? 0) : 0
   let fontScale = storedScale
@@ -516,10 +488,8 @@ export function layoutText(input: TextLayoutInput): RenderTextLayout {
 }
 
 /**
- * PowerPoint autofit's discrete shrink steps (fontScale in 7.5% increments +
- * lnSpcReduction in 0/10/20% bands), observed from real files
- * (92500/0, 85000/10000, 62500/20000…).
- * Step down and take the first that fits; floor 25%.
+ * PowerPoint autofit's discrete shrink steps (fontScale in 7.5% increments + lnSpcReduction in
+ * 0/10/20% bands), observed from real files (92500/0, 85000/10000, 62500/20000…).
  */
 const SHRINK_STEPS: Array<[number, number]> = [
   [0.925, 0],
@@ -537,19 +507,8 @@ const SHRINK_STEPS: Array<[number, number]> = [
 // ── Vertical text (bodyPr vert) ─────────────────────────────────────
 
 /**
- * Vertical column layout: horizontal "lines" become "columns", columns run right
- * to left, and characters within a column stack top to bottom.
- * Approximations (v1):
- * - vert/vert270/wordArtVert should rotate the whole box 90°/270°, but that is too
- *   invasive for rendering/hit-testing/editing overlays, so degrade to the same
- *   column layout as eaVert;
- * - PowerPoint rotates Latin characters 90° under eaVert; here they stay upright
- *   (one grapheme per cell);
- * - autofit doesn't self-iterate (only reuses the stored fontScale);
- *   justify/bidi/marL/super-subscript shifts are skipped.
- * Coordinate conventions match horizontal layout: GlyphRun.x/baselineY are relative
- * to the content area's (inside insets) top-left, zero renderer changes.
- * TextLine = one column; paraStart/srcRunIdx semantics unchanged, editor round-trips work.
+ * Vertical column layout: horizontal "lines" become "columns", columns run right to left, and
+ * characters within a column stack top to bottom.
  */
 function layoutTextVertical(
   body: TextBody,
@@ -789,9 +748,8 @@ function layoutAll(
   let y = 0
   let autoNum = 0 // buAutoNum sequential numbering (reset on a non-numbered paragraph)
   for (const p of body.paragraphs) {
-    // Indent and bullets (body lines start at marL; the bullet
-    // draws at marL+indent, negative indent = hanging indent; without a bullet the
-    // first line starts at marL+indent)
+    // Indent and bullets (body lines start at marL; the bullet draws at marL+indent, negative
+    // indent = hanging indent; without a bullet the first line starts at marL+indent)
     const marLPx = emuToPx(p.marL ?? 0, scale)
     const indentPx = emuToPx(p.indent ?? 0, scale)
     const hasText = p.runs.some((r) => r.text.trim())

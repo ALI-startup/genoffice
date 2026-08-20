@@ -1,31 +1,4 @@
-/**
- * Paragraph roles recovered straight from the HWPX package.
- *
- * `neoali-hwpxjs` renders a document to display HTML: every body paragraph comes
- * back as a `<p>`, whatever role it had. Headings arrive flattened to body text,
- * and list items arrive as ordinary paragraphs whose bullet or number has been
- * baked into the text as literal characters (`"• item"`, `"1. item"`).
- *
- * For a viewer that is the right call. For an importer it is not: flattening
- * headings loses the document's structure, and a literal bullet is corrupting —
- * re-exporting such a paragraph prefixes it a second time, so a round trip turns
- * `1. one` into `1. 1. one`.
- *
- * Both roles are still in the package, in the two files the renderer's public API
- * does not expose. This module reads them directly, using the same jszip +
- * fast-xml-parser pair the rest of the repo already depends on:
- *
- *   - `Contents/header.xml` holds the style table (`hh:style`, keyed by the
- *     `styleIDRef` a paragraph carries) and the paragraph-property table
- *     (`hh:paraPr`, keyed by `paraPrIDRef`), which is where `hh:heading` records
- *     whether a paragraph is an outline heading, a numbered item or a bullet.
- *   - `Contents/section*.xml` holds the body, whose *direct* `hp:p` children are
- *     the top-level blocks in document order.
- *
- * The result is positional: entry `i` describes the i-th top-level block. Callers
- * must treat a length mismatch against the rendered HTML as "no information" and
- * fall back, never as an off-by-one to absorb — see `normalize.ts`.
- */
+/** Paragraph roles recovered straight from the HWPX package. */
 import JSZip from 'jszip'
 import { XMLParser } from 'fast-xml-parser'
 
@@ -60,15 +33,7 @@ const attr = (node: XmlNode | undefined, name: string): string | undefined => {
   return value === undefined || value === null ? undefined : String(value)
 }
 
-/**
- * Heading level from a style name.
- *
- * Both the English and the Korean built-in names are matched, because a
- * document authored in Hangul Word Processor carries the Korean ones and only
- * files that passed through an English build carry `engName`. `제목 N` is
- * "Heading N" and `개요 N` is "Outline N"; the bare `제목` / `Title` is the
- * document title, which maps to level 1, and `부제목` / `Subtitle` to level 2.
- */
+/** Heading level from a style name. */
 function headingLevelFromStyleName(name: string | undefined): number | null {
   if (!name) return null
   const trimmed = name.trim()
@@ -90,12 +55,7 @@ function findEntry(zip: JSZip, path: string): JSZip.JSZipObject | null {
   return null
 }
 
-/**
- * Section parts in body order.
- *
- * Sorted numerically rather than lexically: `section10.xml` must follow
- * `section9.xml`, which a plain string sort gets backwards.
- */
+/** Section parts in body order. */
 function sectionEntries(zip: JSZip): JSZip.JSZipObject[] {
   const sections: Array<{ index: number; entry: JSZip.JSZipObject }> = []
   for (const name of Object.keys(zip.files)) {
@@ -152,7 +112,9 @@ function readHeaderTables(xml: string): HeaderTables {
   }
 
   const paraPr = new Map<string, { role: ParagraphRole; align: ParagraphInfo['align'] }>()
-  for (const pr of asArray((refList?.['hh:paraProperties'] as XmlNode | undefined)?.['hh:paraPr'])) {
+  for (const pr of asArray(
+    (refList?.['hh:paraProperties'] as XmlNode | undefined)?.['hh:paraPr'],
+  )) {
     const id = attr(pr, 'id')
     if (id === undefined) continue
     paraPr.set(id, { role: roleOf(pr), align: alignOf(pr) })
@@ -161,14 +123,7 @@ function readHeaderTables(xml: string): HeaderTables {
   return { styleHeadingLevel, styleParaPr, paraPr }
 }
 
-/**
- * Resolve one paragraph against the header tables.
- *
- * The named style wins over the paragraph properties: a paragraph carrying
- * `styleIDRef` for "Heading 2" is a level-2 heading even when its own paraPr
- * says outline level 5, because the style is what the author picked and the
- * paraPr is what the template happened to attach to it.
- */
+/** Resolve one paragraph against the header tables. */
 function resolve(tables: HeaderTables, styleIdRef?: string, paraPrIdRef?: string): ParagraphInfo {
   const named = styleIdRef === undefined ? undefined : tables.styleHeadingLevel.get(styleIdRef)
   const ownProps = paraPrIdRef === undefined ? undefined : tables.paraPr.get(paraPrIdRef)
@@ -180,22 +135,12 @@ function resolve(tables: HeaderTables, styleIdRef?: string, paraPrIdRef?: string
       : tables.paraPr.get(tables.styleParaPr.get(styleIdRef) ?? '')
   const props = ownProps ?? styleProps
 
-  if (named !== undefined) return { role: { kind: 'heading', level: named }, align: props?.align ?? null }
+  if (named !== undefined)
+    return { role: { kind: 'heading', level: named }, align: props?.align ?? null }
   return { role: props?.role ?? { kind: 'body' }, align: props?.align ?? null }
 }
 
-/**
- * Roles of every top-level block, in document order.
- *
- * Only the *direct* `hp:p` children of each section count. Paragraphs nested in
- * a table cell (`hp:tbl` → `hp:tr` → `hp:tc` → `hp:subList` → `hp:p`) are
- * deliberately not walked: the renderer emits a table as a single block, so
- * counting its cells would desynchronise every index after it.
- *
- * Returns an empty array when the package cannot be read at all, which callers
- * treat the same as a length mismatch — import without role recovery rather than
- * import with the wrong roles.
- */
+/** Roles of every top-level block, in document order. */
 export async function readParagraphInfo(bytes: Uint8Array): Promise<ParagraphInfo[]> {
   let zip: JSZip
   try {

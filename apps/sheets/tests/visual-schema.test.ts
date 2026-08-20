@@ -2,10 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import { workbookFileSchema } from '../src/shared/desktop-api'
 
-// The open path parses the sidecar's visuals with this strict schema; a Rust
-// output field that zod does not know about rejects the whole workbook
-// (docs/dev-usage-notes.md's six-point protocol sync). This guards the
-// drawingPath/drawingIndex locator added for save-side visual edits.
+// The open path parses the sidecar's visuals with this strict schema; a Rust output field that zod
+// does not know about rejects the whole workbook (docs/dev-usage-notes.md's six-point protocol
+// sync).
 const visualSchema = workbookFileSchema.shape.visuals.element
 
 const anchor = {

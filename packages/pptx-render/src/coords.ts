@@ -1,13 +1,4 @@
-/**
- * 2.1 Coordinate system — EMU → px conversion + slide viewport mapping.
- *
- * OOXML uses EMU (English Metric Unit): 1 inch = 914400 EMU, 1 px@96dpi = 9525 EMU.
- * Rendering maps EMU geometry to target canvas pixels; the slide size plus the
- * target viewport size determine one uniform scale factor, keeping proportions
- * without stretching.
- *
- * Angles: OOXML rot unit = 1/60000 degree; clockwise positive (matching Canvas/CSS).
- */
+/** 2.1 Coordinate system — EMU → px conversion + slide viewport mapping. */
 import type { EmuRect, Transform, SlideSize } from '@samugen/pptx-engine'
 
 export const EMU_PER_INCH = 914400
@@ -43,10 +34,7 @@ export interface Viewport {
   scale: number
 }
 
-/**
- * Computes a proportional viewport from the slide size + target width.
- * Pass fitWidthPx: the canvas fills that width proportionally, height follows the slide ratio.
- */
+/** Computes a proportional viewport from the slide size + target width. */
 export function makeViewport(size: SlideSize, fitWidthPx: number): Viewport {
   const baseWidthPx = size.cx / EMU_PER_PX_96 // the slide's "natural" pixel width at 96dpi
   const scale = fitWidthPx / baseWidthPx
@@ -95,10 +83,7 @@ export interface ParentPlacement {
   scaleY?: number
 }
 
-/**
- * Transform (EMU geometry + rotation/flip) → pixel placement box.
- * parent: for nested groups, the parent's converted top-left offset + group scaling (default none).
- */
+/** Transform (EMU geometry + rotation/flip) → pixel placement box. */
 export function placeTransform(
   t: Transform,
   vp: Viewport,

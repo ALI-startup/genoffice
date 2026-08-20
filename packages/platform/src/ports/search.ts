@@ -1,23 +1,4 @@
-/**
- * Web / image search capability (backed by the shared main-process
- * Serper + DuckDuckGo client).
- *
- * Every member is required. The table records which preloads currently forward
- * each channel, not what the host can do — like the AI channels, these handlers
- * are registered process-wide and any preload can forward them:
- *
- * | method      | pdf | docs | slides | sheets |
- * | ----------- | --- | ---- | ------ | ------ |
- * | webSearch   | no  | yes  | yes    | yes    |
- * | imageSearch | no  | yes  | yes    | no     |
- * | fetchImage  | no  | yes  | no     | no     |
- *
- * Result-shape note: docs declares an optional `error` field (the failure
- * reason carried when `method === 'error'`); slides and sheets omit it. The
- * port takes the docs shape — the extra optional field is the superset and the
- * transport already sends it. (Optional *data* fields are fine; optional
- * *methods* are what we are eliminating.)
- */
+/** Web / image search capability (backed by the shared main-process Serper + DuckDuckGo client). */
 
 export interface WebSearchHit {
   title: string

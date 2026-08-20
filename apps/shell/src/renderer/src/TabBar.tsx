@@ -88,24 +88,7 @@ interface MenuItem {
   run: () => void
 }
 
-/**
- * A popup menu drawn in the DOM, for hosts that have no native one.
- *
- * The tab strip's two menus are native on Electron by necessity, not by taste:
- * the content area below the strip is a `WebContentsView` that paints over any
- * DOM dropdown the shell renders. In a browser the content area is an iframe
- * with a z-index, so a DOM menu simply works — which is why `tabMenus` is null
- * there rather than backed by something that would have to fake a native menu.
- *
- * Anchored to its button in *viewport* coordinates, and `position: fixed` for that
- * reason: the new-tab button sits inside `.tab-strip`, which scrolls horizontally
- * (`overflow-x: auto`) once the tabs stop fitting — and an overflow ancestor clips an
- * absolutely positioned descendant. The menu used to be clipped to the height of the
- * strip, which read as the button doing nothing at all.
- *
- * Dismissed on outside click, Escape, a choice, or anything that moves the button out
- * from under it: a resize, or a scroll that did not come from inside the menu.
- */
+/** A popup menu drawn in the DOM, for hosts that have no native one. */
 /** Keep a menu inside the window; the same 180px `.tab-menu` declares as its minimum. */
 const TAB_MENU_MIN_WIDTH = 180
 const TAB_MENU_EDGE_GAP = 8
@@ -136,7 +119,6 @@ function DomMenu({
       if (event.key === 'Escape') close()
     }
     // Capture, so the strip's own scroll is seen — it is the one that moves the button.
-    // A scroll inside the menu is not the ground moving, so it is left alone.
     const onScroll = (event: Event) => {
       if (menuRef.current?.contains(event.target as Node)) return
       close()
@@ -256,7 +238,6 @@ export function TabBar() {
       // the main-process broadcast arrives with the identical order
       setTabs((prev) => {
         // look the tab up by id — the list may have changed mid-drag (e.g.
-        // Cmd+W), which would make the indices captured at pointer-down stale
         const fromIdx = prev.findIndex((tb) => tb.id === drag.id)
         if (fromIdx < 0) return prev
         const next = [...prev]
@@ -273,8 +254,7 @@ export function TabBar() {
     return tabsPort.onChanged(setTabs)
   }, [tabsPort])
 
-  // if the dragged tab is closed mid-drag (e.g. Cmd+W) its element unmounts
-  // and pointerup/pointercancel never fire — clear the drag state ourselves
+  // if the dragged tab is closed mid-drag (e.g.
   useEffect(() => {
     const drag = dragRef.current
     if (drag && !tabs.some((t) => t.id === drag.id)) {
@@ -283,9 +263,7 @@ export function TabBar() {
     }
   }, [tabs])
 
-  // Trackpads scroll the strip natively; map a mouse's vertical wheel to
-  // horizontal scrolling. Native listener because React registers wheel as
-  // passive, which forbids preventDefault.
+  // Trackpads scroll the strip natively; map a mouse's vertical wheel to horizontal scrolling.
   useEffect(() => {
     const strip = stripRef.current
     if (!strip) return
@@ -302,9 +280,8 @@ export function TabBar() {
   // keep the active tab in view — new tabs open at the far end of the strip
   const activeId = tabs.find((tab) => tab.active)?.id
   useEffect(() => {
-    // pointer-down activation runs while the user is pressing that tab — it is
-    // already visible, and scrolling the strip mid-press would invalidate the
-    // drag geometry sampled at pointer-down
+    // pointer-down activation runs while the user is pressing that tab — it is already visible, and
+    // scrolling the strip mid-press would invalidate the drag geometry sampled at pointer-down
     if (dragRef.current) return
     stripRef.current
       ?.querySelector('.tab-item.active')
@@ -312,8 +289,6 @@ export function TabBar() {
   }, [activeId])
 
   // The DOM menus' contents, built from the ports that are actually present.
-  // A host without `sheetsLauncher` gets no spreadsheet entry rather than an
-  // entry that does nothing, which is the same rule the native menus follow.
   const newMenuItems = useMemo<MenuItem[]>(() => {
     const items: MenuItem[] = [
       { key: 'doc', label: t('newDoc'), run: () => void launcher.newDoc() },

@@ -1,7 +1,4 @@
-/**
- * File actions extracted from App.tsx: save / save-as, image & PDF
- * export, and printing. Each function takes the ActionCtx built fresh per call.
- */
+/** File actions extracted from App.tsx: save / save-as, image & PDF export, and printing. */
 import { slidesPrint } from './platform'
 import type { RenderSlide } from '@samugen/pptx-render'
 import type { ActionCtx } from './action-context'

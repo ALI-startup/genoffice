@@ -1,7 +1,4 @@
-/**
- * Picture crop and cutout (background removal) actions. Extracted from
- * App.tsx; functions read the latest App state through ActionCtx.
- */
+/** Picture crop and cutout (background removal) actions. */
 import type { PictureRenderNode } from '@samugen/pptx-render'
 import { FIT_WIDTH } from './app-constants'
 import type { ActionCtx } from './action-context'
@@ -65,10 +62,8 @@ export function startCutout(ctx: ActionCtx): void {
 }
 
 /**
- * Apply the cutout result: insert the background-removed PNG at the same position/size
- * (inheriting rotation/crop), then delete the original. Replacement is composed from existing
- * IPC (no direct source-swap IPC); the new image ends up on top.
- * TODO: if the original z-order must be strictly preserved, append reorderElement steps to move it down.
+ * Apply the cutout result: insert the background-removed PNG at the same position/size (inheriting
+ * rotation/crop), then delete the original.
  */
 export async function applyCutout(ctx: ActionCtx, pngDataUrl: string): Promise<void> {
   if (!ctx.cutoutTarget || !ctx.slide) return

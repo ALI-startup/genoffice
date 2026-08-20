@@ -1,24 +1,12 @@
-/**
- * The two security properties the BFF exists to provide.
- *
- * 1. No fragment of a credential appears in any response body.
- * 2. A browser-supplied `settings` field is dropped, never honoured.
- *
- * Both are asserted against real bytes off a real socket, and both sweep *every*
- * route rather than the one obvious one — a leak is only interesting if it can
- * be found where nobody was looking.
- */
+/** The two security properties the BFF exists to provide. */
 import { describe, expect, it } from 'vitest'
 import { AI_BFF_ROUTES } from '@samugen/platform-web/wire'
 import { defaultAiSettings, resolveAiSettings } from '@samugen/ai-provider'
 import { SECRET_KEY, settingsWithSecret, sseChunks, startHarness } from './fakes.js'
 
 /**
- * Every substring of the credential of length >= 4, which is what makes this a
- * "no fragment" check rather than a "no whole key" check. Length 4 is the floor
- * on purpose: it is exactly the size of the `••••1234` hint that
- * @samugen/ai-electron's `toPublicAiSettings` keeps and the wire contract
- * deliberately drops, so a regression that reintroduced the hint would fail here.
+ * Every substring of the credential of length >= 4, which is what makes this a "no fragment" check
+ * rather than a "no whole key" check.
  */
 function fragments(secret: string, minLength = 4): string[] {
   const out = new Set<string>()

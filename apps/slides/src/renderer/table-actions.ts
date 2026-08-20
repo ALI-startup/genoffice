@@ -1,7 +1,6 @@
 /**
- * Table editing actions extracted from App.tsx: row/column
- * structure, merge/split, resize, cell text commit and Tab navigation.
- * Functions read the latest App state through ActionCtx.
+ * Table editing actions extracted from App.tsx: row/column structure, merge/split, resize, cell
+ * text commit and Tab navigation.
  */
 import type { EditParagraph } from '../shared/ipc'
 import type { ActionCtx } from './action-context'

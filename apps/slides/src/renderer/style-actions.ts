@@ -1,7 +1,6 @@
 /**
- * Element/style actions extracted from App.tsx: fonts, paragraph
- * format, fill/stroke, background, theme, table style, and chart edits.
- * Functions read the latest App state through ActionCtx.
+ * Element/style actions extracted from App.tsx: fonts, paragraph format, fill/stroke, background,
+ * theme, table style, and chart edits.
  */
 import type { ShapeRenderNode } from '@samugen/pptx-render'
 import type { EditChartOp, EditTableStyleOp, GradientFillSpec } from '../shared/ipc'
@@ -151,8 +150,7 @@ const SELECTION_PATCH_KEYS = new Set([
 
 // While editing, bullets/numbering/line spacing/paragraph spacing apply to the paragraphs covered
 // by the caret/selection (PowerPoint semantics, committed with the edit); with an element selected
-// they apply element-wide. Clicking the same bullet kind again = turn off (toggle semantics);
-// editing mode judges by the paragraph div's marks, element mode by the render tree's bullet glyphs
+// they apply element-wide.
 export function onParagraphFormat(ctx: ActionCtx, patch: ParagraphFormatPatch): void {
   if (ctx.editing && Object.keys(patch).every((k) => SELECTION_PATCH_KEYS.has(k))) {
     const active = document.activeElement

@@ -1,11 +1,4 @@
-/**
- * Univer UI locale wiring. createUniver boots with en-US (the packs
- * are needed synchronously); once the runtime exists, the app language picks
- * the matching Univer language packs — every preset ships all 19 — and
- * switches LocaleService, which re-renders the whole Univer React tree
- * (rule-management panels, dialogs, menus). Languages Univer has no pack for
- * (th/nl/ms/he/hi) stay English.
- */
+/** Univer UI locale wiring. */
 import { LocaleService, LocaleType, mergeLocales, type ILocales } from '@univerjs/core'
 
 import type { UniverRuntime } from './univer-state'
@@ -222,9 +215,8 @@ export async function applyUniverLocale(runtime: UniverRuntime, lang: string): P
   if (!entry) return
   const packs = (await entry.load()).map((mod) => mod.default)
   const merged = mergeLocales(...packs) as Record<string, Record<string, unknown>>
-  // sheets-ui 0.25.1 references these two keys but no shipped pack has them;
-  // keep the English fallback so the raw key never surfaces (same patch as
-  // the en-US boot locale in App.tsx).
+  // sheets-ui 0.25.1 references these two keys but no shipped pack has them; keep the English
+  // fallback so the raw key never surfaces (same patch as the en-US boot locale in App.tsx).
   merged['sheets-ui'] = {
     ...merged['sheets-ui'],
     info: {

@@ -1,9 +1,8 @@
 import { Fragment, type ReactNode } from 'react'
 
 /**
- * Minimal dependency-free markdown for chat bubbles: paragraphs, ul/ol,
- * headings, **bold**, *italic*, `inline code`. Tolerates
- * partial (streaming) input — anything unrecognized renders as plain text.
+ * Minimal dependency-free markdown for chat bubbles: paragraphs, ul/ol, headings, **bold**,
+ * *italic*, `inline code`.
  */
 
 const INLINE_RE = /(`[^`\n]+`|\*\*[^*\n]+?\*\*|\*[^*\n]+?\*)/g

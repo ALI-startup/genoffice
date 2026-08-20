@@ -1,20 +1,4 @@
-/**
- * Placeholder geometry inheritance (Phase 2, filling a gap left by Phase 1).
- *
- * Placeholder shapes on a slide (<p:ph>) often omit their own <a:xfrm>; geometry
- * must be backfilled from the slideLayout per OOXML inheritance rules, and from
- * the slideMaster when the layout lacks it.
- *
- * Matching rules (aligned with PowerPoint / pptxtojson):
- *   1. exact (type, idx) match first;
- *   2. then by idx (when type is missing/inconsistent);
- *   3. then by type;
- *   4. body-like types (body/subTitle, etc.) fall back to each other, as do
- *      title/ctrTitle.
- *
- * Read-only: layout/master geometry is used only for render inheritance, never
- * written back to the original pptx.
- */
+/** Placeholder geometry inheritance (Phase 2, filling a gap left by Phase 1). */
 import { XMLParser } from 'fast-xml-parser'
 import type { Transform, TextAlign } from './types'
 import { type Theme, resolveFontRef } from './theme'
@@ -103,9 +87,8 @@ function parseXfrmNode(xfrmRaw: unknown): Transform | null {
 }
 
 /**
- * Extract the placeholder geometry table + lstStyle text style defaults from a
- * layout/master's full XML. Collects shapes that carry <p:ph> and at least one of
- * <a:xfrm> or <a:lstStyle>.
+ * Extract the placeholder geometry table + lstStyle text style defaults from a layout/master's full
+ * XML.
  */
 export function parsePlaceholderMap(layoutOrMasterXml: string, theme?: Theme): PlaceholderMap {
   const entries: PlaceholderGeom[] = []
@@ -269,9 +252,8 @@ function findStyleInMap(
 }
 
 /**
- * Placeholder text style inheritance chain (highest priority first):
- * layout placeholder lstStyle → master placeholder lstStyle → master txStyles
- * (by ph family). The caller may prepend the slide shape's own lstStyle.
+ * Placeholder text style inheritance chain (highest priority first): layout placeholder lstStyle →
+ * master placeholder lstStyle → master txStyles (by ph family).
  */
 export function placeholderStyleChain(
   layout: PlaceholderMap | undefined,
@@ -296,9 +278,7 @@ export function placeholderStyleChain(
 }
 
 /**
- * Merge one level's default style field by field along the inheritance chain
- * (earlier layers win). When a layer lacks the level, fall back to that layer's
- * lvl1 (lenient fallback).
+ * Merge one level's default style field by field along the inheritance chain (earlier layers win).
  */
 export function mergeTextStyleChain(
   chain: Array<TextStyleLevels | undefined>,
@@ -385,11 +365,7 @@ function findInMap(
   return undefined
 }
 
-/**
- * Resolve placeholder geometry: layout first, master as fallback.
- * undefined means neither layer has inheritable geometry (the render layer may
- * further fall back to a default or (0,0)).
- */
+/** Resolve placeholder geometry: layout first, master as fallback. */
 export function resolvePlaceholderTransform(
   layout: PlaceholderMap | undefined,
   master: PlaceholderMap | undefined,

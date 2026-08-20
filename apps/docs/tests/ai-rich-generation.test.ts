@@ -11,14 +11,7 @@ import {
 import { blocksToPmDoc, pmDocToSavePlan, type PmNode } from '../src/renderer/editor/convert'
 import { executeTool } from '../src/renderer/ai/tools'
 
-/**
- * Guard tests for AI rich generation (tables / code blocks / quotes / TOC):
- * 1. blank template + restricted HTML with the new tags saves to a docx that
- *    reparses with the expected block structure;
- * 2. reopen + save with no edits returns byte-identical output (the signature
- *    round-trip invariant that keeps untouched blocks byte-stable);
- * 3. reopened AI tables stay protected and cell-text patching works.
- */
+/** Guard tests for AI rich generation (tables / code blocks / quotes / TOC): 1. */
 
 const NUM_IDS = { bullet: BLANK_BULLET_NUM_ID, ordered: BLANK_ORDERED_NUM_ID }
 

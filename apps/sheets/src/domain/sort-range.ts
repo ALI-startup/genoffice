@@ -2,11 +2,8 @@ import { columnIndex, formatAddress, parseRange } from './cell-address'
 import type { CellScalar, CellState } from './workbook.types'
 
 /**
- * Computes the cell rewrites a sort produces, so sorting rides the existing
- * per-cell preview / CAS / apply machinery in both demo and lazy mode.
- * Regions containing formulas are rejected: moving formula text between rows
- * silently re-targets relative references, which is exactly the class of
- * damage the preview model exists to prevent.
+ * Computes the cell rewrites a sort produces, so sorting rides the existing per-cell preview / CAS
+ * / apply machinery in both demo and lazy mode.
  */
 
 export interface SortComputedChange {
@@ -71,9 +68,8 @@ export function computeSortChanges(
     .map((row, index) => ({ row, index }))
     .sort((a, b) => {
       const cmp = compareScalars(a.row.key, b.row.key)
-      const oriented = a.row.key === null || b.row.key === null || cmp === 0
-        ? cmp
-        : spec.ascending ? cmp : -cmp
+      const oriented =
+        a.row.key === null || b.row.key === null || cmp === 0 ? cmp : spec.ascending ? cmp : -cmp
       return oriented !== 0 ? oriented : a.index - b.index
     })
     .map((entry) => entry.row)

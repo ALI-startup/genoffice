@@ -507,10 +507,8 @@ export function FormatCellsDialog({
                   type="color"
                   value={draft.fill || '#ffffff'}
                   disabled={draft.noFill}
-                  // An unset fill already displays as white, so picking white
-                  // never fires a change event. Seed the draft when the user
-                  // opens the picker: that turns the displayed white into an
-                  // explicit choice, distinguishable from "no fill".
+                  // An unset fill already displays as white, so picking white never fires a change
+                  // event.
                   onClick={() => {
                     if (!draft.fill) set('fill', '#ffffff')
                   }}

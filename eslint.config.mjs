@@ -1,5 +1,4 @@
 // Repo-wide lint config (lint only — no formatter, so no whole-repo format diff).
-// Rules are tuned so the current codebase passes cleanly; tighten incrementally.
 import js from '@eslint/js'
 import globals from 'globals'
 import tseslint from 'typescript-eslint'

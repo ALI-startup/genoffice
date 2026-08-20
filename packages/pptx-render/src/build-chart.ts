@@ -1,14 +1,4 @@
-/**
- * Chart layouter — ChartModel (pptx-engine parse) → ChartRenderNode (draw primitives).
- *
- * Same idea as text layout: all geometry (ticks, bar widths, polyline points,
- * legend, wedge angles) is computed to px here; Konva only draws. Supports
- * line / area / bar (columns + horizontal bars: clustered + stacked + percent
- * stacked) / pie (incl. doughnut) / scatter / radar, and bar+line/area combos
- * (series.plotKind). Combos support a secondary value axis (series.secondaryAxis:
- * independent right-side range + tick labels). Unrecognized types fall back to a
- * placeholder chip upstream.
- */
+/** Chart layouter — ChartModel (pptx-engine parse) → ChartRenderNode (draw primitives). */
 import type { ChartModel } from '@samugen/pptx-engine'
 import type { ChartRenderNode } from './render-tree'
 import type { PlacedBox } from './coords'

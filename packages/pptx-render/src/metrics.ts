@@ -1,23 +1,4 @@
-/**
- * 2.3 Text metrics (fidelity linchpin) — font metrics abstraction layer.
- *
- * The key to fidelity is owning the font metrics: don't rely on browser Canvas
- * measureText (untestable, inconsistent across environments); instead parse real
- * font files with opentype.js to get exact advance width / ascent / descent, so
- * any environment (including node unit tests) yields deterministic wrapping and
- * line-height results.
- *
- * Design: FontMetricsProvider interface + three implementations:
- *   1. OpentypeMetrics — real fonts (opentype.Font), pixel-accurate. What a host with
- *      access to font files uses, which is the Electron main process.
- *   2. HeuristicMetrics — deterministic fallback without font files (advance
- *      estimated by character class), keeping wrapping logic unit-testable and
- *      cross-environment consistent; once the frontend loads real fonts it
- *      switches to exact metrics automatically.
- *   3. CanvasMetrics — the browser's own text engine, for a host that has no font files
- *      but *is* the thing that will draw the text. See its own comment for why that makes
- *      it the accurate choice there rather than a second-best one.
- */
+/** 2.3 Text metrics (fidelity linchpin) — font metrics abstraction layer. */
 
 export interface RunStyle {
   fontFamily: string
@@ -40,14 +21,7 @@ export interface FontMetricsProvider {
   metrics(style: RunStyle): FontMetrics
   /** Advance width of a piece of text under this style (px). */
   measure(text: string, style: RunStyle): number
-  /**
-   * CSS font family actually used for drawing. When a missing font is substituted
-   * by an installed one, return the substitute name so the renderer draws with the
-   * same font file the metrics used (otherwise baked run x positions drift from the
-   * real widths of the browser's own fallback font → overlap/squeezing).
-   * Unimplemented = use the original name. `text` lets implementations adjust per
-   * script (complex-script runs measure/draw with the same shaping font).
-   */
+  /** CSS font family actually used for drawing. */
   displayFamily?(style: RunStyle, text?: string): string
 }
 
@@ -59,10 +33,8 @@ const SEGMENTER: Intl.Segmenter | null =
     : null
 
 /**
- * Split by grapheme cluster (combining marks / ZWJ emoji / flags / skin-tone
- * sequences stay intact). Both measurement and line breaking must treat clusters
- * as the smallest unit — splitting by code point would push Thai combining vowels
- * to a line start and measure an emoji sequence as N character widths.
+ * Split by grapheme cluster (combining marks / ZWJ emoji / flags / skin-tone sequences stay
+ * intact).
  */
 export function graphemes(text: string): string[] {
   if (!SEGMENTER) return [...text]
@@ -99,12 +71,7 @@ export function isWideChar(code: number): boolean {
   return false
 }
 
-/**
- * Estimate advance by character class (ratio relative to font size).
- * EAW fullwidth ≈ 1.0em, general Latin ≈ 0.5em, narrow chars smaller. Bold adds a bit.
- * These factors are only for the deterministic no-real-font fallback and don't aim
- * for pixel accuracy; real typesetting is handled by OpentypeMetrics.
- */
+/** Estimate advance by character class (ratio relative to font size). */
 function charAdvanceEm(code: number): number {
   if (isWideChar(code)) return 1.0
   // emoji ranges (rough)
@@ -124,9 +91,8 @@ const ZERO_WIDTH_RE = /[\p{Mn}\p{Me}\p{Cf}]/u
 const EMOJI_JOIN_RE = /[\u200d\ufe0f\u{1f1e6}-\u{1f1ff}\u{1f3fb}-\u{1f3ff}]/u
 
 /**
- * Estimated width of one grapheme cluster: an emoji composition cluster draws as
- * one glyph at 1em; otherwise sum per code point, counting zero-width marks as 0
- * (spacing vowel marks Mc, e.g. Devanagari, have real width and use the default factor).
+ * Estimated width of one grapheme cluster: an emoji composition cluster draws as one glyph at 1em;
+ * otherwise sum per code point, counting zero-width marks as 0 (spacing vowel marks Mc, e.g.
  */
 function clusterAdvanceEm(g: string): number {
   if (g.length > 1 && EMOJI_JOIN_RE.test(g)) return 1.0
@@ -170,10 +136,7 @@ export interface OpentypeFontLike {
   charToGlyphIndex?(char: string): number
 }
 
-/**
- * Exact metrics using fonts already loaded via opentype.js.
- * fontResolver: returns the font instance for family+bold+italic (undefined if not found → caller falls back).
- */
+/** Exact metrics using fonts already loaded via opentype.js. */
 export class OpentypeMetrics implements FontMetricsProvider {
   constructor(
     private fontResolver: (style: RunStyle) => OpentypeFontLike | undefined,
@@ -193,9 +156,7 @@ export class OpentypeMetrics implements FontMetricsProvider {
     const font = this.fontResolver(style)
     if (!font) return this.fallback.measure(text, style)
     try {
-      // Missing-glyph guard: if any character has no glyph (e.g. CJK landing on a Latin
-      // font) → fall back to heuristics for the whole run, so advance=0 doesn't make
-      // line widths badly undersized.
+      // Missing-glyph guard: if any character has no glyph (e.g.
       if (font.charToGlyphIndex) {
         for (const ch of text) {
           if (font.charToGlyphIndex(ch) === 0) return this.fallback.measure(text, style)
@@ -210,13 +171,7 @@ export class OpentypeMetrics implements FontMetricsProvider {
 
 // ── Browser metrics via a canvas 2D context ─────────────────────────
 
-/**
- * What `CanvasMetrics` needs of a 2D canvas context.
- *
- * Minimal on purpose, the same way `OpentypeFontLike` is: this package carries no DOM
- * types, and the host injects the real `CanvasRenderingContext2D`, which satisfies this
- * structurally.
- */
+/** What `CanvasMetrics` needs of a 2D canvas context. */
 export interface TextMeasureContext {
   /** CSS font shorthand, e.g. `bold 18px "Arial", sans-serif`. Assigned before measuring. */
   font: string
@@ -231,13 +186,7 @@ export interface TextMeasureResult {
 }
 
 export interface CanvasMetricsOptions {
-  /**
-   * A run's font family to the family *stack* the renderer will draw with.
-   *
-   * Load-bearing rather than cosmetic: a browser measures and draws with whatever the stack
-   * resolves to, so measuring the bare family while drawing a stack would reintroduce exactly
-   * the measure/draw drift this provider exists to remove. Identity by default.
-   */
+  /** A run's font family to the family *stack* the renderer will draw with. */
   familyStack?: (family: string) => string
   /** Used when the context reports no font box, and when a measurement throws. */
   fallback?: FontMetricsProvider
@@ -245,20 +194,7 @@ export interface CanvasMetricsOptions {
   cacheLimit?: number
 }
 
-/**
- * Metrics from the browser's own text engine.
- *
- * The third provider, and the one a browser host wants. `OpentypeMetrics` is exact about a
- * *font file*, which is what the Electron main process has: it parses the file itself and
- * lays text out before any canvas exists. A page has no font files -- reading them needs the
- * `queryLocalFonts()` permission -- but it has something better for this purpose: the very
- * engine that will draw the text. Measuring through it means layout and drawing agree by
- * construction, including the parts a sum of advance widths gets wrong: kerning, and the
- * shaping of Arabic and Indic runs, which the desktop needs HarfBuzz to approximate.
- *
- * Deterministic across runs of the same browser, which is what a renderer needs; it is not
- * deterministic across engines, which is why unit tests still use `HeuristicMetrics`.
- */
+/** Metrics from the browser's own text engine. */
 export class CanvasMetrics implements FontMetricsProvider {
   private readonly familyStack: (family: string) => string
   private readonly fallback: FontMetricsProvider
@@ -277,13 +213,7 @@ export class CanvasMetrics implements FontMetricsProvider {
     this.cacheLimit = options.cacheLimit ?? 20_000
   }
 
-  /**
-   * The CSS font shorthand, in the order the renderer's own draw path produces.
-   *
-   * Konva builds `<style> <variant> <size>px <family stack>` and quotes any family whose name
-   * contains a space; this reproduces that string so the measurement is of the same font the
-   * draw will use, not merely of a similar one.
-   */
+  /** The CSS font shorthand, in the order the renderer's own draw path produces. */
   private fontOf(style: RunStyle): string {
     const parts: string[] = []
     if (style.bold) parts.push('bold')
@@ -333,9 +263,8 @@ export class CanvasMetrics implements FontMetricsProvider {
     } catch {
       width = this.fallback.measure(text, style)
     }
-    // Dropped wholesale rather than evicted one by one: the cache exists to make a layout
-    // pass cheap, and a layout pass re-measures whatever it still needs. A bound with no
-    // bookkeeping.
+    // Dropped wholesale rather than evicted one by one: the cache exists to make a layout pass
+    // cheap, and a layout pass re-measures whatever it still needs.
     if (this.widths.size >= this.cacheLimit) this.widths.clear()
     this.widths.set(key, width)
     return width

@@ -1,8 +1,4 @@
-/**
- * Pivot-table and slicer actions (create/edit/refresh dialogs, slicer panels).
- * Extracted from App.tsx; the App component passes a PivotActionContext built
- * fresh per call so refs and state never go stale.
- */
+/** Pivot-table and slicer actions (create/edit/refresh dialogs, slicer panels). */
 import { columnLabel, parseRange } from '../domain/cell-address'
 import { applyPivotSlicer, growPivotDefinition, recomputePivotData } from '../domain/pivot-engine'
 import type { WorkbookFile, WorkbookPivotDefinition } from '../shared/desktop-api'
@@ -111,10 +107,9 @@ export function refreshPivotTables(ctx: PivotActionContext, sheetId: string): nu
     const sourceValues = sourceSheet.getRange(definition.sourceRef).getValues() as (
       string | number | boolean | null | undefined
     )[][]
-    // (3) Automatic layout growth: when source data has new categories outside
-    // the cache, first fold the new members into the layout (in memory), then
-    // recompute; without new categories, take the existing data-area-only
-    // write-back path.
+    // (3) Automatic layout growth: when source data has new categories outside the cache, first
+    // fold the new members into the layout (in memory), then recompute; without new categories,
+    // take the existing data-area-only write-back path.
     const growth = growPivotDefinition(definition, sourceValues)
     const grown = growth.definition
     const { data } = recomputePivotData(grown, sourceValues)
@@ -137,10 +132,9 @@ export function refreshPivotTables(ctx: PivotActionContext, sheetId: string): nu
     } else {
       const newOutputRef = applyGrownPivotOutput(target, grown, data, bounds)
       if (pivot.cachePath !== null) {
-        // On save, the pivotTableDefinition's location ref is widened to the
-        // new area; OOXML write-back of rowItems/colItems and sharedItems is
-        // deferred — refreshOnLoad makes Excel rebuild them on open (see the
-        // pivot-engine TODO).
+        // On save, the pivotTableDefinition's location ref is widened to the new area; OOXML
+        // write-back of rowItems/colItems and sharedItems is deferred — refreshOnLoad makes Excel
+        // rebuild them on open (see the pivot-engine TODO).
         recordPivotRefreshUpdate(state.editJournal, pivot.cachePath, sheetId, newOutputRef)
       }
       // The grown definition (with the new outputRef) takes over subsequent
@@ -243,9 +237,8 @@ export function pivotEditInitial(ctx: PivotActionContext): PivotEditSeed | null 
     ctx.setMessage(t('appPivotEditUnsupported', { reasons: definition.unsupported.join('; ') }))
     return null
   }
-  // MVP boundary: existing grouping/filters/report filters/calculated fields
-  // cannot be prefilled into the dialog, and a layout change would drop them —
-  // fail closed.
+  // MVP boundary: existing grouping/filters/report filters/calculated fields cannot be prefilled
+  // into the dialog, and a layout change would drop them — fail closed.
   if (
     definition.fields.some(
       (field) => field.grouping !== undefined || field.formula !== undefined,

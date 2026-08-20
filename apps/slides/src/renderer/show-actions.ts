@@ -1,7 +1,6 @@
 /**
- * Slide-show tab actions extracted from App.tsx: starting shows,
- * presenter view, custom shows, rehearsal timings, and hiding slides.
- * Functions take the ActionCtx built fresh per call.
+ * Slide-show tab actions extracted from App.tsx: starting shows, presenter view, custom shows,
+ * rehearsal timings, and hiding slides.
  */
 import type { ActionCtx } from './action-context'
 import type { CustomShow } from './slideshow-utils'

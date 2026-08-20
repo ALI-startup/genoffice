@@ -1,19 +1,4 @@
-/**
- * The HTTP contract between the browser and the AI BFF.
- *
- * Types only, and deliberately free of any DOM or Node reference: the BFF
- * imports this module (via the package's `./wire` export) to type its
- * responses, and the browser adapter imports it to type what it parses. One
- * declaration, so the two sides cannot drift.
- *
- * The defining property of `PublicAiSettings` is what it does *not* carry.
- * @samugen/ai-electron's `toPublicAiSettings` strips the key down to a
- * `••••1234` hint; this contract goes one step further and drops the hint too,
- * keeping only `credentialConfigured`. There is no settings UI in the browser
- * build to render a hint, and with the last four characters gone the guarantee
- * becomes absolute and testable: no fragment of any credential appears in any
- * response body.
- */
+/** The HTTP contract between the browser and the AI BFF. */
 import type { AiProviderId, AiStreamRequest } from '@samugen/ai-provider'
 
 /** Route prefix the browser calls, and the path the dev server proxies to the BFF. */
@@ -42,14 +27,7 @@ export interface PublicAiSettings {
   providers: Record<string, PublicAiProviderSettings>
 }
 
-/**
- * What the browser may ask for.
- *
- * `AiStreamRequest.settings` is deliberately omitted: it is the deprecated
- * renderer-supplied settings field, and accepting it from a browser would let a
- * page point the server's credentials at an endpoint of its choosing. The BFF
- * drops the field if it arrives anyway.
- */
+/** What the browser may ask for. */
 export type AiStreamBody = Omit<AiStreamRequest, 'settings'>
 
 export interface AiCancelBody {

@@ -11,16 +11,7 @@ import {
   type InkTool,
 } from '../editor/ink'
 
-/**
- * Transparent drawing layer covering the page (pen/highlighter/eraser). Lives inside
- * .page-wrap, which is inside the zoomed .doc-zoom container — pointer
- * coordinates are divided by the zoom factor so stroke geometry is stored at
- * 100% zoom, matching the engine's EMU offsets on save.
- *
- * Finished strokes are anchored to the nearest body paragraph (data-idx) and
- * stored relative to its top-left corner, so they follow the paragraph when
- * content above reflows.
- */
+/** Transparent drawing layer covering the page (pen/highlighter/eraser). */
 
 interface InkOverlayProps {
   tool: InkTool
@@ -76,7 +67,15 @@ function pickAnchor(positions: AnchorPositions, start: InkPoint): number | null 
   return best
 }
 
-export function InkOverlay({ tool, color, width, zoom, annotations, onAdd, onRemove }: InkOverlayProps) {
+export function InkOverlay({
+  tool,
+  color,
+  width,
+  zoom,
+  annotations,
+  onAdd,
+  onRemove,
+}: InkOverlayProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const [anchors, setAnchors] = useState<AnchorPositions>(new Map())
   const [livePoints, setLivePoints] = useState<InkPoint[] | null>(null)
@@ -229,7 +228,10 @@ export function InkOverlay({ tool, color, width, zoom, annotations, onAdd, onRem
           return null
         })}
         {livePoints && drawing && (
-          <path d={strokePathD(livePoints)} {...strokeStyle({ tool, color, width, points: livePoints })} />
+          <path
+            d={strokePathD(livePoints)}
+            {...strokeStyle({ tool, color, width, points: livePoints })}
+          />
         )}
       </svg>
     </div>

@@ -3,10 +3,9 @@ import { parseDocx } from '../src/index'
 import { buildDocx } from './helpers/build-docx'
 
 /**
- * Chinese government documents (repro) place the footer page number
- * inside a VML textbox: w:p > w:r > w:pict > v:shape > v:textbox > w:txbxContent,
- * with a complex PAGE field ("— PAGE —") whose cached result is a literal digit.
- * The parser must surface the textbox paragraphs instead of dropping the footer.
+ * Chinese government documents (repro) place the footer page number inside a VML textbox: w:p > w:r
+ * > w:pict > v:shape > v:textbox > w:txbxContent, with a complex PAGE field ("— PAGE —") whose
+ * cached result is a literal digit.
  */
 
 const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'

@@ -1,9 +1,4 @@
-/**
- * The ribbon command dispatcher. Extracted from App.tsx; the App component
- * passes a RibbonCommandContext built fresh per call so refs and state never
- * go stale. Page-layout, export and save flows stay in App and arrive here
- * as callbacks.
- */
+/** The ribbon command dispatcher. */
 import {
   BooleanNumber,
   BorderStyleTypes,
@@ -268,9 +263,8 @@ export function handleRibbonCommand(ctx: RibbonCommandContext, command: string):
     case 'copy':
     case 'cut':
     case 'paste':
-      // The sheet clipboard implementation registers on the shared UI
-      // command ids; paste falls back to the internal copy cache when the
-      // Clipboard API is unavailable.
+      // The sheet clipboard implementation registers on the shared UI command ids; paste falls back
+      // to the internal copy cache when the Clipboard API is unavailable.
       void runtime.univerAPI.executeCommand(`univer.command.${command}`)
       return
     case 'paste-special:value':
@@ -303,8 +297,6 @@ export function handleRibbonCommand(ctx: RibbonCommandContext, command: string):
     }
     case 'format-painter':
       // One-shot painter: the next selection receives the copied format.
-      // Style deltas land as set-range-values mutations, so they journal
-      // and save like any ribbon style edit.
       void runtime.univerAPI.executeCommand('sheet.command.set-once-format-painter')
       ctx.setMessage(t('appFormatCopied'))
       return
@@ -453,8 +445,6 @@ export function handleRibbonCommand(ctx: RibbonCommandContext, command: string):
       const nextHidden = !worksheet.hasHiddenGridLines()
       worksheet.setHiddenGridlines(nextHidden)
       // The display toggle persists as sheetView@showGridLines on save.
-      // The message also forces the render that refreshes the ribbon
-      // checkbox (journalSize may not change here).
       const state = ctx.lazyWorkbookRef.current
       const sheetId = worksheet.getSheetId()
       if (state && !isSheetRemoved(state.editJournal, sheetId)) {
@@ -765,8 +755,7 @@ export function handleRibbonCommand(ctx: RibbonCommandContext, command: string):
         break
       case 'underline': {
         if (argument === 'double') {
-          // Toggle: Excel's double-underline button removes an existing
-          // double underline. setValue merges the style patch range-wide.
+          // Toggle: Excel's double-underline button removes an existing double underline.
           const current = style.ul as { s?: number; t?: number } | undefined
           const isDouble = current?.s === BooleanNumber.TRUE && current.t === 10
           range.setValue({
@@ -797,11 +786,7 @@ export function handleRibbonCommand(ctx: RibbonCommandContext, command: string):
         )
         break
       case 'align':
-        // justify/distributed set the raw style key (same mutation shape,
-        // journals identically). The facade helper only accepts
-        // 'left' | 'center' | 'normal' — and 'normal' (confusingly) maps to
-        // RIGHT — so translate 'right' before calling it; anything else
-        // would hit its throwing default branch.
+        // justify/distributed set the raw style key (same mutation shape, journals identically).
         if (argument === 'justify' || argument === 'distributed') {
           range.setValue({
             s: { ht: argument === 'justify' ? 4 : 6 },
@@ -830,8 +815,7 @@ export function handleRibbonCommand(ctx: RibbonCommandContext, command: string):
         break
       }
       case 'cellprot': {
-        // No Univer model for cell protection — journal the neutral delta
-        // directly. File-only: not rendered, not undoable.
+        // No Univer model for cell protection — journal the neutral delta directly.
         const state = ctx.lazyWorkbookRef.current
         if (!state) {
           ctx.setMessage(t('appSettingNeedsFile'))

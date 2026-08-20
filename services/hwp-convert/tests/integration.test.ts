@@ -1,16 +1,4 @@
-/**
- * The real converter, on a real `.hwp`.
- *
- * `tests/fixtures/blank.hwp` is a genuine HWP 5.0 binary — an OLE compound
- * document, produced by hwplib's own `BlankFileMaker` with one line of Korean
- * and Latin text in it. It is the smallest thing that can prove the chain works
- * rather than merely that the driver's branches are wired up, which is what
- * `convert.test.ts` covers.
- *
- * Skipped where `java` is absent, and deliberately not mocked into passing: a
- * suite that reports success without having run the converter would be worse
- * than one that says it could not.
- */
+/** The real converter, on a real `.hwp`. */
 import { readFile } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
 import JSZip from 'jszip'

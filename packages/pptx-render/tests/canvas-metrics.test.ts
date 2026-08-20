@@ -1,11 +1,4 @@
-/**
- * `CanvasMetrics` — the provider a browser host measures with.
- *
- * The context is a fake, and has to be: a real one is the browser's text engine, whose
- * numbers are not the same on two engines and are not this file's business. What is testable
- * — and is what the provider exists to get right — is the font string it asks with, that it
- * asks as few times as it can, and what it does when the engine cannot answer.
- */
+/** `CanvasMetrics` — the provider a browser host measures with. */
 import { describe, expect, it } from 'vitest'
 import { CanvasMetrics, HeuristicMetrics, type TextMeasureResult } from '../src/metrics'
 

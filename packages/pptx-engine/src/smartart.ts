@@ -1,11 +1,7 @@
 /**
- * SmartArt (simplified) — instead of writing real diagram parts (the
- * data/layout/colors/quickStyle quartet is too heavy), generate a <p:grpSp> shape
- * group from a preset layout; it is freely editable and is just a plain shape group
- * in PowerPoint.
- *
- * Supported layouts: list (vertical list) / process (horizontal flow) / cycle /
- * hierarchy / pyramid / matrix / venn.
+ * SmartArt (simplified) — instead of writing real diagram parts (the data/layout/colors/quickStyle
+ * quartet is too heavy), generate a <p:grpSp> shape group from a preset layout; it is freely
+ * editable and is just a plain shape group in PowerPoint.
  */
 import type { EmuRect, Slide } from './types'
 import { escapeXmlAttr, escapeXmlText } from './xml-utils'

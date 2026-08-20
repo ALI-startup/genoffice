@@ -1,9 +1,4 @@
-/**
- * Shared Univer runtime types and lazy-workbook streaming state.
- *
- * Used by both the App component (App.tsx) and the module-level sync
- * helpers (univer-sync.ts).
- */
+/** Shared Univer runtime types and lazy-workbook streaming state. */
 import { BorderType, type IRange } from '@univerjs/core'
 
 import type { WorkbookFile, WorkbookPivotDefinition } from '../shared/desktop-api'

@@ -6,12 +6,8 @@ import type {
 } from '@samugen/pptx-render'
 
 /**
- * Deterministic layout audit (modeled on the Google Slides add-in review_google_slides_addin geometry-only checks):
- * pure geometric computation, no LLM calls, no screenshots. Checks three kinds of problems:
- *  1. Elements extending past the canvas
- *  2. Pairwise overlap of content elements (text-text / text-image/media)
- *  3. Text overflowing its text box (uses the render layer's already-laid-out text.contentHeight — exact, not estimated)
- * Results are appended to layout tools' return values so the AI "sees" the real post-edit state (write → verify → fix loop).
+ * Deterministic layout audit (modeled on the Google Slides add-in review_google_slides_addin
+ * geometry-only checks): pure geometric computation, no LLM calls, no screenshots.
  */
 
 interface AuditEntry {
@@ -97,9 +93,7 @@ const OVERLAP_MIN_AREA = 400
 const BACKGROUND_AREA_RATIO = 0.7
 const MAX_ISSUES = 12
 
-/**
- * Audit one page's layout and return the list of problems (empty array = pass).
- */
+/** Audit one page's layout and return the list of problems (empty array = pass). */
 export function auditSlideLayout(slide: RenderSlide): string[] {
   const entries = collectEntries(slide.nodes)
   const issues: string[] = []

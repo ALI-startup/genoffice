@@ -1,9 +1,8 @@
 import { escapeXmlAttr } from './xml-utils'
 
 /**
- * Text watermark support. Word implements watermarks as a VML shape with a
- * v:textpath inside the page header; the shape floats behind the body text
- * on every page that uses that header.
+ * Text watermark support. Word implements watermarks as a VML shape with a v:textpath inside the
+ * page header; the shape floats behind the body text on every page that uses that header.
  */
 
 /** namespaces the header part root needs when it carries a VML watermark */
@@ -26,10 +25,7 @@ export function readWatermarkText(headerXml: string): string | null {
   return text || null
 }
 
-/**
- * The diagonal gray text watermark paragraph Word generates (shapetype 136 =
- * text-on-path). Lives as the first paragraph of the header part.
- */
+/** The diagonal gray text watermark paragraph Word generates (shapetype 136 = text-on-path). */
 export function watermarkParagraphXml(text: string): string {
   const shape =
     '<v:shape id="PowerPlusWaterMarkObject1" o:spid="_x0000_s2049" type="#_x0000_t136"' +

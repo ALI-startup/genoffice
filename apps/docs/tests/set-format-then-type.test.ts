@@ -1,9 +1,7 @@
 /**
- * With a collapsed cursor (no selection), setting two character
- * formats in a row must keep both - font then size used to drop the font,
- * because the ribbon rebuilt the whole docTextStyle mark from a stale
- * getAttributes read-back. The ribbon now passes only the patch and lets
- * setMark merge with the caret's stored mark.
+ * With a collapsed cursor (no selection), setting two character formats in a row must keep both -
+ * font then size used to drop the font, because the ribbon rebuilt the whole docTextStyle mark from
+ * a stale getAttributes read-back.
  */
 import { Editor } from '@tiptap/core'
 import { describe, expect, it } from 'vitest'

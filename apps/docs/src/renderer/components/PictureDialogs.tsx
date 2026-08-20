@@ -1,14 +1,4 @@
-/**
- * Picture Format dialogs: remove background (tolerance cutout) + crop.
- *
- * Remove background: same interaction as slides' CutoutDialog — a tolerance slider with live
- * preview; the preview computes on a ≤520px downsampled copy, applying recomputes at the
- * original resolution and returns a transparent PNG dataUrl.
- *
- * Crop: drag 8 handles on the preview (or drag inside the box to move) to pick the kept
- * region; applying bakes the selection into a new dataUrl at the original resolution
- * (png keeps transparency, jpeg stays jpeg). Reuses the .modal-backdrop/.modal styles.
- */
+/** Picture Format dialogs: remove background (tolerance cutout) + crop. */
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { removeBackground, sampleBackgroundColors, type PixelImage, type RGB } from '../cutout'
 import { useI18n, type StringKey } from '../i18n/locale'

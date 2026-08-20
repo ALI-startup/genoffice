@@ -1,18 +1,4 @@
-/**
- * Presenter view for slide shows.
- *
- * Multi-screen: on entry the main process detects displays and opens a full-screen audience
- * show window (AudienceView) on the external screen. This view is the only driver — page
- * number/animation cursor/blackout/ink are all broadcast over IPC (absolute state, the audience
- * side seeks idempotently), and audience clicks/keys are sent back here for arbitration.
- * Single screen: this window only.
- *
- * Layout: top bar (end show/swap displays/switch to normal show),
- * left column timer (pause/reset) + clock → big frame → toolbar (pen/laser/clear ink/blackout)
- * + page progress navigation, right column next-slide preview + notes (adjustable font size),
- * bottom full-width thumbnail strip with click-to-jump.
- * Keyboard: →/space/enter/PgDn next step; ←/PgUp previous page; Home/End first/last; B blackout; Esc exit.
- */
+/** Presenter view for slide shows. */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { RenderSlide } from '@samugen/pptx-render'
 import type { AnimationItem, ShowSyncState } from '../../shared/ipc'

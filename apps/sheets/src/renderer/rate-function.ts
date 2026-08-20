@@ -1,11 +1,4 @@
-/**
- * RATE bisection fallback. Univer's Newton solver gives up the moment
- * an iterate crosses rate <= -1, so deep-negative solutions (each period
- * losing nearly everything, e.g. CAGR of a collapsing series) come back
- * #NUM! even though a root exists just above -1. When the builtin errors,
- * re-solve by bracketing on (-1, 1e9] and bisecting; only a genuinely
- * root-less equation stays #NUM!.
- */
+/** RATE bisection fallback. */
 import {
   BaseFunction,
   ErrorType,

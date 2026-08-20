@@ -167,10 +167,8 @@ describe('recomputePivotData', () => {
 })
 
 describe('showDataAs (show values as)', () => {
-  // Raw aggregate matrix (rows = East/West/total, columns = A/B/total):
-  //   [15, 20,  35]
-  //   [30, 41,  71]
-  //   [45, 61, 106]
+  // Raw aggregate matrix (rows = East/West/total, columns = A/B/total): [15, 20,  35] [30, 41,  71]
+  // [45, 61, 106]
   const withShowDataAs = (mode: string): string =>
     PIVOT_XML.replace(
       '<dataField name="Sum of Sales" fld="2"/>',

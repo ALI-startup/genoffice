@@ -1,16 +1,4 @@
-/**
- * Audio/video / 3D model insertion — media part surgery.
- *
- * Video/audio: the modern PowerPoint dual-relationship form —
- *   <a:videoFile r:link> (2007 semantics) + p14:media r:embed (2010 semantics),
- *   both relationships pointing at the same embedded ppt/media/mediaN.ext part;
- *   blipFill is the poster frame.
- *
- * 3D models (simplified): glb bytes embedded in the package + a poster placeholder
- * image element (cNvPr descr records the model part path so it is recoverable);
- * no am3d extension XML is written (the schema is complex and easily triggers
- * repair); shows as the poster image in PowerPoint.
- */
+/** Audio/video / 3D model insertion — media part surgery. */
 import { concatBytes, utf8Bytes } from './bytes'
 import type { EmuRect, Slide } from './types'
 import { escapeXmlAttr } from './xml-utils'
@@ -95,20 +83,7 @@ function adler32(data: Uint8Array): number {
   return ((b << 16) | a) >>> 0
 }
 
-/**
- * Wrap `data` in a zlib stream of *stored* (uncompressed) deflate blocks.
- *
- * This replaces `node:zlib`'s `deflateSync`, and storing rather than compressing
- * is a deliberate trade rather than a shortcut. A browser's only built-in deflate
- * is `CompressionStream`, which is async — and making this async would ripple
- * through `addMedia` / `addModel3d` and their callers for no benefit, because the
- * only thing that reaches here is a 16×9 poster placeholder: 441 raw bytes, where
- * compression would save a few hundred. Stored blocks are valid zlib and valid
- * PNG, so PowerPoint and every decoder read the result identically.
- *
- * If a caller ever needs this for real image data, that is the point to reach for
- * `CompressionStream` and pay the async cost.
- */
+/** Wrap `data` in a zlib stream of *stored* (uncompressed) deflate blocks. */
 function zlibStored(data: Uint8Array): Uint8Array {
   const MAX_BLOCK = 0xffff
   const blocks = Math.max(1, Math.ceil(data.length / MAX_BLOCK))
@@ -291,9 +266,8 @@ export interface NewModel3dOptions {
 }
 
 /**
- * Embed a 3D model: model bytes go into the package (PowerPoint preserves unknown
- * parts) + a poster placeholder image element; descr records
- * `aislides-3d:{partPath}` for recognition on reopen. No am3d extension is written.
+ * Embed a 3D model: model bytes go into the package (PowerPoint preserves unknown parts) + a poster
+ * placeholder image element; descr records `aislides-3d:{partPath}` for recognition on reopen.
  */
 export function addModel3d(
   opened: OpenedPptx,

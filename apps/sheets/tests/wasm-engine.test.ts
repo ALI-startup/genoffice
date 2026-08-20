@@ -1,18 +1,4 @@
-/**
- * The xlsx engine, compiled to WebAssembly and answering the same protocol.
- *
- * The claim under test is the one Phase 6b rests on: that a browser can run the *same*
- * engine, not a second implementation of it. So this drives the wasm module through the real
- * protocol against a real workbook, and — when the desktop binary is also built — asserts the
- * two hosts return byte-identical JSON for the same requests.
- *
- * Node's own WASI stands in for the browser shim here. That is honest rather than a
- * shortcut: what is being tested is the module, and the module cannot tell which
- * implementation of `fd_read` answered it. The browser's shim is exercised by its own tests.
- *
- * Skipped, loudly, when `npm run wasm:build -w @samugen/sheets` has not been run — the
- * module is 4.5MB of generated binary and is not committed.
- */
+/** The xlsx engine, compiled to WebAssembly and answering the same protocol. */
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
@@ -32,12 +18,7 @@ interface Exports {
   xlsx_response_ptr(): number
 }
 
-/**
- * One instantiated module, plus the four lines of ABI that talk to it.
- *
- * Requests go in as UTF-8 in linear memory and responses come back the same way, which is
- * the whole interface — see native/xlsx-engine/src/wasm.rs.
- */
+/** One instantiated module, plus the four lines of ABI that talk to it. */
 function startEngine(workDir: string, scratch: string) {
   return async () => {
     const wasi = new WASI({
@@ -169,9 +150,8 @@ describeWasm('the xlsx engine in WebAssembly', () => {
       console.warn('[wasm-engine] differential check skipped: cargo build --release first')
       return
     }
-    // Paths differ between the hosts by necessity — one is a real file, the other a
-    // preopened directory — so they are the one field excluded from the comparison. The
-    // rest of the response is expected to match character for character.
+    // Paths differ between the hosts by necessity — one is a real file, the other a preopened
+    // directory — so they are the one field excluded from the comparison.
     const wasmRequests = [
       { version: 1, requestId: 'a', command: 'archive_manifest', path: '/work/book.xlsx' },
       {

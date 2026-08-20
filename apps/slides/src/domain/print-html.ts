@@ -1,14 +1,4 @@
-/**
- * The printable document for a deck: slides, handouts, or notes pages.
- *
- * Moved out of the main process unchanged, because printing is one of the few things both
- * hosts really do and the output must not differ between them. Electron loads this HTML in a
- * hidden window and calls `webContents.print()` — its own page is the editor, so it cannot
- * print itself; a browser prints the same HTML from a frame.
- *
- * Pure string building: page geometry from the slide ratio, the slide images as data URLs,
- * and the `@page` rules that make a printout paginate. Nothing here touches a host.
- */
+/** The printable document for a deck: slides, handouts, or notes pages. */
 import type { PrintSlidesOp } from '../shared/ipc'
 
 export function buildPrintHtml(op: PrintSlidesOp): string {

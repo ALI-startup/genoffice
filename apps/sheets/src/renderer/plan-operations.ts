@@ -1,10 +1,4 @@
-/**
- * AI change-plan builders for the sheets renderer.
- *
- * proposeOperations validates agent-provided DSL operations and builds a
- * preview plan; runDeterministicPlan does the same for the regex planner.
- * Extracted from App.tsx; App-scope state comes in through PlanContext.
- */
+/** AI change-plan builders for the sheets renderer. */
 import { planPrompt } from '../ai/deterministic-planner'
 import { parseAddress, parseRange, rangeCellCount } from '../domain/cell-address'
 import { CHART_EDIT_TYPES, chartDataFromValues } from '../domain/chart-visual'

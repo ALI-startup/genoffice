@@ -1,8 +1,6 @@
 /**
- * Pagination corpus generation script
- * Run: tsx apps/docs/scripts/generate-corpus.ts
- * Output: apps/docs/tests/pagination-corpus/docx/*.docx
- *       apps/docs/tests/pagination-corpus/meta/*.json
+ * Pagination corpus generator. Run: tsx apps/docs/scripts/generate-corpus.ts
+ * apps/docs/tests/pagination-corpus/docx/*.docx       apps/docs/tests/pagination-corpus/meta/*.json
  */
 
 import { mkdirSync, writeFileSync, copyFileSync, existsSync } from 'node:fs'

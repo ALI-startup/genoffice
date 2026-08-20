@@ -1,10 +1,6 @@
 /**
- * Header/footer — "Apply to All" writes dt / ftr / sldNum placeholder
- * entities into each slide, one slide at a time.
- *
- * Simplification: placeholders carry an explicit xfrm (bottom left/center/right
- * segments) instead of relying on same-idx placeholder inheritance from the layout,
- * so they are visible with stable positions under any template.
+ * Header/footer — "Apply to All" writes dt / ftr / sldNum placeholder entities into each slide, one
+ * slide at a time.
  */
 import type { Paragraph, Slide, TextElement } from './types'
 import { generateParagraphXml } from './generate'
@@ -49,11 +45,7 @@ function hfSpXml(
   )
 }
 
-/**
- * Apply header/footer to the given slides (all slides by default).
- * Removes existing dt/ftr/sldNum placeholder elements first, then appends new
- * ones per the toggles. Returns whether any slide was modified.
- */
+/** Apply header/footer to the given slides (all slides by default). */
 export function applyHeaderFooter(
   opened: OpenedPptx,
   opts: HeaderFooterOptions,

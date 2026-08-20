@@ -1,26 +1,6 @@
 /**
- * Executable entry point: read the environment, bind a socket, report whether
- * the converter is actually usable, and shut down cleanly.
- *
- * Split from server.ts for the reason the AI BFF splits the same way — that file
- * is a pure handler with its settings injected, and this one owns the two impure
- * things, `process.env` and `listen`.
- *
- * Environment:
- *
- *   SAMUGEN_HWP_CONVERT_HOST     bind address (default 127.0.0.1)
- *   SAMUGEN_HWP_CONVERT_PORT     port (default 8789); 0 asks the OS for a free one
- *   SAMUGEN_HWP_CONVERT_TIMEOUT  ceiling on one conversion, ms (default 120000)
- *   SAMUGEN_HWP2HWPX_JAR         converter JAR (default: the vendored one)
- *   SAMUGEN_JAVA_BIN             `java` executable (default: `java` on the PATH)
- *
- * Loopback by default, like the BFF: this process runs a subprocess over bytes
- * it is handed, so being reachable from off the machine is an explicit opt-in.
- *
- * A missing JVM is logged at startup and does not stop the service. It still
- * answers `/health` with `converter: false`, which is how the browser learns not
- * to offer `.hwp` in a file dialog — the alternative, refusing to boot, takes
- * the whole stack down over a format that most documents are not in.
+ * Executable entry point: read the environment, bind a socket, report whether the converter is
+ * actually usable, and shut down cleanly.
  */
 import type { Server } from 'node:http'
 import { CONVERT_BASE_PATH } from '@samugen/platform-web/convert-wire'

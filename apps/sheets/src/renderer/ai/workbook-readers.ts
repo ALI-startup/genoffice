@@ -1,8 +1,6 @@
 /**
- * Read-only workbook views for the AI skill layer (read_cells, read_formats,
- * sheet feature reports, and the active-sheet context block). Extracted from
- * App.tsx; the App component wires these into SheetsSkillDeps with a
- * WorkbookReadContext closing over its refs.
+ * Read-only workbook views for the AI skill layer (read_cells, read_formats, sheet feature reports,
+ * and the active-sheet context block).
  */
 import type { IRange } from '@univerjs/core'
 import { columnLabel, parseAddress } from '../../domain/cell-address'

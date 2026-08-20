@@ -124,27 +124,13 @@ interface RibbonProps {
   onOpen: () => void
   onSave: () => void
   onSaveAs: () => void
-  /**
-   * Export the document as .hwpx, or null on a host that cannot convert.
-   *
-   * Null hides the item rather than disabling it, matching how the platform
-   * models the capability: the port is null exactly when the command cannot
-   * work, so an offered command always works.
-   */
+  /** Export the document as .hwpx, or null on a host that cannot convert. */
   onExportHwpx?: (() => void) | null
   /**
-   * Download the document as `.docx`, or `null` on a host whose Save As already
-   * writes a real file. Null hides the item rather than disabling it: on the
-   * desktop there is nothing missing to explain.
+   * Download the document as `.docx`, or `null` on a host whose Save As already writes a real file.
    */
   onDownload?: (() => void) | null
-  /**
-   * Whether the host draws the window frame and application menu itself.
-   *
-   * False in a browser, and it decides two things: whether the File dropdown
-   * renders (macOS puts those commands in the menu bar, but only when there is
-   * one), and whether the tab row reserves space for window controls.
-   */
+  /** Whether the host draws the window frame and application menu itself. */
   nativeChrome: boolean
   showAi: boolean
   onToggleAi: () => void
@@ -250,18 +236,13 @@ function transformCase(s: string, mode: 'upper' | 'lower' | 'title' | 'sentence'
   }
 }
 
-// Word for Mac has no File ribbon tab: file actions live in the native menu
-// bar. That only holds where something is *drawing* a menu bar, which is why
-// both uses below pair this with the host's `nativeChrome` — a browser tab on
-// macOS has no menu bar, so keying off the platform alone would hide the File
-// menu and leave Open, Save As and Export unreachable.
+// Word for Mac has no File ribbon tab: file actions live in the native menu bar.
 const IS_MAC = navigator.platform.toLowerCase().includes('mac')
 /** shell tab mode: the tab strip above owns traffic lights / caption buttons */
 const IN_TAB = new URLSearchParams(window.location.search).get('mode') === 'tab'
 
-// 'file' is filtered out of the tab row (it renders as its own dropdown button),
-// so listing it unconditionally costs nothing and keeps the tab type stable
-// across hosts.
+// 'file' is filtered out of the tab row (it renders as its own dropdown button), so listing it
+// unconditionally costs nothing and keeps the tab type stable across hosts.
 const TABS = [
   'file',
   'home',
@@ -691,14 +672,7 @@ function RibbonInner({
     }
   }, [inImage])
 
-  /**
-   * Replace the selected image's bytes (shared by Replace Picture / remove background / crop).
-   * The original image's patch-save only supports size/alignment/wrap; swapping bytes must go
-   * through the genImage new-image embed branch, so docxIndex is cleared (on save the old
-   * block is treated as deleted, the new image is written at the same position, and
-   * alignment/wrap are inherited from attributes).
-   * Display size keeps the current width; height adapts to the new image's aspect ratio.
-   */
+  /** Replace the selected image's bytes (shared by Replace Picture / remove background / crop). */
   const applyPictureBytes = async (dataUrl: string) => {
     if (!canEdit) return
     const m = /^data:(image\/(?:png|jpeg|gif));base64,(.*)$/s.exec(dataUrl)
@@ -886,10 +860,7 @@ function RibbonInner({
   const activeAlign = fs.align ?? (fs.bidi ? 'right' : 'left')
   const activeSpacing = fs.lineSpacing
 
-  /** merge new attrs into the docTextStyle mark, preserving the rest.
-   * Only the patch is passed: setMark merges per existing mark and with the caret's
-   * stored mark. Rebuilding from getAttributes read-back dropped the previous call's
-   * value on a collapsed cursor (stored-mark changes don't re-render). */
+  /** merge new attrs into the docTextStyle mark, preserving the rest. */
   const setTextStyle = (patch: Record<string, unknown>) => {
     chain().setMark('docTextStyle', patch).run()
     setDropdown(null)
@@ -945,11 +916,7 @@ function RibbonInner({
         .run()
   }
 
-  /**
-   * Character styles shown in the gallery.
-   * Use doc's own character styles (type=character) if any, otherwise show
-   * the two built-in presets so the gallery is never empty.
-   */
+  /** Character styles shown in the gallery. */
   const charStyleItems: Array<{ key: string; label: string; previewStyle: CSSProperties }> =
     (() => {
       // Collect non-Hyperlink character styles from the document

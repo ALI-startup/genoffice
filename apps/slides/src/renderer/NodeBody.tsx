@@ -1,11 +1,4 @@
-/**
- * Static node rendering — draws a RenderNode as Konva shapes (no interaction logic).
- *
- * Reused in three places so canvas / thumbnails / group children / master decoration
- * layer stay visually identical:
- * - SlideCanvas: shape content inside the interactive Group + group children + decoration layer
- * - SlideThumb: whole page statically scaled down
- */
+/** Static node rendering — draws a RenderNode as Konva shapes (no interaction logic). */
 import React from 'react'
 import { Group, Rect, Ellipse, Text, Line, Arrow, Image as KImage, Path } from 'react-konva'
 import type {
@@ -421,7 +414,6 @@ export const NodeBody = React.memo(function NodeBody({
 
 /**
  * ArrowHead — draws a custom arrowhead (stealth/diamond/oval/arrow) at a polyline's start or end.
- * The arrowhead always faces the segment direction (angle taken from the tangent at the end point).
  */
 function ArrowHead({
   end,
@@ -564,11 +556,7 @@ function MediaBadge({ kind, w, h }: { kind: 'video' | 'audio'; w: number; h: num
   )
 }
 
-/**
- * Statically positioned node: container (position/rotation/flip) + NodeBody.
- * Flip is corrected with an offset (x + w then scale -1) so it mirrors inside the original box
- * instead of outside it.
- */
+/** Statically positioned node: container (position/rotation/flip) + NodeBody. */
 export const StaticNode = React.memo(function StaticNode({ node, images }: NodeBodyProps) {
   const { box } = node
   return (

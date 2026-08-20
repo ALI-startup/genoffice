@@ -9,9 +9,8 @@ export interface SaveUntilPersistedDeps {
   /** True when the last save wrote successfully but the editor changed mid-flight. */
   wasIncomplete: () => boolean
   /**
-   * False for a document with no path yet: that save goes through the Save As
-   * dialog, so retrying would prompt again — and a modal dialog means the user
-   * was not typing anyway.
+   * False for a document with no path yet: that save goes through the Save As dialog, so retrying
+   * would prompt again — and a modal dialog means the user was not typing anyway.
    */
   hasPath: () => boolean
   /** Passes before giving up (a user typing without pause never converges). */
@@ -19,11 +18,10 @@ export interface SaveUntilPersistedDeps {
 }
 
 /**
- * Serializes save passes. A call that arrives while a save is in flight waits
- * for it instead of failing (the old immediate `false` made "Save and close"
- * silently give up during a blur autosave), reuses the finished save's success
- * when `canReuse` says nothing is left to persist, and otherwise runs its own
- * pass. Callers always get the real outcome.
+ * Serializes save passes. A call that arrives while a save is in flight waits for it instead of
+ * failing (the old immediate `false` made "Save and close" silently give up during a blur
+ * autosave), reuses the finished save's success when `canReuse` says nothing is left to persist,
+ * and otherwise runs its own pass. Callers always get the real outcome.
  */
 export function createSaveSerializer(): (
   runSave: () => Promise<boolean>,
@@ -31,10 +29,9 @@ export function createSaveSerializer(): (
 ) => Promise<boolean> {
   let tail: Promise<boolean> | null = null
   return (runSave, canReuse) => {
-    // Strict FIFO chaining: every caller queues behind the current tail, so two
-    // save passes can never run concurrently — the old "wait then re-check a
-    // shared inFlight slot" let several waiters observe the cleared slot together
-    // and start overlapping passes.
+    // Strict FIFO chaining: every caller queues behind the current tail, so two save passes can
+    // never run concurrently — the old "wait then re-check a shared inFlight slot" let several
+    // waiters observe the cleared slot together and start overlapping passes.
     const prior = tail
     const pass = (async () => {
       if (prior) {
@@ -53,10 +50,7 @@ export function createSaveSerializer(): (
   }
 }
 
-/**
- * True only when the document is fully on disk. False means the caller must not
- * treat the save as complete — for the close guard, keep the window open.
- */
+/** True only when the document is fully on disk. */
 export async function saveUntilPersisted(deps: SaveUntilPersistedDeps): Promise<boolean> {
   const { save, wasIncomplete, hasPath, maxPasses = 3 } = deps
   for (let pass = 0; pass < maxPasses; pass++) {

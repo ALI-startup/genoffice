@@ -1,22 +1,4 @@
-/**
- * `.hwp` → `.hwpx`, by running the bundled converter.
- *
- * The conversion itself is `hwp2hwpx` (kr.dogfoot: hwplib reads the HWP 5.0
- * binary, hwpxlib writes the OWPML package), shipped as a fat JAR under
- * `vendor/`. This module is the driver around it, and the strategy is a port of
- * the one in ALI-startup/neoclaw's `backend/app/utils/file_conversion.py`: write
- * the input to a private temp directory, run the converter as a subprocess with
- * a timeout, read the output back, delete the directory.
- *
- * Files rather than pipes because that is the JAR's interface — it takes two
- * paths — and giving it a directory of its own is what keeps two concurrent
- * requests from colliding over a name.
- *
- * `runJava` is injected for one reason: every test below can then drive the real
- * decision tree (missing JVM, non-zero exit, no output file, timeout) without a
- * JVM. The integration test that does use the real thing is separate, and skips
- * itself where `java` is absent.
- */
+/** `.hwp` → `.hwpx`, by running the bundled converter. */
 import { spawn } from 'node:child_process'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -28,13 +10,7 @@ export const DEFAULT_TIMEOUT_MS = 120_000
 /** Where the vendored JAR lives, relative to this package. */
 export const VENDORED_JAR = new URL('../vendor/hwp2hwpx.jar', import.meta.url)
 
-/**
- * OLE compound document signature — the first eight bytes of every HWP 5.0 file.
- *
- * Checked before the JVM starts, so a `.docx` renamed to `.hwp` costs a byte
- * comparison instead of a process launch, and the caller gets `invalid` rather
- * than a stack trace from inside hwplib.
- */
+/** OLE compound document signature — the first eight bytes of every HWP 5.0 file. */
 const OLE_SIGNATURE = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]
 
 export function looksLikeHwp(bytes: Uint8Array): boolean {
@@ -71,13 +47,7 @@ export type ConvertResult =
       error: string
     }
 
-/**
- * Spawn the JVM and wait for it.
- *
- * `stdout` is deliberately discarded: the JAR writes its result to a file and
- * uses stdout for nothing, while stderr carries the message worth reporting.
- * Both are still consumed so a chatty build cannot fill a pipe and deadlock.
- */
+/** Spawn the JVM and wait for it. */
 export function spawnJava(javaBin: string): RunJava {
   return (args, { timeoutMs }) =>
     new Promise<JavaRun>((resolve, reject) => {
@@ -108,13 +78,7 @@ export function spawnJava(javaBin: string): RunJava {
 const pathOf = (jar: string | URL): string =>
   typeof jar === 'string' ? jar : decodeURIComponent(new URL(jar).pathname)
 
-/**
- * Convert one document.
- *
- * Never throws for anything the caller can act on — a missing JVM, a file that
- * is not an HWP, a converter that refused — because every one of those is a
- * response the browser has to render. Only a broken filesystem escapes.
- */
+/** Convert one document. */
 export async function convertHwpToHwpx(
   bytes: Uint8Array,
   options: ConvertOptions = {},
@@ -173,14 +137,7 @@ export async function convertHwpToHwpx(
   }
 }
 
-/**
- * Can this process convert at all?
- *
- * Asked by the health route, and the answer a browser needs before it offers
- * `.hwp` in a file dialog. Deliberately a real launch of the JAR with no
- * arguments — it prints its usage and exits non-zero — because that exercises
- * exactly the two things that can be missing: the JVM and the JAR.
- */
+/** Can this process convert at all? */
 export async function converterAvailable(options: ConvertOptions = {}): Promise<boolean> {
   const jar = pathOf(options.jar ?? VENDORED_JAR)
   const runJava = options.runJava ?? spawnJava(options.javaBin ?? 'java')

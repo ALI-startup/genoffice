@@ -2,13 +2,7 @@ import type { Editor } from '@tiptap/core'
 import { DATE_LOCALES, getLang, t, type StringKey } from '../i18n/locale'
 import type { PmNode } from './convert'
 
-/**
- * Built-in cover page library (the preset gallery behind Insert → Cover
- * Page). Everything is built from layout primitives the engine
- * already supports: paragraph shading / single-line borders / alignment /
- * spacing + text color / size / bold / italic. No drawing objects, so the
- * result holds up in Word after saving.
- */
+/** Built-in cover page library (the preset gallery behind Insert → Cover Page). */
 
 export interface CoverPara {
   text?: string

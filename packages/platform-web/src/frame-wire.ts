@@ -1,52 +1,9 @@
-/**
- * The `postMessage` contract between the web shell and the editor frames it
- * hosts.
- *
- * Types plus validators, and deliberately free of any Node reference: both sides
- * import this one module (through the package's `./frame` export), so the shell
- * and the frames cannot drift — the same reason the AI wire lives in one file.
- *
- * Why a protocol at all, when the frames are same-origin and the shell could
- * simply reach into `contentWindow`? Two answers, and they divide the work:
- *
- *   - The *title* is not here. It is a document-level property the shell reads
- *     straight off `iframe.contentDocument.title`, which works precisely because
- *     the frames are same-origin, and needs no cooperation from the app.
- *   - The *dirty state* and the *save-before-close* handshake are here, because
- *     neither is a document property. Both live behind an app's platform port
- *     (docs' `onCloseCheck` / `reportCloseCheck`, pdf's `onCloseSaveRequest` /
- *     `reportCloseSaveResult`), and reaching into another document's module
- *     graph to drive them would be a coupling no type system could police.
- *     `beforeunload` cannot stand in for them: it does not fire when an iframe
- *     element is removed, which is exactly what closing a tab does.
- *
- * Everything inbound is validated. A page may receive a `message` from any
- * window that can get a reference to it — an opener, an embedder, another frame
- * — so an unvalidated handler is an injection surface. `parseFrameToShell` and
- * `parseShellToFrame` are the only way either side reads a message: they check
- * the origin, then the shape, field by field, and return `null` for anything
- * else. Neither ever throws, so a hostile message is dropped rather than turned
- * into an error the app has to handle.
- */
+/** The `postMessage` contract between the web shell and the editor frames it hosts. */
 
-/**
- * Protocol tag carried by every message, versioned in the string.
- *
- * A version bump is a new tag, so an old frame and a new shell simply fail to
- * recognise each other's messages instead of misreading them. It is also what
- * makes this a distinctive token to grep the Electron bundle for: it must never
- * appear there.
- */
+/** Protocol tag carried by every message, versioned in the string. */
 export const FRAME_PROTOCOL = 'samugen.shell.frame.v1'
 
-/**
- * Query parameter naming the frame, set by the shell on the iframe URL.
- *
- * It is how a frame knows it is hosted at all: without it, the app is running
- * standalone and installs no protocol client. Making it explicit rather than
- * inferring from `window.parent !== window` means an app embedded by something
- * else does not start answering a protocol that embedder never spoke.
- */
+/** Query parameter naming the frame, set by the shell on the iframe URL. */
 export const FRAME_ID_PARAM = 'shellFrame'
 
 /** Shell → frame. */
@@ -68,16 +25,7 @@ export type ShellToFrameMessage =
 export type FrameToShellMessage =
   | {
       protocol: typeof FRAME_PROTOCOL
-      /**
-       * Sent once, when the frame's protocol client is installed.
-       *
-       * The shell needs it to tell "this frame is loaded and simply has not
-       * answered yet" from "this frame speaks no protocol". A close check that
-       * times out on a frame that never announced itself is treated as clean —
-       * a page that never loaded has no unsaved work — while one that times out
-       * after `ready` is treated as dirty, because there the silence means the
-       * app is wedged and an extra prompt is cheaper than a discarded document.
-       */
+      /** Sent once, when the frame's protocol client is installed. */
       kind: 'ready'
       frameId: string
     }
@@ -96,27 +44,13 @@ export type FrameToShellMessage =
       ok: boolean
     }
 
-/**
- * The parts of a `MessageEvent` the validators read.
- *
- * Structural rather than the DOM type so the validators are exercisable without
- * a browser, and so the shell can pass the extra `source` check it performs on
- * top (see `createShellFrameLink`).
- */
+/** The parts of a `MessageEvent` the validators read. */
 export interface FrameMessageLike {
   origin: string
   data: unknown
 }
 
-/**
- * Is this message from our own origin?
- *
- * `expectedOrigin` is the page's own `location.origin`. The literal string
- * `'null'` is rejected explicitly: a sandboxed or `data:`-URL document posts
- * that opaque origin, and it must never match — including the case where the
- * page itself is opaque, where `expectedOrigin` would be `'null'` too and a
- * plain equality test would let every opaque document through.
- */
+/** Is this message from our own origin? */
 function originAllowed(origin: string, expectedOrigin: string): boolean {
   return origin !== 'null' && origin === expectedOrigin
 }

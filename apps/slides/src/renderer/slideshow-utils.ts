@@ -1,7 +1,4 @@
-/**
- * Pure logic for slide shows: playback sequence computation + rehearsal timing accumulation.
- * Extracted from SlideShowView for unit testing (no React/DOM dependency).
- */
+/** Pure logic for slide shows: playback sequence computation + rehearsal timing accumulation. */
 
 /** Custom show: subset of slides in user-specified order (original indexes). App persists it per document to localStorage. */
 export interface CustomShow {
@@ -10,12 +7,7 @@ export interface CustomShow {
   slideIndices: number[]
 }
 
-/**
- * Compute the playback sequence (array of original indexes).
- * - Default: all slides in order, skipping hidden ones (starting from a hidden slide still plays it)
- * - Non-empty customOrder: play in its order (out-of-range slides filtered; hidden slides still skipped, except the start slide)
- * - Fallback: when the result is empty, at least play the start slide
- */
+/** Compute the playback sequence (array of original indexes). */
 export function computePlayOrder(
   slides: ReadonlyArray<{ hidden?: boolean }>,
   startAt: number,

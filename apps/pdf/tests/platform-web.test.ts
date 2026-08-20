@@ -1,16 +1,4 @@
-/**
- * The browser host adapter (src/renderer/platform-web.ts).
- *
- * @samugen/platform-web covers the document store and @samugen/pdf-edit
- * covers the editing, so what is left to check here is the glue that turns those
- * into pdf's own port: which store call each channel makes, how a dismissed
- * dialog becomes `canceled: true` rather than a failure, how a thrown error
- * becomes `{ ok: false, error }` instead of escaping into the renderer, and the
- * two members that must *not* pretend to work.
- *
- * The store is faked at its public surface rather than mocked per method, so the
- * assertions are about the adapter's choices and not about a call graph.
- */
+/** The browser host adapter (src/renderer/platform-web.ts). */
 import { describe, expect, it, vi } from 'vitest'
 import { PDFDocument } from 'pdf-lib'
 import type { WebDocumentStore } from '@samugen/platform-web'
@@ -26,10 +14,9 @@ const noEdits: PdfEditRequest = {
 }
 
 /**
- * A real two-page PDF. The adapter runs @samugen/pdf-edit for real rather than
- * against a mock, so the store's bytes have to be a document pdf-lib can load —
- * which also means the "nothing is written when the edit fails" test can use
- * deliberate garbage and mean it.
+ * A real two-page PDF. The adapter runs @samugen/pdf-edit for real rather than against a mock, so
+ * the store's bytes have to be a document pdf-lib can load — which also means the "nothing is
+ * written when the edit fails" test can use deliberate garbage and mean it.
  */
 async function makePdf(pages = 2): Promise<Uint8Array> {
   const doc = await PDFDocument.create()
@@ -79,10 +66,8 @@ function fakeStore(
     },
     ...overrides,
   } as Record<string, unknown>
-  // Defined after the overrides and routed through them, exactly as the real
-  // `bytesIo` routes through `this.read` / `this.write`. Closing over the
-  // originals instead would make a `write` override invisible to an in-place
-  // save, which is the one path that goes through `bytesIo`.
+  // Defined after the overrides and routed through them, exactly as the real `bytesIo` routes
+  // through `this.read` / `this.write`.
   base.bytesIo ??= (ref: string) => ({
     read: () => (base.read as typeof read)(ref),
     write: (bytes: Uint8Array) => (base.write as typeof write)(ref, bytes),

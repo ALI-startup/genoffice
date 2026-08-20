@@ -1,7 +1,6 @@
 /**
- * App-scope constants shared by the App component: chart ribbon command
- * vocabularies, Univer mutation/command names the edit journal listens to,
- * and the Home → Cell Styles presets. Extracted from App.tsx verbatim.
+ * App-scope constants shared by the App component: chart ribbon command vocabularies, Univer
+ * mutation/command names the edit journal listens to, and the Home → Cell Styles presets.
  */
 import type { CellFormatPatch } from '../domain/workbook-dsl'
 import type { WorkbookSnapshot } from '../domain/workbook.types'
@@ -49,9 +48,7 @@ export const SET_RANGE_VALUES_MUTATION = 'sheet.mutation.set-range-values'
 export const SET_NUMFMT_MUTATION = 'sheet.mutation.set.numfmt'
 // Undoing a numfmt set emits the remove mutation; only the ribbon echo cares.
 export const REMOVE_NUMFMT_MUTATION = 'sheet.mutation.remove.numfmt'
-// Row/column inserts/removals and merges are journaled and replayed at save
-// time. Streamed viewports keep working after a shift: read requests and
-// results translate through the operation stream (view-transform.ts).
+// Row/column inserts/removals and merges are journaled and replayed at save time.
 export const STRUCTURAL_EDIT_COMMAND_PATTERN =
   /^sheet\.command\.(insert-row|remove-row|insert-col|remove-col|add-worksheet-merge|remove-worksheet-merge)/
 export const ROW_COLUMN_MUTATIONS: Record<
@@ -67,10 +64,8 @@ export const MERGE_MUTATIONS: Record<string, 'merge-cells' | 'unmerge-cells'> = 
   'sheet.mutation.add-worksheet-merge': 'merge-cells',
   'sheet.mutation.remove-worksheet-merge': 'unmerge-cells',
 }
-// Row/column sizing and visibility journal as ordered ops and replay into
-// row/cols attributes at save time. (`set-worksheet-row-auto-height` is
-// derived layout — it fires during rendering and must NOT journal; the user
-// command is `set-worksheet-row-is-auto-height`.)
+// Row/column sizing and visibility journal as ordered ops and replay into row/cols attributes at
+// save time.
 export const AXIS_ATTR_MUTATIONS: Record<
   string,
   { kind: 'size' | 'hidden' | 'auto-size'; axis: 'row' | 'column'; hidden?: boolean }
@@ -128,18 +123,14 @@ export const DEFINED_NAME_MUTATIONS = new Set([
   'formula.mutation.set-defined-name',
   'formula.mutation.remove-defined-name',
 ])
-// Note edits mark the sheet dirty; the save snapshots the live note set as
-// legacy comments. Position-only moves don't change what the file stores.
+// Note edits mark the sheet dirty; the save snapshots the live note set as legacy comments.
 export const NOTE_MUTATIONS = new Set(['sheet.mutation.update-note', 'sheet.mutation.remove-note'])
-// Panel commands that mutate DV rules. Editing needs the sheet's own file
-// rules installed first (a declarative save would silently drop them).
+// Panel commands that mutate DV rules.
 export const DV_EDIT_COMMAND_PATTERN =
   /^sheets?\.command\.(addDataValidation|updateDataValidationRuleRange|update-data-validation-(?:setting|options)|clear-range-data-validation|remove-data-validation-rule|remove-all-data-validation)$/
 export const FILTER_COMMAND_PATTERN =
   /^sheet\.command\.(set-filter-criteria|set-filter-range|smart-toggle-filter|clear-filter-criteria|remove-sheet-filter|re-calc-filter)$/
-// Sheet management is journaled and replayed at save time. Renames rewrite
-// qualified references file-side; adds create blank parts; removals fail
-// closed when referenced.
+// Sheet management is journaled and replayed at save time.
 export const SHEET_LIFECYCLE_MUTATIONS = new Set([
   'sheet.mutation.insert-sheet',
   'sheet.mutation.remove-sheet',
@@ -147,8 +138,7 @@ export const SHEET_LIFECYCLE_MUTATIONS = new Set([
   'sheet.mutation.set-worksheet-order',
   'sheet.mutation.set-worksheet-hidden',
 ])
-// Whole-row/column moves would need row heights and hidden flags to travel
-// with the snapshot. Still blocked.
+// Whole-row/column moves would need row heights and hidden flags to travel with the snapshot.
 export const BLOCKED_COMMAND_PATTERN = /^sheet\.command\.(move-rows|move-cols)/
 // Sheet duplication clones the worksheet part file-side; the journal records
 // the source so the save seeds the new part from it.

@@ -1,11 +1,4 @@
-/**
- * Shared setup for the web E2E tests.
- *
- * The state these tests care about lives in the page's own storage rather than in a
- * user-data directory, so "a fresh install" and "a returning user" are one
- * `addInitScript` apart. Each test gets its own browser context from Playwright, so
- * nothing leaks between them and no scratch directory has to be cleaned up.
- */
+/** Shared setup for the web E2E tests. */
 import type { Page } from '@playwright/test'
 
 /** Where the shell records that the first-run tour has been seen (see host-web.ts). */
@@ -22,11 +15,8 @@ export interface OpenOptions {
 }
 
 /**
- * Pick a UI language from the shell's only language control: the list behind the
- * Language row of the bottom-left Settings menu, on the home screen.
- *
- * `label` is the language's own endonym, as the list shows it ('한국어', '日本語').
- * The menu closes itself on the click, so nothing needs dismissing afterwards.
+ * Pick a UI language from the shell's only language control: the list behind the Language row of
+ * the bottom-left Settings menu, on the home screen.
  */
 export async function chooseLanguage(page: Page, label: string): Promise<void> {
   await page.locator('.account-btn').click()
@@ -34,13 +24,7 @@ export async function chooseLanguage(page: Page, label: string): Promise<void> {
   await page.locator('.lang-flyout .lang-menu-item', { hasText: label }).click()
 }
 
-/**
- * Load the shell at its root, with the storage state a test asks for.
- *
- * The seeding runs as an init script, not after navigation: the shell reads both
- * values while it boots (main.tsx awaits them before the first render), so writing
- * them afterwards would be a reload too late.
- */
+/** Load the shell at its root, with the storage state a test asks for. */
 export async function openShell(page: Page, options: OpenOptions = {}): Promise<void> {
   const { onboardingSeen = false, lang } = options
   if (onboardingSeen || lang) {

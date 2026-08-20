@@ -1,14 +1,6 @@
 /**
  * Audience show window — the presenter view's external-screen full-screen playback end
  * (?mode=audience entry).
- *
- * When the main process creates this window it has already shared the presenter's document
- * session with this webContents, so read-only IPC pulls RenderSlide/animations/transitions and
- * sees the in-memory document. State is fully passive: the presenter broadcasts ShowSyncState
- * (absolute state) and this side seeks idempotently; forward page turns play the transition
- * effect (including morph tweens), ink/laser mirror the presenter.
- * Navigation input (clicks/→ etc.) is sent back for presenter arbitration (audienceNav); Esc ends
- * the whole show.
  */
 import React, { useEffect, useRef, useState } from 'react'
 import type { RenderFill, RenderNode, RenderSlide } from '@samugen/pptx-render'

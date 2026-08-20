@@ -2,10 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../i18n/locale'
 import { useModalKeys } from './modal-keys'
 
-/**
- * In-app replacement for window.prompt, which Electron renderers do not
- * support. Single-line by default; multiline renders a textarea (notes).
- */
+/** In-app replacement for window.prompt, which Electron renderers do not support. */
 export function PromptModal({
   title,
   placeholder,

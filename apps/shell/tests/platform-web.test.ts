@@ -17,14 +17,7 @@ import {
 import type { ShellCloseDecision, ShellCloseRequest } from '../src/renderer/src/platform'
 import type { TabSummary } from '../src/shared/tabs-api'
 
-/**
- * The web shell's tab strip, router and close guard.
- *
- * Everything here is exercised through injected fakes, which is the point of the
- * adapters taking a route, a frame link and a scheduler rather than reaching for
- * `window`: the close guard in particular is a three-party handshake (shell →
- * frame → prompt → frame) and it has to be assertable without a browser.
- */
+/** The web shell's tab strip, router and close guard. */
 
 interface FakeRoute {
   env: RouteEnv

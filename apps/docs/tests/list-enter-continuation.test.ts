@@ -1,7 +1,6 @@
 /**
- * Enter at the end of a list item must continue the list (Word
- * behavior); Enter in an empty item leaves it. ProseMirror's default splitBlock
- * produced the schema's default block, so every new line dropped out of the list.
+ * Enter at the end of a list item must continue the list (Word behavior); Enter in an empty item
+ * leaves it.
  */
 import { Editor } from '@tiptap/core'
 import { describe, expect, it } from 'vitest'

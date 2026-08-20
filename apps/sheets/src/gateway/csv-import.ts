@@ -41,12 +41,7 @@ function score(text: string): number {
   return value
 }
 
-/**
- * Decodes CSV bytes: BOM, then strict UTF-8, then the legacy charsets Excel
- * writes. `preferred` (from the UI language) breaks the ties those charsets
- * produce — GBK and Shift_JIS both decode the same bytes to plausible-looking
- * but different CJK.
- */
+/** Decodes CSV bytes: BOM, then strict UTF-8, then the legacy charsets Excel writes. */
 export function decodeCsvBuffer(bytes: Uint8Array, preferred?: string): string {
   if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
     return decode(bytes.subarray(3), 'utf-8') ?? ''

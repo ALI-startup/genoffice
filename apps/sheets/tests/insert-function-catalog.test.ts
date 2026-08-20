@@ -1,8 +1,4 @@
-/**
- * The Formulas tab's category buttons opened the same unfiltered
- * catalog. They now pass a catalog category, so the categories they advertise
- * have to exist in the catalog (and Financial has to carry real functions).
- */
+/** The Formulas tab's category buttons opened the same unfiltered catalog. */
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'

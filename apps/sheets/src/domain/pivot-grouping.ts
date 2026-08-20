@@ -99,8 +99,7 @@ export function groupValue(
       return { label: String(parts.year), sort: parts.year }
     }
     if (grouping.dateUnit === 'quarter') {
-      // Quarter/month units merge across years (single-level date grouping,
-      // not nested under year).
+      // Quarter/month units merge across years (single-level date grouping, not nested under year).
       const quarter = Math.floor((parts.month - 1) / 3) + 1
       return { label: `Q${quarter}`, sort: quarter }
     }

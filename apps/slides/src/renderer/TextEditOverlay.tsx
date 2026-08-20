@@ -1,8 +1,6 @@
 /**
- * 3.2 DOM overlay text editing (run-level rich text) — a contentEditable stacked over the text
- * box takes over input (caret/selection/IME for free). Bold/italic/underline are triggered by the
- * ribbon font group (execCommand on the selection). On exit, walk the DOM to extract the
- * paragraph/run structure (each run's format preserved independently) and go through IPC editText.
+ * 3.2 DOM overlay text editing (run-level rich text) — a contentEditable stacked over the text box
+ * takes over input (caret/selection/IME for free).
  */
 import React, { useEffect, useRef } from 'react'
 import type { GlyphRun, ShapeRenderNode, TextLine } from '@samugen/pptx-render'
@@ -66,17 +64,10 @@ function editorParaRuns(
 }
 
 /**
- * Layout lines → the editor's initial DOM: one <div> per model paragraph (data-src-para records
- * the source paragraph index, with paragraph alignment); wrap/word-split fragments merged back
- * into their runs by srcRunIdx (data-src-run), one span per model run; bullet glyphs injected by
- * layout are skipped (not body text; committing them would turn them into text).
- * Font sizes use layout viewport px directly (including scale/autofit fontScale); on commit
- * they're divided by norm back to pt.
- * Line/paragraph spacing is derived back from layout lines (lnSpc/lineExact/lnSpcReduction baked
- * into height, spcBef/spcAft baked into gaps in line tops), so editing's vertical metrics match the canvas.
- * anchorDy = the whole offset that middle/bottom anchoring bakes into line tops (editing implements
- * anchoring with flex, so it must be removed from the first paragraph's top or the offset doubles).
- * Exported so tests can do "layout → DOM → extractParagraphs" round-trip assertions.
+ * Layout lines → the editor's initial DOM: one <div> per model paragraph (data-src-para records the
+ * source paragraph index, with paragraph alignment); wrap/word-split fragments merged back into
+ * their runs by srcRunIdx (data-src-run), one span per model run; bullet glyphs injected by layout
+ * are skipped (not body text; committing them would turn them into text).
  */
 export function populateEditorDom(div: HTMLElement, lines: TextLine[], anchorDy = 0): void {
   div.innerHTML = ''
@@ -140,15 +131,12 @@ export function populateEditorDom(div: HTMLElement, lines: TextLine[], anchorDy 
         const fragment = document.createElement('span')
         fragment.dataset.layoutFragment = 'true'
         fragment.textContent = text
-        // Each fragment occupies the exact advance measured by the layout engine. CJK is normally
-        // one grapheme per fragment; Latin/SEA keep their script-aware token boundaries. RTL stays
-        // in normal inline flow so Chromium can preserve joining and bidirectional shaping.
+        // Each fragment occupies the exact advance measured by the layout engine.
         if (!run.rtl) {
           fragment.style.display = 'inline-block'
           fragment.style.width = `${run.widthPx}px`
         }
-        // Keep the browser editor visually aligned with the canvas renderer. This is display-only:
-        // extraction intentionally preserves the source run's PPT letter spacing through srcRun.
+        // Keep the browser editor visually aligned with the canvas renderer.
         if (run.letterSpacingPx) fragment.style.letterSpacing = `${run.letterSpacingPx}px`
         span.appendChild(fragment)
       } else {
@@ -274,10 +262,9 @@ export function TextEditOverlay({
   }, [])
 
   return (
-    // Outer layer = the whole text box (the edit-frame border is drawn here);
-    // inner contentEditable edits in place with a transparent background (the canvas already hides this node's text), flex implements the vertical anchor.
-    // Height fixed to the shape box: overflowing content shows past it, the edit box doesn't grow with content;
-    // border uses outline (takes no layout space) so the inner usable size matches canvas layout exactly
+    // Outer layer = the whole text box (the edit-frame border is drawn here); inner contentEditable
+    // edits in place with a transparent background (the canvas already hides this node's text),
+    // flex implements the vertical anchor.
     <div
       style={{
         position: 'absolute',
@@ -357,9 +344,7 @@ export function TextEditOverlay({
               }
             }
           } else if (e.key === 'Enter' && e.shiftKey) {
-            // Shift+Enter = in-paragraph soft break (<a:br/>). The default behavior inserts <br>,
-            // and execCommand('insertText','\n') splits the div in Chromium — both become paragraph splits,
-            // so the only way is manually inserting a "\n" text node via Range (displayed in place as a line break under pre-wrap)
+            // Shift+Enter = in-paragraph soft break (<a:br/>).
             e.preventDefault()
             const sel = window.getSelection()
             if (sel && sel.rangeCount) {
@@ -455,13 +440,7 @@ function splitSoftBreaks(runs: EditRun[]): EditRun[] {
   return out
 }
 
-/** Walk the contentEditable DOM → paragraph/run structure. <br>/<div> split paragraphs, span styles → run format,
- * div/root text-align → paragraph alignment (product of execCommand justify*).
- * data-src-para/data-src-run carry back source indexes (browser Enter splits divs copying data attributes,
- * so both halves inherit the same source).
- * bold/italic/underline are committed as explicit booleans (the DOM is the authoritative state), avoiding
- * the main process's ?? fallback inheriting wrongly.
- * norm = viewport scale × autofit fontScale: DOM font sizes are viewport px, divided by norm to model pt. */
+/** Walk the contentEditable DOM → paragraph/run structure. */
 export function extractParagraphs(root: HTMLElement, norm: number): EditParagraph[] {
   const paragraphs: EditParagraph[] = []
   let cur: EditRun[] = []
@@ -655,8 +634,7 @@ export function selectionLink(): LinkTargetOp | null {
 
 /**
  * Set/clear a hyperlink on the editor selection (restoring the saved selection first — the link
- * dialog took focus). A collapsed caret inside an existing link expands to the whole link, matching
- * PowerPoint. Returns false when there is no usable selection to apply to.
+ * dialog took focus).
  */
 export function applySelectionLink(target: LinkTargetOp | null): boolean {
   if (!restoreEditSelection()) return false
@@ -676,11 +654,8 @@ export function applySelectionLink(target: LinkTargetOp | null): boolean {
 }
 
 /**
- * Per-paragraph format while editing: mark the paragraph divs covered by the
- * caret/selection; extractParagraphs carries the marks to the main process on commit.
- * Toggle-off (clicking the active bullet kind again) resolves against the first covered
- * paragraph's current state. Returns false when no editor selection is available
- * (the caller falls back to the element-level op).
+ * Per-paragraph format while editing: mark the paragraph divs covered by the caret/selection;
+ * extractParagraphs carries the marks to the main process on commit.
  */
 export function applySelectionParagraphFormat(patch: {
   bullet?: 'char' | 'number' | 'none'
@@ -798,7 +773,6 @@ export function setSelectionFontSizePt(pt: number): void {
 }
 
 // Viewport px font size → model pt (divide back by viewport scale × autofit fontScale).
-// Half-pt resolution, matching the ribbon size box (commitSizeDraft).
 function pxToPt(px: number, norm: number): number {
   return Math.round(((px * 72) / (96 * norm)) * 2) / 2
 }

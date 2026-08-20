@@ -1,11 +1,4 @@
-/**
- * CELL("filename") support. Univer's builtin CELL demands exactly two
- * arguments and hard-codes the "filename" info_type to #VALUE!, which breaks
- * the ubiquitous `=MID(CELL("filename",B1),FIND("]",...)+1,31)` sheet-name
- * idiom. This executor replaces it: "filename" answers Excel's
- * `dir/[Book.xlsx]Sheet` (empty string while the workbook has never been
- * saved), everything else delegates to the builtin.
- */
+/** CELL("filename") support. */
 import {
   BaseFunction,
   ErrorType,
@@ -74,9 +67,8 @@ export class CellWithFilename extends BaseFunction {
   }
 
   private _delegate(infoType: ValueLike, reference?: ValueLike): CalcResult {
-    // The builtin dereferences its second argument unconditionally; Excel's
-    // ref-less form ("the last changed cell") is unknowable here, so only
-    // "filename" supports it.
+    // The builtin dereferences its second argument unconditionally; Excel's ref-less form ("the
+    // last changed cell") is unknowable here, so only "filename" supports it.
     if (!reference || !this._original) return ErrorValueObject.create(ErrorType.NA)
     return (this._original.calculate as (a: ValueLike, b: ValueLike) => CalcResult)(
       infoType,

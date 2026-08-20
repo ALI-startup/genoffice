@@ -1,6 +1,5 @@
 /**
  * Context menu — fixed positioning, kept within the viewport; closes on any click/Escape/scroll.
- * Items that are null render as separators.
  */
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 

@@ -9,12 +9,7 @@ export interface OpenFileResult {
   hash: string
 }
 
-/**
- * A .hwpx the main process converted on the way in.
- *
- * Content only: there is no path to save back to, because the editor writes
- * .docx. Writing .hwpx again is the separate exportHwpx call.
- */
+/** A .hwpx the main process converted on the way in. */
 export interface ImportFileResult {
   /** restricted HTML fragment (h1-h6, p, ul/ol/li, strong/em/u/s, a, br, tables) */
   html: string
@@ -28,12 +23,7 @@ export interface ImportFileResult {
   name: string
 }
 
-/**
- * Either outcome of an open request.
- *
- * Tagged rather than merged, so the renderer cannot mistake an import for a
- * document with a path behind it.
- */
+/** Either outcome of an open request. */
 export type OpenResult =
   ({ kind: 'document' } & OpenFileResult) | ({ kind: 'import' } & ImportFileResult)
 
@@ -210,8 +200,7 @@ export interface DesktopApi {
   setAiSettings(settings: AiSettings): Promise<void>
   /** system print dialog for the current window */
   print(): Promise<void>
-  /** render the document to PDF and ask where to save; size in twips.
-   *  outPath is only honored when a previous export dialog chose that exact path */
+  /** render the document to PDF and ask where to save; size in twips. */
   exportPdf(
     defaultName: string,
     pageWidthTwips: number,

@@ -1,13 +1,4 @@
-/**
- * <a:custGeom> custom geometry parsing (read-only rendering).
- *
- * fast-xml-parser does not preserve document order of mixed child nodes
- * (moveTo/lnTo/… order would be lost), so we scan tags in order directly over
- * the raw XML bytes.
- * Output is a normalized SVG path: coordinates 0..1, relative to each <a:path>'s
- * declared w/h; arcTo is converted to cubic beziers; gdLst/avLst formulas are
- * evaluated first so pt/arcTo can reference them.
- */
+/** <a:custGeom> custom geometry parsing (read-only rendering). */
 import type { CustomGeometry } from './types'
 
 // Tag matcher tolerating '>' inside attribute values (same pattern as scan.ts)
@@ -27,11 +18,7 @@ const DEG = Math.PI / 180
 /** OOXML angle (1/60000 of a degree) → radians */
 const a2r = (v: number) => (v / 60000) * DEG
 
-/**
- * gd formula evaluation (CT_GeomGuide fmla). Evaluated in order; may reference
- * earlier guides and built-in variables (w/h/ss/hc/vc/l/t/r/b/wdN/hdN/ssdN/cdN…,
- * angles in 1/60000 of a degree).
- */
+/** gd formula evaluation (CT_GeomGuide fmla). */
 export function evalGuides(
   gds: Array<{ name: string; fmla: string }>,
   w: number,
@@ -181,11 +168,7 @@ const CMD_LETTER: Record<string, RawCmd['c']> = {
   'a:cubicBezTo': 'C',
 }
 
-/**
- * Extract and parse <a:custGeom> from a shape's raw XML.
- * shapeW/shapeH: element box in EMU (basis for guide evaluation; fallback space
- * when a path declares no w/h).
- */
+/** Extract and parse <a:custGeom> from a shape's raw XML. */
 export function parseCustGeom(
   shapeXml: string,
   shapeW: number,
@@ -324,11 +307,7 @@ interface AbsCmd {
   xy: number[]
 }
 
-/**
- * Ray angle → ellipse parametric angle, staying in the same revolution.
- * OOXML arcTo angles point at the ellipse from the center; the parametric form
- * (wR·cos t, hR·sin t) only matches when wR == hR.
- */
+/** Ray angle → ellipse parametric angle, staying in the same revolution. */
 function paramAngle(a: number, wR: number, hR: number): number {
   if (wR === hR || !wR || !hR) return a
   const t = Math.atan2(Math.sin(a) * wR, Math.cos(a) * hR)

@@ -145,9 +145,8 @@ function mechanicalDigest(dropped: readonly AgentMessage[]): string {
 }
 
 /**
- * Generic ReAct loop: user message -> model turn (text + tool calls) ->
- * execute tools -> feed results back -> repeat until the model answers with
- * plain text. History persists across runs, so follow-up questions work.
+ * Generic ReAct loop: user message -> model turn (text + tool calls) -> execute tools -> feed
+ * results back -> repeat until the model answers with plain text.
  */
 export class AgentLoop<TSnapshot = unknown> {
   private readonly options: AgentLoopOptions<TSnapshot>
@@ -182,13 +181,7 @@ export class AgentLoop<TSnapshot = unknown> {
     return this.history
   }
 
-  /**
-   * Seed the conversation with restored history (e.g. transcript reloaded from
-   * disk when a document reopens), so follow-up instructions keep their context.
-   * No-op unless the loop is idle with an empty history.
-   * Old messages over the compaction budget fold into a mechanical digest
-   * (no LLM request on restore, guaranteeing zero latency).
-   */
+  /** Seed the conversation with restored history (e.g. */
   restore(messages: readonly AgentMessage[]): void {
     if (this.running || this.history.length > 0 || messages.length === 0) return
     // Edits-only runs persist an assistant message with no text; give it a placeholder
@@ -293,11 +286,7 @@ export class AgentLoop<TSnapshot = unknown> {
     }
   }
 
-  /**
-   * Find the compaction cut at a user boundary: accumulate from the tail up to keepRecentBytes.
-   * Returns the start index of the kept segment; if no suitable boundary exists,
-   * fall back to keeping the last user turn.
-   */
+  /** Find the compaction cut at a user boundary: accumulate from the tail up to keepRecentBytes. */
   private findCompactCut(keepRecentBytes: number): number {
     let kept = 0
     let cut = -1
@@ -387,9 +376,8 @@ export class AgentLoop<TSnapshot = unknown> {
   }
 
   /**
-   * When over budget mid-run (between tool turns), truncate stale tool outputs:
-   * keep structure (tool_use/tool_result pairs intact), cut content only,
-   * and keep the most recent N verbatim.
+   * When over budget mid-run (between tool turns), truncate stale tool outputs: keep structure
+   * (tool_use/tool_result pairs intact), cut content only, and keep the most recent N verbatim.
    */
   private squashStaleToolOutputs(): void {
     if (!this.compactionEnabled()) return
@@ -493,9 +481,8 @@ export class AgentLoop<TSnapshot = unknown> {
     const { events, skill, captureSnapshot } = this.options
     const toolCalls = this.toolCalls
 
-    // final turn: no tools requested, the user stopped the run, or the
-    // no-tools finalizing turn after hitting the limit
-    // (a cancelled turn drops its tool calls — no results would follow)
+    // final turn: no tools requested, the user stopped the run, or the no-tools finalizing turn
+    // after hitting the limit (a cancelled turn drops its tool calls — no results would follow)
     if (toolCalls.length === 0 || this.cancelled || this.finalizing) {
       this.history.push({ role: 'assistant', text: this.turnText })
       this.running = false

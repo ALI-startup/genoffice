@@ -1,16 +1,4 @@
-/**
- * Real metrics from LO-bundled fonts (for the parity runner only).
- *
- * Baseline PDFs are laid out by LibreOffice, which ships metric-compatible
- * substitute fonts (Calibri→Carlito, Cambria→Caladea, Times/Arial/Courier→Liberation).
- * Parsing those font files for line-height/char-width metrics aligns us exactly
- * with the baseline's layout engine.
- *
- * Coverage: Latin fonts. System CJK fonts are all .ttc collections (unsupported
- * by opentype.js), and CJK char width is always 1.0em (em-square), so no real
- * files are needed; CJK line height still uses the simulateLines coefficient
- * path. Unmatched font families, or LO not installed, fall back to heuristics.
- */
+/** Real metrics from LO-bundled fonts (for the parity runner only). */
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import * as opentype from 'opentype.js'
@@ -76,7 +64,14 @@ function resolve(style: RunStyle): OpentypeFontLike | undefined {
   if (prefix) return loadFont(prefix, style.bold, style.italic) ?? undefined
   const dfont = DFONT_MAP.find(([re]) => re.test(style.fontFamily))?.[1]
   if (dfont) {
-    const file = style.bold && style.italic ? dfont.bi : style.bold ? dfont.b : style.italic ? dfont.i : dfont.r
+    const file =
+      style.bold && style.italic
+        ? dfont.bi
+        : style.bold
+          ? dfont.b
+          : style.italic
+            ? dfont.i
+            : dfont.r
     return loadFontFile(join(WORD_DFONTS_DIR, file)) ?? undefined
   }
   return undefined // Unknown font family (incl. CJK family names) → heuristics

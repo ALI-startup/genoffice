@@ -10,13 +10,7 @@ import {
 
 const ORIGIN = 'https://shell.example'
 
-/**
- * The frame protocol's validators and the frame-side client.
- *
- * The validators carry the security property: a page receives `message` events
- * from anything that can reach it, so anything that is not a well-formed message
- * from our own origin has to be dropped rather than half-read.
- */
+/** The frame protocol's validators and the frame-side client. */
 describe('parseFrameToShell', () => {
   const ready = { protocol: FRAME_PROTOCOL, kind: 'ready', frameId: 't1' }
 

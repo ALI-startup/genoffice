@@ -408,9 +408,8 @@ export function buildChartXml(chart: ChartAdd): string {
     (chart.grouping === 'stacked' || chart.grouping === 'percentStacked')
       ? '<c:overlap val="100"/>'
       : ''
-  // Bars ride the primary axes, the line rides a secondary right value axis
-  // plus a hidden category axis — PowerPoint's combo-with-secondary shape
-  // (mirrors pptx-engine chart-insert).
+  // Bars ride the primary axes, the line rides a secondary right value axis plus a hidden category
+  // axis — PowerPoint's combo-with-secondary shape (mirrors pptx-engine chart-insert).
   const comboPlot = (): string => {
     const lineCount = chart.series.length >= 2 ? 1 : 0
     const barEnd = chart.series.length - lineCount

@@ -1,15 +1,4 @@
-/**
- * Public surface of the HWP conversion service.
- *
- * Two kinds of consumer, and the export list is the union of what they need:
- * `main.ts`, which binds a socket, and tests, which want the request handler
- * without one — `createHwpConvertHandler` is a plain `(req, res)` function so a
- * test can drive it over an ephemeral `node:http` server and assert on real
- * response bodies.
- *
- * `convertHwpToHwpx` is exported too, because it is useful on its own: a script
- * converting a directory of documents has no reason to start a server.
- */
+/** Public surface of the HWP conversion service. */
 export {
   convertHwpToHwpx,
   converterAvailable,

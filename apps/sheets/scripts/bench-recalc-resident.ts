@@ -1,6 +1,4 @@
 // One-off benchmark for the resident-model recalc cache (not part of gate).
-// Builds an Excel-style workbook with ROWS data rows + one SUM column, then
-// times a cold recalc (file import) against warm recalcs (resident model).
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'

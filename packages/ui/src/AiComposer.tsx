@@ -5,10 +5,9 @@ import { IconEnter, IconSend, IconStop } from './icons'
 const MAX_TEXTAREA_HEIGHT = 147
 
 /**
- * The AI panel input box shared by docs and sheets: auto-growing textarea
- * (Enter sends, Shift+Enter newline, Esc stops) plus a footer with optional
- * app-specific controls, a shortcut hint, and the send/stop button.
- * Renders the `.ai-input-box` class family; each app themes it in its own CSS.
+ * The AI panel input box shared by docs and sheets: auto-growing textarea (Enter sends, Shift+Enter
+ * newline, Esc stops) plus a footer with optional app-specific controls, a shortcut hint, and the
+ * send/stop button.
  */
 export function AiComposer({
   value,

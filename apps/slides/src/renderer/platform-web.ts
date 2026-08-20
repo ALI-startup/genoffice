@@ -1,21 +1,4 @@
-/**
- * Builds slides' platform for a browser.
- *
- * The composition behind the slot: the ports this host can back, and `null` for the rest.
- * The Electron adapter forwards every port to a preload bridge, because the document lives
- * in the main process. Here there is no bridge and no other process: the document lives in
- * this page, and the `doc` port's 84 members are direct calls into src/domain/ops.ts — the
- * same functions the main process runs, with the same session shape.
- *
- * That makes this host *faster* than the desktop one for every edit, not slower: an edit is
- * a function call rather than a structured-clone round trip through IPC. The logic is
- * identical because it is literally the same code.
- *
- * Nothing in this file reaches a browser global. The document store, the pickers, the font
- * metrics and the host services are all passed in, so this module is exercisable without a
- * `window`, and host-web.ts is the only place globals are read — the same division docs
- * and pdf use.
- */
+/** Builds slides' platform for a browser. */
 import {
   commitSaved,
   createBlankPptx,
@@ -57,14 +40,7 @@ import type {
 import { buildPrintHtml } from '../domain/print-html'
 import type { OpenResult } from '../shared/ipc'
 
-/**
- * The one deck this page has open, and the session every operation acts on.
- *
- * Electron keys sessions by `webContents.id` because one process serves several editors.
- * A page is one editor, so this is a single slot — which is why `slideOps`' first parameter
- * is `Session | undefined`: the guards that fire on the desktop when a renderer has no
- * session are simply never taken here, and the code path is otherwise the same.
- */
+/** The one deck this page has open, and the session every operation acts on. */
 export class WebSlidesSession {
   private current: Session | undefined
 
@@ -87,28 +63,15 @@ export class WebSlidesSession {
 
 /** The host services the document port cannot answer for itself. */
 export interface WebDocumentServices {
-  /**
-   * The author name new comments are attributed to. `userInfo().username` on the desktop; a
-   * browser has no equivalent, so the host decides what to put there.
-   */
+  /** The author name new comments are attributed to. */
   commentAuthor: () => string
   /** The host's translations for the labels two operations hand to the user. */
   translate: OpsTranslate
-  /**
-   * Ask the user to confirm rebuilding an imported chart. `window.confirm` on this host —
-   * the closest a page gets to the desktop's native warning box, and the same substitution
-   * docs makes for its overwrite prompt.
-   */
+  /** Ask the user to confirm rebuilding an imported chart. */
   confirmChartSimplify: () => Promise<boolean>
 }
 
-/**
- * The document port, backed by the operations in src/domain/ops.ts.
- *
- * Every member is `async` because the port is one the Electron host answers over IPC, and
- * a promise is the shape the renderer already awaits. Here the work is synchronous and the
- * promise resolves immediately.
- */
+/** The document port, backed by the operations in src/domain/ops.ts. */
 export function createWebSlidesDocPort(
   session: () => Session | undefined,
   services: WebDocumentServices,
@@ -149,7 +112,6 @@ export function createWebSlidesDocPort(
     findReplace: async (op) => slideOps.findReplace(session(), op),
     flipElements: async (op) => slideOps.flipElements(session(), op),
     // getAnimations: needs a host service; written by hand below.
-    // getChartColorSchemes: needs a host service; written by hand below.
     getChartData: async (slideIndex, sourceId) =>
       slideOps.getChartData(session(), slideIndex, sourceId),
     getComments: async (slideIndex) => slideOps.getComments(session(), slideIndex),
@@ -200,8 +162,7 @@ export function createWebSlidesDocPort(
     tableStructure: async (op) => slideOps.tableStructure(session(), op),
     undo: async () => slideOps.undo(session()),
     ungroupElement: async (op) => slideOps.ungroupElement(session(), op),
-    // The four that need a host service. Each takes it as a parameter rather than importing
-    // one, which is what keeps src/domain free of i18n, node:os and any dialog.
+    // The four that need a host service.
     addComment: async (op) => slideOps.addComment(session(), op, services.commentAuthor),
     getAnimations: async (slideIndex) =>
       slideOps.getAnimations(session(), slideIndex, services.translate),
@@ -211,19 +172,7 @@ export function createWebSlidesDocPort(
   }
 }
 
-/**
- * The in-app deck clipboard, kept in this page.
- *
- * The narrower half of what Electron promises, and honestly so. There the copied slide
- * lives in the main process, so it can be pasted into a deck open in another window; here
- * it lives in the page, so it crosses slides within this deck and no further. That is a
- * real capability rather than a stub, which is why this port is required while reading the
- * *system* clipboard is a nullable one.
- *
- * `markCopied` does nothing here: the desktop writes a marker to the system clipboard so a
- * later paste can tell whether this app or another application copied most recently, and a
- * page that cannot read the system clipboard has no such question to answer.
- */
+/** The in-app deck clipboard, kept in this page. */
 export function createWebSlidesDeckClipboardPort(
   session: () => Session | undefined,
 ): SlidesDeckClipboardPort {
@@ -262,10 +211,7 @@ export interface WebFileServices {
   store: WebDocumentStore
   /** Pickers for the one-off reads — a picture, a media file, a 3D model. */
   pickers: FilePickers
-  /**
-   * An image's own pixel size, which only a host can measure. `null` when the bytes cannot be
-   * decoded, and the operation then falls back to 4:3 exactly as the desktop does.
-   */
+  /** An image's own pixel size, which only a host can measure. */
   imageSize: (bytes: Uint8Array, ext: string) => Promise<{ width: number; height: number } | null>
   /** Hand the deck to the user as a download, for a deck with nowhere to save to. */
   download: (fileName: string, bytes: Uint8Array) => void
@@ -329,23 +275,7 @@ async function pickBytes(
   }
 }
 
-/**
- * Getting a deck in and out of a browser.
- *
- * The store issues an opaque ref per document and resolves it to a `FileSystemFileHandle`, so
- * `OpenResult.path` carries that ref where Electron's carries an absolute path — and `name`
- * carries what to show, which is why the renderer no longer derives one.
- *
- * Two members report a capability this host does not have, and both do it through the value
- * their signature already allows rather than by pretending:
- *
- *   - `consumePendingOpen` — the desktop queues a document for a tab it is about to create.
- *     Nothing queues one here, so there is never a pending document and it answers `null`,
- *     which is the same answer the desktop gives for a tab opened empty.
- *   - `getRecentFiles` — returns paths, which the renderer puts straight in a list. This host
- *     has refs, and a ref is not something to show a user, so it reports none. The handles
- *     *are* persisted; surfacing them needs a name-carrying shape, the same gap pdf has.
- */
+/** Getting a deck in and out of a browser. */
 export function createWebSlidesFilePort(
   sessionSlot: WebSlidesSession,
   services: WebFileServices,
@@ -396,14 +326,7 @@ export function createWebSlidesFilePort(
       }
     },
 
-    /**
-     * Save the deck where it already lives.
-     *
-     * A deck with no ref — a new blank one — has nowhere to live yet, and this host has no
-     * folder it may write to unasked. A save the user asked for therefore goes through Save
-     * As; an automatic one declines, because a dialog nobody asked for is the bug this flag
-     * exists to prevent. That is the same rule docs' `saveNew` follows.
-     */
+    /** Save the deck where it already lives. */
     save: async (auto) => {
       const current = session()
       if (!current) return { ok: false, error: 'no file open' }
@@ -517,40 +440,12 @@ export function createWebSlidesFilePort(
       })
     },
 
-    /**
-     * Insert an image the AI found on the web.
-     *
-     * Not available here, and the reason is the CSP rather than the API: every app is served
-     * with `connect-src 'self'`, so the page cannot fetch an arbitrary image host. Routing it
-     * through the BFF is the fix and needs a route that does not exist yet — the same gap
-     * `search` is null for.
-     */
+    /** Insert an image the AI found on the web. */
     insertImageUrl: async () => null,
   }
 }
 
-/**
- * The window integration for a browser.
- *
- * What each member can honestly do depends on whether this page is standalone or a tab of
- * the web shell, and the difference is the `frame` argument rather than a runtime guess:
- *
- *   - `isDirty` works either way, and does not go anywhere to find out: the deck is in this
- *     page, so the same predicate the main process runs (`slideOps.isDirty`) runs here.
- *   - `onCloseSaveRequest` / `reportCloseSaveResult` are the desktop's "save, then tell me
- *     how it went, and I will wait" handshake. Standalone, nothing can make that request:
- *     `beforeunload` may not await anything, so the subscription is real and simply never
- *     fires, and the unload prompt below is what protects unsaved work — the browser's own
- *     "Leave site?" dialog, armed while the deck is dirty. In the shell there *is* someone
- *     who can wait: closing a tab removes the iframe, which `beforeunload` never sees, so
- *     the shell asks first and this port relays the question to the same subscriber the
- *     desktop's close guard reaches. Same arrangement docs has.
- *   - `setAutoSavePref` is accepted and recorded. On the desktop it tells the main process to
- *     save silently while closing a window; here there is no other process to tell, and an
- *     unload handler cannot await a write anyway.
- *   - `onOpened` / `onRenamed` are subscriptions with no emissions: nothing outside this page
- *     opens a document into it or renames one underneath it.
- */
+/** The window integration for a browser. */
 export function createWebSlidesWindowPort(
   session: () => Session | undefined,
   unloadPrompt: typeof createWebUnloadPrompt = createWebUnloadPrompt,
@@ -562,9 +457,8 @@ export function createWebSlidesWindowPort(
     return !!current && slideOps.isDirty(current) === true
   }
   const closeSaveListeners = new Set<() => void>()
-  // Installed once, for the life of the page: the browser's own leave-site prompt is the only
-  // close guard a standalone page gets, and it must be armed before the first edit rather
-  // than at close.
+  // Installed once, for the life of the page: the browser's own leave-site prompt is the only close
+  // guard a standalone page gets, and it must be armed before the first edit rather than at close.
   unloadPrompt(isDirty)
 
   if (frame !== null) {
@@ -573,8 +467,7 @@ export function createWebSlidesWindowPort(
     frame.onCloseCheck(isDirty)
     frame.onCloseSave(() => {
       if (closeSaveListeners.size === 0) {
-        // Nobody is listening, so nothing will ever reply. Say so now rather than let the
-        // shell wait out its deadline and reach the same answer.
+        // Nobody is listening, so nothing will ever reply.
         frame.reportCloseSave(false)
         return
       }
@@ -598,27 +491,12 @@ export function createWebSlidesWindowPort(
   }
 }
 
-/**
- * The UI language, from the shared web language storage every app uses.
- *
- * The shared port verbatim. It used to cast, because slides declared a stale eleven-value copy
- * of @samugen/i18n's nineteen-value `Lang` (§6.4 of the migration doc) that a shared `Lang`
- * did not fit through. The bridge now says `Lang`, so the two agree.
- */
+/** The UI language, from the shared web language storage every app uses. */
 export function createWebSlidesLanguagePort(language: LanguagePort): SlidesLanguagePort {
   return language
 }
 
-/**
- * Printing, from a frame.
- *
- * The same HTML the desktop renders in a hidden window (src/domain/print-html.ts), so a
- * printout does not differ between hosts. It goes in an iframe rather than the page because
- * the page is the editor: printing the editor would print the editor.
- *
- * `printFrame` is injected — it is the only part that touches the DOM — and resolves once the
- * print dialog has closed, which a page can observe through `afterprint` in the frame.
- */
+/** Printing, from a frame. */
 export function createWebSlidesPrintPort(
   printFrame: (html: string) => Promise<void>,
 ): SlidesPrintPort {
@@ -636,18 +514,7 @@ export function createWebSlidesPrintPort(
   }
 }
 
-/**
- * The AI port, over the BFF.
- *
- * Four of the five members are the shared `AiPort` verbatim — `getAiSettings`, `aiStream`,
- * `aiStreamCancel`, `onAiStream` — so `createWebAiPort` from @samugen/platform-web backs them
- * with no adapter at all, and slides streams through the same server route docs and pdf do. The
- * credential lives in the BFF and never reaches this page, which is the whole reason the route
- * exists.
- *
- * The fifth, `aiSnapshotRestore`, is not a network call: it rolls the deck back to a snapshot
- * this page holds, so it goes to the operations like every other document change.
- */
+/** The AI port, over the BFF. */
 export function createWebSlidesAiPort(
   shared: AiPort,
   session: () => Session | undefined,
@@ -679,27 +546,15 @@ export interface WebSlidesPlatformDeps {
   /** Print the given HTML from a frame; see `createWebSlidesPrintPort`. */
   printFrame: (html: string) => Promise<void>
   /**
-   * The web shell's frame link when this page is a tab of its strip, `null` when it is a
-   * standalone browser tab. It is what makes the close guard real for a tab close, which
-   * `beforeunload` cannot see. Same argument docs' platform takes.
+   * The web shell's frame link when this page is a tab of its strip, `null` when it is a standalone
+   * browser tab.
    */
   frame?: FrameChildLink | null
   /** Install a `beforeunload` guard; injected so tests can drive it. Defaults to the real one. */
   unloadPrompt?: typeof createWebUnloadPrompt
 }
 
-/**
- * slides' platform for a browser: eight ports backed, nine answered `null`.
- *
- * The `null`s are the same list platform.ts documents, and each is a capability this host
- * genuinely lacks rather than one left for later — a second screen it cannot open, a system
- * clipboard it cannot read, a provider credential it must never hold, a filesystem of style
- * templates, a native menu bar. The renderer already tests every one of them, because
- * Electron's `SlidesApi` never had them optional; it has them non-null.
- *
- * `project` is `null` for a different reason and says so in platform.ts: the chat/project
- * store is a main-process database (§6.1), and no browser-side one exists yet.
- */
+/** slides' platform for a browser: eight ports backed, nine answered `null`. */
 export function createWebSlidesPlatform(deps: WebSlidesPlatformDeps): SlidesPlatform {
   const session = () => deps.session.get()
   return {

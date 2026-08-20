@@ -1,11 +1,9 @@
 import type { DocProtection } from './types'
 
 /**
- * w:documentProtection password hash (Word 2013+ scheme, ECMA-376 iterated hash):
- *   h0 = H(salt || UTF-16LE(password))
- *   hi = H(h(i-1) || LE32(i))   i = 0..spinCount-1
- * sid 14 = SHA-512 (the only implemented algorithm). Uses WebCrypto, so it works in
- * both the renderer process and Node 20+.
+ * w:documentProtection password hash (Word 2013+ scheme, ECMA-376 iterated hash): h0 = H(salt ||
+ * UTF-16LE(password)) hi = H(h(i-1) || LE32(i)) i = 0..spinCount-1 sid 14 = SHA-512 (the only
+ * implemented algorithm).
  */
 
 function toBase64(bytes: Uint8Array): string {

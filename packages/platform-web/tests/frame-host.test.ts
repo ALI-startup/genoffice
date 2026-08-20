@@ -104,8 +104,7 @@ describe('createShellFrameLink', () => {
     const impostor = fakeFrame()
     link.register('t1', frame)
     const answer = link.wouldLoseWork('t1')
-    // Same origin, correct shape, correct id — and a different sender. Accepting
-    // it would let one frame talk the shell into discarding another's work.
+    // Same origin, correct shape, correct id — and a different sender.
     h.deliver(
       {
         protocol: FRAME_PROTOCOL,

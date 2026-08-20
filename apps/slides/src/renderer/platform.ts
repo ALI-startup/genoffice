@@ -1,47 +1,14 @@
 /**
- * slides' platform slot: the one place the renderer names the host capabilities it needs,
- * and the only thing renderer code is allowed to reach the host through.
- *
- * The same arrangement docs and pdf have, arrived at differently. Those two declared their
- * ports from scratch; slides already had one typed object describing its whole host
- * surface — `SlidesApi` in ../shared/ipc.ts, 148 members, which the renderer reached as
- * `window.slidesApi`. So the ports here are `Pick`s of it: nothing is retyped, the split is
- * visible in one place, and the Electron adapter satisfies every port with the same bridge
- * object it always used.
- *
- * The split is the design. Eight ports are required and a web host must answer all of
- * them; ten are `X | null` — nine capabilities a browser genuinely cannot back, plus
- * `project` (§6.1). None of them is a stub, and none is an optional method:
- *
- *   - `aiMedia` — image generation and media analysis, which call a provider directly with a
- *     credential the browser must never hold and have no BFF route.
- *   - `presenter` — a second window mirrored to a projector, plus its ink channel.
- *   - `pdfExport` — the main process renders with `printToPDF` and merges with pdf-lib. The
- *     same decision docs made in Phase 4c: a renderer-side exporter would write a
- *     *different* document under one command name, so the browser prints instead.
- *   - `clipboard` — reading what another application put on the system clipboard. The
- *     in-app deck clipboard is a separate, required port; see `SlidesDeckClipboardPort`.
- *   - `search` — needs a key the browser must never hold and an origin its CSP forbids, so
- *     it needs a BFF route that does not exist yet.
- *   - `styleTemplates` — read off the host's filesystem today.
- *   - `menu` — the native application menu; a page has no menu bar.
- *
- * That eight of the eighteen are required — including all 84 document operations — is what
- * phase 7a bought. Before it, `doc` was a main-process surface and a browser could only
- * have faked it.
+ * slides' platform slot: the one place the renderer names the host capabilities it needs, and the
+ * only thing renderer code is allowed to reach the host through.
  */
 import { createPlatformSlot, type AttachmentsPort } from '@samugen/platform'
 import type { ProjectApi } from '@samugen/project-store'
 import type { SlidesApi } from '../shared/ipc'
 
 /**
- * Every document operation and query: edits, inserts, deletes, undo/redo, tables, master
- * view, sections, animations, notes, comments, and the RenderSlide rebuilds they return.
- *
- * Required on both hosts, because the implementation is the same code either way —
- * src/domain/ops.ts. All 84 members map one-to-one onto an operation there (six by a
- * spelling difference the adapters absorb), so a browser backs this port by calling those
- * functions in the page rather than by reimplementing anything.
+ * Every document operation and query: edits, inserts, deletes, undo/redo, tables, master view,
+ * sections, animations, notes, comments, and the RenderSlide rebuilds they return.
  */
 export type SlidesDocumentPort = Pick<
   SlidesApi,
@@ -132,13 +99,9 @@ export type SlidesDocumentPort = Pick<
 >
 
 /**
- * Getting a deck in and out, and the host pickers that insert media into one: the open
- * dialog, save, Save As, the document a new tab was created with, the recent list, and
- * picture/media/model insertion.
- *
- * Required on both hosts, implemented differently on each — native dialogs and a path, or
- * the File System Access API and an opaque handle. Nothing here carries a path, so the
- * renderer cannot come to depend on one.
+ * Getting a deck in and out, and the host pickers that insert media into one: the open dialog,
+ * save, Save As, the document a new tab was created with, the recent list, and picture/media/model
+ * insertion.
  */
 export type SlidesFilePort = Pick<
   SlidesApi,
@@ -156,15 +119,7 @@ export type SlidesFilePort = Pick<
   | 'saveAs'
 >
 
-/**
- * The in-app clipboard: a slide or a set of elements copied here and pasted back here.
- *
- * Separate from `clipboard` below, and required rather than nullable, because this is not
- * the system clipboard. Electron keeps the copied slide per renderer in the main process
- * so it can cross two windows; a browser keeps it per page, which is a narrower promise
- * but a real one. The native clipboard — reading what another application put there — is
- * the nullable port.
- */
+/** The in-app clipboard: a slide or a set of elements copied here and pasted back here. */
 export type SlidesDeckClipboardPort = Pick<
   SlidesApi,
   | 'copyElements'
@@ -176,11 +131,8 @@ export type SlidesDeckClipboardPort = Pick<
 >
 
 /**
- * The close-guard handshake, the dirty flag, and the host reporting that the open document
- * was replaced or renamed underneath the renderer.
- *
- * A pull, not a push: the host asks at close time and the renderer answers, which is the
- * one shape `beforeunload` can also express.
+ * The close-guard handshake, the dirty flag, and the host reporting that the open document was
+ * replaced or renamed underneath the renderer.
  */
 export type SlidesWindowPort = Pick<
   SlidesApi,
@@ -199,34 +151,18 @@ export type SlidesLanguagePort = Pick<
 >
 
 /**
- * The AI surface: provider settings, the streaming channel and its chunks, snapshot
- * rollback, and the two multimodal helpers.
- *
- * Required on both. Electron streams from the main process; a browser streams from the
- * BFF, which is the only place a provider credential may live — and where settings are
- * therefore read-only (see §6.2 of the migration doc).
+ * The AI surface: provider settings, the streaming channel and its chunks, snapshot rollback, and
+ * the two multimodal helpers.
  */
 export type SlidesAiPort = Pick<
   SlidesApi,
   'aiSnapshotRestore' | 'aiStream' | 'aiStreamCancel' | 'getAiSettings' | 'onAiStream'
 >
 
-/**
- * Printing the deck — slides, handouts or notes pages.
- *
- * Required on both, and the only member where Electron is the one doing something
- * unusual: it renders the print HTML in a hidden window because the renderer's own page is
- * the editor, not the printout. A browser prints that same HTML from a frame.
- */
+/** Printing the deck — slides, handouts or notes pages. */
 export type SlidesPrintPort = Pick<SlidesApi, 'printSlides'>
 
-/**
- * Image generation and media analysis.
- *
- * Separate from `ai` because the BFF has no route for either: both call a provider directly
- * with a credential the browser must never hold. The streaming channel above has a route and
- * so stays required.
- */
+/** Image generation and media analysis. */
 export type SlidesAiMediaPort = Pick<SlidesApi, 'generateImage'>
 
 /** Presenter view, the audience window, and the ink and sync channels between them. */
@@ -265,19 +201,7 @@ export type SlidesStyleTemplatePort = Pick<
 /** Commands from the native application menu. */
 export type SlidesMenuPort = Pick<SlidesApi, 'onMenuCommand'>
 
-/**
- * The attachment surface the AI panel uses.
- *
- * Not a `Pick` of anything slides owns: it is the shared `AttachmentsPort`, the same port
- * docs has used since Phase 4a. Slides' own surface (`DesktopFilesApi`, reached through
- * `window.desktop` rather than `window.slidesApi`) was path-based, and its
- * `getPathForFile(file: File): string` was the sharp edge — a browser had nothing to
- * return but `''`, which type-checks as a path and flows onward silently. Collapsing the
- * two was §6.3: the renderer now holds an opaque `AttachmentRef` it may only hand back,
- * Electron resolves that ref to a path in the adapter, and a browser resolves it to a blob
- * it is holding. `DesktopFilesApi` itself is unchanged — it is the preload bridge contract,
- * and the ref↔path mapping happens above it.
- */
+/** The attachment surface the AI panel uses. */
 export type SlidesAttachmentsPort = AttachmentsPort
 
 /** slides' composed platform. */
@@ -301,21 +225,14 @@ export interface SlidesPlatform {
   menu: SlidesMenuPort | null
 }
 
-/**
- * What a host module must export as `createSlidesPlatform`.
- *
- * The build-time seam: `main.tsx` imports it from the bare specifier `@host`, which each
- * Vite config aliases to exactly one host, so the Electron bundle carries no browser code
- * and a web bundle no reference to `window.slidesApi`.
- */
+/** What a host module must export as `createSlidesPlatform`. */
 export type CreateSlidesPlatform = () => Promise<SlidesPlatform>
 
 export const { set: setSlidesPlatform, get: slidesPlatform } =
   createPlatformSlot<SlidesPlatform>('slides')
 
-// Per-port accessors for the required ports, so a call site reads `slidesDoc().editText(op)`
-// rather than `slidesPlatform().doc.editText(op)`. The nullable ports deliberately have
-// none: their callers must hold the port and test it, which is the point of the null.
+// Per-port accessors for the required ports, so a call site reads `slidesDoc().editText(op)` rather
+// than `slidesPlatform().doc.editText(op)`.
 export const slidesDoc = (): SlidesDocumentPort => slidesPlatform().doc
 export const slidesFile = (): SlidesFilePort => slidesPlatform().file
 export const slidesDeckClipboard = (): SlidesDeckClipboardPort => slidesPlatform().deckClipboard

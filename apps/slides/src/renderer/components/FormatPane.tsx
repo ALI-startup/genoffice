@@ -1,8 +1,6 @@
 /**
- * Format pane (a trimmed-down PowerPoint Format Pane): position/size/rotation/fill of the
- * selected element. Shares the right dock area with the AI panel, mutually exclusive. Inputs
- * commit on blur/Enter; external changes (dragging etc.) sync default values by remounting
- * inputs via key.
+ * Format pane (a trimmed-down PowerPoint Format Pane): position/size/rotation/fill of the selected
+ * element.
  */
 import React, { useEffect, useRef, useState } from 'react'
 import type { RenderNode, ShapeRenderNode } from '@samugen/pptx-render'

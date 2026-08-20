@@ -1,8 +1,4 @@
-/**
- * Chart/shape/image insertion (ribbon and AI ops). Extracted from App.tsx;
- * the App component passes a VisualActionContext built fresh per call so
- * refs and state never go stale.
- */
+/** Chart/shape/image insertion (ribbon and AI ops). */
 import { columnLabel, parseAddress, parseRange } from '../domain/cell-address'
 import { buildChartVisual, chartDataFromValues } from '../domain/chart-visual'
 import type { InMemoryWorkbookAdapter } from '../domain/in-memory-workbook'
@@ -206,8 +202,7 @@ export async function handleInsertChart(
   }
   const sheetName = worksheet.getSheetName()
   const dataStartRow = startRow + (parsed.hasHeaderRow && !parsed.byRow ? 1 : 0)
-  // by-row orientation: series names come from the first column, categories
-  // from the first row
+  // by-row orientation: series names come from the first column, categories from the first row
   const dataStartColumn = startColumn + (parsed.hasHeaderRow && parsed.byRow ? 1 : 0)
   const visual: WorkbookVisualObject = {
     id: `added-chart-${Date.now().toString(36)}-${state.editJournal.visualAdds.length + 1}`,

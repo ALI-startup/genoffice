@@ -37,10 +37,7 @@ export type AgentMessage =
   | { role: 'assistant'; text: string; toolCalls?: AgentToolCall[] | undefined }
   | { role: 'tool'; results: AgentToolResult[] }
 
-/**
- * Side-channel display data: UI-only, never merged into messages sent to the LLM.
- * kind='images' → image grid; kind='links' → link list; kind='text' → extra text.
- */
+/** Side-channel display data: UI-only, never merged into messages sent to the LLM. */
 export interface ToolDisplay {
   kind: 'images' | 'links' | 'text'
   /** entry list for images / links modes */
@@ -58,10 +55,7 @@ export interface ToolExecution {
   mutated?: boolean
   /** short human-readable label for activity UI */
   summary: string
-  /**
-   * Side-channel display: for UI only, never enters the LLM context.
-   * Ignored when tool results are assembled into an AgentMessage.
-   */
+  /** Side-channel display: for UI only, never enters the LLM context. */
   display?: ToolDisplay
 }
 

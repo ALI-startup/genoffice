@@ -13,16 +13,11 @@ export interface TabsApi {
   list(): Promise<TabSummary[]>
   activate(id: string): Promise<void>
   close(id: string): Promise<void>
-  /**
-   * pop up the native "all tabs" list menu at (x, y) in window CSS coordinates.
-   * Native because the content area below the strip is a WebContentsView that
-   * would cover any DOM dropdown rendered by the shell.
-   */
+  /** pop up the native "all tabs" list menu at (x, y) in window CSS coordinates. */
   showMenu(x: number, y: number): Promise<void>
   /**
-   * pop up the native "+" new-file menu (new doc/sheet/slides, open local
-   * file) at (x, y) in window CSS coordinates. Native for the same reason
-   * as showMenu.
+   * pop up the native "+" new-file menu (new doc/sheet/slides, open local file) at (x, y) in window
+   * CSS coordinates.
    */
   showNewMenu(x: number, y: number): Promise<void>
   /** move a tab to a new index in the strip; Home stays pinned at index 0 */

@@ -1,14 +1,4 @@
-/**
- * The Worker side: it owns the engine, and answers one message at a time.
- *
- * Written as a function over a `MessageLink` rather than as a script that reaches for
- * `self`, so the same code runs in a Worker, in a test, and — if it ever helps — on the main
- * thread. `worker.ts` is the four lines that hand it the real `self`.
- *
- * Requests are serialised deliberately. The engine is one wasm instance with one linear
- * memory and no threads; two overlapping calls would interleave inside it. A queue here is
- * both simpler and more honest than a lock inside the module.
- */
+/** The Worker side: it owns the engine, and answers one message at a time. */
 import { XlsxEngine, type EnginePath, type XlsxEngineOptions } from './engine'
 import type { EngineOutbound, EngineReply, MessageLink } from './protocol'
 

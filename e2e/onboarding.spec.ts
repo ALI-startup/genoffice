@@ -1,12 +1,4 @@
-/**
- * The first-run tour, end to end in a browser.
- *
- * What is worth testing here is not the three slides — a unit test can render those
- * — but that the tour gates the home screen on a fresh profile, that finishing or
- * skipping it records the fact in the page's own storage, and that a returning
- * visitor never sees it again. That last part is the whole point of the flag, and it
- * is the part only a real page load can prove.
- */
+/** The first-run tour, end to end in a browser. */
 import { test, expect } from '@playwright/test'
 import { ONBOARDING_KEY, openShell } from './helpers'
 

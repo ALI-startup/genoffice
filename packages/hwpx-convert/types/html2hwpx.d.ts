@@ -1,14 +1,4 @@
-/**
- * Ambient types for `html2hwpx`, which ships plain CommonJS with no
- * declarations.
- *
- * Only the pure, filesystem-free half of the library is declared. The
- * convenience entry points it also exports (`HTMLtoHWPX`, `convertToHwpx`,
- * `HtmlRenderer`) all read the style template off the package directory, which
- * is exactly what `write.ts` avoids so the exporter can run in a browser — so
- * they are deliberately not surfaced here. Anything not declared cannot be
- * reached by accident.
- */
+/** Ambient types for `html2hwpx`, which ships plain CommonJS with no declarations. */
 declare module 'html2hwpx' {
   /** Parsed representation of an HTML document; opaque to this package. */
   export type HtmlAst = unknown
@@ -28,12 +18,7 @@ declare module 'html2hwpx' {
       basePath: string | null
     })
 
-    /**
-     * Convert the AST to the body of `Contents/section0.xml`.
-     *
-     * Must be called before `getModifiedHeaderXml`, which reports the character
-     * and paragraph properties this pass appended.
-     */
+    /** Convert the AST to the body of `Contents/section0.xml`. */
     process(): string
 
     /** The template header with the properties `process()` needed added to it. */

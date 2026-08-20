@@ -235,10 +235,9 @@ describe('pivot additions', () => {
   })
 
   it('cache records reflect actual source data: blank rows → <m/>, numeric cells → <n/>', async () => {
-    // rowItems contains the three region labels but fixture col A (region) has no matching values
-    // → col 0 (region) all rows: <m/> (no match to sharedItems)
-    // fixture B3 = formula evaluating to 5 → col 1, row 2 (0-indexed): <n v="5"/>
-    // col 2 (amount) all rows: <m/>
+    // rowItems contains the three region labels but fixture col A (region) has no matching values →
+    // col 0 (region) all rows: <m/> (no match to sharedItems) fixture B3 = formula evaluating to 5
+    // → col 1, row 2 (0-indexed): <n v="5"/> col 2 (amount) all rows: <m/>
     const plan = await planWith([pivotAddition()])
     const records = plan.added.get('xl/pivotCache/pivotCacheRecords1.xml')
     expect(records).toContain('<r><m/><m/><m/></r>') // row index 1 (Excel row 2, all blank)

@@ -1,13 +1,5 @@
 /**
- * The engine on the host a browser actually gets: our own WASI shim, over an in-memory
- * filesystem.
- *
- * `wasm-engine.test.ts` proves the module is right by running it under Node's WASI. This one
- * proves the *shim* is right, by running the same module against the implementation that
- * ships — which is where a mistake would be silent, since an `fd_read` that returns the wrong
- * count corrupts a workbook rather than failing.
- *
- * Skipped, loudly, when `npm run wasm:build -w @samugen/sheets` has not been run.
+ * The engine on the host a browser actually gets: our own WASI shim, over an in-memory filesystem.
  */
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
@@ -74,9 +66,8 @@ describeEngine('the engine over the browser shim', () => {
     const engine = await XlsxEngine.start(module, {
       newRequestId: () => `r${counter++}`,
       now: () => 1_700_000_000_000,
-      // Deterministic but *distinct*: the engine's session ids are UUIDv4s drawn from
-      // `random_get`, so a constant filler would make two sessions collide on the scratch
-      // directory they create. A browser passes `crypto.getRandomValues` and never sees it.
+      // Deterministic but *distinct*: the engine's session ids are UUIDv4s drawn from `random_get`,
+      // so a constant filler would make two sessions collide on the scratch directory they create.
       randomFill: (bytes) => {
         for (let index = 0; index < bytes.length; index += 1) bytes[index] = (counter + index) % 251
         counter += 1

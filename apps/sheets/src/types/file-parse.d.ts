@@ -1,9 +1,6 @@
 /**
- * Type shim: @samugen/file-parse ships as TS source, and its dependency
- * @samugen/docx-engine fails under sheets' stricter compiler options
- * (exactOptionalPropertyTypes/noUncheckedIndexedAccess). tsconfig paths point
- * type resolution here; the runtime bundle still uses the real
- * source. Keep the export signatures in sync with packages/file-parse/src/parse.ts.
+ * Type shim: @samugen/file-parse ships as TS source, and its dependency @samugen/docx-engine fails
+ * under sheets' stricter compiler options (exactOptionalPropertyTypes/noUncheckedIndexedAccess).
  */
 export type ParsedFileKind = 'text' | 'image' | 'unsupported'
 

@@ -1,8 +1,4 @@
-/**
- * Applying a theme has to change the page, not only the saved file.
- * docThemeCss is generated from live theme state, so the render reflects a pick
- * immediately.
- */
+/** Applying a theme has to change the page, not only the saved file. */
 import { describe, expect, it } from 'vitest'
 import { docThemeCss } from '../src/renderer/doc-style-css'
 

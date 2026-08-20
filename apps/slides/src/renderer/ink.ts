@@ -1,15 +1,6 @@
 import type { PictureRenderNode, RenderNode, RenderSlide } from '@samugen/pptx-render'
 
-/**
- * Freehand ink (Draw tab) — editor-side model. Same mechanism as apps/docs ink, but a
- * slide is a fixed canvas: no paragraph anchors needed; ink coordinates use page px
- * directly (fitWidth viewport).
- *
- * One stroke = one transparent PNG picture element (p:pic): cNvPr name carries the
- * aislides-ink prefix to mark our own ink, and descr stores the vector points as JSON.
- * PowerPoint renders it as a regular picture; our editor decodes the vector points on
- * reopen, so the eraser can hit-test and delete whole strokes precisely.
- */
+/** Freehand ink (Draw tab) — editor-side model. */
 
 export type InkTool = 'select' | 'pen' | 'highlighter' | 'eraser'
 

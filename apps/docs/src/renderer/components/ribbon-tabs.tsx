@@ -293,11 +293,7 @@ export function shapePresetStyle(prst: string | undefined): CSSProperties {
   return style
 }
 
-/**
- * Insert a block beside the current top-level block. Ribbon actions can be
- * invoked while the caret is nested in a table cell, where inserting a block
- * directly at the selection is invalid and TipTap otherwise fails silently.
- */
+/** Insert a block beside the current top-level block. */
 export function insertTopLevelBlockAtSelection(editor: Editor, content: JSONContent): boolean {
   const { $from } = editor.state.selection
   const position = $from.depth > 0 ? $from.after(1) : editor.state.selection.to
@@ -396,10 +392,8 @@ export function insertPageBreakAt(editor: Editor): void {
 }
 
 /**
- * Word's "Blank Page": one empty paragraph that starts its own page, and —
- * only when content follows it — a break pushed onto that following block so
- * it starts the page after. Unconditionally inserting two break paragraphs
- * turned a 1-page document into 3 pages.
+ * Word's "Blank Page": one empty paragraph that starts its own page, and — only when content
+ * follows it — a break pushed onto that following block so it starts the page after.
  */
 export function insertBlankPageAt(editor: Editor): void {
   editor

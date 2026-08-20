@@ -13,10 +13,7 @@ export function isTextUndoTarget(target: UndoTarget): boolean {
   )
 }
 
-/**
- * The empty AI composer yields undo to the deck after a run. Once the user types again, native
- * input undo wins even if they later delete their draft back to an empty string.
- */
+/** The empty AI composer yields undo to the deck after a run. */
 export function shouldRouteUndoToDeck(target: UndoTarget): boolean {
   return (
     !!target &&

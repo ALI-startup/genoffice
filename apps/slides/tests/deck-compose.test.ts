@@ -1,11 +1,4 @@
-/**
- * The half of deck generation that has no model in it.
- *
- * Placement is arithmetic, so it can be asserted exactly — which is the point of
- * splitting the generator here. What matters most is that a page is *readable*
- * whatever the model returned: contrast is recomputed rather than trusted, junk
- * blocks are dropped rather than drawn, and nothing lands off-canvas.
- */
+/** The half of deck generation that has no model in it. */
 import { describe, expect, it } from 'vitest'
 import {
   composePage,

@@ -3,10 +3,9 @@ import { parseDocx } from '../src/parse'
 import { buildDocx } from './helpers/build-docx'
 
 /**
- * Legacy VML textboxes and content-control (w:sdt) wrappers, as produced by
- * broker research-report templates: every field lives in an sdt,
- * sidebars are v:shape textboxes full of tables, and whole tables are wrapped
- * in content controls. Display must look through all of it.
+ * Legacy VML textboxes and content-control (w:sdt) wrappers, as produced by broker research-report
+ * templates: every field lives in an sdt, sidebars are v:shape textboxes full of tables, and whole
+ * tables are wrapped in content controls.
  */
 
 const V_NS = 'xmlns:v="urn:schemas-microsoft-com:vml"'

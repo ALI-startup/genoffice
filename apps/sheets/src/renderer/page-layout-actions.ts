@@ -1,10 +1,4 @@
-/**
- * Page Layout commands, header/footer, freeze journaling and PDF export.
- * Extracted from App.tsx; the App component passes a PageLayoutContext built
- * fresh per call so refs and state never go stale. Page-setup edits journal
- * per-sheet print settings; nothing renders in the grid (Univer has no
- * page-layout view), everything lands in the saved file.
- */
+/** Page Layout commands, header/footer, freeze journaling and PDF export. */
 import { columnLabel } from '../domain/cell-address'
 import {
   isSheetRemoved,
@@ -107,8 +101,7 @@ export function handlePageLayoutCommand(ctx: PageLayoutContext, rest: string): v
     case 'fit-height': {
       const pages = Number(value)
       if (!Number.isInteger(pages) || pages < 0 || pages > 1_000) return
-      // Excel treats the untouched other axis as Automatic (0) once
-      // fit-to-page engages.
+      // Excel treats the untouched other axis as Automatic (0) once fit-to-page engages.
       const fitToWidth = key === 'fit-width' ? pages : (prior.fitToWidth ?? 0)
       const fitToHeight = key === 'fit-height' ? pages : (prior.fitToHeight ?? 0)
       const fitValue = pages === 0 ? t('appFitAutomatic') : t('appFitPages', { count: pages })
@@ -214,8 +207,7 @@ export async function handleExportPdf(ctx: PageLayoutContext): Promise<void> {
       `${baseName}.pdf`,
       worksheet.getSheetName(),
     )
-    // Null on a host that cannot write a PDF file. The command that reaches this line is
-    // hidden there, so this is the belt to that UI's braces rather than the only guard.
+    // Null on a host that cannot write a PDF file.
     const pdfExport = sheetsPlatform().pdfExport
     if (!pdfExport) {
       ctx.setMessage(t('appPdfExportFailed'))

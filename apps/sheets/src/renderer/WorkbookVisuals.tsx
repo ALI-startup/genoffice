@@ -668,10 +668,7 @@ function EditableShapeVisual({
     const dx = dxRaw / zoom
     const dy = dyRaw / zoom
     if (mode === 'move') {
-      // Free placement: keep the frame size. The grid edge caps
-      // the shift — walk the leading marker first and apply the distance it
-      // actually covered to both markers, so a clamped drag cannot shrink
-      // the frame.
+      // Free placement: keep the frame size.
       const effectiveShift = (
         delta: number,
         from: AnchorMarker,
@@ -749,9 +746,7 @@ function EditableShapeVisual({
         hostNodeRef.current = node
         if (!node || pendingFocusId !== visual.id) return
         pendingFocusId = null
-        // The float container may not be attached/laid out yet; retry until
-        // focus actually lands. preventScroll: a scroll-into-view here would
-        // shift the sheet under the just-dropped visual.
+        // The float container may not be attached/laid out yet; retry until focus actually lands.
         const tryFocus = (attempts: number): void => {
           node.focus({ preventScroll: true })
           if (document.activeElement !== node && attempts > 0) {
@@ -1139,9 +1134,8 @@ function ChartVisual({
   // so only file charts carry a pending overlay.
   const editKey = chartPath ?? visualId
   const pendingEdit = chartPath ? chartEditing?.edits.get(chartPath) : undefined
-  // Files written without numCache (openpyxl, pandas) have series refs but no
-  // cached points; hydrate those series from the referenced cells. Categories
-  // hydrate on their own too (scatter xVal numRef without numCache).
+  // Files written without numCache (openpyxl, pandas) have series refs but no cached points;
+  // hydrate those series from the referenced cells.
   const readVector = chartEditing?.readVector
   const needsHydration = sourceChart.series.some(
     (series) =>

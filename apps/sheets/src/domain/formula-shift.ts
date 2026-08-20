@@ -2,16 +2,10 @@ import { columnIndex, columnLabel } from './cell-address'
 import type { StructuralOperation } from './workbook-dsl'
 
 /**
- * Rewrites A1-style references in a formula after rows/columns shift, the way
- * Excel does for structural edits: every reference to the shifted region
- * moves (absolute $ markers do NOT pin a reference against inserts/deletes —
- * they only matter for copy/fill), references into a deleted region become
- * #REF!, and ranges that partially overlap a deleted region shrink.
- *
- * Handled: plain refs (B2), absolute markers ($B$2), ranges (B2:D4), sheet
- * prefixes (Sheet1!B2, 'My Sheet'!B2 — only rewritten when the prefix names
- * the sheet the structural op targets), quoted string literals (skipped).
- * Function names like LOG10 are protected by boundary checks.
+ * Rewrites A1-style references in a formula after rows/columns shift, the way Excel does for
+ * structural edits: every reference to the shifted region moves (absolute $ markers do NOT pin a
+ * reference against inserts/deletes — they only matter for copy/fill), references into a deleted
+ * region become #REF!, and ranges that partially overlap a deleted region shrink.
  */
 
 export interface ShiftSpec {
@@ -73,9 +67,7 @@ function clampRefPart(part: RefPart, spec: ShiftSpec, side: 'start' | 'end'): Re
   return spec.axis === 'row' ? { ...part, row: clamped } : { ...part, col: clamped }
 }
 
-// sheet prefix (optional) + first ref + optional ":second ref". Boundaries:
-// not preceded by [A-Za-z0-9_.$] (protects LOG10, names) and the ref itself
-// must not be followed by a letter/digit/( (protects ABC1DEF, functions).
+// sheet prefix (optional) + first ref + optional ":second ref".
 const REF_RE =
   /(?<![A-Za-z0-9_.$!])(?:(?:'([^']+)'|([A-Za-z0-9_.]+))!)?(\$?)([A-Z]{1,3})(\$?)([0-9]{1,7})(?::(\$?)([A-Z]{1,3})(\$?)([0-9]{1,7}))?(?![A-Za-z0-9(])/g
 

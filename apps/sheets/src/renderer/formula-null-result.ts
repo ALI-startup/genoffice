@@ -1,16 +1,4 @@
-/**
- * Empty-value formula results display as 0, like Excel.
- *
- * A bare `=H19` on an empty cell already shows 0: the root reference goes
- * through BaseReferenceObject.getFirstCell(), which maps a missing cell to
- * NumberValueObject(0). But an empty reference passed THROUGH a function
- * (IFERROR, IF, CHOOSE, SWITCH, …) arrives as a NullValueObject, is returned
- * as-is, and the runtime stores `v: null` — a blank cell where Excel shows 0.
- *
- * Coercing at the root keeps intermediate semantics intact: `=IFERROR(H19,
- * "NA")&""` still concatenates the emptiness to "" before the root ever sees
- * it, matching Excel.
- */
+/** Empty-value formula results display as 0, like Excel. */
 import { IFormulaRuntimeService, NumberValueObject } from '@univerjs/engine-formula'
 
 import type { UniverRuntime } from './univer-state'

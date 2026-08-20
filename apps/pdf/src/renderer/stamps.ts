@@ -55,11 +55,7 @@ function toBase64(canvas: HTMLCanvasElement): string {
   return canvas.toDataURL('image/png').split(',')[1] ?? ''
 }
 
-/**
- * Watermark bitmap: full-page transparent canvas with text rotated around the center.
- * Uses a bitmap because pdf-lib's built-in fonts lack CJK, and embedding fonts would
- * bundle several MB of font data.
- */
+/** Watermark bitmap: full-page transparent canvas with text rotated around the center. */
 export function renderWatermark(cfg: WatermarkConfig, pw: number, ph: number): string | null {
   const text = cfg.text.trim()
   if (!text) return null
@@ -126,11 +122,7 @@ function renderBar(
 const fill = (tpl: string, page: number, total: number) =>
   tpl.replaceAll('{page}', String(page)).replaceAll('{total}', String(total))
 
-/**
- * Build stamps for each target page. pages provides (original page index, unrotated
- * page size, display number). Headers/footers are placed in unrotated coordinates and
- * follow rotation consistently with the page's /Rotate.
- */
+/** Build stamps for each target page. */
 export function buildStamps(
   pages: { origIdx: number; pw: number; ph: number; displayNo: number }[],
   watermark: WatermarkConfig | null,
@@ -162,7 +154,11 @@ export function buildStamps(
     const margin = Math.min(p.ph * 0.035, 26)
 
     const header = renderBar(
-      [hf.headerLeft, hf.headerCenter, hf.headerRight].map((s) => fill(s, no, total)) as [string, string, string],
+      [hf.headerLeft, hf.headerCenter, hf.headerRight].map((s) => fill(s, no, total)) as [
+        string,
+        string,
+        string,
+      ],
       p.pw,
       hf.fontSize,
       hf.color,

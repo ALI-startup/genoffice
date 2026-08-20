@@ -27,9 +27,8 @@ const recalcResultSchema = z
   })
   .strict()
 
-// IronCalc's importer is strict: single-line XML (whitespace text nodes crash
-// it) and a styles.xml complete with cellStyleXfs/cellStyles. This mirrors
-// what Excel itself produces.
+// IronCalc's importer is strict: single-line XML (whitespace text nodes crash it) and a styles.xml
+// complete with cellStyleXfs/cellStyles.
 async function buildRecalcFixture(): Promise<Buffer> {
   const zip = new JSZip()
   zip.file(

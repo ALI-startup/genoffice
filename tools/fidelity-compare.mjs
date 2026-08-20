@@ -1,16 +1,4 @@
-/**
- * pptx rendering fidelity comparison pipeline.
- *
- * Reference side: LibreOffice headless export to PDF → pdftoppm PNG per page (96dpi, 16:9 → 1280×720).
- *   (AppleScript batch export in the new PowerPoint for Mac is broken; LibreOffice serves as
- *   the automatable reference renderer, with PowerPoint used for manual spot checks.)
- * Our side: playwright drives the packaged SamuGen Slides (Electron) with zoom locked at 100%,
- *   clicks through the thumbnails page by page, and screenshots the canvas element .stage-rel.
- * Compare: pixelmatch per-pixel diff (bilinear-scaled to the same size first), emitting a side-by-side HTML report.
- *
- * Usage: node tools/fidelity-compare.mjs <a.pptx> [b.pptx …] [--max-slides N] [--out DIR]
- * Prereq: npm run build -w @samugen/slides; brew: libreoffice + poppler (pdftoppm).
- */
+/** pptx rendering fidelity comparison pipeline. */
 /* global document, MouseEvent -- used inside page.evaluate() browser context */
 import { _electron as electron } from 'playwright-core'
 import { execFileSync } from 'node:child_process'

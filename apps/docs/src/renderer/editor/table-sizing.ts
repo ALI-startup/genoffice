@@ -9,10 +9,7 @@ function finiteWidth(value: unknown, fallback: number): number {
   return Number.isFinite(width) && width > 0 ? width : fallback
 }
 
-/**
- * Fit a table grid into the section content box. Requested columns keep their
- * requested size where possible; unselected columns give up space first.
- */
+/** Fit a table grid into the section content box. */
 export function fitColumnWidths(
   current: number[],
   requested: ReadonlyMap<number, number>,

@@ -1,42 +1,4 @@
-/**
- * Builds the shell's platform for a browser.
- *
- * The composition behind the slot, and it keeps the seam's discipline: nothing
- * here reads a browser global. The route, the frame link, the AI fetch and the
- * clocks are all injected, so every adapter — including the tab strip and the
- * close guard, which are the interesting ones — is exercisable without a DOM,
- * and host-web.ts stays the one file that touches `window`.
- *
- * What replaces what:
- *
- *   - Electron's tab strip is `TabManager` in the main process, hanging a
- *     `WebContentsView` per tab off one `BrowserWindow`. Here a tab is a route
- *     plus an iframe of the shell's own origin, and `createWebShellTabs` below
- *     is the same bookkeeping — open, activate, reorder, close, broadcast —
- *     minus everything native views brought with them (bounds, menus, fullscreen
- *     tracking, the docs teardown workaround for an Electron freeze).
- *   - Electron's close guard is a native message box raised by the main process,
- *     which then drives the editor's save over IPC. Here it is the frame
- *     protocol plus a React dialog the renderer installs; see `closeTab`.
- *
- * Two capabilities are absent rather than approximated, and each is a `null` port
- * the UI already tests for: `projects` and `browse`. `sheetsLauncher` and
- * `slidesLauncher` were both null until their apps gained browser builds, which is
- * why they are two ports and not one.
- * `tabMenus` is null too, but for the opposite reason — the constraint that made
- * those menus native is an Electron artefact, so the tab strip renders its own
- * DOM menus when the port is absent.
- *
- * `files` is the one port here that is present and answers nothing, which needs
- * saying plainly: this host keeps no cross-application file registry, so its
- * lists are empty and every other member takes a `FileRef` it never issued and
- * is therefore unreachable by construction. Those members warn rather than
- * returning silently, on the same principle as `reportCloseSaveResult` in
- * @samugen/platform-web — if the invariant is ever broken, the mismatch is
- * visible instead of swallowed. Recent documents are not lost, only relocated:
- * each editor keeps its own, in the IndexedDB handle store that survives a
- * reload, and shows it inside its own frame.
- */
+/** Builds the shell's platform for a browser. */
 import type { LanguagePort } from '@samugen/platform'
 import type { PublicAiSettings, ShellFrameLink } from '@samugen/platform-web'
 import { FRAME_ID_PARAM } from '@samugen/platform-web'
@@ -65,16 +27,7 @@ import type {
 /** The Home tab's fixed id, as in the Electron tab manager. */
 const HOME_ID = 'home'
 
-/**
- * Where each editor is served, relative to the shell's own origin.
- *
- * Sub-paths of the shell rather than each app's own port, and that is load
- * bearing in two directions. The editors call `/v1/ai` root-relative and the BFF
- * sends no CORS headers on purpose, so a cross-origin frame would simply fail
- * every AI request; and the shell reads each frame's `document.title`, which
- * only a same-origin frame allows. One proxy rule per prefix covers both, in dev
- * (vite.web.config.ts) and in whatever fronts the static files in a deployment.
- */
+/** Where each editor is served, relative to the shell's own origin. */
 export const WEB_APP_PATHS: Record<WebFrameKind, string> = {
   docs: '/app/docs/',
   pdf: '/app/pdf/',
@@ -82,14 +35,7 @@ export const WEB_APP_PATHS: Record<WebFrameKind, string> = {
   sheets: '/app/sheets/',
 }
 
-/**
- * The tab kinds this host can actually show.
- *
- * A subset of `TabKind`, and the subset is the point: it is exactly the apps with a browser
- * build, which as of Phase 6c is all four. `home` is the only kind left out, because it is
- * this shell's own page rather than a frame — and because this is a type rather than a
- * runtime check, a kind added without a build is a compile error rather than a blank frame.
- */
+/** The tab kinds this host can actually show. */
 export type WebFrameKind = 'docs' | 'pdf' | 'slides' | 'sheets'
 
 /** Is this a tab kind this host can host a frame for? */
@@ -103,13 +49,7 @@ export const TITLE_POLL_MS = 400
 /** The route → tab mapping, as it appears in the address bar. */
 export const ROUTE_HOME = '#/'
 
-/**
- * The history surface the router needs; injected so routing is testable.
- *
- * `push` for a user-initiated activation and `replace` for a correction the user
- * did not ask for (the tab that inherits focus after a close), so Back walks the
- * tabs the user actually visited.
- */
+/** The history surface the router needs; injected so routing is testable. */
 export interface RouteEnv {
   hash(): string
   push(hash: string): void
@@ -133,14 +73,7 @@ export function routeFor(tab: { id: string; kind: TabKind }): string {
   return tab.id === HOME_ID ? ROUTE_HOME : `#/${tab.kind}/${tab.id}`
 }
 
-/**
- * Parse a route back into the tab it names.
- *
- * A reload cannot restore a document — the editors own their handles, and a
- * handle needs a fresh grant — so a route to a frame tab reopens an *empty* tab
- * of that kind. That is the honest reading of the URL: it names a surface, not a
- * document.
- */
+/** Parse a route back into the tab it names. */
 export function parseRoute(hash: string): { id: string; kind: TabKind } | null {
   const match = /^#\/(docs|pdf|slides|sheets)\/([A-Za-z0-9]+)$/.exec(hash)
   if (match === null) return null
@@ -158,12 +91,8 @@ export interface WebShellTabsDeps {
 }
 
 /**
- * The tab strip, the frames it hosts, and the routing that keeps the address bar
- * honest about which one is showing.
- *
- * Returned as both ports at once because they are one piece of state: `srcFor`
- * has to agree with the tab list about which tabs have frames, and `close` has
- * to reach the frame link before it removes the tab.
+ * The tab strip, the frames it hosts, and the routing that keeps the address bar honest about which
+ * one is showing.
  */
 export function createWebShellTabs(deps: WebShellTabsDeps): {
   tabs: ShellTabsPort
@@ -238,21 +167,7 @@ export function createWebShellTabs(deps: WebShellTabsDeps): {
     }
   }
 
-  /**
-   * Close a tab, guarding unsaved work.
-   *
-   * The Electron flow, transposed: ask the editor whether closing would lose
-   * work, and if so bring the tab into view — a prompt about a document you
-   * cannot see is a prompt you cannot answer — and put the decision to the user.
-   * "Save" goes back through the frame protocol into the editor's own save path,
-   * because that is the only place a save can happen: the editor owns the file
-   * handle, and a browser grants file-write permission to the window that asked
-   * for it.
-   *
-   * Without an installed prompt the tab stays open. That is the safe direction
-   * and it is unreachable in practice — AppFrame installs one before it renders
-   * a frame — but "no way to ask" must never mean "discard".
-   */
+  /** Close a tab, guarding unsaved work. */
   const closeTab = async (id: string): Promise<void> => {
     if (id === HOME_ID) return
     const tab = tabs.find((entry) => entry.id === id)
@@ -286,15 +201,7 @@ export function createWebShellTabs(deps: WebShellTabsDeps): {
     remove(id)
   }
 
-  /**
-   * Make the tab list match the URL.
-   *
-   * The URL is the source of truth for which tab shows, so this runs once at
-   * startup (a deep link, or a reload) and again on every Back/Forward. A route
-   * naming a tab this session no longer has reopens an empty one of that kind
-   * rather than silently landing on Home — see `parseRoute` on why it can only
-   * ever be empty.
-   */
+  /** Make the tab list match the URL. */
   const applyRoute = (): void => {
     const target = parseRoute(deps.route.hash())
     if (target === null) {
@@ -376,13 +283,7 @@ export function createWebShellTabs(deps: WebShellTabsDeps): {
   }
 }
 
-/**
- * The Home file lists, on a host that keeps none.
- *
- * See the file header: the lists are empty and everything else takes a ref this
- * host never issues, so it is unreachable by construction and says so loudly if
- * it is ever reached.
- */
+/** The Home file lists, on a host that keeps none. */
 export function createWebShellFilesPort(): ShellFilesPort {
   const emptyPage: FilePage = { entries: [], total: 0, totalAll: 0 }
   const unreachable = (member: string, ref: FileRef | FileRef[]): void => {
@@ -444,47 +345,21 @@ export function createWebShellPdfLauncherPort(
   return { newPdfTab: async () => openTab('pdf') }
 }
 
-/**
- * New spreadsheets, in a frame. Non-null since 6c gave apps/sheets a browser build; `options`
- * is dropped for the same reason `slidesLauncher` drops it — this host has no projects.
- */
+/** New spreadsheets, in a frame. */
 export function createWebShellSheetsLauncherPort(
   openTab: (kind: WebFrameKind) => void,
 ): ShellSheetsLauncherPort {
   return { newSheet: async () => openTab('sheets') }
 }
 
-/**
- * New presentations, in a frame.
- *
- * `options` is accepted and dropped: it carries the project a new document belongs to, and
- * projects are a main-process store this host does not have (`projects` is null here for the
- * same reason). Dropping it silently is right precisely because the UI that supplies it —
- * Home's project sidebar — does not exist on this host either.
- */
+/** New presentations, in a frame. */
 export function createWebShellSlidesLauncherPort(
   openTab: (kind: WebFrameKind) => void,
 ): ShellSlidesLauncherPort {
   return { newSlide: async () => openTab('slides') }
 }
 
-/**
- * The AI provider configuration, read-only.
- *
- * Built from `PublicAiSettings` rather than from `toAiSettings`, because that
- * mapping exists to satisfy `AiPort` and drops the field a settings screen needs
- * — `credentialConfigured`, which becomes `credentialSet` here. What the screen
- * shows is therefore exactly what the server is willing to say about itself:
- * which provider and model it will use, and which providers it holds a
- * credential for.
- *
- * `credentialHint` is deliberately never set. The desktop host renders a
- * `••••1234` suffix from its own credential store; this one has no credential to
- * take a suffix from, and the BFF will not send one — its no-leak test asserts
- * that no four-character run of any credential appears in any response body. An
- * invented mask would be a fiction in the one place a user goes to check what
- * the server is configured with.
- */
+/** The AI provider configuration, read-only. */
 export function createWebShellAiSettingsPort(
   fetchSettings: () => Promise<PublicAiSettings>,
 ): ShellAiSettingsPort {
@@ -498,20 +373,16 @@ export function createWebShellAiSettingsPort(
           model: entry?.model ?? definition.models[0] ?? definition.imageModels?.[0] ?? '',
           baseUrl: entry?.baseUrl ?? definition.defaultBaseUrl ?? '',
           credentialSet: entry?.credentialConfigured ?? false,
-          // The BFF has no per-provider on/off switch: a provider is usable when
-          // the server holds a credential for it, which `credentialSet` already
-          // says. Reporting every provider as enabled keeps this field from
-          // making a second, weaker claim about the same thing.
+          // The BFF has no per-provider on/off switch: a provider is usable when the server holds a
+          // credential for it, which `credentialSet` already says.
           enabled: true,
         }
       })
       return {
         activeProvider: published.active.providerId,
         activeModel: published.active.model,
-        // The BFF chooses one provider for everything and publishes no separate
-        // image selection, so naming one here would invent a setting the server
-        // does not have. Empty means the Image tab marks nothing as active,
-        // which is the truth about this host.
+        // The BFF chooses one provider for everything and publishes no separate image selection, so
+        // naming one here would invent a setting the server does not have.
         imageProvider: '',
         imageModel: '',
         providers,
@@ -525,16 +396,7 @@ export function createWebShellAiSettingsPort(
   }
 }
 
-/**
- * UI language: the shared browser port, unchanged.
- *
- * It reads the stored choice (or the browser's own locale), and its write is
- * what reaches the frames — the value lands in localStorage and a storage event
- * carries it to every other same-origin document. Same effect as the shell
- * broadcasting to each WebContentsView over IPC, and the subscription is the
- * same event seen from the other side: an editor frame that switches the
- * language is heard here.
- */
+/** UI language: the shared browser port, unchanged. */
 export function createWebShellLanguagePort(language: LanguagePort): ShellLanguagePort {
   return language
 }
@@ -552,9 +414,7 @@ export function createWebShellPlatform(deps: WebShellPlatformDeps): ShellPlatfor
     frames: deps.frames,
     tabs: deps.tabs,
     aiSettings: deps.aiSettings,
-    // The capabilities this host does not have. Each is `null` rather than a
-    // stub, so the UI that offers them is absent instead of inert — see
-    // ShellPlatform in platform.ts for the reason behind each one.
+    // The capabilities this host does not have.
     browse: null,
     projects: null,
     tabMenus: null,

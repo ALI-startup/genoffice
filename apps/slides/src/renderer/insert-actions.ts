@@ -1,8 +1,7 @@
 /**
- * Insert-tab actions extracted from App.tsx: shapes/text boxes,
- * images, tables, icons, charts, SmartArt, WordArt, fields, links, Zoom,
- * header/footer, equations, media, 3D models, and screen recording.
- * Functions take the ActionCtx built fresh per call.
+ * Insert-tab actions extracted from App.tsx: shapes/text boxes, images, tables, icons, charts,
+ * SmartArt, WordArt, fields, links, Zoom, header/footer, equations, media, 3D models, and screen
+ * recording.
  */
 import type { InsertKind, LinkTargetOp } from '../shared/ipc'
 import type { ActionCtx } from './action-context'

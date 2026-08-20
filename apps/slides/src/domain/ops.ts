@@ -1,26 +1,4 @@
-/**
- * Every slides document operation, with no host in sight.
- *
- * These are the bodies that used to sit inline in `registerSlidesIpc`, moved here
- * unchanged. Each one takes the session it acts on instead of looking it up by
- * `webContents.id`, and that is the whole difference: an Electron handler is now a
- * two-line delegation, and a browser can call the same function directly.
- *
- * `session` is typed `Session | undefined` rather than `Session`, deliberately. Every
- * body already began by guarding the lookup — `if (!session) return null`,
- * `if (!session || !me) return null`, `session?.opened.deck...` — and keeping those
- * guards exactly as written is what makes the move provably behaviour-preserving.
- * There is no second code path anywhere: Electron passes `sessions.get(e.sender.id)`,
- * a browser passes its one session, and the guard simply never fires there.
- *
- * Two operations take a host service as a parameter rather than importing one, because
- * the alternative would drag Node into this file: `addComment` needs the OS user name,
- * and `getAnimations` needs the main-process translations for element type labels.
- *
- * What stayed behind in slides-main.ts is the ~25 channels that genuinely need the
- * host: file dialogs, the native clipboard, PDF export, the recent list, autosave, and
- * the paste bookkeeping that is keyed per renderer. See docs/web-migration.md §5.4.
- */
+/** Every slides document operation, with no host in sight. */
 import {
   EMU_PER_PT,
   TABLE_STYLE_PRESETS,
@@ -216,14 +194,7 @@ import {
 import type { Session } from './session'
 import { applyEditParagraphs, collectParagraphFormatPatches, levelsChanged } from './edit-text'
 
-/**
- * The user-facing strings these operations produce, supplied by the host.
- *
- * Two operations here hand text to the user — animation targets are labelled by element
- * type, and the chart colour gallery names its schemes — and the translations live in the
- * host's dictionary (`shared/ops-i18n.ts`). Passing the translator in keeps
- * this module free of any i18n import and lets each host answer with its own strings.
- */
+/** The user-facing strings these operations produce, supplied by the host. */
 export type OpsLabelKey =
   | 'labelTextBox'
   | 'labelShape'
@@ -262,9 +233,7 @@ function findEl(slide: Slide, sourceId: string): TextElement | undefined {
 
 /**
  * spAutoFit (autofit='resize', "resize shape to fit text"): after a text change, the box height
- * grows/shrinks with the content and is written back to cy. rendered = the
- * rebuilt result after this change; when the height changed, update the transform and rebuild
- * once more. Top-level elements only (group children use a different coordinate system, skip).
+ * grows/shrinks with the content and is written back to cy.
  */
 function applyAutofitResize(
   session: Session,
@@ -297,8 +266,6 @@ function applyAutofitResize(
  * normAutofit fontScale write-back: when the shrink ratio the layout actually used after a text
  * edit (≤ the stored cap, shrink-only) differs from the stored model value, sync the model and
  * patch the bodyPr attribute — only then does PowerPoint show the same size on open.
- * Triggered only by text edits (resize gestures do not write: the layout cap locks the stored
- * value, and writing back during a gesture would ratchet one way); top-level elements only.
  */
 function syncAutofitScale(
   session: Session,
@@ -419,12 +386,9 @@ function recolorFullBleedBackdrops(
   }
 }
 
-// ── Master edit view ───────────────────────────────────────────────
-// Exception to the fidelity rule: only parts the user actively changed in master view are
-// written back, using the same byte surgery as slides. Every commit writes the entry + fully
-// reparses all slides — inheritance takes effect immediately, and each undo snapshot's
-// (slides model, entries) pair stays self-consistent (rendering and file don't diverge after
-// undo).
+// ── Master edit view ─────────────────────────────────────────────── Exception to the fidelity
+// rule: only parts the user actively changed in master view are written back, using the same byte
+// surgery as slides.
 function buildMasterRenderSlide(session: Session): RenderSlide | null {
   const me = session.masterEdit
   if (!me) return null
@@ -460,19 +424,7 @@ const AV_MIME: Record<string, string> = {
   ogg: 'audio/ogg',
 }
 
-/**
- * Where a copied slide or set of elements is kept, owned by the host.
- *
- * Injected rather than held here because the two hosts store it differently, and the
- * difference is a real capability rather than an implementation detail. Electron keeps the
- * copied *slide* in the main process so it can be pasted into a deck open in another
- * window, and the element clipboard and last-paste record per renderer; a page keeps all
- * three in the page, which crosses slides within one deck and no further.
- *
- * `markCopied` is the system-clipboard marker the desktop writes so that a later paste can
- * tell whether this app or another application copied most recently. A host with no system
- * clipboard has nothing to mark and says so by doing nothing.
- */
+/** Where a copied slide or set of elements is kept, owned by the host. */
 export interface DeckClipboardStore {
   slide(): SlideClipboardEntry | null
   setSlide(entry: SlideClipboardEntry | null): void
@@ -539,17 +491,7 @@ function performSlidePaste(
 
 // ── The operations ──
 
-/**
- * Every slides document operation, as methods on one object.
- *
- * Methods rather than exported functions for a concrete reason: 20-odd of these names
- * are also `@samugen/pptx-engine` function names (`addChart`, `addElement`,
- * `deleteSlide`, `setSlideSize`, …). A module-scope `export function addChart` would
- * shadow the import, and every body that calls the engine's `addChart` would silently
- * recurse into the op. A property in an object literal is not a binding, so a bare
- * name inside a body still resolves to the engine — which is what lets the bodies stay
- * exactly as they were written.
- */
+/** Every slides document operation, as methods on one object. */
 export const slideOps = {
   editText(session: Session | undefined, op: EditTextOp) {
     if (!session) return null
@@ -690,7 +632,6 @@ export const slideOps = {
     const grpChild = op.groupId ? findGroupChild(slide, op.groupId, op.sourceId) : null
     if (!el && !grpChild) return null
     // Undo semantics for preview gestures: one whole drag = one undo step.
-    // The first preview pushes a pre-gesture snapshot; later previews and the final commit do not.
     if (op.preview) {
       if (!session.transformPreview) {
         pushHistory(session)
@@ -791,11 +732,8 @@ export const slideOps = {
 
   getRenderSlides(session: Session | undefined): RenderSlide[] | null {
     if (!session) return null
-    // `rebuildSlide` returns null only for an index outside the deck, and every index here
-    // comes from the deck itself. The assertion is the type catching up with the loop, not a
-    // claim about anything the caller passed — and it is stated because the IPC declaration
-    // has always promised `RenderSlide[] | null`, which structured cloning let it get away
-    // with. A direct call does not.
+    // `rebuildSlide` returns null only for an index outside the deck, and every index here comes
+    // from the deck itself.
     return session.opened.deck.slides.map((_, i) => rebuildSlide(session, i)!)
   },
 
@@ -1692,10 +1630,8 @@ export const slideOps = {
       ...(op.minorFont ? { minorFont: op.minorFont } : {}),
     }
     try {
-      // 1) Bake unsaved edits into the entries first: the color surgery edits entries
-      //    directly, and dirty elements left for a later save would overwrite the surgery
-      //    result with stale slices. In-memory (commitSaved/reparseDeck) instead of
-      //    savePptx -> openPptx: the zip roundtrip's contiguous buffer fails on large decks
+      // 1) Bake unsaved edits into the entries first: the color surgery edits entries directly, and
+      // dirty elements left for a later save would overwrite the surgery result with stale slices.
       commitSaved(session.opened)
       // 2) Pure entry surgery: theme parts + explicit color remapping
       const patched = applyThemeToArchive(session.opened, spec)
@@ -1723,16 +1659,7 @@ export const slideOps = {
     return buildAllRenderSlides(session.opened, op.fitWidthPx)
   },
 
-  /**
-   * Edit a chart's data or presentation.
-   *
-   * `confirmSimplify` is asked once, before the first edit of a chart that came from
-   * another program: the edit rebuilds it from this app's template, and formatting the
-   * model does not carry (number formats, trendlines, error bars, per-point styles) is
-   * lost. Injected because the question is the host's to put on screen — a native warning
-   * box on the desktop, whatever a browser can manage there — while the answer is all
-   * this operation needs.
-   */
+  /** Edit a chart's data or presentation. */
   async editChart(
     session: Session | undefined,
     op: EditChartOp,
@@ -1813,8 +1740,7 @@ export const slideOps = {
     return r
   },
 
-  // Paste-options floater: undo the just-completed paste and redo it with another
-  // mode. Refused when anything (edits, undo) touched the deck in between.
+  // Paste-options floater: undo the just-completed paste and redo it with another mode.
   repasteSlide(session: Session | undefined, op: RepasteSlideOp, clip: DeckClipboardStore) {
     const rec = clip.lastPaste()
     if (!session || !clip.slide() || !rec) return null
@@ -1873,12 +1799,7 @@ export const slideOps = {
     return rebuilt ? { slide: rebuilt, sourceIds: r.elementIds } : null
   },
 
-  /**
-   * Replace a picture's image with `bytes`.
-   *
-   * The half of "change picture" that is not the file dialog: the host picks the file — a
-   * native dialog or the File System Access API — and hands the bytes here.
-   */
+  /** Replace a picture's image with `bytes`. */
   setImageFillBytes(
     session: Session | undefined,
     op: { slideIndex: number; sourceId: string; bytes: Uint8Array; ext: string },
@@ -1894,14 +1815,7 @@ export const slideOps = {
     return rebuildSlide(session, op.slideIndex)
   },
 
-  /**
-   * Insert a 3D model, centred at half the page height.
-   *
-   * `poster` is the still image shown in its place, and it is optional because only some
-   * hosts can render one: Electron asks the OS for a thumbnail, and a browser has no
-   * equivalent — the engine then writes its own dark-grey placeholder, which is what the
-   * desktop also falls back to when the thumbnail fails.
-   */
+  /** Insert a 3D model, centred at half the page height. */
   addModel3dBytes(
     session: Session | undefined,
     op: {
@@ -1940,14 +1854,7 @@ export const slideOps = {
     return rebuilt ? { slide: rebuilt, sourceId: added.elementId } : null
   },
 
-  /**
-   * Insert a picture, scaled to at most half the page and centred.
-   *
-   * `natural` is the image's own pixel size, which the host measures because only the host
-   * can: Electron asks `nativeImage`, a browser decodes the bytes with `createImageBitmap`,
-   * and neither belongs in here. It falls back to 4:3 when a host cannot tell — the same
-   * default the desktop has always used for an image it failed to read.
-   */
+  /** Insert a picture, scaled to at most half the page and centred. */
   insertPictureBytes(
     session: Session | undefined,
     op: {

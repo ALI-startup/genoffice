@@ -55,8 +55,7 @@ describe('applyDefinedNames ordering', () => {
     ])
     const version = inserted.filter((entry) => entry.name === 'Version')
     expect(version[0]?.formulaOrRefString).toBe('WELCOME!$S$5')
-    // A live sheet-scoped definition still outranks a #REF! one but follows
-    // the workbook-level entry; unrelated names are untouched.
+    // A live sheet-scoped definition still outranks a #REF!
     expect(inserted.some((entry) => entry.name === 'Unrelated')).toBe(true)
   })
 })

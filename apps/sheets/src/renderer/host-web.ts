@@ -1,14 +1,6 @@
 /**
- * sheets' host module, filled into the platform slot at boot, and the only
- * file in the web bundle that reads a global.
- *
- * `vite.web.config.ts` aliases `@host` here, so nothing in this file (nor anything it
- * imports) reaches the Electron bundle, and `window.desktopApi` is never referenced: there is
- * no preload bridge on this host, and the spreadsheet engine runs in a Worker of this page.
- *
- * The Worker is started here rather than in platform-web.ts for the usual reason — that
- * module touches no globals — and lazily inside the client, so a session that never opens a
- * workbook never downloads 4.5MB of engine.
+ * sheets' host module, filled into the platform slot at boot, and the only file in the web bundle
+ * that reads a global.
  */
 import {
   browserFilePickers,
@@ -25,8 +17,7 @@ import { t } from './i18n/locale'
 import type { CreateSheetsPlatform } from './platform'
 import { createWebSheetsPlatform } from './platform-web'
 import { XlsxWorkerClient } from './wasm/client'
-// Vite resolves both to URLs the bundle ships: the Worker as its own chunk, the engine as an
-// asset. Neither is inlined, so the engine is fetched only when a workbook is opened.
+// Vite resolves both to URLs the bundle ships: the Worker as its own chunk, the engine as an asset.
 import EngineWorker from './wasm/worker?worker'
 import engineWasmUrl from './wasm/xlsx-sidecar.wasm?url'
 
@@ -39,20 +30,16 @@ export const createSheetsPlatform: CreateSheetsPlatform = async () => {
     ai: createWebAiPort(),
     attachments: createWebAttachmentsPort({
       pick: browserMultiFilePicker(),
-      // The `.hwp` converter, always wired: whether a deployment actually runs
-      // the service is not knowable synchronously, and the port answers a
-      // missing one with a message naming the fix (save it as .hwpx) rather
-      // than a failure. See platform-web's hwp-convert.ts.
+      // The `.hwp` converter, always wired: whether a deployment actually runs the service is not
+      // knowable synchronously, and the port answers a missing one with a message naming the fix
+      // (save it as .hwpx) rather than a failure.
       extractor: createBrowserAttachmentExtractor({ hwp: createWebHwpConvertPort() }),
     }),
-    // The browser's own dialog, standing in for the native warning box the Electron main
-    // process shows on the same condition. Blocking and synchronous, which is what the
-    // decision needs: the answer has to be in hand before anything is written.
+    // The browser's own dialog, standing in for the native warning box the Electron main process
+    // shows on the same condition.
     confirmOverwrite: () => window.confirm(t('appDiskChangedConfirm')),
-    // Non-null only when the web shell hosts this page in its tab strip, which it signals with
-    // a query parameter. Closing a shell tab removes the iframe, and `beforeunload` does not
-    // fire for that, so this is what lets the shell ask the workbook whether it has unsaved
-    // work — and ask it to save.
+    // Non-null only when the web shell hosts this page in its tab strip, which it signals with a
+    // query parameter.
     frame: createFrameChildLink(),
   })
 }

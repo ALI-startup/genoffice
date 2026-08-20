@@ -19,31 +19,14 @@ export const EMPTY_HF_VARIANTS: HfVariantsState = {
 export interface DocState {
   parsed: ParsedDocFull
   /**
-   * The open document's host-issued handle (a `DocumentRef` — see
-   * renderer/platform.ts); null until a new document is saved for the first
-   * time.
-   *
-   * Still named `filePath` because it is genuinely a path for its one remaining
-   * non-seam consumer, `window.projectApi` (resolveChat / rebindChat), which is
-   * main-process bookkeeping and not migrated yet. Treat it as opaque anyway:
-   * store it, compare it, hand it back. Never split, parse or display it — use
-   * `fileName`, which the host supplies.
+   * The open document's host-issued handle (a `DocumentRef` — see renderer/platform.ts); null until
+   * a new document is saved for the first time.
    */
   filePath: string | null
   /** Display name, supplied by the host; the renderer never derives it from filePath. */
   fileName: string
   hash: string
-  /**
-   * What a save writes.
-   *
-   * `docx` for everything the editor models directly — the parsed document above
-   * *is* a docx, whatever the file on disk is. `hwpx` for a document opened from
-   * a Hangul package: the editing model is still the docx one, and only the
-   * encoding on the way out differs, which is exactly why this is a field on the
-   * document rather than a different kind of document.
-   *
-   * Absent means `docx`, so every existing caller keeps its meaning.
-   */
+  /** What a save writes. */
   format?: 'docx' | 'hwpx'
   /** created from the built-in blank template (its numbering ids are known) */
   isBlank?: boolean

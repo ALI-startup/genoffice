@@ -59,9 +59,7 @@ export type ParsedDocFull = ParsedDoc & { extras: ParseExtras }
 export type SaveBlock = (
   | { kind: 'original'; docxIndex: number }
   | { kind: 'generated'; block: GeneratedBlock }
-  /** self-contained OOXML fragment created by the editor (e.g. a new table);
-   *  docxIndex marks the source block (kept when a section-break paragraph is
-   *  rewritten, used to inject per-section header references) */
+  /** self-contained OOXML fragment created by the editor (e.g. */
   | { kind: 'xml'; xml: string; docxIndex?: number }
   /** a new inline image; bytes become word/media/... + relationship */
   | { kind: 'image'; image: NewImage }
@@ -95,24 +93,13 @@ export interface SaveOptions {
   footerEven?: HeaderFooter
   /** "different first page": set/remove w:titlePg in the trailing sectPr */
   titlePg?: boolean
-  /**
-   * Per-section header/footer edits (non-last sections of multi-section docs, default
-   * variant). lastBlockIndex locates the section's break paragraph: if the section
-   * already has a matching reference, the referenced part is rewritten (earlier sections
-   * sharing the part change with it — Word's "same as previous" semantics); if there is
-   * no reference (inherited from the previous section), a new part is created and the
-   * reference injected into this section's sectPr (the section becomes independent,
-   * earlier sections are unaffected).
-   */
+  /** Per-section header/footer edits (non-last sections of multi-section docs, default variant). */
   sectionHf?: Array<{ lastBlockIndex: number; kind: 'header' | 'footer'; hf: HeaderFooter }>
   /** "different odd & even pages": set/remove settings.xml w:evenAndOddHeaders */
   evenAndOddHeaders?: boolean
   /**
-   * Append numbering definitions to word/numbering.xml (when the part is missing, it is
-   * created from the blank template, including rel/ContentType). newDefs = brand-new
-   * abstractNum + w:num (new lists); restartNums = new w:num pointing at an existing
-   * abstractNum + startOverride (restart numbering). Append-only: existing entries keep
-   * their original bytes.
+   * Append numbering definitions to word/numbering.xml (when the part is missing, it is created
+   * from the blank template, including rel/ContentType).
    */
   numbering?: {
     /** with levels, generates the abstractNum from custom levels (multilevel list / bullet library); otherwise uses the blank-template style */
@@ -125,23 +112,14 @@ export interface SaveOptions {
   }
   /** create/modify styles: surgical upsert of word/styles.xml by styleId (replace when present, else append) */
   styleUpserts?: StyleUpsert[]
-  /**
-   * Replace whole zip parts by path (e.g. patched chart parts from
-   * patchChartPartXml). Only paths that already exist in the package are
-   * rewritten; unknown paths are ignored.
-   */
+  /** Replace whole zip parts by path (e.g. */
   partXml?: Record<string, string>
   /**
-   * Replace whole zip parts with binary data (base64) — used to update
-   * embedded xlsx workbooks alongside patched chart parts.
-   * Only paths already present in the package are rewritten; unknown paths are
-   * ignored.
+   * Replace whole zip parts with binary data (base64) — used to update embedded xlsx workbooks
+   * alongside patched chart parts.
    */
   partBinary?: Record<string, string>
-  /**
-   * Full desired comment list; word/comments.xml is regenerated from it
-   * (plain-text bodies). undefined = keep the part byte-identical.
-   */
+  /** Full desired comment list; word/comments.xml is regenerated from it (plain-text bodies). */
   comments?: CommentInfo[]
   /** editing restriction; null removes w:documentProtection, undefined keeps */
   protection?: DocProtection | null
@@ -156,11 +134,7 @@ export interface SaveOptions {
    * it, undefined keeps whatever the header already has.
    */
   watermark?: string | null
-  /**
-   * Full desired ink-annotation list (freehand strokes), as floating anchored pictures.
-   * Existing aidocs-ink runs are stripped and re-emitted from this list, so
-   * passing [] removes all our ink. undefined = keep whatever is in the file.
-   */
+  /** Full desired ink-annotation list (freehand strokes), as floating anchored pictures. */
   inks?: NewInkImage[]
   /** full bibliography source list; regenerates the b:Sources customXml part */
   sources?: SourceInfo[]
@@ -265,12 +239,7 @@ const IMAGE_EXT: Record<NewImage['mime'], string> = {
 
 const EMU_PER_PX = 9525
 
-/**
- * Given the original docx bytes and a chart part path (e.g.
- * "word/charts/chart1.xml"), returns the zip-relative path of the embedded
- * workbook (e.g. "word/charts/embeddings/workbook1.xlsx") by reading the
- * chart's rels file, or null when no workbook relationship exists.
- */
+/** Given the original docx bytes and a chart part path (e.g. */
 export async function findChartWorkbookPath(
   docxBytes: Uint8Array,
   chartPath: string,
@@ -296,10 +265,7 @@ export async function findChartWorkbookPath(
   }
 }
 
-/**
- * Read the raw base64 bytes of a zip part from a docx file.
- * Returns null if the part doesn't exist.
- */
+/** Read the raw base64 bytes of a zip part from a docx file. */
 export async function readDocxPartBase64(
   docxBytes: Uint8Array,
   path: string,
@@ -320,9 +286,8 @@ export async function readDocxPartBase64(
 const CORE_PROPS_PATH = 'docProps/core.xml'
 
 /**
- * docProps/core.xml: only a real save to disk updates dcterms:modified and cp:revision;
- * all other fields stay as-is. Missing tags are not injected (avoids touching the root
- * element namespaces); returns null = no change.
+ * docProps/core.xml: only a real save to disk updates dcterms:modified and cp:revision; all other
+ * fields stay as-is.
  */
 function patchCoreProps(xml: string, savedAt?: string): string | null {
   const iso = (savedAt ?? new Date().toISOString()).replace(/\.\d{3}Z$/, 'Z')
@@ -334,18 +299,7 @@ function patchCoreProps(xml: string, savedAt?: string): string | null {
   return out === xml ? null : out
 }
 
-/**
- * Paragraph-patch save.
- *
- * - Blocks marked 'original' are copied as the exact substring of the original
- *   word/document.xml (byte-for-byte after UTF-8 re-encode).
- * - Blocks marked 'generated' become fresh OOXML fragments referencing only
- *   styles that already exist in the document.
- * - 'xml' blocks are self-contained fragments inserted verbatim; 'image' blocks
- *   additionally add media entries and relationships.
- * - Every other zip entry is copied without modification.
- * - If nothing changed at all, the original file bytes are returned untouched.
- */
+/** Paragraph-patch save. */
 export async function saveDocx(
   parsed: ParsedDocFull,
   finalBlocks: SaveBlock[],
@@ -1188,11 +1142,7 @@ export async function saveDocx(
   })
 }
 
-/**
- * Standalone header/footer part: one centered paragraph, optional PAGE field.
- * A '#' in the text marks where the page number goes (e.g. "- # -"). Headers
- * additionally carry the page watermark shape when one is set.
- */
+/** Standalone header/footer part: one centered paragraph, optional PAGE field. */
 /** Add the namespaces a VML watermark needs to the original part's root tag (existing ones untouched) */
 function withWatermarkNs(openTag: string): string {
   let out = openTag
@@ -1207,10 +1157,9 @@ function withWatermarkNs(openTag: string): string {
 }
 
 /**
- * In-place patch for a watermark-only change: drop the old watermark paragraph (<w:p>
- * containing v:textpath), insert the new watermark at the start of the part, and keep
- * everything else (paragraph formatting/tables/logos/fields) byte-identical. Returns
- * null when the root tag cannot be recognized so the caller falls back to a full rebuild.
+ * In-place patch for a watermark-only change: drop the old watermark paragraph (<w:p> containing
+ * v:textpath), insert the new watermark at the start of the part, and keep everything else
+ * (paragraph formatting/tables/logos/fields) byte-identical.
  */
 function patchWatermarkInPart(originalXml: string, watermark: string | null): string | null {
   const open = /<w:hdr[^>]*>/.exec(originalXml)?.[0]
@@ -1297,11 +1246,10 @@ function headerFooterPartXml(
   }
   const watermarkXml = kind === 'header' && watermark ? watermarkParagraphXml(watermark) : ''
   const body = `${watermarkXml}${content}`
-  // Surgical merge: non-paragraph children of the original part (tables/sdt) and
-  // paragraphs containing images/objects (logos etc., which are not in the text-paragraph
-  // model) keep their original bytes; only the set of text paragraphs is replaced as a
-  // whole at the position of the first text paragraph. The watermark paragraph
-  // (v:textpath) is the exception — it is regenerated from watermarkXml.
+  // Surgical merge: non-paragraph children of the original part (tables/sdt) and paragraphs
+  // containing images/objects (logos etc., which are not in the text-paragraph model) keep their
+  // original bytes; only the set of text paragraphs is replaced as a whole at the position of the
+  // first text paragraph.
   if (originalXml) {
     const open = new RegExp(`<${root}[^>]*>`).exec(originalXml)?.[0]
     const closeIdx = originalXml.lastIndexOf(`</${root}>`)

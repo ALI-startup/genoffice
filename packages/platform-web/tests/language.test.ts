@@ -83,9 +83,8 @@ describe('setLanguage', () => {
     port.onLanguageChanged((lang) => seen.push(lang))
 
     await port.setLanguage('ko')
-    // The `storage` event never fires in the writing document, and the port does
-    // not fake one: the caller applies its own switch (see LanguagePort). A
-    // synthetic echo here would arrive twice for a caller that already did.
+    // The `storage` event never fires in the writing document, and the port does not fake one: the
+    // caller applies its own switch (see LanguagePort).
     expect(seen).toEqual([])
   })
 

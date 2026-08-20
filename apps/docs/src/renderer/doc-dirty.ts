@@ -1,7 +1,6 @@
 /**
- * Composite "has unsaved changes" check shared by the close guard, the autosave
- * tick and the crash-recovery push. Only persisted state counts — transient UI
- * state (AI highlights, selection, view modes) must never appear here.
+ * Composite "has unsaved changes" check shared by the close guard, the autosave tick and the
+ * crash-recovery push.
  */
 export interface DocDirtyState {
   dirtyRef: { current: boolean }

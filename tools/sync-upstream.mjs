@@ -190,8 +190,7 @@ export function syncUpstream(options) {
       rebaseError = error
     }
   } finally {
-    // Restore after both success and conflict. A conflict is intentionally left
-    // active for the developer to resolve; user data never participates in it.
+    // Restore after both success and conflict.
     restoreProtectedFiles(snapshots)
     rmSync(tempDir, { recursive: true, force: true })
   }

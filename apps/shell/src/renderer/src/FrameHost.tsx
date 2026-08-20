@@ -1,42 +1,4 @@
-/**
- * The editor surfaces, as in-page frames.
- *
- * Rendered only on a host that has a `frames` port — the web one. Electron
- * paints its editors as `WebContentsView` children of the shell window, so there
- * the port is null and this component never mounts.
- *
- * One iframe per tab, same origin, sub-path of the shell: `/app/docs`,
- * `/app/pdf`. Not one combined bundle, because two editors in one document would
- * have to reconcile two `#root` elements, two sets of unprefixed `:root` CSS
- * variables holding different values, two CSPs (pdf needs `wasm-unsafe-eval`,
- * docs does not), four document-level singletons both apps write, and some
- * twenty global listeners landing on one `window`. A frame is the browser's
- * `WebContentsView`, and it settles all of that the same way Electron does.
- *
- * Two behaviours are deliberate and worth stating:
- *
- *   - **Lazy.** A tab gets its frame the first time it is activated, so opening
- *     a tab in the background costs nothing. Same as the Electron shell, which
- *     creates the view when the tab opens and only then loads it.
- *   - **Kept alive.** A backgrounded frame is hidden, never unmounted.
- *     Unmounting would destroy the document and take its unsaved edits with it,
- *     which is precisely the thing the close guard exists to prevent — so the
- *     hidden state has to be a paint decision, not a lifecycle one. `visibility`
- *     rather than `display: none` for the same reason a `WebContentsView` is
- *     hidden rather than detached: the frame keeps its layout box, so switching
- *     back is a repaint rather than a relayout of a document that thinks it has
- *     zero width.
- *
- * The dialog at the bottom is the close guard's third of the work. The host asks
- * the frame whether closing would lose work and honours the answer; this is
- * where the answer is *asked for*, because a port cannot render. It offers the
- * same three outcomes as the native message box Electron raises — Save, Don't
- * Save, Cancel — and "Save" runs inside the frame, over the protocol, through
- * the editor's own save path. If that fails (a document that has never been
- * saved needs a file dialog, and a file dialog needs a click in the frame's own
- * window) the dialog says so and leaves the other two choices standing, rather
- * than closing the tab on a save that did not happen.
- */
+/** The editor surfaces, as in-page frames. */
 import { useEffect, useRef, useState } from 'react'
 import type { ShellCloseDecision, ShellCloseRequest, ShellFramesPort } from './platform'
 import { shellPlatform } from './platform'
@@ -58,17 +20,7 @@ export function FrameHost({ frames }: { frames: ShellFramesPort }) {
   const [saving, setSaving] = useState(false)
   const [saveFailed, setSaveFailed] = useState(false)
   const dialogRef = useRef<HTMLDivElement>(null)
-  /**
-   * One stable ref callback per frame, kept for the life of the component.
-   *
-   * React re-runs a ref callback whose *identity* changed, detaching with `null`
-   * first — so an inline arrow would detach and reattach every frame on every
-   * render. That is not cosmetic here: detaching tells the host the frame is
-   * gone, which fails whatever it has in flight, and the close guard's own
-   * dialog re-renders this component while a save request is outstanding. A
-   * stable callback means a frame is registered exactly when it mounts and
-   * detached exactly when it unmounts.
-   */
+  /** One stable ref callback per frame, kept for the life of the component. */
   const frameRefs = useRef(new Map<string, (element: HTMLIFrameElement | null) => void>())
   const frameRef = (id: string) => {
     const existing = frameRefs.current.get(id)
@@ -86,9 +38,8 @@ export function FrameHost({ frames }: { frames: ShellFramesPort }) {
 
   useEffect(() => {
     setMounted((prev) => {
-      // Drop frames whose tabs are gone, then add the active tab if this is the
-      // first time it has been shown. Returning `prev` unchanged when nothing
-      // moved keeps this from re-rendering on every tab broadcast.
+      // Drop frames whose tabs are gone, then add the active tab if this is the first time it has
+      // been shown.
       const alive = prev.filter((id) => tabs.some((tab) => tab.id === id))
       const active = tabs.find((tab) => tab.active)
       const needsFrame = active !== undefined && frames.srcFor(active) !== null
@@ -97,8 +48,7 @@ export function FrameHost({ frames }: { frames: ShellFramesPort }) {
     })
   }, [tabs, frames])
 
-  // Forget the ref callbacks of frames that are gone. Separate from the update
-  // above so that updater stays a pure function of its input.
+  // Forget the ref callbacks of frames that are gone.
   useEffect(() => {
     for (const id of [...frameRefs.current.keys()]) {
       if (!mounted.includes(id)) frameRefs.current.delete(id)

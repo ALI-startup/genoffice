@@ -1,9 +1,4 @@
-/**
- * Comments pane (right side) — current page's comment list + create/delete.
- * The source of truth lives in the main process (the pptx comments part); this only displays and
- * sends back intents. The list is owned by App (refreshed after page switch/add/delete), keeping
- * the ribbon badge in sync.
- */
+/** Comments pane (right side) — current page's comment list + create/delete. */
 import React, { useEffect, useRef, useState } from 'react'
 import type { SlideComment } from '../../shared/ipc'
 import { useI18n } from '../i18n/locale'
@@ -23,10 +18,22 @@ interface Props {
 function fmtDt(dt: string, locale: string): string {
   const d = new Date(dt)
   if (Number.isNaN(d.getTime())) return dt
-  return d.toLocaleString(locale, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleString(locale, {
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
-export function CommentsPane({ slideIndex, comments, focusNonce, onAdd, onDelete, onCollapse }: Props) {
+export function CommentsPane({
+  slideIndex,
+  comments,
+  focusNonce,
+  onAdd,
+  onDelete,
+  onCollapse,
+}: Props) {
   const { t, dateLocale } = useI18n()
   const [draft, setDraft] = useState('')
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -69,7 +76,11 @@ export function CommentsPane({ slideIndex, comments, focusNonce, onAdd, onDelete
                 <span className="comment-author">{c.author}</span>
                 {c.dt && <span className="comment-time">{fmtDt(c.dt, dateLocale)}</span>}
               </span>
-              <button className="comment-del" title={t('paneCommentsDelete')} onClick={() => onDelete(c)}>
+              <button
+                className="comment-del"
+                title={t('paneCommentsDelete')}
+                onClick={() => onDelete(c)}
+              >
                 ✕
               </button>
             </div>

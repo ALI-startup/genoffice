@@ -17,11 +17,7 @@ import {
   type NumIds,
 } from './protocol'
 
-/**
- * Local agent tools: a document-context reader plus a script-style execution
- * channel. The "execution backend" is the in-process ProseMirror doc, split
- * into three safe primitives plus the deterministic command engine.
- */
+/** Local agent tools: a document-context reader plus a script-style execution channel. */
 
 const READ_MAX_CHARS = 24_000
 
@@ -283,14 +279,7 @@ function imageSizeOf(dataUrl: string): Promise<{ width: number; height: number }
   })
 }
 
-/**
- * The three tools backed by `SearchPort`, which not every host has.
- *
- * `availableTools()` removes them from the list the model is shown when the port
- * is null, so the model is never offered a capability that would fail — the same
- * reasoning as gating a ribbon button on a null port, applied to the tool
- * catalogue.
- */
+/** The three tools backed by `SearchPort`, which not every host has. */
 const SEARCH_TOOLS: ReadonlySet<string> = new Set(['web_search', 'image_search', 'insert_image'])
 
 /** The tool definitions this host can actually execute. */
@@ -306,9 +295,7 @@ async function executeAsyncTool(
   signal?: AbortSignal,
 ): Promise<ToolExecution> {
   const search = docsPlatform().search
-  // Unreachable through `availableTools()`, which never offers these on a host
-  // without the port. Kept because a model can name a tool it was not given, and
-  // "this host cannot search" is a better answer than a crash on null.
+  // Unreachable through `availableTools()`, which never offers these on a host without the port.
   if (search === null) {
     return fail(t('aiSumUnknownTool'), `${call.name} is not available in this build`)
   }
@@ -374,9 +361,8 @@ async function executeAsyncTool(
         const scale = Math.min(1, maxW / natural.width)
         const w = Math.round(natural.width * scale)
         const h = Math.round(natural.height * scale)
-        // The download can take long: user edits made meanwhile must keep the
-        // freshness baseline stale, so only our own insertion may mark the doc
-        // seen. Checked right before the write — there is no async gap after.
+        // The download can take long: user edits made meanwhile must keep the freshness baseline
+        // stale, so only our own insertion may mark the doc seen.
         const userEditedDuringFetch = editedExternally(editor)
         editor
           .chain()
@@ -423,10 +409,8 @@ export function executeTool(
     if (exec.mutated || (readsDoc && !exec.isError)) markDocSeen(editor)
     return exec
   }
-  // Async tools take a separate Promise branch; the other sync tools keep returning
-  // synchronously (doesn't break existing tests). No settle here: marking the doc
-  // seen after the long download would baptize user edits made meanwhile —
-  // insert_image maintains the baseline itself right at its synchronous write.
+  // Async tools take a separate Promise branch; the other sync tools keep returning synchronously
+  // (doesn't break existing tests).
   if (call.name === 'web_search' || call.name === 'image_search' || call.name === 'insert_image') {
     return executeAsyncTool(editor, call, signal)
   }

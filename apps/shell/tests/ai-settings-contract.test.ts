@@ -62,8 +62,7 @@ describe('AI settings public contract', () => {
 
 describe('the default provider a screen opens on', () => {
   it('is the one named in the provider package, not the head of the display list', () => {
-    // The list is display order; the default is a separate decision. They were the same
-    // value once, and a screen reading `[0]` then opened on a provider nobody configured.
+    // The list is display order; the default is a separate decision.
     expect(AI_PROVIDER_DEFINITIONS[0]?.id).not.toBe(DEFAULT_AI_PROVIDER)
     expect(AI_PROVIDER_DEFINITIONS.some((d) => d.id === DEFAULT_AI_PROVIDER)).toBe(true)
   })

@@ -1,8 +1,4 @@
-/**
- * Mirroring an element writes a:xfrm flipH/flipV, so arrows can point
- * the other way. Rotation cannot express a single-axis mirror, and the render layer
- * already honors the flags — this pins the write-back half.
- */
+/** Mirroring an element writes a:xfrm flipH/flipV, so arrows can point the other way. */
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'

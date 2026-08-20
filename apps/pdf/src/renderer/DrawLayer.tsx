@@ -65,7 +65,15 @@ function drawingShape(d: DrawingInput, geom: PageGeom, scale: number): ReactElem
     return d.kind === 'rect' ? (
       <rect x={x} y={y} width={rw} height={rh} fill="none" stroke={stroke} strokeWidth={w} />
     ) : (
-      <ellipse cx={x + rw / 2} cy={y + rh / 2} rx={rw / 2} ry={rh / 2} fill="none" stroke={stroke} strokeWidth={w} />
+      <ellipse
+        cx={x + rw / 2}
+        cy={y + rh / 2}
+        rx={rw / 2}
+        ry={rh / 2}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={w}
+      />
     )
   }
   const [fx, fy] = toView(geom, scale, d.from[0], d.from[1])
@@ -98,9 +106,8 @@ function drawingShape(d: DrawingInput, geom: PageGeom, scale: number): ReactElem
 }
 
 /**
- * Draw layer: with a tool active it takes over pointer events to draw on the page;
- * otherwise it only renders existing shapes (click to select; deletion is an explicit App action).
- * Notes are placed at the click point; content is entered via an App dialog.
+ * Draw layer: with a tool active it takes over pointer events to draw on the page; otherwise it
+ * only renders existing shapes (click to select; deletion is an explicit App action).
  */
 export function DrawLayer({
   geom,
@@ -173,7 +180,14 @@ export function DrawLayer({
         rect: [Math.min(sx, at[0]), Math.min(sy, at[1]), Math.max(sx, at[0]), Math.max(sy, at[1])],
       })
     } else if (tool === 'line' || tool === 'arrow') {
-      setLive({ kind: tool, pageIndex: 0, color, width: strokeWidth, from: startRef.current, to: at })
+      setLive({
+        kind: tool,
+        pageIndex: 0,
+        color,
+        width: strokeWidth,
+        from: startRef.current,
+        to: at,
+      })
     }
   }
 
@@ -234,7 +248,15 @@ export function DrawLayer({
               title={`${note.contents}\n\n${selectTitle}`}
               onClick={(e) => onSelect(d.id, e.clientX, e.clientY)}
             >
-              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#fff" strokeWidth="1.6" aria-hidden>
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="#fff"
+                strokeWidth="1.6"
+                aria-hidden
+              >
                 <path d="M2.5 3.5h11v8h-6l-3 2.5V11.5h-2z" strokeLinejoin="round" />
               </svg>
             </button>

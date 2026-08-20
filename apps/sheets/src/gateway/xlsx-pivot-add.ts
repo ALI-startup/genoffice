@@ -329,8 +329,7 @@ async function readSourceRows(
     const sourcePath = await resolveSourcePath(pkg, addition.sourceSheetName)
     worksheetXml = await pkg.readText(sourcePath)
   } catch {
-    // Source sheet not accessible (e.g. test fixture without the sheet) →
-    // fall back to empty records and let refreshOnLoad handle it at open time.
+    // Source sheet not accessible (e.g.
     return []
   }
   const sharedStrings = await readPivotSharedStrings(pkg)
@@ -530,8 +529,7 @@ function validateAddition(addition: PivotAddition): void {
   const levels = addition.rowFieldIndices.length
   validateAxisLines('row', levels, addition.rowLevelItems, addition.rowLines)
   validateAxisLines('column', colFieldIndices.length, addition.colLevelItems, addition.colLines)
-  // Grouping is only allowed on row/column dimension fields, and the rule itself
-  // must be valid.
+  // Grouping is only allowed on row/column dimension fields, and the rule itself must be valid.
   const dimensionFields = new Set([...addition.rowFieldIndices, ...colFieldIndices])
   for (const { fieldIndex, ...grouping } of addition.groupings ?? []) {
     if (!dimensionFields.has(fieldIndex) || !isValidGrouping(grouping)) {
@@ -651,9 +649,8 @@ export function buildCacheDefinitionXml(
       return `<cacheField name="${escapeAttribute(name)}" numFmtId="0">${sharedItems}</cacheField>`
     })
     .join('')
-  // Calculated fields are appended after all source fields: databaseField="0",
-  // no cache records; formulas are normalized to the quoted-reference form (see
-  // pivot-formula).
+  // Calculated fields are appended after all source fields: databaseField="0", no cache records;
+  // formulas are normalized to the quoted-reference form (see pivot-formula).
   const calcFields = calcValueSpecsOf(addition)
     .map(
       (spec) =>
@@ -685,9 +682,8 @@ export function buildPivotTableXml(cacheId: number, addition: PivotAddition): st
   const colFieldIndices = colFieldIndicesOf(addition)
   const colLevelItems = colLevelItemsOf(addition)
   const colLevels = colFieldIndices.length
-  // Multi-level rows use tabular layout (compact/outline off) so each level takes
-  // one column, matching the baked grid's N label columns; single level keeps the
-  // existing compact output.
+  // Multi-level rows use tabular layout (compact/outline off) so each level takes one column,
+  // matching the baked grid's N label columns; single level keeps the existing compact output.
   const tabular = levels >= 2
   const levelByField = new Map<number, number>()
   addition.rowFieldIndices.forEach((fieldIdx, level) => levelByField.set(fieldIdx, level))
@@ -786,7 +782,6 @@ export function buildPivotTableXml(cacheId: number, addition: PivotAddition): st
       const caption = `${AGG_CAPTIONS[value.agg]} of ${field}`
       const subtotal = isCalc ? null : AGG_SUBTOTALS[value.agg]
       // numFmtId: 0 = General; map common patterns to standard Excel IDs.
-      // Percent display modes default to 0.00% (id 10) when no format is given.
       const numFmtId = value.numFmt
         ? resolveNumFmtId(value.numFmt)
         : value.showDataAs !== undefined

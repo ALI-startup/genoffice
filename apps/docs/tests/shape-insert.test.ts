@@ -1,13 +1,4 @@
-/**
- * Shape insertion tests - Item 2: insert shape → save → re-parse
- *
- * Verifies:
- *  1. buildShapeParagraphXml produces XML with the correct prstGeom
- *  2. Word structure assertions after saving each shape type (wps:wsp + a:prstGeom)
- *  3. The prst field is correct after re-parsing
- *  4. Double-click enters text editing (has wps:txbx)
- *  5. Text content can be patched in
- */
+/** Shape insertion tests - Item 2: insert shape → save → re-parse */
 import { describe, expect, it } from 'vitest'
 import { Editor } from '@tiptap/core'
 import { TextSelection } from '@tiptap/pm/state'

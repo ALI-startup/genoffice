@@ -1,15 +1,6 @@
 /**
- * Browser printing: the `@page` rules (src/renderer/print.ts) and the port that
- * opens the dialog (createWebDocsPrintPort).
- *
- * The rules are the whole of what makes a browser print a docx at the right paper
- * size — Electron passes the size to `printToPDF` as an argument and ignores CSS
- * page geometry, so nothing in the desktop test suite covers this ground. The
- * assertions below are about the two properties the printed output depends on:
- * that the unnamed rule (the fallback for browsers with no named-page support)
- * carries the *first* section's paper, and that a page name is a function of the
- * size alone, so the name a `.pv-page` carries and the name a rule declares are
- * always the same string.
+ * Browser printing: the `@page` rules (src/renderer/print.ts) and the port that opens the dialog
+ * (createWebDocsPrintPort).
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { SectionSettings } from '@samugen/docx-engine'
@@ -139,9 +130,7 @@ describe('createWebDocsPrintPort', () => {
   })
 
   it('resolves on a cancelled print too — the caller cannot tell, and must not care', async () => {
-    // `afterprint` fires whether the user printed or dismissed the dialog. The
-    // point of awaiting it is that nothing is torn down under a live print job,
-    // not reporting an outcome the browser never discloses.
+    // `afterprint` fires whether the user printed or dismissed the dialog.
     await expect(
       createWebDocsPrintPort(() => window.dispatchEvent(new Event('afterprint'))).print(),
     ).resolves.toBeUndefined()

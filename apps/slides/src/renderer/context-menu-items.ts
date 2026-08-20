@@ -1,8 +1,4 @@
-/**
- * Context-menu item builder extracted from App.tsx. Builds the
- * thumbnail/section/canvas/element menus from the latest App state (ActionCtx);
- * item callbacks dispatch into the extracted action modules.
- */
+/** Context-menu item builder extracted from App.tsx. */
 import type { PictureRenderNode } from '@samugen/pptx-render'
 import type { ActionCtx } from './action-context'
 import type { CtxItem } from './components/ContextMenu'

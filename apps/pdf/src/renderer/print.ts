@@ -4,10 +4,8 @@ const PRINT_SCALE = 150 / 72
 
 /**
  * Sequentially render pages as JPEG images into a print-only container (canvas discarded
- * immediately to avoid keeping full-doc hi-res bitmaps in memory), then hand off to the
- * system print dialog; clean up after it closes (including cancel).
- * Caller flushes unsaved changes and re-getDocument first — rotations/deleted pages are
- * already in the file.
+ * immediately to avoid keeping full-doc hi-res bitmaps in memory), then hand off to the system
+ * print dialog; clean up after it closes (including cancel).
  */
 export async function printPdf(doc: PDFDocumentProxy): Promise<void> {
   const root = document.createElement('div')

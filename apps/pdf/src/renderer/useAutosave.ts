@@ -4,9 +4,8 @@ import { useEffect, useRef } from 'react'
 export const AUTOSAVE_INTERVAL_MS = 30_000
 
 /**
- * Autosave scheduling (Docs strategy): calls `save` every `intervalMs` and whenever
- * the window loses focus, but only while `shouldSave()` reports pending changes.
- * Returns a stop function that detaches the timer and the blur listener.
+ * Autosave scheduling (Docs strategy): calls `save` every `intervalMs` and whenever the window
+ * loses focus, but only while `shouldSave()` reports pending changes.
  */
 export function startAutosave(
   shouldSave: () => boolean,

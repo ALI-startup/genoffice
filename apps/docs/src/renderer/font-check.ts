@@ -33,9 +33,8 @@ export function collectDocFonts(parsed: ParsedDoc): string[] {
   return [...names]
 }
 
-// document.fonts.check is useless here: Chromium answers true for any family
-// (system-fallback rendering counts). Detect availability by measuring — an
-// unresolvable family inherits the exact metrics of the generic fallback.
+// document.fonts.check is useless here: Chromium answers true for any family (system-fallback
+// rendering counts).
 const SAMPLE = '永体宋黑Wmg10'
 
 function ctx2d(): CanvasRenderingContext2D | null {

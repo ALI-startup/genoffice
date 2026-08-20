@@ -191,8 +191,7 @@ export const RIBBON_GLYPH_ICONS: Record<string, ReactElement> = {
       <path d="m5 8.5 4.5-3.25L14 8l5-3.75" />
     </Icon>
   ),
-  // ---- clipboard ----
-  // paste shares the docs ribbon's clipboard geometry (docs 16-canvas × 1.5);
+  // ---- clipboard ---- paste shares the docs ribbon's clipboard geometry (docs 16-canvas × 1.5);
   // paste special swaps the text lines for option sliders on the same board
   '📋': (
     <Icon>

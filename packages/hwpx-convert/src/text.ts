@@ -1,31 +1,10 @@
-/**
- * `.hwpx` bytes → plain text, for everything that wants the words and not the document.
- *
- * The AI panels' attachment path is the caller: a Korean report attached to a
- * question in slides or sheets has to reach the model as text, and those apps
- * have no document model to import it into. `hwpxToHtml` is the wrong tool there
- * — it pulls in `neoali-hwpxjs` to render display HTML and then a second pass to
- * recover paragraph roles, all of which is discarded on the way to a string.
- *
- * So this reads the package directly, with the jszip + fast-xml-parser pair
- * `outline.ts` already uses, and it is deliberately the *only* module here that
- * parses with `preserveOrder`. Order is the whole product: a paragraph's runs,
- * its tabs and its line breaks have to come out in the sequence they were
- * written, and the ordinary parse collapses same-named siblings into one array
- * per key, which loses the interleaving with everything between them.
- *
- * Table cells are walked, unlike in `outline.ts` where they are skipped on
- * purpose. The reason differs with the job: there, one line per *block* has to
- * stay aligned with the renderer's block count; here, the text inside a table is
- * exactly the text a reader wants.
- */
+/** `.hwpx` bytes → plain text, for everything that wants the words and not the document. */
 import JSZip from 'jszip'
 import { XMLParser } from 'fast-xml-parser'
 
 /**
- * `preserveOrder` shape: every element is an object with one tag key holding its
- * children in document order, plus `:@` for its attributes when it has any. Text
- * arrives as a `#text` key.
+ * `preserveOrder` shape: every element is an object with one tag key holding its children in
+ * document order, plus `:@` for its attributes when it has any.
  */
 type OrderedNode = Record<string, unknown>
 
@@ -56,14 +35,7 @@ interface Line {
   parts: string[]
 }
 
-/**
- * Walk a subtree, appending its text to `line`.
- *
- * `inText` is what keeps stray whitespace out: only a `#text` inside an `hp:t`
- * is document text, and every other text node is XML formatting. Paragraphs met
- * along the way are separated by newlines rather than starting new lines of
- * their own, so a cell containing three paragraphs stays one cell.
- */
+/** Walk a subtree, appending its text to `line`. */
 function walk(nodes: OrderedNode[], line: Line, inText: boolean): void {
   for (const node of nodes) {
     for (const [key, value] of Object.entries(node)) {
@@ -89,9 +61,8 @@ function walk(nodes: OrderedNode[], line: Line, inText: boolean): void {
           walkTable(asNodes(value), line)
           break
         case 'hp:p':
-          // A paragraph nested inside something already being read — a cell, a
-          // text box, a footnote. Separated, not flushed: the enclosing block
-          // decides where lines begin.
+          // A paragraph nested inside something already being read — a cell, a text box, a
+          // footnote.
           if (line.parts.length > 0) line.parts.push('\n')
           walk(asNodes(value), line, false)
           break
@@ -102,12 +73,7 @@ function walk(nodes: OrderedNode[], line: Line, inText: boolean): void {
   }
 }
 
-/**
- * A table, as rows of tab-separated cells.
- *
- * Tabs rather than a rendered grid because the consumer is a model reading
- * prose, and tab-separated cells are the form it already reads spreadsheets in.
- */
+/** A table, as rows of tab-separated cells. */
 function walkTable(nodes: OrderedNode[], out: Line): void {
   for (const node of nodes) {
     for (const [key, value] of Object.entries(node)) {
@@ -156,15 +122,7 @@ function readSection(nodes: OrderedNode[], lines: string[]): void {
   }
 }
 
-/**
- * Every word in a `.hwpx` package, one line per paragraph.
- *
- * Throws when the bytes are not a zip at all — that is a file the caller handed
- * to the wrong reader, and reporting it is what lets the attachment path say so.
- * A package that opens but holds no readable section yields an empty string
- * instead: an encrypted or exotic document has no text to offer, which is not
- * the same as a broken input.
- */
+/** Every word in a `.hwpx` package, one line per paragraph. */
 export async function hwpxToText(bytes: Uint8Array): Promise<string> {
   const zip = await JSZip.loadAsync(bytes)
   const lines: string[] = []
@@ -178,10 +136,8 @@ export async function hwpxToText(bytes: Uint8Array): Promise<string> {
     }
     readSection(asNodes(parsed), lines)
   }
-  // Blank paragraphs at either end belong to the template rather than to the
-  // author — the package this repo writes opens with one — so they are dropped.
-  // Interior ones are kept: those are the document's own spacing, and losing
-  // them runs separate sections of a report together.
+  // Blank paragraphs at either end belong to the template rather than to the author — the package
+  // this repo writes opens with one — so they are dropped.
   while (lines.length > 0 && lines[0] === '') lines.shift()
   while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop()
   return lines.join('\n')

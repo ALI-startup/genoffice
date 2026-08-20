@@ -1,14 +1,4 @@
-/**
- * The Electron transport contract: preload channels and the payloads that cross
- * them. Everything in this file is main-process-side by definition, so file
- * paths are the natural identifiers here — the renderer's own seam
- * (renderer/platform.ts) speaks in opaque `DocumentRef`s instead, and the
- * Electron adapter is what maps one to the other.
- *
- * The edit payload itself is host-agnostic and lives in @samugen/pdf-edit;
- * it is re-exported here so renderer modules keep importing their input types
- * from one place.
- */
+/** The Electron transport contract: preload channels and the payloads that cross them. */
 import type { Lang } from '@samugen/i18n'
 import type { AiSettings, AiStreamChunk, AiStreamRequest } from '@samugen/ai-provider'
 import type { PdfEditRequest } from '@samugen/pdf-edit'
@@ -42,9 +32,8 @@ export const PDF_CHANNELS = {
 } as const
 
 /**
- * Save over the Electron transport: the host-agnostic edit payload plus the
- * paths the main process needs. The renderer never builds `path` itself — the
- * Electron adapter fills it in from the DocumentRef it issued.
+ * Save over the Electron transport: the host-agnostic edit payload plus the paths the main process
+ * needs.
  */
 export interface SavePdfRequest extends PdfEditRequest {
   path: string

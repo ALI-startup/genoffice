@@ -1,23 +1,7 @@
 import type { NewInkImage } from './types'
 import { escapeXmlAttr } from './xml-utils'
 
-/**
- * Ink annotations (freehand strokes). Each saved annotation is a floating picture —
- * a run-level <w:drawing><wp:anchor> injected into its anchor paragraph:
- *
- * - wp:positionV relativeFrom="paragraph": the drawing moves with the
- *   paragraph when content above it reflows.
- * - wp:positionH relativeFrom="column": offsets are measured from the text
- *   column edge, independent of the paragraph's own indentation.
- * - behindDoc="0" + wp:wrapNone: floats in front of the text without
- *   affecting layout.
- * - wp:docPr name starts with "aidocs-ink" so we can recognize our own
- *   annotations when the file is reopened; descr carries the editor's
- *   stroke vectors (opaque payload) so the layer stays re-editable.
- *
- * Word renders these as ordinary floating pictures; only our editor restores
- * them into live strokes.
- */
+/** Ink annotations (freehand strokes). */
 
 export const INK_NAME_PREFIX = 'aidocs-ink'
 
@@ -40,11 +24,7 @@ const PIC_NS = 'http://schemas.openxmlformats.org/drawingml/2006/picture'
 const WP_NS = 'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing'
 const R_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
 
-/**
- * The anchored-picture run for one ink annotation. Namespaces are declared
- * inline so the fragment is valid regardless of what the document root
- * declares (w: is always present).
- */
+/** The anchored-picture run for one ink annotation. */
 export function anchoredInkRunXml(
   ink: Pick<NewInkImage, 'widthPx' | 'heightPx' | 'offsetXPx' | 'offsetYPx' | 'payload'>,
   rId: string,
@@ -123,11 +103,7 @@ export function findInkRuns(paragraphXml: string): InkRunMatch[] {
   return out
 }
 
-/**
- * Insert ink runs at the end of a paragraph fragment (after all content
- * runs). Returns null when the fragment's root is not a w:p — floating ink
- * can only anchor to paragraphs.
- */
+/** Insert ink runs at the end of a paragraph fragment (after all content runs). */
 export function injectInkRunsIntoParagraph(xml: string, runsXml: string): string | null {
   if (!/^<w:p[\s/>]/.test(xml)) return null
   if (xml.endsWith('/>')) return `${xml.slice(0, -2)}>${runsXml}</w:p>`

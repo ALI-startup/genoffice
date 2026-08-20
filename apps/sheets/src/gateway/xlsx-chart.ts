@@ -882,9 +882,8 @@ function setSeriesColor(chartXml: string, seriesIndex: number, color: string): s
     `<a:ln><a:solidFill><a:srgbClr val="${argb}"/></a:solidFill></a:ln></c:spPr>`
   const seriesPattern = /<c:ser>[\s\S]*?<\/c:ser>/g
   let found = false
-  // Document position, not c:idx: the sidecar numbers series by document
-  // order, so a file whose c:idx values are shuffled must still edit the
-  // series the UI showed as N.
+  // Document position, not c:idx: the sidecar numbers series by document order, so a file whose
+  // c:idx values are shuffled must still edit the series the UI showed as N.
   let position = -1
   const result = chartXml.replace(seriesPattern, (serXml) => {
     position += 1

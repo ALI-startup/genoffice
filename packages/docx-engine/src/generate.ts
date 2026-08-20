@@ -27,11 +27,7 @@ export interface ImagePatch {
   heightPx?: number
   /** paragraph alignment; null/'left' removes w:jc, undefined keeps as-is */
   align?: 'left' | 'center' | 'right' | null
-  /**
-   * New horizontal/vertical posOffset (in EMU) for floating images. Rewrites
-   * the <wp:posOffset> inside wp:positionH / wp:positionV.
-   * Ignored when the anchor uses <wp:align> instead of <wp:posOffset>.
-   */
+  /** New horizontal/vertical posOffset (in EMU) for floating images. */
   posOffsetX?: number
   posOffsetY?: number
 }
@@ -94,12 +90,8 @@ const WRAP_ELEMENT_RE =
   /<wp:wrapNone\s*\/>|<wp:wrapSquare[^>]*\/>|<wp:wrapSquare[\s\S]*?<\/wp:wrapSquare>|<wp:wrapTight[\s\S]*?<\/wp:wrapTight>|<wp:wrapThrough[\s\S]*?<\/wp:wrapThrough>|<wp:wrapTopAndBottom\s*\/>|<wp:wrapTopAndBottom[\s\S]*?<\/wp:wrapTopAndBottom>/g
 
 /**
- * Switch an image paragraph between inline (in line with text, wrap = null) and floating
- * (wp:anchor with the given wrap mode). Position/wrap elements are rebuilt;
- * extent, docPr and the pic graphic stay untouched.
- *
- * When `posOffset` is provided, the anchor's positionH/V use numeric
- * `<wp:posOffset>` instead of `<wp:align>`, enabling free-position drag.
+ * Switch an image paragraph between inline (in line with text, wrap = null) and floating (wp:anchor
+ * with the given wrap mode).
  */
 export function applyImageWrap(
   xml: string,
@@ -246,10 +238,7 @@ export interface FieldTextPatch {
   right?: string
 }
 
-/**
- * Patch only cached visible w:t text in a field paragraph. Field instructions,
- * hyperlinks, tabs, run styling, and field boundaries remain byte-identical.
- */
+/** Patch only cached visible w:t text in a field paragraph. */
 export function patchFieldParagraphXml(xml: string, patch: FieldTextPatch): string {
   const nodes = textNodes(xml, 'w:t')
   if (nodes.length === 0) return xml
@@ -274,11 +263,7 @@ export function patchFieldParagraphXml(xml: string, patch: FieldTextPatch): stri
   return replaceTextNodes(xml, replacements)
 }
 
-/**
- * Patch OMML leaf token text without rebuilding its structural math nodes.
- * Token count must stay unchanged so fractions, scripts, matrices, and styling
- * remain exactly as authored by Word.
- */
+/** Patch OMML leaf token text without rebuilding its structural math nodes. */
 export function patchMathTokens(xml: string, tokens: readonly string[]): string {
   const nodes = textNodes(xml, 'm:t')
   if (nodes.length === 0 || nodes.length !== tokens.length) return xml
@@ -333,9 +318,8 @@ function xmlSegments(
 }
 
 /**
- * Rebuild one cell's paragraphs with new text, keeping tcPr and the first
- * paragraph's pPr / first run's rPr (so header bold, alignment, shading stay).
- * Returns null when the cell is too complex to patch safely (nested table).
+ * Rebuild one cell's paragraphs with new text, keeping tcPr and the first paragraph's pPr / first
+ * run's rPr (so header bold, alignment, shading stay).
  */
 function patchCellXml(tcXml: string, paras: string[]): string | null {
   if (tcXml.indexOf('<w:tbl', 1) !== -1) return null
@@ -368,13 +352,7 @@ export type CellTextsPatch =
       > | null>
     }
 
-/**
- * Replace cell texts inside a <w:tbl> fragment.
- * `texts[row][cell]` = new paragraph strings for that cell (or a CellTextsPatch
- * carrying nested-table cell texts), or null/undefined to leave the cell
- * untouched. Indexes follow document order of w:tr / w:tc (matching
- * TableModel.rows, which includes vMerge-continue cells).
- */
+/** Replace cell texts inside a <w:tbl> fragment. */
 export function patchTableCellTexts(
   tableXml: string,
   texts: ReadonlyArray<ReadonlyArray<CellTextsPatch | null | undefined> | null | undefined>,
@@ -429,12 +407,7 @@ function patchNestedInCell(
 
 // ---- textbox paragraph patching ----
 
-/**
- * Replacement content for one textbox paragraph. `runs` carry the full rich
- * style (bold, color, size, ...) and are regenerated as fresh OOXML runs.
- * `align`: undefined keeps the original pPr untouched, null removes w:jc,
- * a value rewrites it.
- */
+/** Replacement content for one textbox paragraph. */
 export interface TextboxParaPatch {
   runs: Run[]
   align?: 'left' | 'center' | 'right' | 'justify' | 'distribute' | null
@@ -473,13 +446,7 @@ function pPrWithJc(pPr: string, align: TextboxParaPatch['align']): string {
   return out.slice(0, insertAt) + jc + out.slice(insertAt)
 }
 
-/**
- * Rebuild the paragraphs of one w:txbxContent. `paras[i]` = null keeps the
- * original paragraph bytes; a patch regenerates the paragraph from its rich
- * runs, reusing the nearest original paragraph's pPr (extra new paragraphs
- * inherit the last original's pPr). Original paragraphs beyond paras.length
- * are dropped (paragraph deleted in the editor).
- */
+/** Rebuild the paragraphs of one w:txbxContent. */
 function patchTxbxContent(
   segXml: string,
   paras: ReadonlyArray<TextboxParaPatch | null | undefined>,
@@ -507,13 +474,7 @@ function patchTxbxContent(
 }
 
 /**
- * Replace textbox paragraphs inside a paragraph fragment that carries
- * anchored DrawingML textboxes. `boxes[box]` = per-paragraph patches for that
- * box (visible-shape order, matching Block.textboxes), or null/undefined to
- * leave the box untouched. Word pairs every DrawingML shape with a VML twin
- * inside mc:Fallback whose w:txbxContent duplicates the content — fallback
- * copies are patched with the same paragraphs as the preceding visible box so
- * both renderings stay in sync.
+ * Replace textbox paragraphs inside a paragraph fragment that carries anchored DrawingML textboxes.
  */
 export function patchTextboxParas(
   paragraphXml: string,
@@ -890,19 +851,7 @@ function pprGroupUnchanged(tag: string, raw: string | undefined, f: ParaFormat):
   }
 }
 
-/**
- * Merge format-model changes into an original <w:pPr> slice. Like mergeRPrModel,
- * each managed child is compared group by group: when its raw bytes re-parse to
- * the current model value the group was not edited and keeps its original bytes,
- * so unmodeled attributes (w:firstLineChars, w:afterLines, autospacing, border
- * colors, shading patterns…) survive. Only genuinely changed groups are rebuilt
- * from the model (at their schema position) — a rebuilt w:ind intentionally drops
- * firstLineChars/leftChars so the user's new twips indent wins over the CJK
- * char-unit variant Word would otherwise prefer. Everything unmanaged — keepNext,
- * paragraph-mark rPr, pPrChange revision records... — keeps its original bytes.
- * When format.tabStops is set, w:tabs is also managed (replaced or removed).
- * When format.dropCap is set, w:framePr is also managed.
- */
+/** Merge format-model changes into an original <w:pPr> slice. */
 export function mergePPrFormat(rawPPr: string, format: ParaFormat | undefined): string {
   const open = /^<w:pPr(?: [^>]*)?>/.exec(rawPPr)?.[0]
   const fresh = formatPPrChildren(format)
@@ -939,14 +888,9 @@ export function mergePPrFormat(rawPPr: string, format: ParaFormat | undefined): 
   return `${open}${parts.join('')}</w:pPr>`
 }
 
-/**
- * Strip <w:pPrChange>...</w:pPrChange> from a raw <w:pPr> slice.
- * Used when the editor accepts or rejects a paragraph-property revision,
- * so the saved file no longer contains the pPrChange record.
- */
+/** Strip <w:pPrChange>...</w:pPrChange> from a raw <w:pPr> slice. */
 export function stripPPrChange(rawPPr: string): string {
   // pPrChange nests a <w:pPr> inside it, so we need depth-aware removal.
-  // Pattern: <w:pPrChange ...> ... </w:pPrChange>
   const start = rawPPr.indexOf('<w:pPrChange')
   if (start === -1) return rawPPr
   const end = rawPPr.indexOf('</w:pPrChange>', start)
@@ -987,10 +931,7 @@ function revisionPPrChangeXml(changeJson: string): string | null {
   return `<w:pPrChange${attrs}><w:pPr>${children.map((child) => child.xml).join('')}</w:pPr></w:pPrChange>`
 }
 
-/**
- * Insert or replace the live paragraph-property revision in a raw pPr slice.
- * The revision is last in CT_PPr schema order.
- */
+/** Insert or replace the live paragraph-property revision in a raw pPr slice. */
 export function setPPrChange(rawPPr: string, changeJson: string): string {
   const change = revisionPPrChangeXml(changeJson)
   if (!change) return rawPPr
@@ -1001,12 +942,7 @@ export function setPPrChange(rawPPr: string, changeJson: string): string {
   return `${clean.slice(0, close)}${change}${clean.slice(close)}`
 }
 
-/**
- * Generate an OOXML <w:p> fragment for an edited/new block.
- * Only references styles that already exist in the original document, so the
- * patched file never needs styles.xml modifications. When `rawPPr` is set the
- * paragraph properties pass through byte-identical instead of being rebuilt.
- */
+/** Generate an OOXML <w:p> fragment for an edited/new block. */
 export function generateParagraphXml(block: GeneratedBlock, ctx: GenerateContext): string {
   const crossStarts = (block.commentStarts ?? [])
     .map((id) => `<w:commentRangeStart w:id="${escapeXmlAttr(id)}"/>`)
@@ -1073,11 +1009,7 @@ function bookmarksXml(names: string[] | undefined): string {
 }
 
 export interface TableGenOptions {
-  /**
-   * Style the first row as a header: light shading plus an empty bold run.
-   * The bold run matters because patchTableCellTexts reuses the first run's
-   * rPr when it fills in cell texts, so header texts come out bold.
-   */
+  /** Style the first row as a header: light shading plus an empty bold run. */
   headerRow?: boolean
 }
 
@@ -1205,11 +1137,7 @@ function tableCellXml(
   return `<w:tc><w:tcPr>${tcPr.join('')}</w:tcPr>${content}${nested ? `${nested}<w:p/>` : ''}</w:tc>`
 }
 
-/**
- * Generate a complete table from the editable display model. This is used only
- * after structural edits; untouched tables and text-only edits keep their
- * original XML through the byte-preserving patch paths.
- */
+/** Generate a complete table from the editable display model. */
 export function generateTableModelXml(model: TableModel, originalTableXml?: string): string {
   const columnCount = Math.max(
     1,
@@ -1330,11 +1258,7 @@ export interface TocEntry {
   pageNo?: number
 }
 
-/**
- * Generate a real TOC field as one w:p fragment per line. The begin fldChar is
- * marked dirty so Word recalculates entries and page numbers on open; the
- * static entry texts serve as the visible result until then.
- */
+/** Generate a real TOC field as one w:p fragment per line. */
 export function generateTocFieldXml(entries: TocEntry[]): string[] {
   if (entries.length === 0) return []
   const maxLevel = Math.min(Math.max(...entries.map((e) => e.level), 1), 9)
@@ -1359,11 +1283,7 @@ export function generateTocFieldXml(entries: TocEntry[]): string[] {
   })
 }
 
-/**
- * Caption paragraph: `<label> <SEQ label> <text>`, e.g. "Figure 1 System architecture".
- * The SEQ field is marked dirty so Word renumbers all captions on open; the
- * static number is the visible result until then.
- */
+/** Caption paragraph: `<label> <SEQ label> <text>`, e.g. */
 export function generateCaptionXml(label: string, number: number, text: string): string {
   const rPr = '<w:rPr><w:color w:val="44546A"/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr>'
   const run = (inner: string) => `<w:r>${rPr}${inner}</w:r>`
@@ -1382,10 +1302,7 @@ export function generateCaptionXml(label: string, number: number, text: string):
   )
 }
 
-/**
- * INDEX field as one w:p per cached entry line, alphabetically sorted. The
- * begin fldChar is dirty so Word rebuilds entries and page numbers on open.
- */
+/** INDEX field as one w:p per cached entry line, alphabetically sorted. */
 export function generateIndexFieldXml(terms: string[]): string[] {
   const unique = [...new Set(terms.map((t) => t.trim()).filter(Boolean))]
   if (unique.length === 0) return []
@@ -1419,11 +1336,7 @@ export function inlineRunsXml(runs: Run[]): string {
   return runsXml(runs, null)
 }
 
-/**
- * OOXML runs for a run list. `allocate` mints rIds for new external links;
- * pass null where no relationship allocation is possible (textbox patches) —
- * links without an existing rId then degrade to plain runs.
- */
+/** OOXML runs for a run list. */
 function runsXml(runs: Run[], allocate: ((href: string) => string) | null): string {
   // comment ranges: re-emit start/end/reference markers around the first..last
   // run each id covers, so editing a commented paragraph keeps its comments
@@ -1499,7 +1412,6 @@ function runsXml(runs: Run[], allocate: ((href: string) => string) | null): stri
   }
 
   // tracked changes: wrap consecutive runs of the same revision in w:ins / w:del.
-  // An insertion later deleted (both set) nests w:del inside w:ins, as Word does.
   const revKey = (r: Run) =>
     r.ins || r.del
       ? JSON.stringify([
@@ -1783,9 +1695,8 @@ export function mergeRPrModel(rawRPr: string, run: Run, insideLink: boolean): st
         return (raw === 'none' ? undefined : raw) === run.highlight
       }
       case 'underline': {
-        // w:u is not a boolean prop: no w:val (or val="none") means no
-        // underline, regardless of other attributes like w:color. Must match
-        // underlineProp() used at parse time.
+        // w:u is not a boolean prop: no w:val (or val="none") means no underline, regardless of
+        // other attributes like w:color.
         const val = rawAttr(rawOf('w:u'), 'w:val')
         return (val !== undefined && val !== 'none') === !!run.underline
       }
@@ -1828,14 +1739,8 @@ export function mergeRPrModel(rawRPr: string, run: Run, insideLink: boolean): st
 // ---- new drawing paragraph generators ----
 
 /**
- * Build a minimal <w:p> fragment that contains a floating WPS text-box anchored
- * at the cursor position with the given dimensions.
- *
- * @param widthEmu  horizontal size in EMU  (default ~5 cm = 1800000)
- * @param heightEmu vertical size in EMU    (default ~3 cm = 1080000)
- * @param id        wp:docPr id / name suffix (caller must keep unique)
- * @param fillHex   6-char solid fill hex colour (default "FFFFFF" = white)
- * @param borderHex 6-char border hex colour     (default "000000" = black)
+ * Build a minimal <w:p> fragment that contains a floating WPS text-box anchored at the cursor
+ * position with the given dimensions.
  */
 export function buildTextboxParagraphXml(opts?: {
   widthEmu?: number
@@ -1907,10 +1812,7 @@ export function buildTextboxParagraphXml(opts?: {
   return `<w:p><w:r>${alternateContent}</w:r></w:p>`
 }
 
-/**
- * Build a <w:p> fragment for a floating WPS shape (prstGeom) with optional
- * text content. Same anchor structure as buildTextboxParagraphXml.
- */
+/** Build a <w:p> fragment for a floating WPS shape (prstGeom) with optional text content. */
 export function buildShapeParagraphXml(opts: {
   prst: string
   widthEmu?: number
@@ -2033,11 +1935,7 @@ export const WORDART_PRESETS = [
   },
 ] as const
 
-/**
- * Build a <w:p> fragment containing a floating WordArt WPS text box.
- * The shape has no background fill; the text runs carry large size (36pt)
- * and the specified color. Style is approximated — Word can open the result.
- */
+/** Build a <w:p> fragment containing a floating WordArt WPS text box. */
 export function buildWordArtParagraphXml(opts: {
   text?: string
   wordArtId?: string
@@ -2133,7 +2031,6 @@ function generateRunXml(run: Run, insideLink: boolean): string {
   }
 
   // Translate embedded control characters back to OOXML elements.
-  // Deleted runs carry their text in w:delText instead of w:t.
   const textTag = run.del ? 'w:delText' : 'w:t'
   const segments: string[] = []
   let buffer = ''

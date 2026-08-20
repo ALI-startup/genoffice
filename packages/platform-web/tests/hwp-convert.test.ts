@@ -1,11 +1,4 @@
-/**
- * The browser's side of the conversion service, over a fake `fetch`.
- *
- * The two behaviours worth pinning are the ones a UI depends on: `available()`
- * distinguishes "the service is there but has no converter" from "there is no
- * service", and it asks once per page rather than once per file — a dialog that
- * probed on every pick would be a request per keystroke of hesitation.
- */
+/** The browser's side of the conversion service, over a fake `fetch`. */
 import { describe, expect, it, vi } from 'vitest'
 import { CONVERT_ROUTES } from '../src/convert-wire'
 import { createWebHwpConvertPort } from '../src/hwp-convert'

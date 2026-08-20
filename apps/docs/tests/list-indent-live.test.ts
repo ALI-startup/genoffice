@@ -1,9 +1,7 @@
 /**
- * Regression: A list created on a blank document must show its
- * indent immediately - the freshly allocated numbering definition has to be
- * synced into the renderer's numbering table (overlayNumberingDef), not only
- * written to numbering.xml at save. The editing-time geometry must equal the
- * save -> reopen geometry.
+ * Regression: A list created on a blank document must show its indent immediately - the freshly
+ * allocated numbering definition has to be synced into the renderer's numbering table
+ * (overlayNumberingDef), not only written to numbering.xml at save.
  */
 import { Editor } from '@tiptap/core'
 import { describe, expect, it } from 'vitest'

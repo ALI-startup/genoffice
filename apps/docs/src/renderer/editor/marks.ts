@@ -6,11 +6,7 @@ import { cssFontFamily } from '../line-metrics'
 import { t } from '../i18n/locale'
 import {} from '@samugen/docx-engine'
 
-/**
- * Custom schema mirroring the docx-engine Block model 1:1.
- * Every top-level node carries `docxIndex` (patch anchor, null = new) and
- * `aiChanged` (diff highlighting for AI edits).
- */
+/** Custom schema mirroring the docx-engine Block model 1:1. */
 
 export const BoldMark = Mark.create({
   name: 'bold',
@@ -124,9 +120,8 @@ export const LinkMark = Mark.create({
 })
 
 /**
- * Word comment range: rendered as a highlighted span carrying its comment ids
- * (space-separated), so the comments panel can jump to it. `inclusive: false`
- * keeps typing at the range edges from silently extending the comment.
+ * Word comment range: rendered as a highlighted span carrying its comment ids (space-separated), so
+ * the comments panel can jump to it.
  */
 export const CommentMark = Mark.create({
   name: 'comment',
@@ -144,12 +139,7 @@ export const CommentMark = Mark.create({
   },
 })
 
-/**
- * Tracked insertion (w:ins). Rendered underlined in the revision color; hover
- * shows author/date. `inclusive: false` so typing at the edge of someone
- * else's insertion doesn't inherit their authorship — the track-changes
- * recorder marks new input itself.
- */
+/** Tracked insertion (w:ins). */
 export const InsMark = Mark.create({
   name: 'ins',
   inclusive: false,
@@ -251,10 +241,8 @@ export const revisionDisplayState = { mode: 'all' as 'all' | 'none' | 'original'
 const revisionOriginalKey = new PluginKey('revisionOriginal')
 
 /**
- * Original view (shown as if rejected): for text with rPrChange, restore the pre-revision
- * modeled formatting via inner decorations (mirroring revisions.ts reject logic). The inner
- * span can override bold/italic, color, font size, and font; undoing underline/strikethrough
- * isn't possible in CSS, so it stays approximate.
+ * Original view (shown as if rejected): for text with rPrChange, restore the pre-revision modeled
+ * formatting via inner decorations (mirroring revisions.ts reject logic).
  */
 export const RevisionOriginalExtension = Extension.create({
   name: 'revisionOriginal',

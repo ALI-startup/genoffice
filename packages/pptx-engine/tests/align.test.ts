@@ -1,7 +1,4 @@
-/**
- * Unit tests for pure geometry align/distribute functions (alignRects / distributeRects).
- * No IO, no model dependency; verifies correctness of 6 alignments + 2 distributions.
- */
+/** Unit tests for pure geometry align/distribute functions (alignRects / distributeRects). */
 import { describe, it, expect } from 'vitest'
 import { alignRects, distributeRects } from '../src/align'
 
@@ -101,9 +98,8 @@ describe('alignRects', () => {
 
 describe('distributeRects', () => {
   it('horizontal: 3 equal-width rects distribute evenly', () => {
-    // a: x=0,w=50  b: x=200,w=50  c: x=300,w=50 → span=350, gap=(350-150)/2=100
-    // sorted: a(0), b(200), c(300)
-    // first=a at 0, cursor: a→50, gap=100, b→150, c→300
+    // a: x=0,w=50  b: x=200,w=50  c: x=300,w=50 → span=350, gap=(350-150)/2=100 sorted: a(0),
+    // b(200), c(300) first=a at 0, cursor: a→50, gap=100, b→150, c→300
     const rects = [R(0, 0, 50, 20), R(200, 0, 50, 20), R(300, 0, 50, 20)]
     const result = distributeRects(rects, 'horizontal')
     const xs = result.map((r) => r.x).sort((a, b) => a - b)
@@ -129,16 +125,15 @@ describe('distributeRects', () => {
   })
 
   it('horizontal: 4 variable-width rects distribute evenly', () => {
-    // a: x=0,w=30  b: x=100,w=40  c: x=200,w=20  d: x=300,w=50
-    // sorted by x: a,b,c,d
-    // span = 350; totalWidth = 140; gap = (350-140)/3 = 70
-    // positions: a=0, b=0+30+70=100, c=100+40+70=210, d=210+20+70=300
+    // a: x=0,w=30  b: x=100,w=40  c: x=200,w=20  d: x=300,w=50 sorted by x: a,b,c,d span = 350;
+    // totalWidth = 140; gap = (350-140)/3 = 70 positions: a=0, b=0+30+70=100, c=100+40+70=210,
+    // d=210+20+70=300
     const rects = [R(0, 0, 30, 20), R(100, 0, 40, 20), R(200, 0, 20, 20), R(300, 0, 50, 20)]
     const result = distributeRects(rects, 'horizontal')
     const xs = result.map((r) => r.x)
-    expect(xs[0]).toBe(0)   // a stays
-    expect(xs[1]).toBeCloseTo(100)  // b
-    expect(xs[2]).toBeCloseTo(210)  // c
+    expect(xs[0]).toBe(0) // a stays
+    expect(xs[1]).toBeCloseTo(100) // b
+    expect(xs[2]).toBeCloseTo(210) // c
     expect(xs[3]).toBe(300) // d stays
   })
 })
