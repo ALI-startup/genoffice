@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { extname } from 'node:path'
 import { docxToText } from './docx'
+import { hwpxToText } from './hwpx'
 import { pdfToText } from './pdf'
 import { pptxToText } from './pptx'
 import { xlsxToText } from './xlsx'
@@ -55,6 +56,11 @@ export async function parseFileToText(filePath: string): Promise<ParsedFile> {
         return { ok: true, kind: 'text', text: await xlsxToText(await readFile(filePath)) }
       case 'pdf':
         return { ok: true, kind: 'text', text: await pdfToText(await readFile(filePath)) }
+      // .hwpx only. The legacy .hwp binary has no reader on any host and is
+      // converted to this before it ever reaches a parser — see
+      // services/hwp-convert.
+      case 'hwpx':
+        return { ok: true, kind: 'text', text: await hwpxToText(await readFile(filePath)) }
     }
   } catch (e) {
     return { ok: false, kind: 'text', error: e instanceof Error ? e.message : String(e) }

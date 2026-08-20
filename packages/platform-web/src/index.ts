@@ -79,6 +79,9 @@ export {
 export type { LanguageHostEnv } from './language.js'
 
 export { createBrowserAttachmentExtractor } from './attachment-extract.js'
+export type { BrowserAttachmentExtractorOptions } from './attachment-extract.js'
+export { createWebHwpConvertPort } from './hwp-convert.js'
+export type { HwpConvertResult, WebHwpConvertOptions, WebHwpConvertPort } from './hwp-convert.js'
 export { browserDownloadEnv, DOWNLOAD_URL_TTL_MS, downloadBytes } from './download.js'
 export type { DownloadEnv } from './download.js'
 
@@ -107,6 +110,8 @@ export {
 export type { FrameMessageLike, FrameToShellMessage, ShellToFrameMessage } from './frame-wire.js'
 
 export { AI_BFF_BASE_PATH, AI_BFF_ROUTES } from './ai-wire.js'
+export { CONVERT_BASE_PATH, CONVERT_ROUTES, HWP_MIME, HWPX_MIME } from './convert-wire.js'
+export type { ConvertErrorBody, ConvertHealthBody } from './convert-wire.js'
 export type {
   AiCancelBody,
   AiChatBody,

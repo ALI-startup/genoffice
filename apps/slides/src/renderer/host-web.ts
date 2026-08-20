@@ -23,6 +23,7 @@ import {
   browserLanguageEnv,
   browserMultiFilePicker,
   createBrowserAttachmentExtractor,
+  createWebHwpConvertPort,
   createFrameChildLink,
   createIndexedDbHandleStore,
   createWebAiPort,
@@ -179,7 +180,11 @@ export const createSlidesPlatform: CreateSlidesPlatform = async () => {
     ai: createWebAiPort(),
     attachments: createWebAttachmentsPort({
       pick: browserMultiFilePicker(),
-      extractor: createBrowserAttachmentExtractor(),
+      // The `.hwp` converter, always wired: whether a deployment actually runs
+      // the service is not knowable synchronously, and the port answers a
+      // missing one with a message naming the fix (save it as .hwpx) rather
+      // than a failure. See platform-web's hwp-convert.ts.
+      extractor: createBrowserAttachmentExtractor({ hwp: createWebHwpConvertPort() }),
     }),
     document: {
       // The desktop uses the system account name; a page has no equivalent and inventing one

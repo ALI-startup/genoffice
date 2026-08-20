@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@samugen/docx-engine": "*",
+    "@samugen/hwpx-convert": "*",
     "fast-xml-parser": "^5.3.4",
     "jszip": "^3.10.1",
     "pdfjs-dist": "^5.4.54"

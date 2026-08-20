@@ -7,6 +7,8 @@
   "description": "HWPX import/export codecs: .hwpx bytes to the restricted HTML fragment docs' editor consumes, and back again",
   "exports": {
     ".": "./src/index.ts",
+    "./formats": "./src/formats.ts",
+    "./text": "./src/text.ts",
     "./vite": "./vite.ts"
   },
   "scripts": {

@@ -1,4 +1,6 @@
 export { hwpxToHtml, type HwpxImport } from './read'
 export { htmlToHwpx } from './write'
+export { hwpxToText } from './text'
+export { HWP_EXT, HWPX_EXT, hwpxNameFor, isHangulName, isHwpName, isHwpxName } from './formats'
 export { normalizeHwpxHtml, type BlockAlign, type NormalizedHtml } from './normalize'
 export { readParagraphInfo, type ParagraphInfo, type ParagraphRole } from './outline'

@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./wire": "./src/ai-wire.ts",
+    "./convert-wire": "./src/convert-wire.ts",
     "./frame": "./src/frame-wire.ts"
   },
   "scripts": {

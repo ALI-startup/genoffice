@@ -11,5 +11,6 @@
  * Keep in sync with packages/file-parse/src/browser.ts.
  */
 export function docxToText(bytes: Uint8Array): Promise<string>
+export function hwpxToText(bytes: Uint8Array): Promise<string>
 export function pptxToText(bytes: Uint8Array): Promise<string>
 export function xlsxToText(bytes: Uint8Array): Promise<string>

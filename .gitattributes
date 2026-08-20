@@ -15,3 +15,10 @@
 *.otf binary
 *.woff binary
 *.woff2 binary
+
+# The vendored hwp2hwpx converter (services/hwp-convert/vendor).
+*.jar binary
+
+# Hangul Word Processor test fixtures.
+*.hwp binary
+*.hwpx binary

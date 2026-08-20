@@ -28,6 +28,7 @@ import {
   createIndexedDbHandleStore,
   DOCUMENT_DB_NAME,
   createBrowserAttachmentExtractor,
+  createWebHwpConvertPort,
   createWebAiPort,
   createWebAttachmentsPort,
   createWebLanguagePort,
@@ -78,7 +79,11 @@ export const createDocsPlatform: CreateDocsPlatform = async () => {
     ai: createWebAiPort(),
     attachments: createWebAttachmentsPort({
       pick: browserMultiFilePicker(),
-      extractor: createBrowserAttachmentExtractor(),
+      // The `.hwp` converter, always wired: whether a deployment actually runs
+      // the service is not knowable synchronously, and the port answers a
+      // missing one with a message naming the fix (save it as .hwpx) rather
+      // than a failure. See platform-web's hwp-convert.ts.
+      extractor: createBrowserAttachmentExtractor({ hwp: createWebHwpConvertPort() }),
     }),
     hasUserActivation,
     // The browser's own dialog, standing in for the native warning box the

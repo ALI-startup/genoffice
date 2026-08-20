@@ -1,0 +1,27 @@
+{
+  "name": "@samugen/hwp-convert",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "description": "Converts legacy .hwp documents to .hwpx by running the bundled hwp2hwpx converter, so the browser only ever has to read the modern package",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@samugen/platform-web": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "jszip": "^3.10.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
+  }
+}

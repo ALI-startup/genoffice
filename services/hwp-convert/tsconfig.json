@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Server-side only: no DOM lib, which is also a structural guarantee that
+    // nothing browser-shaped leaks into a process that spawns subprocesses.
+    "lib": ["ES2022"],
+    "types": ["node"]
+  },
+  "include": ["src", "tests", "vitest.config.ts"]
+}
