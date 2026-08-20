@@ -17,8 +17,8 @@ test.describe('home screen', () => {
     await openShell(page, { onboardingSeen: true })
 
     await expect(page.locator('.home-hero')).toBeVisible()
-    // One card per editor that can be created from empty.
-    for (const label of ['AI Docs', 'AI Sheets', 'AI Slides']) {
+    // One card per editor this host has, pdf included.
+    for (const label of ['AI Docs', 'AI Sheets', 'AI Slides', 'AI PDF']) {
       await expect(page.locator('.quick-card', { hasText: label })).toBeVisible()
     }
     // The tab strip is the shell's own chrome, with home as the first tab.

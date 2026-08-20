@@ -114,7 +114,7 @@ function setup(initialHash = '#/') {
     frames,
     titleFor: (kind) =>
       kind === 'pdf'
-        ? 'Open PDF'
+        ? 'AI PDF'
         : kind === 'slides'
           ? 'AI Slides'
           : kind === 'sheets'

@@ -25,6 +25,20 @@ test.describe('opening an editor', () => {
     expect(page.frames().some((f) => f.url().includes('/app/slides/'))).toBe(true)
   })
 
+  test('the pdf card opens the pdf surface, with its own Open button inside', async ({ page }) => {
+    await openShell(page, { onboardingSeen: true })
+
+    await page.locator('.quick-card', { hasText: 'AI PDF' }).click()
+
+    // Unlike the other three this card creates no document, so what proves it worked is
+    // pdf's own empty state — and specifically its Open button, which is the only place a
+    // browser can raise a file picker for a pdf (see ShellPdfLauncherPort).
+    const frame = page.frameLocator('iframe')
+    await expect(frame.locator('.pdf-placeholder')).toBeVisible()
+    await expect(frame.locator('.pdf-open-btn')).toBeVisible()
+    expect(page.frames().some((f) => f.url().includes('/app/pdf/'))).toBe(true)
+  })
+
   test('a language chosen on the home tab reaches inside the editor frame', async ({ page }) => {
     await openShell(page, { onboardingSeen: true })
     await page.locator('.quick-card', { hasText: 'AI Slides' }).click()

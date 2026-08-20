@@ -127,7 +127,7 @@ export const createShellPlatform: CreateShellPlatform = async () => {
   const translate = createI18n(strings)
   const lang = await language.getLanguage()
   const titleFor = (kind: TabKind): string => {
-    if (kind === 'pdf') return translate(lang, 'openPdf')
+    if (kind === 'pdf') return translate(lang, 'newPdf')
     if (kind === 'slides') return translate(lang, 'newSlide')
     if (kind === 'sheets') return translate(lang, 'newSheet')
     return translate(lang, 'newDoc')

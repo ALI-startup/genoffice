@@ -325,7 +325,7 @@ export function TabBar() {
       items.push({ key: 'slide', label: t('newSlide'), run: () => void slidesLauncher.newSlide() })
     }
     if (pdfLauncher) {
-      items.push({ key: 'pdf', label: t('openPdf'), run: () => void pdfLauncher.newPdfTab() })
+      items.push({ key: 'pdf', label: t('newPdf'), run: () => void pdfLauncher.newPdfTab() })
     }
     if (browse) items.push({ key: 'open', label: t('openLocal'), run: () => void browse.browse() })
     return items

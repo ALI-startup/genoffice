@@ -704,6 +704,7 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
     launcher,
     sheetsLauncher,
     slidesLauncher,
+    pdfLauncher,
     browse,
     projects: projectsPort,
   } = shellPlatform()
@@ -1049,8 +1050,13 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
   }
 
   // Each card exists only on a host that has that editor, so a card is absent rather than
-  // present and inert. Two ports rather than one because the two answers differ: slides has
-  // a browser build and sheets does not (see ShellSheetsLauncherPort).
+  // present and inert — one port per editor, because the answers are per-editor and have
+  // changed independently (see each port).
+  //
+  // The pdf card is the one that opens a surface rather than creating a document: nothing
+  // authors a blank pdf, so its click lands on pdf's own empty state, whose Open button has
+  // the user activation a picker needs (see ShellPdfLauncherPort). It reads as the fourth
+  // editor anyway, which is what it is once a file is in it.
   const NEW_ITEMS = [
     { ext: 'docx', title: t('newDoc'), sub: '.docx', action: handleNewDoc },
     ...(sheetsLauncher
@@ -1076,6 +1082,18 @@ export function Home({ onOpenSettings }: { onOpenSettings: () => void }) {
               slidesLauncher.newSlide(
                 selectedProjectId ? { projectId: selectedProjectId } : undefined,
               ),
+          },
+        ]
+      : []),
+    ...(pdfLauncher
+      ? [
+          {
+            ext: 'pdf',
+            title: t('newPdf'),
+            sub: '.pdf',
+            // No project option: this opens an empty surface, so there is no new file yet
+            // for a project to hold.
+            action: () => pdfLauncher.newPdfTab(),
           },
         ]
       : []),
